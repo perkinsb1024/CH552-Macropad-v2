@@ -15,6 +15,30 @@ mode within ten seconds. Hold the encoder button for three seconds, or hold
 the first three keys during startup. The Upload task always invokes the
 programmer, even when the HEX file is already built.
 
+The firmware configuration work has started with the version 1 image codec in
+`src/config.c`. It validates a 128-byte image, provides built-in defaults for
+both physical variants, and exposes layer, binding, chord, and palette accessors.
+The byte format and palette are documented in `protocol/config-v1.md`. Run the
+codec checks with:
+
+```sh
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
+  tests/config_test.c src/config.c -o /tmp/ch552-config-test
+/tmp/ch552-config-test
+```
+
+The current sketch still executes its original fixed bindings. USB
+configuration transport, DataFlash loading/saving, layers, and the new action
+engine are subsequent firmware work. Do not upload a custom image to the pad
+yet. The new codec is initialized to built-in defaults at startup but does not
+yet control the sketch's actions.
+
+The baseline build before this work used 118 bytes of internal data, 128 bytes
+of xRAM plus 130 initialized xRAM bytes, and a code image ending near `0x1C1F`.
+The current map uses 118 bytes of internal data, 317 bytes of xRAM plus 130
+initialized xRAM bytes, and its code image ends near `0x2B5E`. The linker
+allows code through `0x37FF`; later milestones must continue checking the map.
+
 `platformio.ini` matches the Arduino settings: CH552 Board, 24 MHz internal
 clock at 5 V, user USB code with 148 bytes reserved, and P3.6 (D+) pull-up
 bootloader configuration. The project-local `pio-platform/` adapter is needed

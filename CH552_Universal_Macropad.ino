@@ -13,6 +13,7 @@
 #define SERIAL_DEBUG  false
 
 #include <WS2812.h>
+#include "src/config.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 // Modifier Keys
@@ -62,13 +63,8 @@ __xdata uint8_t ledData[NUM_BYTES];
 #define MIN_SCROLL_STEP 2
 #define SCROLL_STEP     1
 #define SCROLL_DIST     1
-#if INVERT_SCROLLING
-#define SCROLL_UP       SCROLL_DIST
-#define SCROLL_DOWN     -SCROLL_DIST
-#else
 #define SCROLL_UP       -SCROLL_DIST
 #define SCROLL_DOWN     SCROLL_DIST
-#endif
 #define KEY_PRESSED     LOW
 #define KEY_RELEASED    HIGH
 
@@ -384,12 +380,12 @@ void encoderScroll() {
     lastScrollSendMs = millis();
     // If we have moved the encoder enough to trigger a scroll, then do it
     if (encoderPos >= MIN_SCROLL_STEP) {
-      Mouse_scroll(SCROLL_UP);
+      Mouse_scroll(INVERT_SCROLLING ? -SCROLL_UP : SCROLL_UP);
       // The library leaves the mouse scroll value in the HID report, manually clear it
       Mouse_scroll(0);
       encoderPos -= SCROLL_STEP;
     } else if (encoderPos <= -MIN_SCROLL_STEP) {
-      Mouse_scroll(SCROLL_DOWN);
+      Mouse_scroll(INVERT_SCROLLING ? -SCROLL_DOWN : SCROLL_DOWN);
       // The library leaves the mouse scroll value in the HID report, manually clear it
       Mouse_scroll(0);
       encoderPos += SCROLL_STEP;
@@ -419,10 +415,14 @@ void enterBootloader() {
 }
 
 void setup() {
+  configDefaults(PHYSICAL_VARIANT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(KEY0_PIN, INPUT_PULLUP);
   pinMode(KEY1_PIN, INPUT_PULLUP);
   pinMode(KEY2_PIN, INPUT_PULLUP);
+  pinMode(KEY3_PIN, INPUT_PULLUP);
+  pinMode(KEY4_PIN, INPUT_PULLUP);
+  pinMode(KEY5_PIN, INPUT_PULLUP);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(ENC_A_PIN, INPUT_PULLUP);
   pinMode(ENC_B_PIN, INPUT_PULLUP);
@@ -431,6 +431,9 @@ void setup() {
   lastScrollSendMs = millis() - SCROLL_SEND_MS - 1;
   enterBootloaderMs = millis();
   encoderALastState = digitalRead(ENC_A_PIN);
+  for (uint8_t i = 0; i < MAX_KEYS_W_ENCODER; i++) {
+    keyLastState[i] = digitalRead(KEY_PIN[i]);
+  }
   USBInit();
   if (ALLOW_BOOTLOADER_FROM_BOOT) {
     if (digitalRead(KEY0_PIN) == KEY_PRESSED && digitalRead(KEY1_PIN) == KEY_PRESSED && digitalRead(KEY2_PIN) == KEY_PRESSED) {
