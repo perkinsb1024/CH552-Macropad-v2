@@ -218,7 +218,7 @@ export function Inspector() {
             ))}
           </div>
           <div class="row">
-            <span class="hint">{PALETTE[layer.leds[keyIndex]!]?.name ?? 'Unknown'} · fixed 16-color firmware palette</span>
+            <span class="hint">{PALETTE[layer.leds[keyIndex]!]?.name ?? 'Unknown'}</span>
             {keyCount(p.variant) > 1 && (
               <button class="btn btn-small" onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds = d.layers[slot.layer]!.leds.map(() => layer.leds[keyIndex]!); })}>
                 Apply to all keys

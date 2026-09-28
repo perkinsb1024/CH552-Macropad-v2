@@ -14,13 +14,13 @@ const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperC
 describe('golden defaults from config-v1.md', () => {
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 9))).toBe('4D 50 01 00 00 00 11 D1 08');
-    expect(imageCrc(image)).toBe(0xd111);
+    expect(hex(image.subarray(0, 9))).toBe('4D 50 01 00 00 00 4A 86 08');
+    expect(imageCrc(image)).toBe(0x864a);
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 9))).toBe('4D 50 01 00 00 01 AC 99 08');
-    expect(imageCrc(image)).toBe(0x99ac);
+    expect(hex(image.subarray(0, 9))).toBe('4D 50 01 00 00 01 65 F0 08');
+    expect(imageCrc(image)).toBe(0xf065);
   });
   it('defaults round-trip', () => {
     for (const variant of [VARIANT_SIX_KEYS, VARIANT_THREE_KEYS] as Variant[]) {

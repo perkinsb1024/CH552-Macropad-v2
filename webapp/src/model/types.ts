@@ -1,4 +1,4 @@
-import type { Variant } from './constants';
+import type { LayerIndicatorBehavior, Variant } from './constants';
 
 export type Action =
   | { type: 'none' }
@@ -30,6 +30,8 @@ export interface Layer {
   leds: number[];
   bootloaderFromBoot: boolean;
   bootloaderFromRun: boolean;
+  indicatorBehavior: LayerIndicatorBehavior;
+  indicatorColor: number;
 }
 
 export interface Chord {

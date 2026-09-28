@@ -34,6 +34,19 @@
 #define CONFIG_ACTION_MOUSE_X          0xE
 #define CONFIG_ACTION_MOUSE_Y          0xF
 
+// Per-layer option byte: boot bits 0–1, indicator behavior bits 2–3, palette bits 4–7.
+#define CONFIG_LAYER_OPT_BOOTLOADER_BOOT 0x01
+#define CONFIG_LAYER_OPT_BOOTLOADER_RUN  0x02
+#define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
+#define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C
+#define CONFIG_LAYER_OPT_COLOR_SHIFT     4
+#define CONFIG_LAYER_OPT_COLOR_MASK      0xF0
+
+#define CONFIG_LAYER_INDICATOR_NONE          0
+#define CONFIG_LAYER_INDICATOR_BLINK_ONCE    1
+#define CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER 2
+#define CONFIG_LAYER_INDICATOR_ALWAYS_ON     3
+
 extern __xdata uint8_t activeConfig[CONFIG_SIZE];
 extern __code uint8_t configPalette[16][3];
 

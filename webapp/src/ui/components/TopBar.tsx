@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ask, canRedo, canSave, canUndo, closeDialog, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
-import { IconCheck, IconChevron, IconRefresh, IconSave, IconUnplug, IconUsb, IconWarning } from './Icons';
+import { IconCheck, IconChevron, IconRefresh, IconSave, IconUsb, IconWarning } from './Icons';
 import { variantName } from '../../model/constants';
 
 function ConnectMenu() {
@@ -128,8 +128,8 @@ export function TopBar() {
               <IconRefresh /> Reload
             </button>
             <SaveButton />
-            <button class="btn btn-icon" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
-              <IconUnplug />
+            <button class="btn" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
+              Disconnect
             </button>
           </>
         ) : (

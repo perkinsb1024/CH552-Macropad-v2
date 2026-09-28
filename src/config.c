@@ -145,9 +145,6 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
         if (keys == 3 && (image[offset + 13] & 0xF0)) {
             return 0;
         }
-        if (image[offset + size - 1] & 0xF8) {
-            return 0;
-        }
     }
     offset = 9 + size * layers;
     for (i = 0; i < chords; i++) {
@@ -206,7 +203,8 @@ void configDefaults(uint8_t variant) {
     activeConfig[offset + 2 * (keys + 1) + 1] = (uint8_t)-1;
     activeConfig[offset + 2 * (keys + 2)] = CONFIG_ACTION_SCROLL;
     activeConfig[offset + 2 * (keys + 2) + 1] = 1;
-    activeConfig[offset + layerSize(variant) - 1] = 6; // Both bootloader gestures
+    activeConfig[offset + layerSize(variant) - 1] =
+        CONFIG_LAYER_OPT_BOOTLOADER_BOOT | CONFIG_LAYER_OPT_BOOTLOADER_RUN;
     crc = configCrc(activeConfig);
     activeConfig[6] = (uint8_t)crc;
     activeConfig[7] = (uint8_t)(crc >> 8);
@@ -218,11 +216,8 @@ uint8_t configKeyCount(void) { return keyCount(activeConfig[5] & 1); }
 uint8_t configChordWindowMs(void) { return (activeConfig[8] & 15) * 5; }
 
 uint8_t configLayerOptions(uint8_t layer) {
-    if (layer >= configLayerCount()) {
-        return 0;
-    }
-    return activeConfig[9 + layerSize(activeConfig[5] & 1) * layer +
-                        layerSize(activeConfig[5] & 1) - 1];
+    uint8_t size = (activeConfig[5] & 1) ? 15 : 22;
+    return activeConfig[8 + size * (layer + 1)];
 }
 
 uint8_t configLedColor(uint8_t layer, uint8_t key) {

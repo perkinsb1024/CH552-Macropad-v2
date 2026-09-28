@@ -84,6 +84,12 @@ export function validateProfile(profile: Profile): Issue[] {
   }
 
   profile.layers.forEach((layer, li) => {
+    if (!Number.isInteger(layer.indicatorBehavior) || layer.indicatorBehavior < 0 || layer.indicatorBehavior > 3) {
+      issues.push({ where: `Layer ${li + 1}`, message: 'Layer indicator behavior must be 0–3.' });
+    }
+    if (!Number.isInteger(layer.indicatorColor) || layer.indicatorColor < 0 || layer.indicatorColor > 15) {
+      issues.push({ where: `Layer ${li + 1}`, message: 'Layer indicator color must be 0–15.' });
+    }
     if (layer.keys.length !== keys) issues.push({ where: `Layer ${li + 1}`, message: `Expected ${keys} key bindings, found ${layer.keys.length}.` });
     if (layer.leds.length !== keys) issues.push({ where: `Layer ${li + 1}`, message: `Expected ${keys} LED colors, found ${layer.leds.length}.` });
     layer.leds.forEach((led, i) => {

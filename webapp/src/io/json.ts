@@ -29,6 +29,8 @@ export interface ExportedProfile {
     leds: string[];
     bootloaderFromBoot: boolean;
     bootloaderFromRun: boolean;
+    indicatorBehavior: number;
+    indicatorColor: number;
   }>;
   chords: Array<{ layer: number; keys: [number, number]; action: Action }>;
   localMetadata?: LocalMetadata;
@@ -49,6 +51,8 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       leds: layer.leds.map((i) => PALETTE[i]?.name ?? String(i)),
       bootloaderFromBoot: layer.bootloaderFromBoot,
       bootloaderFromRun: layer.bootloaderFromRun,
+      indicatorBehavior: layer.indicatorBehavior,
+      indicatorColor: layer.indicatorColor,
     })),
     chords: profile.chords.map((c) => ({ layer: c.layer, keys: [c.keyA, c.keyB], action: c.action })),
   };
@@ -144,6 +148,8 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       leds: l.leds.map((c, i) => led(c, `Layer ${li + 1} LED ${i + 1}`)),
       bootloaderFromBoot: bool(l.bootloaderFromBoot, 'bootloaderFromBoot'),
       bootloaderFromRun: bool(l.bootloaderFromRun, 'bootloaderFromRun'),
+      indicatorBehavior: l.indicatorBehavior === undefined ? 0 : int(l.indicatorBehavior, `Layer ${li + 1} indicatorBehavior`),
+      indicatorColor: l.indicatorColor === undefined ? 0 : int(l.indicatorColor, `Layer ${li + 1} indicatorColor`),
     };
     if (l.invertScroll === true) (layer as Layer & { invertScroll?: boolean }).invertScroll = true;
     return layer;

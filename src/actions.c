@@ -446,10 +446,6 @@ void actionsPoll(uint16_t now) {
     if (type == CONFIG_ACTION_SCROLL || type == CONFIG_ACTION_MOUSE_X ||
         type == CONFIG_ACTION_MOUSE_Y) {
       int8_t delta = currentSecond;
-      if (type == CONFIG_ACTION_SCROLL && currentRotation &&
-          (configLayerOptions(currentLayer) & 1)) {
-        delta = -delta;
-      }
       if (!USB_queueMouse(mouseButtons(),
                           type == CONFIG_ACTION_MOUSE_X ? delta : 0,
                           type == CONFIG_ACTION_MOUSE_Y ? delta : 0,

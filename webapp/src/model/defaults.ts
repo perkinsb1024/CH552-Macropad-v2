@@ -17,6 +17,8 @@ export function emptyLayer(variant: Variant): Layer {
     leds: Array.from({ length: keys }, () => 6),
     bootloaderFromBoot: false,
     bootloaderFromRun: false,
+    indicatorBehavior: 0,
+    indicatorColor: 0,
   };
 }
 
@@ -35,6 +37,8 @@ export function defaultLayer(variant: Variant): Layer {
     leds: Array.from({ length: keys }, (_, i) => i),
     bootloaderFromBoot: true,
     bootloaderFromRun: true,
+    indicatorBehavior: 0,
+    indicatorColor: 0,
   };
 }
 
@@ -55,6 +59,9 @@ export function cloneProfile(profile: Profile): Profile {
 /** Converts profiles from the former per-layer scroll inversion option. */
 export function migrateLegacyScrollInversion(profile: Profile): Profile {
   for (const layer of profile.layers) {
+    // Drafts saved by older editor versions do not contain these fields.
+    layer.indicatorBehavior ??= 0;
+    layer.indicatorColor ??= 0;
     const legacy = layer as Layer & { invertScroll?: boolean };
     if (legacy.invertScroll) {
       if (layer.clockwise.type === 'scroll') layer.clockwise = { ...layer.clockwise, delta: -layer.clockwise.delta };

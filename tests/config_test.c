@@ -21,13 +21,13 @@ static void testDefaults(uint8_t variant) {
     uint8_t i;
     configDefaults(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0x99AC : 0xD111));
+    assert(configCrc(activeConfig) == (variant ? 0xF065 : 0x864A));
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
     assert(configKeyCount() == (variant ? 3 : 6));
     assert(configChordWindowMs() == 40);
-    assert(configLayerOptions(0) == 6);
+    assert(configLayerOptions(0) == 3);
     for (i = 0; i < configKeyCount(); i++) {
         configBinding(0, i, &first, &second);
         assert((first & 15) == CONFIG_ACTION_KEY_TAP);

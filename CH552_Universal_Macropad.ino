@@ -25,6 +25,7 @@
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
+#define LAYER_INDICATOR_PHASE_MS 100
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 __code int8_t encoderTransitions[16] = {
@@ -42,6 +43,8 @@ __xdata uint8_t encoderState;
 __xdata int8_t encoderMovement;
 __xdata uint8_t lastLayer;
 __xdata uint8_t allowRunBootloader;
+__xdata uint8_t layerIndicatorPhasesLeft;
+__xdata uint8_t layerIndicatorDeadline;
 __xdata uint16_t encoderPressedMs;
 
 void displayLeds() {
@@ -49,24 +52,83 @@ void displayLeds() {
 }
 
 void clearLeds() {
+  __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    set_pixel_for_GRB_LED(ledData, i, 0, 0, 0);
+    ledPtr[0] = 0;
+    ledPtr[1] = 0;
+    ledPtr[2] = 0;
+    ledPtr += 3;
   }
   displayLeds();
 }
 
+uint8_t dimIndicatorComponent(uint8_t value) {
+  return (value >> 4) | (value != 0);
+}
+
 void updateLeds() {
   uint8_t layer = actionsLayer();
+  uint8_t options = configLayerOptions(layer);
+  uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
+  uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
+  uint8_t phases = layerIndicatorPhasesLeft;
+  uint8_t blink = phases && !(phases & 1);
+  __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    uint8_t color = configLedColor(layer, i);
-    if (stableState[i]) {
-      set_pixel_for_GRB_LED(ledData, i, configPalette[color][0],
-                            configPalette[color][1], configPalette[color][2]);
+    uint8_t color = palette;
+    uint8_t dim = 0;
+    uint8_t off = 0;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+    if (blink) {
+      // Blink takes priority over per-key colors while the animation is on.
+    } else if (stableState[i]) {
+      color = configLedColor(layer, i);
+    } else if (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) {
+      dim = 1;
     } else {
-      set_pixel_for_GRB_LED(ledData, i, 0, 0, 0);
+      off = 1;
     }
+    red = configPalette[color][0];
+    green = configPalette[color][1];
+    blue = configPalette[color][2];
+    if (dim) {
+      red = dimIndicatorComponent(red);
+      green = dimIndicatorComponent(green);
+      blue = dimIndicatorComponent(blue);
+    }
+    if (off) {
+      red = green = blue = 0;
+    }
+    ledPtr[0] = green;
+    ledPtr[1] = red;
+    ledPtr[2] = blue;
+    ledPtr += 3;
   }
   displayLeds();
+}
+
+void startLayerIndicator(uint8_t layer, uint16_t now) {
+  uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
+  layerIndicatorPhasesLeft = 0;
+  if (behavior == CONFIG_LAYER_INDICATOR_BLINK_ONCE ||
+      behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
+    layerIndicatorPhasesLeft = 2 *
+        (behavior == CONFIG_LAYER_INDICATOR_BLINK_ONCE ? 1 : layer + 1);
+    layerIndicatorDeadline = (uint8_t)(now + LAYER_INDICATOR_PHASE_MS);
+  }
+  updateLeds();
+}
+
+void serviceLayerIndicator(uint16_t now) {
+  if (!layerIndicatorPhasesLeft ||
+      (int8_t)((uint8_t)now - layerIndicatorDeadline) < 0) {
+    return;
+  }
+  layerIndicatorPhasesLeft--;
+  layerIndicatorDeadline += LAYER_INDICATOR_PHASE_MS;
+  updateLeds();
 }
 
 void enterBootloader() {
@@ -76,8 +138,12 @@ void enterBootloader() {
     USB_reportPoll(millis());
     actionsPoll(millis());
   }
+  __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    set_pixel_for_GRB_LED(ledData, i, 255, 0, 0);
+    ledPtr[0] = 0;
+    ledPtr[1] = 255;
+    ledPtr[2] = 0;
+    ledPtr += 3;
   }
   displayLeds();
 
@@ -114,7 +180,7 @@ void scanButton(uint8_t input, uint16_t now) {
     stableState[input] = pressed;
     if (pressed) {
       if (input == configKeyCount()) {
-        allowRunBootloader = configLayerOptions(actionsLayer()) & 4;
+        allowRunBootloader = configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN;
         encoderPressedMs = now;
       }
       actionsPress(input, now);
@@ -160,6 +226,7 @@ void firmwareApplyConfig(void) {
   encoderMovement = 0;
   lastLayer = actionsLayer();
   allowRunBootloader = 0;
+  layerIndicatorPhasesLeft = 0;
   updateLeds();
 }
 
@@ -174,7 +241,7 @@ void setup() {
   clearLeds();
   firmwareApplyConfig();
   USBInit();
-  if (configLayerOptions(configStartupLayer()) & 2) {
+  if (configLayerOptions(configStartupLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_BOOT) {
     if (readButton(0) && readButton(1) && readButton(2)) {
       enterBootloader();
     }
@@ -195,8 +262,9 @@ void loop() {
     lastLayer = actionsLayer();
     encoderState = readEncoder();
     encoderMovement = 0;
-    updateLeds();
+    startLayerIndicator(lastLayer, now);
   }
+  serviceLayerIndicator(now);
   if (allowRunBootloader && stableState[configKeyCount()] &&
       (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
     enterBootloader();

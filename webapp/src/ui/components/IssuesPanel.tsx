@@ -7,7 +7,7 @@ export function IssuesPanel() {
   if (!list.length && !warnings.length) return null;
   return (
     <>
-      {list.length > 0 && <section class="card issues" aria-live="polite">
+      {list.length > 0 && <section class="card issues issues-error" aria-live="polite">
         <header class="card-head">
           <h2><IconWarning /> Fix before saving</h2>
           <span class="warn">{list.length}</span>
