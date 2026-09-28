@@ -53,21 +53,45 @@ cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
 /tmp/ch552-actions-test
 ```
 
+Chord recognition now uses the saved window (40 ms by default). Only physical
+keys participating in a configured chord wait; the encoder button is independent.
+A mapped second press before the window expires suppresses both single actions.
+At the exact deadline the first key becomes a single action. Brief single holds
+emit ordered press/release reports, even when the USB queue temporarily fills.
+Chord holds release on either key, and both keys must be up before retriggering.
+Layer changes resolve pending singles using their captured bindings.
+
+The action queue has eight entries. Rotation is accepted only when this queue
+is empty, reserving the other seven slots for one action per button.
+Excess rotation events are discarded. Repeated button taps can still exhaust
+all eight entries during a long string; in that case the newest transient action
+is discarded. Held outputs and their releases do not use this action queue.
+Long strings run one character at a time.
+
 The default build targets six keys. Set `board_build.physical_variant = 1` in
 `platformio.ini` for the three-key hardware, then run `pio run -t clean` and
-`pio run`. The two variants were compiled separately; neither has been tested
-on a physical pad yet. Chord recognition and DataFlash saving remain firmware
-work. The action queue has eight entries and drops a new transient action when
-full; long strings run one character at a time. USB discovery and control
-report handling still need validation on a physical device and desktop host.
+`pio run`. Both variants compile and pass host action checks. DataFlash upload,
+saving, and verification remain firmware work. USB discovery, control transfers,
+LED timing, and input behavior still need validation on physical hardware.
 
-The baseline build before this work used 118 bytes of internal data, 128 bytes
-of xRAM plus 130 initialized xRAM bytes, and a code image ending near `0x1C1F`.
-The current six-key map uses 122 bytes of internal data, 652 bytes of xRAM
-plus 29 initialized xRAM bytes, and its code image ends near `0x372C`. The
-linker allows code through `0x37FF`; later milestones must continue checking
-the map. The project-local PlatformIO adapter may cache an earlier builder
-script, so clean before switching variants or after changing `src/*.c` files.
+The build uses SDCC's small memory model for the sketch, core, and libraries.
+Temporary values use internal RAM; large persistent buffers remain explicitly
+in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
+now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
+a press counter wrapping while a layer key remains held.
+
+The current six-key image uses 13,566 of 14,336 code bytes (770 free), including
+chord recognition, compared with 14,124 before this phase. It uses 558 of 876
+application xRAM bytes (318 free), plus the separately reserved 148 USB bytes.
+The three-key build uses the same code size and 549 application xRAM bytes.
+Both maps leave 141 bytes for the internal stack, starting at `0x73`; runtime
+stack high-water usage has not yet been measured. A 128-byte staging buffer
+would leave 190 application xRAM bytes on the six-key board before upload
+bookkeeping, so a dedicated programming mode is not currently needed for RAM.
+Flash-code space still needs checking as persistence is added.
+
+The project-local PlatformIO adapter may cache an earlier builder script, so
+clean before switching variants or after changing `src/*.c` files.
 
 `platformio.ini` matches the Arduino settings: CH552 Board, 24 MHz internal
 clock at 5 V, user USB code with 148 bytes reserved, and P3.6 (D+) pull-up

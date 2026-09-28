@@ -9,10 +9,15 @@
 __xdata uint8_t buttonFirst[MAX_INPUTS];
 __xdata uint8_t buttonSecond[MAX_INPUTS];
 __xdata uint8_t buttonPressed[MAX_INPUTS];
-__xdata uint16_t buttonOrder[MAX_INPUTS];
+__xdata uint8_t buttonOrder[MAX_INPUTS];
 __xdata uint8_t latchedMouse[TOGGLE_INPUTS];
 __xdata uint8_t lastKeyboard[8];
 __xdata uint8_t nextKeyboard[8];
+__xdata uint8_t inputDown;
+__xdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
+__xdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
+__xdata uint8_t pendingLayer;
+__xdata uint16_t pendingSince;
 __xdata uint8_t lastMouse;
 __xdata uint8_t lastReportGeneration;
 __xdata uint8_t eventData[EVENT_COUNT][3];
@@ -21,7 +26,6 @@ __xdata uint8_t eventTail;
 __xdata uint8_t eventUsed;
 __xdata uint8_t baseLayer;
 __xdata uint8_t effectiveLayer;
-__xdata uint16_t pressOrder;
 __xdata uint8_t currentFirst;
 __xdata uint8_t currentSecond;
 __xdata uint8_t currentLayer;
@@ -42,8 +46,9 @@ static uint8_t actionType(uint8_t first) {
 
 static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t layer,
                            uint8_t rotation) {
-  if (eventUsed == EVENT_COUNT) {
-    return 0; // Drop the newest action when the bounded queue is full.
+  if (eventUsed == EVENT_COUNT ||
+      (rotation && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
+    return 0; // Reserve room for one action per button during rotation bursts.
   }
   eventData[eventHead][0] = first;
   eventData[eventHead][1] = second;
@@ -127,38 +132,6 @@ static uint8_t flushOutputs(void) {
   return 1;
 }
 
-static void updateLayer(void) {
-  uint8_t next = baseLayer;
-  uint16_t newest = 0;
-  uint8_t i;
-  for (i = 0; i < MAX_INPUTS; i++) {
-    if (buttonPressed[i] &&
-        actionType(buttonFirst[i]) == CONFIG_ACTION_MOMENTARY_LAYER &&
-        buttonOrder[i] >= newest) {
-      newest = buttonOrder[i];
-      next = buttonSecond[i];
-    }
-  }
-  if (next == effectiveLayer) {
-    return;
-  }
-  effectiveLayer = next;
-  for (i = 0; i < TOGGLE_INPUTS; i++) {
-    latchedMouse[i] = 0;
-  }
-  eventUsed = 0;
-  eventHead = 0;
-  eventTail = 0;
-  if (actionType(currentFirst) == CONFIG_ACTION_CONSUMER &&
-      (phase == 4 || phase == 5)) {
-    consumerReleasePending = 1;
-  }
-  currentFirst = 0;
-  phase = 0;
-  tempOn = 0;
-  tempMouse = 0;
-}
-
 static void runAction(uint8_t first, uint8_t second, uint8_t layer,
                       uint8_t rotation, uint8_t input) {
   uint8_t type = actionType(first);
@@ -172,20 +145,17 @@ static void runAction(uint8_t first, uint8_t second, uint8_t layer,
       break;
     case CONFIG_ACTION_SET_LAYER:
       baseLayer = second;
-      updateLayer();
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
-      if (!rotation) {
-        updateLayer();
-      }
       break;
     case CONFIG_ACTION_TOGGLE_LAYER:
       baseLayer = baseLayer == second ? configStartupLayer() : second;
-      updateLayer();
       break;
     case CONFIG_ACTION_NEXT_LAYER:
-      baseLayer = (baseLayer + 1) % configLayerCount();
-      updateLayer();
+      baseLayer++;
+      if (baseLayer == configLayerCount()) {
+        baseLayer = 0;
+      }
       break;
     default:
       queueAction(first, second, layer, rotation);
@@ -193,11 +163,64 @@ static void runAction(uint8_t first, uint8_t second, uint8_t layer,
   }
 }
 
+static void resolvePending(void) {
+  uint8_t input;
+  if (!pendingInput) {
+    return;
+  }
+  input = pendingInput - 1;
+  pendingInput = 0;
+  buttonPressed[input] = 1;
+  runAction(buttonFirst[input], buttonSecond[input], pendingLayer, 0, input);
+}
+
+static void updateLayer(void) {
+  uint8_t next;
+  uint8_t newest;
+  uint8_t i;
+  do {
+    next = baseLayer;
+    newest = 0;
+    for (i = 0; i < MAX_INPUTS; i++) {
+      if (buttonPressed[i] &&
+          actionType(buttonFirst[i]) == CONFIG_ACTION_MOMENTARY_LAYER &&
+          buttonOrder[i] >= newest) {
+        newest = buttonOrder[i];
+        next = buttonSecond[i];
+      }
+    }
+    if (next == effectiveLayer) {
+      return;
+    }
+    effectiveLayer = next;
+    for (i = 0; i < TOGGLE_INPUTS; i++) {
+      latchedMouse[i] = 0;
+    }
+    eventUsed = 0;
+    eventHead = 0;
+    eventTail = 0;
+    if (actionType(currentFirst) == CONFIG_ACTION_CONSUMER &&
+        (phase == 4 || phase == 5)) {
+      consumerReleasePending = 1;
+    }
+    currentFirst = 0;
+    phase = 0;
+    tempOn = 0;
+    tempMouse = 0;
+    // Pending singles belong to the layer on which they were pressed.
+    resolvePending();
+  } while (1);
+}
+
 void actionsInit(void) {
   uint8_t i;
   baseLayer = configStartupLayer();
   effectiveLayer = baseLayer;
-  pressOrder = 0;
+  pendingInput = 0;
+  inputDown = 0;
+  for (i = 0; i < 6; i++) {
+    chordPartner[i] = 0;
+  }
   eventHead = 0;
   eventTail = 0;
   eventUsed = 0;
@@ -210,6 +233,7 @@ void actionsInit(void) {
   lastReportGeneration = USB_reportGeneration();
   for (i = 0; i < MAX_INPUTS; i++) {
     buttonPressed[i] = 0;
+    buttonOrder[i] = i;
     buttonFirst[i] = 0;
     buttonSecond[i] = 0;
   }
@@ -237,25 +261,95 @@ uint8_t actionsLayer(void) {
   return effectiveLayer;
 }
 
-void actionsPress(uint8_t input) {
+static void orderPress(uint8_t input) {
+  uint8_t i;
+  uint8_t previous = buttonOrder[input];
+  // Move this input to the front without a press counter that can wrap.
+  for (i = 0; i < MAX_INPUTS; i++) {
+    if (buttonOrder[i] > previous) {
+      buttonOrder[i]--;
+    }
+  }
+  buttonOrder[input] = MAX_INPUTS - 1;
+}
+
+void actionsPress(uint8_t input, uint16_t now) {
   uint8_t first;
   uint8_t second;
-  if (input >= configKeyCount() + 1 || buttonPressed[input]) {
+  uint8_t other;
+  uint8_t keys = configKeyCount();
+  if (input > keys || (inputDown & (1 << input))) {
     return;
+  }
+  inputDown |= 1 << input;
+  if (input < keys && chordPartner[input]) {
+    return; // A chord cannot retrigger until both of its keys have been released.
+  }
+  if (pendingInput && input < keys) {
+    other = pendingInput - 1;
+    if (input < keys && (uint16_t)(now - pendingSince) < configChordWindowMs() &&
+        configChord(pendingLayer, other, input, &first, &second)) {
+      pendingInput = 0;
+      chordPartner[other] = input + 1;
+      chordPartner[input] = other + 1;
+      buttonFirst[other] = first;
+      buttonSecond[other] = second;
+      buttonPressed[other] = 1;
+      orderPress(other);
+      runAction(first, second, pendingLayer, 0, other);
+      updateLayer();
+      return;
+    }
+    resolvePending();
+    updateLayer();
   }
   configBinding(effectiveLayer, input, &first, &second);
   buttonFirst[input] = first;
   buttonSecond[input] = second;
+  orderPress(input);
+  if (input < keys && configChordWindowMs()) {
+    for (other = 0; other < keys; other++) {
+      if (configChord(effectiveLayer, input, other, &first, &second)) {
+        pendingInput = input + 1;
+        pendingLayer = effectiveLayer;
+        pendingSince = now;
+        return;
+      }
+    }
+  }
   buttonPressed[input] = 1;
-  buttonOrder[input] = ++pressOrder;
-  runAction(first, second, effectiveLayer, 0, input);
+  runAction(buttonFirst[input], buttonSecond[input], effectiveLayer, 0, input);
+  updateLayer();
+}
+
+static void releaseAction(uint8_t input) {
+  uint8_t type = actionType(buttonFirst[input]);
+  if (buttonPressed[input]) {
+    // Keep a brief hold alive until its press report has been accepted.
+    buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
+                           type == CONFIG_ACTION_MOUSE_HOLD ? 2 : 0;
+  }
 }
 
 void actionsRelease(uint8_t input) {
-  if (input >= configKeyCount() + 1 || !buttonPressed[input]) {
+  uint8_t other;
+  if (input > configKeyCount()) {
     return;
   }
-  buttonPressed[input] = 0;
+  inputDown &= ~(1 << input);
+  if (pendingInput == input + 1) {
+    resolvePending();
+    updateLayer();
+  }
+  releaseAction(input);
+  if (input < configKeyCount() && chordPartner[input]) {
+    other = chordPartner[input] - 1;
+    releaseAction(other);
+    if (!(inputDown & (1 << other))) {
+      chordPartner[input] = 0;
+      chordPartner[other] = 0;
+    }
+  }
   updateLayer();
 }
 
@@ -265,12 +359,18 @@ void actionsRotate(uint8_t clockwise) {
   uint8_t input = configKeyCount() + (clockwise ? 1 : 2);
   configBinding(effectiveLayer, input, &first, &second);
   runAction(first, second, effectiveLayer, 1, clockwise ? 7 : 8);
+  updateLayer();
 }
 
 void actionsPoll(uint16_t now) {
   uint8_t type;
   uint8_t c;
   uint8_t usage;
+  uint8_t i;
+  if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
+    resolvePending();
+    updateLayer();
+  }
   if (lastReportGeneration != USB_reportGeneration()) {
     lastReportGeneration = USB_reportGeneration();
     lastKeyboard[0] = 0xFF;
@@ -281,6 +381,14 @@ void actionsPoll(uint16_t now) {
       consumerReleasePending = 0;
     } else {
       return;
+    }
+  }
+  if (!flushOutputs()) {
+    return;
+  }
+  for (i = 0; i < MAX_INPUTS; i++) {
+    if (buttonPressed[i] == 2) {
+      buttonPressed[i] = 0;
     }
   }
   if (!flushOutputs()) {

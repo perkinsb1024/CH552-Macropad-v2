@@ -183,8 +183,8 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
 void configDefaults(uint8_t variant) {
     uint8_t i;
     uint8_t keys = keyCount(variant);
-    uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
-    uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
+    static __code uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
+    static __code uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
     uint8_t offset = 9;
     uint16_t crc;
     for (i = 0; i < CONFIG_SIZE; i++) {

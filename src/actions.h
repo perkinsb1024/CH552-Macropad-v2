@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 void actionsInit(void);
-void actionsPress(uint8_t input);
+void actionsPress(uint8_t input, uint16_t now);
 void actionsRelease(uint8_t input);
 void actionsRotate(uint8_t clockwise);
 void actionsPoll(uint16_t now);

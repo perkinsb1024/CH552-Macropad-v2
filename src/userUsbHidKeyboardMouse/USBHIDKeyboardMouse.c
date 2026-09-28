@@ -19,9 +19,6 @@ __xdata uint8_t keyboardLedStatus = 0;
 volatile __xdata uint8_t UpPoint1_Busy =
     0; // Flag of whether upload pointer is busy
 
-__xdata uint8_t HIDKey[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-__xdata uint8_t HIDMouse[4] = {0x0, 0x0, 0x0, 0x0};
-
 #define SHIFT 0x80
 __code uint8_t _asciimap[128] = {
     0x00, // NUL

@@ -38,7 +38,8 @@ The current firmware phase implements these read-only opcodes:
 | 4 | READ_ACTIVE, offset and length 1–23 | Active image bytes, including built-in defaults if flash is invalid |
 
 The action mask reports the sixteen implemented action types. Chord recognition
-is a separate profile feature and is not enabled in this firmware phase.
+uses the saved profile window; zero disables it. A second press must arrive
+strictly before the window expires to activate a mapped chord.
 
 Status codes are 0 success, 1 unsupported transport version, 2 unsupported
 opcode, 3 invalid offset or length, and 4 malformed packet. Error replies have

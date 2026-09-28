@@ -48,9 +48,11 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     sketch_source.write_text(
         '#include <Arduino.h>\n#include "' + str(project / "CH552_Universal_Macropad.ino") + '"\n'
     )
+    # Keep temporary values in internal RAM; persistent buffers are explicitly xdata.
+    # Compile the core and sketch with the same model so parameter storage agrees.
     flags = [
         "-c", "-Ddouble=float", "-DUSE_STDINT", "-D__PROG_TYPES_COMPAT__",
-        "--model-large", "--int-long-reent", "-mmcs51", "-DCH552",
+        "--model-small", "--int-long-reent", "-mmcs51", "-DCH552",
         f"-DF_CPU={clock}L", "-DF_EXT_OSC=0L", "-DARDUINO=10819",
         f"-DPHYSICAL_VARIANT={physical_variant}",
         "-DARDUINO_ch55x", "-DARDUINO_ARCH_mcs51", f"-DUSER_USB_RAM={usb_ram}",
@@ -98,7 +100,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     firmware = build / "firmware.ihx"
     run(
         sdcc, "--nostdlib", f"-L{build}",
-        f"-L{libroot / 'lib/large_int_calc_stack_auto'}",
+        f"-L{libroot / 'lib/small_int_calc_stack_auto'}",
         "--code-size", code_limit, "--xram-size", str(1024 - int(usb_ram)),
         "--xram-loc", usb_ram, "-mmcs51", "-DCH552",
         sketch_rel, config_rel, actions_rel, protocol_rel, main_rel, *hid_rels, ws_rel, core_lib,

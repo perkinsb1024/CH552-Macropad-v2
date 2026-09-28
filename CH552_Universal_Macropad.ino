@@ -111,7 +111,7 @@ void scanButton(uint8_t input, uint8_t pin, uint16_t now) {
         allowRunBootloader = configLayerOptions(actionsLayer()) & 4;
         encoderPressedMs = now;
       }
-      actionsPress(input);
+      actionsPress(input, now);
     } else {
       actionsRelease(input);
     }
