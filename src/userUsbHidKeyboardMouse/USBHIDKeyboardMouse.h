@@ -82,6 +82,10 @@ uint8_t Mouse_release(__data uint8_t k);
 uint8_t Mouse_click(__data uint8_t k);
 uint8_t Mouse_move(__data int8_t x, __xdata int8_t y);
 uint8_t Mouse_scroll(__data int8_t tilt);
+uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply);
+void USB_EP1_receiveReady(void);
+void USB_setKeyboardLedStatus(uint8_t leds);
+void USB_EP1_reset(void);
 
 #ifdef __cplusplus
 } // extern "C"

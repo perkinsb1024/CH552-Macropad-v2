@@ -13,7 +13,8 @@ build = Path(env.subst("$BUILD_DIR"))
 board = env.BoardConfig()
 script = project / "pio-platform" / "build_firmware.py"
 sketch = project / "CH552_Universal_Macropad.ino"
-sources = [sketch, script, project / "platformio.ini"]
+sources = [sketch, script, project / "platformio.ini", project / "pio-platform" / "builder" / "main.py"]
+sources += list((project / "src").glob("*.[ch]"))
 sources += list((project / "src" / "userUsbHidKeyboardMouse").glob("*.[ch]"))
 
 

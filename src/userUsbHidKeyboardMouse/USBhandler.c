@@ -5,6 +5,8 @@
 #include "USBhandler.h"
 
 #include "USBconstant.h"
+#include "../protocol_firmware.h"
+#include "USBHIDKeyboardMouse.h"
 
 // Keyboard functions:
 
@@ -14,6 +16,7 @@ void USB_EP2_OUT();
 // clang-format off
 __xdata __at (EP0_ADDR) uint8_t Ep0Buffer[8];
 __xdata __at (EP1_ADDR) uint8_t Ep1Buffer[128];       //on page 47 of data sheet, the receive buffer need to be min(possible packet size+2,64), IN and OUT buffer, must be even address
+__xdata uint8_t Ep0Report[32];
 // clang-format on
 
 #if (EP1_ADDR + 128) > USER_USB_RAM
@@ -22,6 +25,8 @@ __xdata __at (EP1_ADDR) uint8_t Ep1Buffer[128];       //on page 47 of data sheet
 
 __data uint16_t SetupLen;
 __data uint8_t SetupReq;
+__data uint8_t ep0ReportExpected;
+__data uint8_t ep0ReportReceived;
 volatile __xdata uint8_t UsbConfig;
 
 __code uint8_t *__data pDescr;
@@ -32,6 +37,7 @@ inline void NOP_Process(void) {}
 
 void USB_EP0_SETUP() {
   __data uint8_t len = USB_RX_LEN;
+  __data uint16_t descriptorLen = 0;
   if (len == (sizeof(USB_SETUP_REQ))) {
     SetupLen = ((uint16_t)UsbSetupBuf->wLengthH << 8) | (UsbSetupBuf->wLengthL);
     len = 0; // Default is success and upload 0 length
@@ -54,10 +60,23 @@ void USB_EP0_SETUP() {
         break;
       }
       case USB_REQ_TYP_CLASS: {
-        switch (SetupReq) {
-        default:
-          len = 0xFF; // command not supported
-          break;
+        if (UsbSetupBuf->wIndexL != 0 || UsbSetupBuf->wIndexH != 0) {
+          len = 0xFF;
+        } else if (SetupReq == 0x09 && UsbSetupBuf->bRequestType == 0x21 &&
+                   UsbSetupBuf->wValueH == 2 &&
+                   ((UsbSetupBuf->wValueL == 3 && SetupLen == 32) ||
+                    (UsbSetupBuf->wValueL == 1 && SetupLen == 2))) {
+          ep0ReportExpected = SetupLen;
+          ep0ReportReceived = 0;
+        } else if (SetupReq == 0x0A && UsbSetupBuf->bRequestType == 0x21 &&
+                   SetupLen == 0) {
+          // SET_IDLE is accepted for the keyboard collection.
+        } else if (SetupReq == 0x02 && UsbSetupBuf->bRequestType == 0xA1 &&
+                   SetupLen >= 1) {
+          Ep0Buffer[0] = 0;
+          len = 1; // GET_IDLE
+        } else {
+          len = 0xFF;
         }
         break;
       }
@@ -75,11 +94,11 @@ void USB_EP0_SETUP() {
         case 1: // Device Descriptor
           pDescr = (__code uint8_t *)
               DeviceDescriptor; // Put Device Descriptor into outgoing buffer
-          len = sizeof(USB_Descriptor_Device_t);
+          descriptorLen = sizeof(USB_Descriptor_Device_t);
           break;
         case 2: // Configure Descriptor
           pDescr = (__code uint8_t *)ConfigurationDescriptor;
-          len = sizeof(USB_Descriptor_Configuration_t);
+          descriptorLen = sizeof(USB_Descriptor_Configuration_t);
           break;
         case 3:
           if (UsbSetupBuf->wValueL == 0) {
@@ -94,12 +113,12 @@ void USB_EP0_SETUP() {
             len = 0xff;
             break;
           }
-          len = pDescr[0];
+          descriptorLen = pDescr[0];
           break;
         case 0x22:
           if (UsbSetupBuf->wValueL == 0) {
             pDescr = (__code uint8_t *)ReportDescriptor;
-            len = ConfigurationDescriptor.HID_KeyboardHID.HIDReportLength;
+            descriptorLen = ConfigurationDescriptor.HID_KeyboardHID.HIDReportLength;
           } else {
             len = 0xff;
           }
@@ -109,8 +128,8 @@ void USB_EP0_SETUP() {
           break;
         }
         if (len != 0xff) {
-          if (SetupLen > len) {
-            SetupLen = len; // Limit length
+          if (SetupLen > descriptorLen) {
+            SetupLen = descriptorLen; // Limit length
           }
           len = SetupLen >= DEFAULT_ENDP0_SIZE
                     ? DEFAULT_ENDP0_SIZE
@@ -326,7 +345,33 @@ void USB_EP0_IN() {
 }
 
 void USB_EP0_OUT() {
-  {
+  __data uint8_t i;
+  if (SetupReq == 0x09 && U_TOG_OK &&
+      USB_RX_LEN <= DEFAULT_ENDP0_SIZE &&
+      ep0ReportReceived + USB_RX_LEN <= ep0ReportExpected) {
+    for (i = 0; i < USB_RX_LEN; i++) {
+      Ep0Report[ep0ReportReceived + i] = Ep0Buffer[i];
+    }
+    ep0ReportReceived += USB_RX_LEN;
+    if (ep0ReportReceived == ep0ReportExpected) {
+      if (ep0ReportExpected == 32 && Ep0Report[0] == 3 &&
+          protocolReceive(Ep0Report)) {
+        UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_NAK;
+      } else if (ep0ReportExpected == 2 && Ep0Report[0] == 1) {
+        USB_setKeyboardLedStatus(Ep0Report[1]);
+      } else {
+        UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG |
+                    UEP_R_RES_STALL | UEP_T_RES_STALL;
+        return;
+      }
+      UEP0_T_LEN = 0;
+      UEP0_CTRL = bUEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;
+    } else {
+      UEP0_CTRL ^= bUEP_R_TOG;
+      UEP0_CTRL = UEP0_CTRL & ~(MASK_UEP_R_RES | MASK_UEP_T_RES) |
+                  UEP_R_RES_ACK | UEP_T_RES_NAK;
+    }
+  } else {
     UEP0_T_LEN = 0;
     UEP0_CTRL |= UEP_R_RES_ACK | UEP_T_RES_NAK; // Respond Nak
   }
@@ -434,6 +479,8 @@ void USBInterrupt(void) { // inline not really working in multiple files in SDCC
 
   // Device mode USB bus reset
   if (UIF_BUS_RST) {
+    protocolReset();
+    USB_EP1_reset();
     UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_T_RES_NAK | UEP_R_RES_ACK;
 

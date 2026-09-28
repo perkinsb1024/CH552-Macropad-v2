@@ -14,6 +14,7 @@
 
 #include <WS2812.h>
 #include "src/config.h"
+#include "src/protocol_firmware.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 // Modifier Keys
@@ -415,7 +416,7 @@ void enterBootloader() {
 }
 
 void setup() {
-  configDefaults(PHYSICAL_VARIANT);
+  protocolInit();
   pinMode(LED_PIN, OUTPUT);
   pinMode(KEY0_PIN, INPUT_PULLUP);
   pinMode(KEY1_PIN, INPUT_PULLUP);
@@ -443,6 +444,7 @@ void setup() {
 }
 
 void loop() {
+  protocolPoll();
   bool needsDebounce = false;
   clearLedData();
 

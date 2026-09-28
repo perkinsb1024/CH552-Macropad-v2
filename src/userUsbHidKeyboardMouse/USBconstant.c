@@ -51,8 +51,8 @@ __code USB_Descriptor_Configuration_t ConfigurationDescriptor = {
                       .TotalEndpoints = 2,
 
                       .Class = HID_CSCP_HIDClass,
-                      .SubClass = HID_CSCP_BootSubclass,
-                      .Protocol = HID_CSCP_KeyboardBootProtocol,
+                      .SubClass = HID_CSCP_NonBootSubclass,
+                      .Protocol = HID_CSCP_NonBootProtocol,
 
                       .InterfaceStrIndex = NO_DESCRIPTOR},
 
@@ -151,6 +151,21 @@ __code uint8_t ReportDescriptor[] = {
     0x95, 0x03,       //     REPORT_COUNT (3)
     0x81, 0x06,       //     INPUT (Data,Var,Rel)
     0xc0,             //     END_COLLECTION
+    0xc0,             // END_COLLECTION
+    0x06, 0x00, 0xff, // USAGE_PAGE (Vendor Defined 0xFF00)
+    0x09, 0x01,       // USAGE (Macropad Configuration)
+    0xa1, 0x01,       // COLLECTION (Application)
+    0x85, 0x03,       //   REPORT_ID (3)
+    0x09, 0x02,       //   USAGE (Configuration Request)
+    0x15, 0x00,       //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x00, //   LOGICAL_MAXIMUM (255)
+    0x75, 0x08,       //   REPORT_SIZE (8)
+    0x95, 0x1f,       //   REPORT_COUNT (31)
+    0x91, 0x02,       //   OUTPUT (Data,Var,Abs)
+    0x85, 0x04,       //   REPORT_ID (4)
+    0x09, 0x03,       //   USAGE (Configuration Reply)
+    0x95, 0x1f,       //   REPORT_COUNT (31)
+    0x81, 0x02,       //   INPUT (Data,Var,Abs)
     0xc0              // END_COLLECTION
 };
 
@@ -175,18 +190,10 @@ __code uint16_t SerialDescriptor[] = {
     's',
 };
 __code uint16_t ProductDescriptor[] = {
-    // Produce String Descriptor
-    (((10 + 1) * 2) | (DTYPE_String << 8)),
-    'C',
-    'H',
-    '5',
-    '5',
-    'x',
-    'd',
-    'u',
-    'i',
-    'n',
-    'o',
+    // Product String Descriptor
+    (((18 + 1) * 2) | (DTYPE_String << 8)),
+    'U', 'n', 'i', 'v', 'e', 'r', 's', 'a', 'l', ' ',
+    'M', 'a', 'c', 'r', 'o', 'p', 'a', 'd',
 };
 __code uint16_t ManufacturerDescriptor[] = {
     // SDCC is little endian

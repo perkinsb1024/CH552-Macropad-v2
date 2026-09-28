@@ -27,16 +27,28 @@ cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
 /tmp/ch552-config-test
 ```
 
-The current sketch still executes its original fixed bindings. USB
-configuration transport, DataFlash loading/saving, layers, and the new action
-engine are subsequent firmware work. Do not upload a custom image to the pad
-yet. The new codec is initialized to built-in defaults at startup but does not
-yet control the sketch's actions.
+The firmware now exposes the read-only HID protocol in `protocol/hid-v1.md`.
+At startup it reads and validates DataFlash, falling back to built-in defaults
+when flash is invalid. GET_INFO, GET_STATUS, READ_FLASH, and READ_ACTIVE are
+implemented. Run the protocol checks with:
+
+```sh
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
+  tests/protocol_test.c src/config.c src/protocol_firmware.c \
+  -o /tmp/ch552-protocol-test
+/tmp/ch552-protocol-test
+```
+
+The current sketch still executes its original fixed bindings. DataFlash
+saving, layers, and the new action engine are subsequent firmware work. Do not
+upload a custom image to the pad yet: the loaded image can be read through HID
+but does not yet control the sketch's actions. USB discovery and control report
+handling still need validation on a physical device and desktop host.
 
 The baseline build before this work used 118 bytes of internal data, 128 bytes
 of xRAM plus 130 initialized xRAM bytes, and a code image ending near `0x1C1F`.
-The current map uses 118 bytes of internal data, 317 bytes of xRAM plus 130
-initialized xRAM bytes, and its code image ends near `0x2B5E`. The linker
+The current map uses 122 bytes of internal data, 422 bytes of xRAM plus 130
+initialized xRAM bytes, and its code image ends near `0x30AB`. The linker
 allows code through `0x37FF`; later milestones must continue checking the map.
 
 `platformio.ini` matches the Arduino settings: CH552 Board, 24 MHz internal

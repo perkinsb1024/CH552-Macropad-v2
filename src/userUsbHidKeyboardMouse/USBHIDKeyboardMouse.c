@@ -5,6 +5,7 @@
 #include "include/ch5xx_usb.h"
 #include "USBconstant.h"
 #include "USBhandler.h"
+#include "../protocol_firmware.h"
 // clang-format on
 
 // clang-format off
@@ -175,10 +176,40 @@ void USB_EP1_IN() {
 void USB_EP1_OUT() {
   if (U_TOG_OK) // Discard unsynchronized packets
   {
-    if (Ep1Buffer[0] == 1) {
+    if (USB_RX_LEN == 2 && Ep1Buffer[0] == 1) {
       keyboardLedStatus = Ep1Buffer[1];
+    } else if (USB_RX_LEN == 32 && Ep1Buffer[0] == 3) {
+      if (protocolReceive(Ep1Buffer)) {
+        UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_NAK;
+      }
     }
   }
+}
+
+uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply) {
+  __data uint8_t i;
+  if (UsbConfig == 0 || UpPoint1_Busy) {
+    return 0;
+  }
+  for (i = 0; i < 32; i++) {
+    Ep1Buffer[64 + i] = reply[i];
+  }
+  UEP1_T_LEN = 32;
+  UpPoint1_Busy = 1;
+  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  return 1;
+}
+
+void USB_EP1_receiveReady(void) {
+  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+}
+
+void USB_setKeyboardLedStatus(uint8_t leds) {
+  keyboardLedStatus = leds;
+}
+
+void USB_EP1_reset(void) {
+  UpPoint1_Busy = 0;
 }
 
 uint8_t USB_EP1_send(__data uint8_t reportID) {
