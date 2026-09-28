@@ -10,10 +10,10 @@ installed under `~/Library/Arduino15/packages/CH55xDuino`. If yours is
 elsewhere, set `CH55XDUINO_PACKAGE_DIR` to the package directory.
 
 Run `pio run` to build. The output is `.pio/build/ch552/firmware.hex`.
-To flash over USB, put the CH552 into bootloader mode and run
-`pio run -t upload`. The sketch can enter the bootloader by holding the
-encoder button for three seconds, or by holding the first three keys during
-startup.
+To flash over USB, run `pio run -t upload` and put the CH552 into bootloader
+mode within ten seconds. Hold the encoder button for three seconds, or hold
+the first three keys during startup. The Upload task always invokes the
+programmer, even when the HEX file is already built.
 
 `platformio.ini` matches the Arduino settings: CH552 Board, 24 MHz internal
 clock at 5 V, user USB code with 148 bytes reserved, and P3.6 (D+) pull-up

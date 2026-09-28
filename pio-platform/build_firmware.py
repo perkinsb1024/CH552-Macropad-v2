@@ -100,8 +100,13 @@ def build_firmware(project, build, clock, usb_ram, code_limit):
 
 def upload(build, bootcfg):
     _, _, tools = locations()
-    uploader = tools / "macosx/vnproch55x"
-    run(uploader, "-r", "2", "-t", "CH552", "-c", bootcfg, build / "firmware.hex")
+    uploader = Path(os.environ.get("CH55XDUINO_UPLOADER", tools / "macosx/vnproch55x"))
+    print(
+        "Enter CH552 bootloader mode now: hold the encoder button for 3 seconds "
+        "or hold the first three keys while powering on. Waiting up to 10 seconds.",
+        flush=True,
+    )
+    run(uploader, "-r", "10", "-t", "CH552", "-c", bootcfg, build / "firmware.hex")
 
 
 if __name__ == "__main__":

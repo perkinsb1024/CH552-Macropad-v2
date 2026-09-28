@@ -1,11 +1,10 @@
 """PlatformIO entry point for the installed CH55xDuino Arduino package."""
 
-import os
 import subprocess
 import sys
 from pathlib import Path
 
-from SCons.Script import Action, Default, DefaultEnvironment
+from SCons.Script import Action, AlwaysBuild, Default, DefaultEnvironment
 
 
 env = DefaultEnvironment()
@@ -50,4 +49,5 @@ def run_upload(target, source, env):
     return subprocess.call(command)
 
 
-env.Alias("upload", firmware, Action(run_upload, "Uploading CH552 firmware"))
+upload = env.Alias("upload", firmware, Action(run_upload, "Uploading CH552 firmware"))
+AlwaysBuild(upload)
