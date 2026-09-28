@@ -26,6 +26,10 @@ cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
 /tmp/ch552-config-test
 ```
 
+Built-in defaults preserve the original shortcuts, encoder middle-click and
+scroll directions, bootloader options, and six original LED colors. A key's
+layer-selected LED color is shown while that key is held and clears on release.
+
 The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
 At startup it reads and validates DataFlash, falling back to built-in defaults
 when flash is invalid. GET_INFO, GET_STATUS, READ_FLASH, READ_ACTIVE,
@@ -92,9 +96,9 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current image uses 14,210 of 14,336 code bytes (126 free) for both
-variants. The six-key build uses 631 of 876 application xRAM bytes (245 free);
-the three-key build uses 622 (254 free). Add 148 separately reserved USB bytes
+The current image uses 14,216 of 14,336 code bytes (120 free) for both
+variants. The six-key build uses 629 of 876 application xRAM bytes (247 free);
+the three-key build uses 620 (256 free). Add 148 separately reserved USB bytes
 to the RAM total. The linker provides 139 bytes for the internal stack; runtime
 stack high-water usage still needs measurement on hardware. The 128-byte
 staging buffer fits in application xRAM without a separate programming mode.

@@ -1,0 +1,107 @@
+import {
+  ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
+  LAYER_OPT_BOOTLOADER_BOOT, LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INVERT_SCROLL, keyCount, layerSize,
+} from '../model/constants';
+import type { Action, Profile } from '../model/types';
+import { descriptor } from '../model/actions';
+import { sortedChords, stringPool } from '../model/capacity';
+import { chordId } from '../model/pairs';
+import { validateProfile } from '../model/validate';
+import { sealImage } from './crc16';
+
+export class EncodeError extends Error {}
+
+/** Encodes one two-byte action record. */
+export function encodeAction(action: Action, stringOffsets: Map<string, number>): [number, number] {
+  const code = descriptor(action.type).code;
+  switch (action.type) {
+    case 'none':
+    case 'nextLayer':
+      return [code, 0];
+    case 'keyTap':
+    case 'keyHold':
+      return [code | ((action.modifiers & 15) << 4), action.usage & 0xff];
+    case 'mouseClick':
+    case 'mouseDouble':
+    case 'mouseHold':
+    case 'mouseToggle':
+      return [code, action.buttons & 7];
+    case 'scroll':
+    case 'mouseX':
+    case 'mouseY':
+      return [code, action.delta & 0xff];
+    case 'consumer':
+      return [code | (((action.usage >> 8) & 15) << 4), action.usage & 0xff];
+    case 'string': {
+      const offset = stringOffsets.get(action.text);
+      if (offset === undefined) throw new EncodeError('String not present in pool.');
+      return [ActionCode.String, offset];
+    }
+    case 'setLayer':
+    case 'momentaryLayer':
+    case 'toggleLayer':
+      return [code, action.layer & 0xff];
+  }
+}
+
+/** Produces the canonical 128-byte image. Throws EncodeError when the profile is invalid. */
+export function encodeProfile(profile: Profile): Uint8Array {
+  const issues = validateProfile(profile);
+  if (issues.length) throw new EncodeError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));
+
+  const keys = keyCount(profile.variant);
+  const size = layerSize(profile.variant);
+  const image = new Uint8Array(IMAGE_SIZE);
+
+  const pool = stringPool(profile);
+  const offsets = new Map<string, number>();
+  let poolLength = 0;
+  for (const text of pool) {
+    offsets.set(text, poolLength);
+    poolLength += text.length + 1;
+  }
+
+  const chords = sortedChords(profile);
+  image[0] = 0x4d; // M
+  image[1] = 0x50; // P
+  image[2] = FORMAT_VERSION;
+  image[3] = (profile.layers.length - 1) | (profile.startupLayer << 2);
+  image[4] = poolLength;
+  image[5] = profile.variant | (chords.length << 1);
+  image[8] = profile.chordWindow & 15;
+
+  profile.layers.forEach((layer, li) => {
+    const base = HEADER_SIZE + size * li;
+    const records = [...layer.keys, layer.encoderButton, layer.clockwise, layer.counterclockwise];
+    records.forEach((action, i) => {
+      const [b0, b1] = encodeAction(action, offsets);
+      image[base + 2 * i] = b0;
+      image[base + 2 * i + 1] = b1;
+    });
+    const ledBase = base + 2 * (keys + 3);
+    layer.leds.forEach((led, i) => {
+      image[ledBase + (i >> 1)]! |= i & 1 ? (led & 15) << 4 : led & 15;
+    });
+    image[base + size - 1] =
+      (layer.invertScroll ? LAYER_OPT_INVERT_SCROLL : 0) |
+      (layer.bootloaderFromBoot ? LAYER_OPT_BOOTLOADER_BOOT : 0) |
+      (layer.bootloaderFromRun ? LAYER_OPT_BOOTLOADER_RUN : 0);
+  });
+
+  let offset = HEADER_SIZE + size * profile.layers.length;
+  for (const chord of chords) {
+    image[offset] = chordId(chord.layer, chord.keyA, chord.keyB, keys);
+    const [b0, b1] = encodeAction(chord.action, offsets);
+    image[offset + 1] = b0;
+    image[offset + 2] = b1;
+    offset += CHORD_ENTRY_SIZE;
+  }
+
+  for (const text of pool) {
+    for (let i = 0; i < text.length; i++) image[offset++] = text.charCodeAt(i);
+    image[offset++] = 0;
+  }
+
+  sealImage(image);
+  return image;
+}

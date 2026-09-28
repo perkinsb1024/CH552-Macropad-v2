@@ -1,0 +1,84 @@
+import { describe, expect, it } from 'vitest';
+import { SimulatedDevice } from '../src/protocol/simulator';
+import { ConfigClient, ProtocolError } from '../src/protocol/client';
+import { buildRequest, parseReply, Opcode, Status } from '../src/protocol/packet';
+import { encodeProfile } from '../src/codec/encode';
+import { defaultProfile, emptyLayer } from '../src/model/defaults';
+import { VARIANT_SIX_KEYS, VARIANT_THREE_KEYS } from '../src/model/constants';
+import { decodeImage } from '../src/codec/decode';
+
+describe('packet framing', () => {
+  it('builds a 31-byte request with UM signature', () => {
+    const payload = buildRequest({ opcode: Opcode.ReadFlash, sequence: 7, offset: 23 });
+    expect(payload.length).toBe(31);
+    expect([...payload.subarray(0, 8)]).toEqual([0x55, 0x4d, 1, 3, 7, 23, 0, 0]);
+  });
+  it('parses replies and ignores foreign payloads', () => {
+    expect(parseReply(new Uint8Array(31))).toBeNull();
+    const reply = new Uint8Array(31);
+    reply.set([0x55, 0x4d, 1, 2, 9, 0, 6, 0, 1, 0, 0, 0, 3, 9], 0);
+    expect(parseReply(reply)).toMatchObject({ opcode: 2, sequence: 9, status: 0 });
+    expect(parseReply(reply)!.data.length).toBe(6);
+  });
+});
+
+describe('client against simulator', () => {
+  it('identifies the device and reads flash', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
+    const client = new ConfigClient(device);
+    const info = await client.getInfo();
+    expect(info).toMatchObject({ variant: 0, keyCount: 6, maxLayers: 4, imageSize: 128, actionMask: 0xffff });
+    const status = await client.getStatus();
+    expect(status.flashValid).toBe(true);
+    const flash = await client.readFlash();
+    expect(decodeImage(flash)).toMatchObject({ ok: true });
+  });
+  it('blank flash reports invalid and serves defaults from READ_ACTIVE', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_THREE_KEYS, blankFlash: true });
+    const client = new ConfigClient(device);
+    expect((await client.getStatus()).flashValid).toBe(false);
+    expect(decodeImage(await client.readFlash())).toMatchObject({ ok: false, reason: 'no-magic' });
+    const active = decodeImage(await client.readActive());
+    expect(active.ok && active.profile).toEqual(defaultProfile(VARIANT_THREE_KEYS));
+  });
+  it('saves, verifies and reads back the same image', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
+    const client = new ConfigClient(device);
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers.push(emptyLayer(VARIANT_SIX_KEYS));
+    profile.layers[1]!.keys[0] = { type: 'string', text: 'saved' };
+    profile.chords.push({ layer: 0, keyA: 0, keyB: 1, action: { type: 'setLayer', layer: 1 } });
+    const image = encodeProfile(profile);
+    const phases: string[] = [];
+    await client.saveImage(image, (phase) => phases.push(phase));
+    expect(phases).toContain('uploading');
+    expect(phases).toContain('saving');
+    expect(phases).toContain('verifying');
+    expect([...device.flash]).toEqual([...image]);
+    expect(decodeImage(await client.readFlash())).toMatchObject({ ok: true });
+  });
+  it('rejects cross-variant images', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_THREE_KEYS });
+    const client = new ConfigClient(device);
+    const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
+    await expect(client.saveImage(image)).rejects.toMatchObject({ status: Status.BadConfig });
+  });
+  it('reports flash verification failures', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS, failNextCommit: true });
+    const client = new ConfigClient(device);
+    await expect(client.saveImage(encodeProfile(defaultProfile(VARIANT_SIX_KEYS)))).rejects.toBeInstanceOf(ProtocolError);
+    expect((await client.getStatus()).flashValid).toBe(false);
+  });
+  it('times out and retries when the device is silent', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
+    let drops = 2;
+    const original = device.send.bind(device);
+    device.send = async (payload) => {
+      if (drops-- > 0) return; // swallow the request
+      return original(payload);
+    };
+    const client = new ConfigClient(device, { timeoutMs: 20, retries: 3 });
+    const info = await client.getInfo();
+    expect(info.keyCount).toBe(6);
+  });
+});

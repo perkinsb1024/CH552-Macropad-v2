@@ -12,6 +12,13 @@ static void seal(void) {
 static void testDefaults(uint8_t variant) {
     uint8_t first;
     uint8_t second;
+    static const uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
+    static const uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
+    static const uint8_t colors[6][3] = {
+        {255, 32, 32}, {64, 200, 32}, {32, 150, 150},
+        {255, 75, 0}, {0, 64, 255}, {255, 0, 100},
+    };
+    uint8_t i;
     configDefaults(variant);
     assert(configValid(activeConfig, variant));
     assert(configCrc(activeConfig) == (variant ? 0x99AC : 0xD111));
@@ -21,8 +28,16 @@ static void testDefaults(uint8_t variant) {
     assert(configKeyCount() == (variant ? 3 : 6));
     assert(configChordWindowMs() == 40);
     assert(configLayerOptions(0) == 6);
-    configBinding(0, 0, &first, &second);
-    assert(first == CONFIG_ACTION_KEY_TAP && second == 0x29);
+    for (i = 0; i < configKeyCount(); i++) {
+        configBinding(0, i, &first, &second);
+        assert((first & 15) == CONFIG_ACTION_KEY_TAP);
+        assert((first >> 4) == modifiers[i]);
+        assert(second == usages[i]);
+        assert(configLedColor(0, i) == i);
+        assert(configPalette[i][0] == colors[i][0]);
+        assert(configPalette[i][1] == colors[i][1]);
+        assert(configPalette[i][2] == colors[i][2]);
+    }
     configBinding(0, configKeyCount(), &first, &second);
     assert(first == CONFIG_ACTION_MOUSE_CLICK && second == 4);
     assert(configLedColor(0, 0) == 0);

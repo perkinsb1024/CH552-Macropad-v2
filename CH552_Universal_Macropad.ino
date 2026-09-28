@@ -24,7 +24,6 @@
 #define NUM_LEDS        (PHYSICAL_VARIANT ? 3 : 6)
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define DEBOUNCE_MS     10
-#define LED_UPDATE_MS   20
 #define ENTER_BOOTLOADER_MS 3000
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
@@ -44,7 +43,6 @@ __xdata int8_t encoderMovement;
 __xdata uint8_t lastLayer;
 __xdata uint8_t allowRunBootloader;
 __xdata uint16_t encoderPressedMs;
-__xdata uint16_t lastLedUpdate;
 
 void displayLeds() {
   LED_FUNC(ledData, NUM_BYTES);
@@ -61,8 +59,12 @@ void updateLeds() {
   uint8_t layer = actionsLayer();
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = configLedColor(layer, i);
-    set_pixel_for_GRB_LED(ledData, i, configPalette[color][0],
-                          configPalette[color][1], configPalette[color][2]);
+    if (stableState[i]) {
+      set_pixel_for_GRB_LED(ledData, i, configPalette[color][0],
+                            configPalette[color][1], configPalette[color][2]);
+    } else {
+      set_pixel_for_GRB_LED(ledData, i, 0, 0, 0);
+    }
   }
   displayLeds();
 }
@@ -119,6 +121,9 @@ void scanButton(uint8_t input, uint16_t now) {
     } else {
       actionsRelease(input);
     }
+    if (input < NUM_LEDS) {
+      updateLeds();
+    }
   }
 }
 
@@ -154,8 +159,8 @@ void firmwareApplyConfig(void) {
   encoderState = readEncoder();
   encoderMovement = 0;
   lastLayer = actionsLayer();
-  lastLedUpdate = now - LED_UPDATE_MS;
   allowRunBootloader = 0;
+  updateLeds();
 }
 
 void setup() {
@@ -190,10 +195,6 @@ void loop() {
     lastLayer = actionsLayer();
     encoderState = readEncoder();
     encoderMovement = 0;
-    lastLedUpdate = now - LED_UPDATE_MS;
-  }
-  if ((uint16_t)(now - lastLedUpdate) >= LED_UPDATE_MS) {
-    lastLedUpdate = now;
     updateLeds();
   }
   if (allowRunBootloader && stableState[configKeyCount()] &&

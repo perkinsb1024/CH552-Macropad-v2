@@ -27,7 +27,7 @@ void neopixel_show_P3_4(uint8_t *data, uint8_t length) {
     bytesWritten = length;
 }
 void set_pixel_for_GRB_LED(uint8_t *data, uint8_t index,
-                           uint8_t green, uint8_t red, uint8_t blue) {
+                           uint8_t red, uint8_t green, uint8_t blue) {
     data[3 * index] = green;
     data[3 * index + 1] = red;
     data[3 * index + 2] = blue;
@@ -90,6 +90,9 @@ int main(void) {
     P1 = P3 = 0xFF;
     setup();
     assert(bytesWritten == (PHYSICAL_VARIANT ? 9 : 18));
+    for (uint8_t i = 0; i < (PHYSICAL_VARIANT ? 9 : 18); i++) {
+        assert(ledData[i] == 0);
+    }
     frameCount = 0;
     assert((testP1ModOc & (PHYSICAL_VARIANT ? 0xC2 : 0xF2)) ==
            (PHYSICAL_VARIANT ? 0xC2 : 0xF2));
@@ -98,10 +101,12 @@ int main(void) {
     tick(0);
     tick(10);
     assert(frameCount == 1 && frames[0][0] == 1 && frames[0][3] == 0x29);
+    assert(ledData[0] == 32 && ledData[1] == 255 && ledData[2] == 32);
     P1 |= 0x02;
     tick(11);
     tick(21);
     assert(frameCount == 2 && frames[1][3] == 0);
+    assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
 
     // An active profile change suppresses a key already held on the device.
     activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
