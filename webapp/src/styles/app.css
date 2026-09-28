@@ -267,7 +267,9 @@ output { font-variant-numeric: tabular-nums; color: var(--fg-muted); font-weight
 /* ------------------------------------------------------------------------
    Layer tabs
    --------------------------------------------------------------------- */
-.tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.layer-tabs-row { display: flex; align-items: flex-start; gap: 8px; }
+.tabs { display: flex; flex: 1; min-width: 0; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.layer-delete { flex: none; margin-bottom: 16px; }
 .tab {
   display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: -1px;
   border: 0; border-bottom: 2px solid transparent; background: none; cursor: pointer;
@@ -369,8 +371,9 @@ output { font-variant-numeric: tabular-nums; color: var(--fg-muted); font-weight
 .inspector .card-head { margin-bottom: 0; align-items: flex-start; }
 .inspector-title { display: flex; flex-direction: column; gap: 2px; }
 .keycap.has-problem .keycap-label { padding-right: 22px; }
-.inspector-empty .legend { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; color: var(--fg-muted); font-size: 13px; }
-.inspector-empty .legend li { display: flex; align-items: center; gap: 8px; }
+.legend { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--fg-muted); font-size: 13px; }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.device-legend { justify-content: center; padding: 0 12px 14px; }
 .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line-strong); }
 .swatch-selected { border: 2px solid var(--accent); }
 .swatch-problem { border: 2px solid var(--danger); }

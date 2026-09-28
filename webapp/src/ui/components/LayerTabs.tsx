@@ -1,12 +1,24 @@
 import { useState } from 'preact/hooks';
-import { addLayer, layerName, meta, profile, selectedLayer, selectedSlot, setLayerName } from '../store';
+import { addLayer, ask, closeDialog, layerName, meta, profile, removeLayer, selectedLayer, selectedSlot, setLayerName } from '../store';
 import { MAX_LAYERS } from '../../model/constants';
-import { IconPlus } from './Icons';
+import { IconPlus, IconTrash } from './Icons';
 
 export function LayerTabs() {
   const p = profile.value!;
   const [editing, setEditing] = useState<number | null>(null);
+  const current = selectedLayer.value;
+  const removeSelected = () => {
+    ask({
+      title: `Remove ${layerName(current)}?`,
+      body: 'All chords and bindings on this layer will be deleted. Nothing changes on the device until you save.',
+      actions: [
+        { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
+        { label: 'Remove layer', tone: 'danger', onSelect: () => { removeLayer(current); closeDialog(); } },
+      ],
+    });
+  };
   return (
+    <div class="layer-tabs-row">
     <div class="tabs" role="tablist" aria-label="Layers">
       {p.layers.map((_, i) => {
         const active = selectedLayer.value === i;
@@ -42,6 +54,8 @@ export function LayerTabs() {
       {p.layers.length < MAX_LAYERS && (
         <button class="tab tab-add" onClick={addLayer} title="Add layer"><IconPlus /> Add layer</button>
       )}
+    </div>
+    {p.layers.length > 1 && <button class="btn btn-icon btn-danger layer-delete" aria-label={`Remove ${layerName(current)}`} title={p.startupLayer === current ? 'Change the startup layer before removing this layer' : `Remove ${layerName(current)}`} disabled={p.startupLayer === current} onClick={removeSelected}><IconTrash /></button>}
     </div>
   );
 }

@@ -19,10 +19,10 @@ export function LayerOptions() {
         </span>
       </label>
       <label class="check">
-        <input type="checkbox" checked={layer.bootloaderFromBoot} onChange={toggle('bootloaderFromBoot')} />
+        <input type="checkbox" checked={layer.bootloaderFromBoot} disabled={li !== p.startupLayer} onChange={toggle('bootloaderFromBoot')} />
         <span>
           <strong>Allow bootloader entry at power-up</strong>
-          <span class="hint">Only the startup layer's setting applies at boot.</span>
+          <span class="hint">{li === p.startupLayer ? 'Only the startup layer can enable this.' : `Available only on ${p.layers[p.startupLayer] ? `the startup layer (${p.startupLayer + 1})` : 'the startup layer'}.`}</span>
         </span>
       </label>
       <label class="check">

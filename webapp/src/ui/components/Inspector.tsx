@@ -6,7 +6,7 @@ import { PALETTE } from '../../model/palette';
 import { normalizeText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
 import { actionProblem, slotLabel } from '../../model/validate';
-import { getAction, layerName, profile, removeChord, selectedSlot, setAction, updateProfile } from '../store';
+import { getAction, layerName, profile, rememberedAction, removeChord, selectedSlot, setAction, updateProfile } from '../store';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 
@@ -60,11 +60,6 @@ export function Inspector() {
       <section class="card inspector inspector-empty">
         <h2>Action editor</h2>
         <p class="muted">Select a key, the encoder, or a chord on the left to edit what it does.</p>
-        <ul class="legend">
-          <li><span class="swatch swatch-selected" /> Selected input</li>
-          <li><span class="swatch swatch-problem" /> Needs attention before saving</li>
-          <li><span class="swatch swatch-chord" /> Key that also participates in a chord</li>
-        </ul>
       </section>
     );
   }
@@ -72,6 +67,9 @@ export function Inspector() {
   const update = (next: Action) => setAction(slot, next);
   const setType = (type: ActionType) => {
     if (type === action.type) return;
+    setAction(slot, action);
+    const remembered = rememberedAction(slot, type);
+    if (remembered) { update(remembered); return; }
     const next = blankAction(type);
     // Carry over compatible fields so switching Tap ↔ Hold keeps the key.
     if ('usage' in next && 'usage' in action && 'modifiers' in next && 'modifiers' in action) update({ ...next, usage: action.usage, modifiers: action.modifiers });

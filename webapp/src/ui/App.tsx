@@ -48,6 +48,11 @@ export function App() {
             <section class="card card-device">
               <LayerTabs />
               <DeviceView />
+              <ul class="legend device-legend">
+                <li><span class="swatch swatch-selected" /> Selected input</li>
+                <li><span class="swatch swatch-problem" /> Needs attention before saving</li>
+                <li><span class="swatch swatch-chord" /> Key that also participates in a chord</li>
+              </ul>
             </section>
             <div class="two-up">
               <ChordPanel />

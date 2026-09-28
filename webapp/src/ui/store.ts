@@ -132,6 +132,7 @@ export function getAction(p: Profile, slot: Slot): Action | undefined {
 }
 
 export function setAction(slot: Slot, action: Action): void {
+  rememberAction(slot, action);
   updateProfile((draft) => {
     const layer = draft.layers[slot.layer];
     if (!layer) return;
@@ -157,6 +158,24 @@ export function setAction(slot: Slot, action: Action): void {
   });
 }
 
+const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';
+type ActionMemory = Record<string, Partial<Record<Action['type'], Action>>>;
+function slotMemoryKey(slot: Slot): string { return JSON.stringify(slot); }
+function readActionMemory(): ActionMemory {
+  try { return JSON.parse(localStorage.getItem(ACTION_MEMORY_KEY) ?? '{}') as ActionMemory; }
+  catch { return {}; }
+}
+function rememberAction(slot: Slot, action: Action): void {
+  try {
+    const memory = readActionMemory();
+    memory[slotMemoryKey(slot)] = { ...memory[slotMemoryKey(slot)], [action.type]: action };
+    localStorage.setItem(ACTION_MEMORY_KEY, JSON.stringify(memory));
+  } catch { /* Browser storage is optional. */ }
+}
+export function rememberedAction(slot: Slot, type: Action['type']): Action | undefined {
+  return readActionMemory()[slotMemoryKey(slot)]?.[type] as Action | undefined;
+}
+
 export function addChord(layer: number, keyA: number, keyB: number): void {
   const [a, b] = keyA < keyB ? [keyA, keyB] : [keyB, keyA];
   updateProfile((draft) => {
@@ -178,7 +197,22 @@ export function addLayer(): void {
   const p = profile.value;
   if (!p || p.layers.length >= MAX_LAYERS) return;
   updateProfile((draft) => {
-    draft.layers.push(emptyLayer(draft.variant));
+    const sourceIndex = selectedLayer.value;
+    const source = draft.layers[sourceIndex];
+    draft.layers.push(source ? {
+      ...source,
+      keys: source.keys.map((action) => ({ ...action })),
+      encoderButton: { ...source.encoderButton },
+      clockwise: { ...source.clockwise },
+      counterclockwise: { ...source.counterclockwise },
+      leds: [...source.leds],
+    } : emptyLayer(draft.variant));
+    if (source) {
+      const newIndex = draft.layers.length - 1;
+      draft.chords.push(...draft.chords
+        .filter((chord) => chord.layer === sourceIndex)
+        .map((chord) => ({ ...chord, layer: newIndex, action: { ...chord.action } })));
+    }
   });
   selectedLayer.value = p.layers.length;
   selectedSlot.value = null;
