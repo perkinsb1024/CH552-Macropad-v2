@@ -4,20 +4,13 @@ export function LayerOptions() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
-  const toggle = (key: 'invertScroll' | 'bootloaderFromBoot' | 'bootloaderFromRun') => (e: Event) =>
+  const toggle = (key: 'bootloaderFromBoot' | 'bootloaderFromRun') => (e: Event) =>
     updateProfile((d) => { d.layers[li]![key] = (e.target as HTMLInputElement).checked; });
   return (
     <section class="card">
       <header class="card-head">
         <h2>Layer options</h2>
       </header>
-      <label class="check">
-        <input type="checkbox" checked={layer.invertScroll} onChange={toggle('invertScroll')} />
-        <span>
-          <strong>Invert encoder scrolling</strong>
-          <span class="hint">Negates scroll actions produced by rotation on this layer. Keyboard and media actions are unaffected.</span>
-        </span>
-      </label>
       <label class="check">
         <input type="checkbox" checked={layer.bootloaderFromBoot} disabled={li !== p.startupLayer} onChange={toggle('bootloaderFromBoot')} />
         <span>

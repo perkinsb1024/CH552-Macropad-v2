@@ -1,9 +1,10 @@
 import {
   ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, MAX_LAYERS,
-  LAYER_OPT_BOOTLOADER_BOOT, LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INVERT_SCROLL,
+  LAYER_OPT_BOOTLOADER_BOOT, LAYER_OPT_BOOTLOADER_RUN,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile } from '../model/types';
+import { migrateLegacyScrollInversion } from '../model/defaults';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
 import { isSupportedUsage } from '../keys/keyboard';
@@ -147,16 +148,17 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     }
     const options = image[base + size - 1]!;
     if (options & 0xf8) return fail('malformed', `Layer ${li + 1}: reserved option bits set.`);
-    layers.push({
+    const layer: Layer = {
       keys: actions.slice(0, keys),
       encoderButton: actions[keys]!,
       clockwise: actions[keys + 1]!,
       counterclockwise: actions[keys + 2]!,
       leds,
-      invertScroll: !!(options & LAYER_OPT_INVERT_SCROLL),
       bootloaderFromBoot: !!(options & LAYER_OPT_BOOTLOADER_BOOT),
       bootloaderFromRun: !!(options & LAYER_OPT_BOOTLOADER_RUN),
-    });
+    };
+    if (options & 1) (layer as Layer & { invertScroll?: boolean }).invertScroll = true;
+    layers.push(layer);
   }
 
   const chords: Chord[] = [];
@@ -181,6 +183,6 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
 
   return {
     ok: true,
-    profile: { variant, startupLayer, chordWindow: image[8]! & 15, layers, chords },
+    profile: migrateLegacyScrollInversion({ variant, startupLayer, chordWindow: image[8]! & 15, layers, chords }),
   };
 }

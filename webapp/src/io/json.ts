@@ -4,6 +4,7 @@ import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
 import { PALETTE } from '../model/palette';
 import { normalizeText } from '../model/strings';
+import { migrateLegacyScrollInversion } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
 export const JSON_VERSION = 1;
@@ -26,7 +27,6 @@ export interface ExportedProfile {
     clockwise: Action;
     counterclockwise: Action;
     leds: string[];
-    invertScroll: boolean;
     bootloaderFromBoot: boolean;
     bootloaderFromRun: boolean;
   }>;
@@ -47,7 +47,6 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       clockwise: layer.clockwise,
       counterclockwise: layer.counterclockwise,
       leds: layer.leds.map((i) => PALETTE[i]?.name ?? String(i)),
-      invertScroll: layer.invertScroll,
       bootloaderFromBoot: layer.bootloaderFromBoot,
       bootloaderFromRun: layer.bootloaderFromRun,
     })),
@@ -137,16 +136,17 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     if (!isRecord(l)) throw new ImportError(`Layer ${li + 1} is malformed.`);
     if (!Array.isArray(l.keys) || l.keys.length !== keys) throw new ImportError(`Layer ${li + 1} must have ${keys} key bindings.`);
     if (!Array.isArray(l.leds) || l.leds.length !== keys) throw new ImportError(`Layer ${li + 1} must have ${keys} LED colors.`);
-    return {
+    const layer: Layer = {
       keys: l.keys.map((a, i) => action(a, `Layer ${li + 1} key ${i + 1}`)),
       encoderButton: action(l.encoderButton, `Layer ${li + 1} encoder button`),
       clockwise: action(l.clockwise, `Layer ${li + 1} clockwise`),
       counterclockwise: action(l.counterclockwise, `Layer ${li + 1} counterclockwise`),
       leds: l.leds.map((c, i) => led(c, `Layer ${li + 1} LED ${i + 1}`)),
-      invertScroll: bool(l.invertScroll, 'invertScroll'),
       bootloaderFromBoot: bool(l.bootloaderFromBoot, 'bootloaderFromBoot'),
       bootloaderFromRun: bool(l.bootloaderFromRun, 'bootloaderFromRun'),
     };
+    if (l.invertScroll === true) (layer as Layer & { invertScroll?: boolean }).invertScroll = true;
+    return layer;
   });
   const chords: Chord[] = (Array.isArray(raw.chords) ? raw.chords : []).map((c, i): Chord => {
     if (!isRecord(c) || !Array.isArray(c.keys) || c.keys.length !== 2) throw new ImportError(`Chord ${i + 1} is malformed.`);
@@ -156,7 +156,8 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
   if (chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75) throw new ImportError('chordWindowMs must be 0–75 in steps of 5.');
-  const profile: Profile = { variant, startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  const imported: Profile = { variant, startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  const profile = migrateLegacyScrollInversion(imported);
   const issues = validateProfile(profile);
   if (issues.length) throw new ImportError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));
   const meta: LocalMetadata = {};

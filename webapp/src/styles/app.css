@@ -151,6 +151,10 @@ output { font-variant-numeric: tabular-nums; color: var(--fg-muted); font-weight
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
 .row { display: flex; align-items: center; gap: 8px; }
 .row > select { flex: 1; }
+.segmented { display: inline-flex; width: fit-content; padding: 3px; gap: 2px; border-radius: var(--radius-sm); background: var(--bg-sunken); }
+.segmented button { min-width: 64px; padding: 5px 12px; border: 0; border-radius: 5px; background: transparent; color: var(--fg-muted); cursor: pointer; }
+.segmented button.is-selected { background: var(--bg-elev); color: var(--fg); box-shadow: 0 1px 3px rgb(0 0 0 / 0.18); }
+.scroll-direction { margin-top: 8px; }
 .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
 .check:first-of-type { border-top: 0; }
 .check input { margin-top: 2px; flex: none; }

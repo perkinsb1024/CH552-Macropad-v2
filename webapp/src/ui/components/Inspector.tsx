@@ -46,6 +46,30 @@ function Delta({ label, value, onChange, hint }: { label: string; value: number;
   );
 }
 
+function ScrollStep({ value, onChange }: { value: number; onChange(v: number): void }) {
+  const magnitude = Math.max(1, Math.min(127, Math.abs(value)));
+  const up = value < 0;
+  const setMagnitude = (next: number) => onChange((up ? -1 : 1) * Math.max(1, Math.min(127, Math.round(next))));
+  const setDirection = (nextUp: boolean) => onChange((nextUp ? -1 : 1) * magnitude);
+  return (
+    <div class="field">
+      <span class="field-label">Wheel step <output>{magnitude}</output></span>
+      <input type="range" min={1} max={127} step={1} value={magnitude} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
+      <div class="row">
+        <input type="number" min={1} max={127} step={1} value={magnitude} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} aria-label="Wheel step" />
+        <span class="hint">Each detent or press sends one step.</span>
+      </div>
+      <div class="field scroll-direction">
+        <span class="field-label">Scroll direction</span>
+        <div class="segmented" role="group" aria-label="Scroll direction">
+          <button type="button" class={up ? 'is-selected' : ''} aria-pressed={up} onClick={() => setDirection(true)}>Up</button>
+          <button type="button" class={!up ? 'is-selected' : ''} aria-pressed={!up} onClick={() => setDirection(false)}>Down</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Inspector() {
   const p = profile.value!;
   const slot = selectedSlot.value;
@@ -119,7 +143,7 @@ export function Inspector() {
       )}
 
       {action.type === 'scroll' && (
-        <Delta label="Wheel step" value={action.delta} onChange={(delta) => update({ ...action, delta })} hint="Negative scrolls up, positive scrolls down. Each detent or press sends one step." />
+        <ScrollStep value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
       {action.type === 'mouseX' && (
         <Delta label="Horizontal move" value={action.delta} onChange={(delta) => update({ ...action, delta })} hint="Pixels per step; negative moves left." />

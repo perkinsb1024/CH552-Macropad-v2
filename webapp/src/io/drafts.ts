@@ -1,4 +1,5 @@
 import type { Profile } from '../model/types';
+import { migrateLegacyScrollInversion } from '../model/defaults';
 import type { LocalMetadata } from './json';
 
 const PREFIX = 'universal-macropad:';
@@ -20,6 +21,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Draft;
     if (!parsed.profile || !Array.isArray(parsed.profile.layers)) return null;
+    parsed.profile = migrateLegacyScrollInversion(parsed.profile);
     return parsed;
   } catch {
     return null;

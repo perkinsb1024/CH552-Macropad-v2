@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { canRedo, canSave, canUndo, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
+import { ask, canRedo, canSave, canUndo, closeDialog, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
 import { IconCheck, IconChevron, IconRefresh, IconSave, IconUnplug, IconUsb, IconWarning } from './Icons';
 import { variantName } from '../../model/constants';
 
@@ -61,6 +61,14 @@ function SaveButton() {
 
 export function TopBar() {
   const c = connection.value;
+  const confirmReload = () => ask({
+    title: 'Reload from device?',
+    body: 'This replaces the profile in the editor and clears its undo history. Unsaved changes will be lost.',
+    actions: [
+      { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
+      { label: 'Reload from device', tone: 'danger', onSelect: () => { closeDialog(); void loadFromDevice(); } },
+    ],
+  });
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
@@ -116,7 +124,7 @@ export function TopBar() {
         </>}
         {c.kind === 'connected' ? (
           <>
-            <button class="btn" onClick={() => void loadFromDevice()} disabled={saveState.value.phase === 'busy'} title="Re-read the profile stored on the device">
+            <button class="btn" onClick={confirmReload} disabled={saveState.value.phase === 'busy'} title="Re-read the profile stored on the device">
               <IconRefresh /> Reload
             </button>
             <SaveButton />

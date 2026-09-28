@@ -3,6 +3,7 @@ import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { MAX_LAYERS, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { validateProfile } from '../model/validate';
+import { layerReachabilityWarnings } from '../model/reachability';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
 import { decodeImage, peekHeader, type DecodeResult } from '../codec/decode';
@@ -98,6 +99,7 @@ export function redo(): void {
 }
 
 export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
+export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
 export const dirty = computed(() => {
   if (!profile.value) return false;

@@ -66,6 +66,5 @@ export const MOUSE_LEFT = 1;
 export const MOUSE_RIGHT = 2;
 export const MOUSE_MIDDLE = 4;
 
-export const LAYER_OPT_INVERT_SCROLL = 1;
 export const LAYER_OPT_BOOTLOADER_BOOT = 2;
 export const LAYER_OPT_BOOTLOADER_RUN = 4;
