@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { canSave, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, save, saveState } from '../store';
+import { canRedo, canSave, canUndo, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
 import { IconCheck, IconChevron, IconRefresh, IconSave, IconUnplug, IconUsb, IconWarning } from './Icons';
 import { variantName } from '../../model/constants';
 
@@ -61,6 +61,26 @@ function SaveButton() {
 
 export function TopBar() {
   const c = connection.value;
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (target?.isContentEditable || tag === 'TEXTAREA' || (tag === 'INPUT' && (target as HTMLInputElement).type !== 'range')) return;
+      if (key === 'z') {
+        if (event.shiftKey ? canRedo.value : canUndo.value) {
+          event.preventDefault();
+          if (event.shiftKey) redo(); else undo();
+        }
+      } else if (key === 'y' && event.ctrlKey && canRedo.value) {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
   return (
     <header class="topbar">
       <div class="brand">
@@ -90,6 +110,10 @@ export function TopBar() {
       </div>
 
       <div class="actions">
+        {profile.value && <>
+          <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo">↶ Undo</button>
+          <button class="btn" onClick={redo} disabled={!canRedo.value} title="Redo (⌘⇧Z / Ctrl+Shift+Z)" aria-label="Redo">↷ Redo</button>
+        </>}
         {c.kind === 'connected' ? (
           <>
             <button class="btn" onClick={() => void loadFromDevice()} disabled={saveState.value.phase === 'busy'} title="Re-read the profile stored on the device">

@@ -189,7 +189,7 @@ export function Inspector() {
                 class={`swatch-btn ${layer.leds[keyIndex] === c.index ? 'is-selected' : ''} ${c.index === 6 ? 'swatch-off' : ''}`}
                 style={`--c:${c.hex}`}
                 title={c.name}
-                onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds[keyIndex] = c.index; })}
+                onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds[keyIndex] = c.index; }, `led:${slot.layer}:${keyIndex}`)}
               />
             ))}
           </div>

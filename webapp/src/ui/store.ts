@@ -44,6 +44,59 @@ export const meta = signal<LocalMetadata>({});
 export const selectedLayer = signal(0);
 export const selectedSlot = signal<Slot | null>(null);
 
+interface EditorSnapshot { profile: Profile; meta: LocalMetadata }
+interface HistoryEntry extends EditorSnapshot { key?: string; at: number }
+const undoHistory = signal<HistoryEntry[]>([]);
+const redoHistory = signal<EditorSnapshot[]>([]);
+export const canUndo = computed(() => undoHistory.value.length > 0);
+export const canRedo = computed(() => redoHistory.value.length > 0);
+
+function copyMeta(value: LocalMetadata): LocalMetadata {
+  return { ...value, layerNames: value.layerNames ? [...value.layerNames] : undefined };
+}
+function editorSnapshot(): EditorSnapshot | null {
+  return profile.value ? { profile: cloneProfile(profile.value), meta: copyMeta(meta.value) } : null;
+}
+function clearHistory(): void {
+  undoHistory.value = [];
+  redoHistory.value = [];
+}
+function recordHistory(key?: string): void {
+  const before = editorSnapshot();
+  if (!before) return;
+  const now = Date.now();
+  const history = undoHistory.value;
+  const last = history[history.length - 1];
+  if (key && last?.key === key && now - last.at < 700) {
+    undoHistory.value = [...history.slice(0, -1), { ...last, at: now }];
+  } else {
+    undoHistory.value = [...history, { ...before, key, at: now }].slice(-100);
+  }
+  redoHistory.value = [];
+}
+function restoreEditor(snapshot: EditorSnapshot): void {
+  profile.value = cloneProfile(snapshot.profile);
+  meta.value = copyMeta(snapshot.meta);
+  selectedLayer.value = Math.min(selectedLayer.value, snapshot.profile.layers.length - 1);
+}
+export function undo(): void {
+  const history = undoHistory.value;
+  const previous = history[history.length - 1];
+  const current = editorSnapshot();
+  if (!previous || !current) return;
+  undoHistory.value = history.slice(0, -1);
+  redoHistory.value = [...redoHistory.value, current].slice(-100);
+  restoreEditor(previous);
+}
+export function redo(): void {
+  const next = redoHistory.value[redoHistory.value.length - 1];
+  const current = editorSnapshot();
+  if (!next || !current) return;
+  redoHistory.value = redoHistory.value.slice(0, -1);
+  undoHistory.value = [...undoHistory.value, { ...current, at: Date.now() }].slice(-100);
+  restoreEditor(next);
+}
+
 export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
 export const dirty = computed(() => {
@@ -106,10 +159,12 @@ export function closeDialog(): void {
 // ---------------------------------------------------------------------------
 // Profile editing helpers
 
-export function updateProfile(mutate: (draft: Profile) => void): void {
+export function updateProfile(mutate: (draft: Profile) => void, historyKey?: string): void {
   if (!profile.value) return;
   const draft = cloneProfile(profile.value);
   mutate(draft);
+  if (JSON.stringify(draft) === JSON.stringify(profile.value)) return;
+  recordHistory(historyKey);
   profile.value = draft;
   if (saveState.value.phase === 'saved' || saveState.value.phase === 'error') saveState.value = { phase: 'idle' };
 }
@@ -155,7 +210,7 @@ export function setAction(slot: Slot, action: Action): void {
         break;
       }
     }
-  });
+  }, `action:${slotMemoryKey(slot)}:${action.type}`);
 }
 
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';
@@ -272,9 +327,11 @@ export function layerName(index: number): string {
 }
 
 export function setLayerName(index: number, name: string): void {
+  if ((meta.value.layerNames?.[index] ?? '') === name) return;
   const names = [...(meta.value.layerNames ?? [])];
   while (names.length <= index) names.push('');
   names[index] = name;
+  recordHistory(`layer-name:${index}`);
   meta.value = { ...meta.value, layerNames: names };
 }
 
@@ -282,6 +339,7 @@ export function setLayerName(index: number, name: string): void {
 // Offline editing
 
 export function startOffline(variant: Variant): void {
+  clearHistory();
   const draft = loadDraft(variant);
   profile.value = draft?.profile ?? defaultProfile(variant);
   meta.value = draft?.meta ?? {};
@@ -304,6 +362,7 @@ export function resetToDefaults(): void {
         label: 'Reset editor',
         tone: 'danger',
         onSelect: () => {
+          recordHistory();
           profile.value = defaultProfile(p.variant);
           meta.value = {};
           selectedLayer.value = 0;
@@ -423,6 +482,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     const draft = options.initial ? loadDraft(info.variant) : null;
     const draftDiffers = draft && JSON.stringify(draft.profile) !== JSON.stringify(fromDevice);
     const apply = () => {
+      clearHistory();
       profile.value = fromDevice;
       baseline.value = cloneProfile(fromDevice);
       selectedLayer.value = Math.min(selectedLayer.value, fromDevice.layers.length - 1);
@@ -447,7 +507,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
         body: `This browser has a draft saved ${new Date(draft.savedAt).toLocaleString()} that differs from the device. Which one do you want to edit?`,
         actions: [
           { label: 'Load from device', tone: 'primary', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Use the draft', tone: 'neutral', onSelect: () => { profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
+          { label: 'Use the draft', tone: 'neutral', onSelect: () => { clearHistory(); profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
         ],
       });
     } else {
@@ -553,6 +613,7 @@ export async function importJsonFile(file: File): Promise<void> {
       return;
     }
     const applyImport = () => {
+      recordHistory();
       profile.value = imported;
       meta.value = importedMeta;
       selectedLayer.value = 0;

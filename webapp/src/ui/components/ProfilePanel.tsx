@@ -20,7 +20,7 @@ export function ProfilePanel() {
           <span class="field-label">
             Chord window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5} ms`}</output>
           </span>
-          <input type="range" min={0} max={15} step={1} value={p.chordWindow} onInput={(e) => updateProfile((d) => { d.chordWindow = Number((e.target as HTMLInputElement).value); })} />
+          <input type="range" min={0} max={15} step={1} value={p.chordWindow} onInput={(e) => updateProfile((d) => { d.chordWindow = Number((e.target as HTMLInputElement).value); }, 'chord-window')} />
           <span class="hint">
             {p.chordWindow === 0
               ? 'Chord recognition is disabled. Saved chords are kept but never trigger, and keys act immediately.'
