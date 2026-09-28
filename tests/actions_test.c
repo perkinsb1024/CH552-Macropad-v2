@@ -459,7 +459,71 @@ static void testLongLivedMomentary(void) {
     assert(actionsLayer() == 0);
 }
 
+static void testRolloverBackpressure(void) {
+    uint8_t i;
+    reset();
+    for (i = 0; i < 6; i++) {
+        activeConfig[9 + 2 * i] = CONFIG_ACTION_KEY_HOLD;
+        activeConfig[10 + 2 * i] = 4 + i;
+        actionsPress(i, 0);
+    }
+    activeConfig[21] = CONFIG_ACTION_KEY_TAP;
+    activeConfig[22] = 10;
+    actionsPoll(0);
+    actionsPress(6, 1);
+    actionsRelease(6);
+    actionsPoll(1);
+    actionsPoll(100);
+    assert(count == 1); // The tap waits while all six slots belong to holds.
+    actionsRelease(0);
+    actionsPoll(101);
+    assert(reports[count - 1][8] == 10);
+    actionsPoll(110);
+    assert(reports[count - 1][8] == 0);
+
+    reset();
+    for (i = 0; i < 7; i++) {
+        activeConfig[9 + 2 * i] = CONFIG_ACTION_KEY_HOLD;
+        activeConfig[10 + 2 * i] = 4 + i;
+        actionsPress(i, 0);
+    }
+    actionsRelease(6);
+    actionsPoll(0);
+    assert(count == 1 && reports[0][8] == 9);
+    actionsRelease(0);
+    actionsPoll(1);
+    actionsPoll(2);
+    assert(reports[1][8] == 10); // Even a released seventh hold gets a press.
+    assert(reports[count - 1][8] == 0);
+}
+
+static void testClearAndOverflow(void) {
+    unsigned i;
+    reset();
+    activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
+    activeConfig[10] = 4;
+    actionsPress(0, 0);
+    actionsPoll(0);
+    blocked = 1;
+    actionsClear();
+    blocked = 0;
+    actionsPoll(1);
+    assert(reports[count - 1][0] == 2 && reports[count - 1][1] == 0);
+    assert(reports[count - 2][0] == 1 && reports[count - 2][3] == 0);
+    reset();
+    for (i = 0; i < 300; i++) {
+        actionsPress(0, 0);
+        actionsRelease(0);
+        actionsRotate(1);
+    }
+    assert(actionsDropped(0) == 255 && actionsDropped(1) == 255);
+    actionsClear();
+    assert(actionsDropped(0) == 0 && actionsDropped(1) == 0);
+}
+
 int main(void) {
+    testRolloverBackpressure();
+    testClearAndOverflow();
     testMultipleChords();
     testRotationPressure();
     testLongLivedMomentary();

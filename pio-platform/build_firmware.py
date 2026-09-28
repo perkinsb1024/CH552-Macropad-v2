@@ -52,7 +52,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     # Compile the core and sketch with the same model so parameter storage agrees.
     flags = [
         "-c", "-Ddouble=float", "-DUSE_STDINT", "-D__PROG_TYPES_COMPAT__",
-        "--model-small", "--int-long-reent", "-mmcs51", "-DCH552",
+        "--model-small", "--opt-code-size", "--int-long-reent", "-mmcs51", "-DCH552",
         f"-DF_CPU={clock}L", "-DF_EXT_OSC=0L", "-DARDUINO=10819",
         f"-DPHYSICAL_VARIANT={physical_variant}",
         "-DARDUINO_ch55x", "-DARDUINO_ARCH_mcs51", f"-DUSER_USB_RAM={usb_ram}",
@@ -82,10 +82,11 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     sketch_rel = compile_source(sketch_source, "sketch")
     config_rel = compile_source(project / "src/config.c", "config")
     actions_rel = compile_source(project / "src/actions.c", "actions")
+    storage_rel = compile_source(project / "src/storage.c", "storage")
     protocol_rel = compile_source(project / "src/protocol_firmware.c", "protocol_firmware")
     hid_sources = sorted((project / "src/userUsbHidKeyboardMouse").glob("*.c"))
     hid_rels = [compile_source(source, "hid_" + source.stem) for source in hid_sources]
-    main_rel = compile_source(core / "main.c", "core_main")
+    main_rel = compile_source(project / "src/main.c", "core_main")
     core_sources = sorted(core.glob("*.c")) + sorted((core / "directGpioLut").glob("*.c"))
     core_rels = [
         compile_source(source, "core_" + source.stem)
@@ -103,7 +104,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
         f"-L{libroot / 'lib/small_int_calc_stack_auto'}",
         "--code-size", code_limit, "--xram-size", str(1024 - int(usb_ram)),
         "--xram-loc", usb_ram, "-mmcs51", "-DCH552",
-        sketch_rel, config_rel, actions_rel, protocol_rel, main_rel, *hid_rels, ws_rel, core_lib,
+        sketch_rel, config_rel, actions_rel, protocol_rel, storage_rel, main_rel, *hid_rels, ws_rel, core_lib,
         "-lmcs51", "-llibsdcc", "-lliblong", "-lliblonglong",
         "-llibint", "-llibfloat", "--out-fmt-ihx", "-o", firmware,
     )

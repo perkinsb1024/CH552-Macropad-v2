@@ -24,32 +24,55 @@ Each request and reply payload has this layout:
 Use one outstanding request at a time. The device accepts requests via
 interrupt OUT or HID SET_REPORT(Output) on interface 0, and sends replies via
 interrupt IN. SET_REPORT must include report ID 3 and exactly 32 USB bytes.
-Report ID 1's existing two-byte keyboard LED Output is also accepted by both
+Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
-The current firmware phase implements these read-only opcodes:
+The action mask reports all sixteen action types. Chord recognition uses the
+saved profile window; zero disables it. A second press must arrive strictly
+before the window expires to activate a mapped chord.
 
 | Opcode | Request | Reply data |
 | ---: | --- | --- |
 | 1 | GET_INFO, offset and length zero | `UMAC`, transport version, format version, physical variant, key count, LED count, maximum layers, image capacity, palette version, 16-bit action mask |
-| 2 | GET_STATUS, offset and length zero | Flash-valid flag, current layer, startup layer, upload-active flag |
+| 2 | GET_STATUS, offset and length zero | Flash-valid flag, current layer, startup layer, upload state, saturated dropped button-action count, saturated dropped rotation-action count |
 | 3 | READ_FLASH, offset and length 1–23 | Actual DataFlash bytes |
 | 4 | READ_ACTIVE, offset and length 1–23 | Active image bytes, including built-in defaults if flash is invalid |
-
-The action mask reports the sixteen implemented action types. Chord recognition
-uses the saved profile window; zero disables it. A second press must arrive
-strictly before the window expires to activate a mapped chord.
+| 5 | BEGIN_WRITE, offset zero, length 3 | Data bytes: image size 128, expected CRC low byte, expected CRC high byte. Starts a new upload and discards any prior staging. |
+| 6 | WRITE_CHUNK, next offset, length 1–23 | Copies the next sequential chunk. Identical duplicate chunks are acknowledged; conflicting or partially overlapping chunks are rejected. |
+| 7 | COMMIT_WRITE, offset and length zero | Validates the full image and CRC, saves changed DataFlash bytes, verifies all 128 bytes, then activates the configuration. Repeated commit is safe. |
+| 8 | ABORT_WRITE, offset and length zero | Discards staging without changing flash or the active profile. |
 
 Status codes are 0 success, 1 unsupported transport version, 2 unsupported
-opcode, 3 invalid offset or length, and 4 malformed packet. Error replies have
-zero data length and zero data bytes. Request padding and the request status
-byte must be zero. Reads ending exactly at image byte 127 are legal. GET_INFO
+opcode, 3 invalid offset or length, 4 malformed packet, 5 incomplete upload,
+6 invalid configuration, 7 CRC mismatch, 9 flash verification failure, and
+10 out-of-order or conflicting chunk. Status 8 is reserved. Error replies have zero data length
+and zero data bytes. Request padding and the request status byte must be zero.
+Reads ending exactly at image byte 127 are legal. GET_INFO
 is the application identity check because VID/PID alone do not distinguish
 this firmware from other CH55xDuino devices.
 
-Write, commit, and abort opcodes are reserved for a later firmware phase.
-The web editor should not offer saving until those opcodes and readback
-verification are implemented. After a bus reset, an incomplete request is
-discarded. If an interrupt reply is delayed by a keyboard or mouse report,
-the device retains the reply and sends it when the endpoint becomes free.
+The upload state is 0 idle, 1 receiving, or 2 committed. It expires after five
+seconds without a valid upload command. Bus reset, interface reconfiguration,
+and ABORT_WRITE discard it. A new BEGIN_WRITE always starts over. COMMIT_WRITE
+may be retried after a lost reply; a repeated successful commit does not write
+flash again. After commit, the host should independently read all 128 flash
+bytes and compare them with the image it sent.
+
+For a changed image, firmware invalidates the two-byte magic, writes and checks
+the body, restores the magic last, and compares the stored image byte for byte.
+If a write fails, the previous active RAM configuration remains in use so the
+host can retry. An interrupted save may leave invalid flash; startup then loads
+built-in defaults without writing flash. Configuration activation releases
+held outputs, cancels pending actions, resets encoder state, and suppresses
+inputs that remain held until they are released.
+
+After a bus reset, an incomplete request is discarded. Configuration reports
+share the input endpoint with short keyboard, mouse, and consumer reports. The
+scheduler alternates them under sustained traffic so neither class can wait
+indefinitely. Endpoint halt status and CLEAR_FEATURE are supported. Remote
+wake-up is not advertised. HID GET_REPORT returns current keyboard, mouse
+button, and consumer state; relative mouse movement is always returned as zero.
+GET_IDLE and SET_IDLE support report IDs 1, 2, and 5, plus report ID 0 to set
+all three idle rates. Idle rates use the standard four millisecond units, and
+the scheduler sends unchanged reports when their configured interval expires.

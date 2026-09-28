@@ -18,26 +18,29 @@ __xdata uint8_t chordPartner[6]; // Partner index plus one; retained until both 
 __xdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
 __xdata uint8_t pendingLayer;
 __xdata uint16_t pendingSince;
-__xdata uint8_t lastMouse;
+__data uint8_t lastMouse;
 __xdata uint8_t lastReportGeneration;
 __xdata uint8_t eventData[EVENT_COUNT][3];
 __xdata uint8_t eventHead;
 __xdata uint8_t eventTail;
-__xdata uint8_t eventUsed;
-__xdata uint8_t baseLayer;
-__xdata uint8_t effectiveLayer;
-__xdata uint8_t currentFirst;
+__data uint8_t eventUsed;
+__xdata uint8_t droppedButtons;
+__xdata uint8_t droppedRotation;
+__data uint8_t baseLayer;
+__data uint8_t effectiveLayer;
+__data uint8_t currentFirst;
 __xdata uint8_t currentSecond;
 __xdata uint8_t currentLayer;
 __xdata uint8_t currentRotation;
-__xdata uint8_t phase;
+__data uint8_t phase;
 __xdata uint8_t tempFirst;
 __xdata uint8_t tempSecond;
 __xdata uint8_t tempMouse;
-__xdata uint8_t tempOn;
+__data uint8_t tempOn;
+__xdata uint8_t tempReady;
 __xdata uint8_t clicksLeft;
 __xdata uint8_t stringIndex;
-__xdata uint8_t consumerReleasePending;
+__data uint8_t consumerReleasePending;
 __xdata uint16_t deadline;
 
 static uint8_t actionType(uint8_t first) {
@@ -48,6 +51,13 @@ static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t layer,
                            uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
       (rotation && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
+    if (rotation) {
+      if (droppedRotation != 255) {
+        droppedRotation++;
+      }
+    } else if (droppedButtons != 255) {
+      droppedButtons++;
+    }
     return 0; // Reserve room for one action per button during rotation bursts.
   }
   eventData[eventHead][0] = first;
@@ -75,21 +85,21 @@ static uint8_t mouseButtons(void) {
   return buttons;
 }
 
-static void addUsage(uint8_t usage) {
+static uint8_t addUsage(uint8_t usage) {
   uint8_t i;
   if (!usage) {
-    return;
+    return 1;
   }
   for (i = 2; i < 8; i++) {
     if (nextKeyboard[i] == usage) {
-      return;
+      return 1;
     }
     if (nextKeyboard[i] == 0) {
       nextKeyboard[i] = usage;
-      return;
+      return 1;
     }
   }
-  // The seventh distinct key waits until one of the six report slots is free.
+  return 0; // Wait until one of the six report slots is free.
 }
 
 static uint8_t flushOutputs(void) {
@@ -105,9 +115,12 @@ static uint8_t flushOutputs(void) {
       addUsage(buttonSecond[i]);
     }
   }
+  tempReady = 1;
   if (tempOn && actionType(tempFirst) == CONFIG_ACTION_KEY_TAP) {
-    nextKeyboard[0] |= tempFirst >> 4;
-    addUsage(tempSecond);
+    tempReady = addUsage(tempSecond);
+    if (tempReady) {
+      nextKeyboard[0] |= tempFirst >> 4;
+    }
   }
   for (i = 0; i < 8; i++) {
     if (nextKeyboard[i] != lastKeyboard[i]) {
@@ -218,6 +231,8 @@ void actionsInit(void) {
   effectiveLayer = baseLayer;
   pendingInput = 0;
   inputDown = 0;
+  droppedButtons = 0;
+  droppedRotation = 0;
   for (i = 0; i < 6; i++) {
     chordPartner[i] = 0;
   }
@@ -246,15 +261,16 @@ void actionsInit(void) {
 }
 
 void actionsClear(void) {
-  uint8_t i;
   USB_discardReports();
   actionsInit();
-  for (i = 0; i < 8; i++) {
-    nextKeyboard[i] = 0;
-  }
-  USB_queueKeyboard(nextKeyboard);
-  USB_queueMouse(0, 0, 0, 0);
-  USB_queueConsumer(0);
+  lastKeyboard[0] = 0xFF;
+  lastMouse = 0xFF;
+  consumerReleasePending = !USB_queueConsumer(0);
+  flushOutputs(); // Unaccepted releases are retried by actionsPoll.
+}
+
+uint8_t actionsDropped(uint8_t rotation) {
+  return rotation ? droppedRotation : droppedButtons;
 }
 
 uint8_t actionsLayer(void) {
@@ -294,6 +310,9 @@ void actionsPress(uint8_t input, uint16_t now) {
       chordPartner[input] = other + 1;
       buttonFirst[other] = first;
       buttonSecond[other] = second;
+      buttonFirst[input] = 0;
+      buttonSecond[input] = 0;
+      buttonPressed[input] = 0;
       buttonPressed[other] = 1;
       orderPress(other);
       runAction(first, second, pendingLayer, 0, other);
@@ -367,6 +386,7 @@ void actionsPoll(uint16_t now) {
   uint8_t c;
   uint8_t usage;
   uint8_t i;
+  uint8_t slot;
   if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
     resolvePending();
     updateLayer();
@@ -388,6 +408,16 @@ void actionsPoll(uint16_t now) {
   }
   for (i = 0; i < MAX_INPUTS; i++) {
     if (buttonPressed[i] == 2) {
+      if (actionType(buttonFirst[i]) == CONFIG_ACTION_KEY_HOLD && buttonSecond[i]) {
+        for (slot = 2; slot < 8; slot++) {
+          if (lastKeyboard[slot] == buttonSecond[i]) {
+            break;
+          }
+        }
+        if (slot == 8) {
+          continue; // A brief seventh hold still needs its own press report.
+        }
+      }
       buttonPressed[i] = 0;
     }
   }
@@ -449,7 +479,7 @@ void actionsPoll(uint16_t now) {
         tempMouse = currentSecond;
       }
       tempOn = 1;
-      if (!flushOutputs()) {
+      if (!flushOutputs() || !tempReady) {
         return;
       }
       deadline = now + 8;

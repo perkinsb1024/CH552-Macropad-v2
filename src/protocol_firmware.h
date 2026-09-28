@@ -6,6 +6,6 @@
 void protocolInit(void);
 void protocolReset(void);
 uint8_t protocolReceive(const __xdata uint8_t *packet);
-void protocolPoll(void);
+void protocolPoll(uint16_t now);
 
 #endif

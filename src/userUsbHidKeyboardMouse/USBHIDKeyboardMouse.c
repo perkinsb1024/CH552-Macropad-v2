@@ -152,13 +152,26 @@ __code uint8_t _asciimap[128] = {
     0             // DEL
 };
 
-// Keep short input reports ahead of configuration replies.
+// Share the endpoint fairly between short input reports and configuration replies.
 __xdata uint8_t reportQueue[8][9];
 __xdata uint8_t reportLength[8];
 __xdata uint8_t reportHead;
 __xdata uint8_t reportTail;
 __xdata uint8_t reportCount;
 __xdata uint8_t reportGeneration;
+__xdata uint8_t configWaiting;
+__xdata uint8_t configTurn;
+volatile __xdata uint8_t USB_idleRate;
+__xdata uint8_t USB_globalIdleRate;
+__xdata uint8_t mouseIdleRate;
+__xdata uint8_t consumerIdleRate;
+__xdata uint8_t idleReport;
+__xdata uint16_t keyboardTime;
+__xdata uint16_t mouseTime;
+__xdata uint16_t consumerTime;
+__xdata uint8_t keyboardState[8];
+__xdata uint8_t mouseState;
+__xdata uint16_t consumerState;
 
 void USBInit() {
   USBDeviceCfg();
@@ -186,22 +199,28 @@ void USB_EP1_OUT() {
   }
 }
 
-uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply) {
+uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply) USB_CRITICAL {
   __data uint8_t i;
-  if (UsbConfig == 0 || UpPoint1_Busy || reportCount) {
+  configWaiting = 1;
+  if (UsbConfig == 0 || UpPoint1_Busy || (reportCount && !configTurn) ||
+      (UEP1_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) {
     return 0;
   }
   for (i = 0; i < 32; i++) {
     Ep1Buffer[64 + i] = reply[i];
   }
+  configWaiting = 0;
+  configTurn = 0;
   UEP1_T_LEN = 32;
   UpPoint1_Busy = 1;
   UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   return 1;
 }
 
-void USB_EP1_receiveReady(void) {
-  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+void USB_EP1_receiveReady(void) USB_CRITICAL {
+  if ((UEP1_CTRL & MASK_UEP_R_RES) != UEP_R_RES_STALL) {
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+  }
 }
 
 void USB_setKeyboardLedStatus(uint8_t leds) {
@@ -209,8 +228,22 @@ void USB_setKeyboardLedStatus(uint8_t leds) {
 }
 
 void USB_EP1_reset(void) {
+  uint8_t i;
+  USB_idleRate = 0;
+  USB_globalIdleRate = 0;
+  mouseIdleRate = 0;
+  consumerIdleRate = 0;
+  idleReport = 0;
+  keyboardTime = mouseTime = consumerTime = 0;
+  for (i = 0; i < 8; i++) {
+    keyboardState[i] = 0;
+  }
+  mouseState = 0;
+  consumerState = 0;
   UpPoint1_Busy = 0;
   reportGeneration++;
+  configWaiting = 0;
+  configTurn = 0;
   USB_discardReports();
 }
 
@@ -218,7 +251,7 @@ uint8_t USB_reportGeneration(void) {
   return reportGeneration;
 }
 
-void USB_discardReports(void) {
+void USB_discardReports(void) USB_CRITICAL {
   reportCount = 0;
   reportHead = 0;
   reportTail = 0;
@@ -234,7 +267,7 @@ static uint8_t queueReport(uint8_t length) {
   return 1;
 }
 
-uint8_t USB_queueKeyboard(const __xdata uint8_t *keys) {
+static uint8_t queueKeyboard(const __xdata uint8_t *keys) {
   uint8_t i;
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
@@ -242,14 +275,20 @@ uint8_t USB_queueKeyboard(const __xdata uint8_t *keys) {
   reportQueue[reportHead][0] = 1;
   for (i = 0; i < 8; i++) {
     reportQueue[reportHead][i + 1] = keys[i];
+    keyboardState[i] = keys[i];
   }
   return queueReport(9);
 }
 
-uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+uint8_t USB_queueKeyboard(const __xdata uint8_t *keys) USB_CRITICAL {
+  return queueKeyboard(keys);
+}
+
+static uint8_t queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
+  mouseState = buttons;
   reportQueue[reportHead][0] = 2;
   reportQueue[reportHead][1] = buttons;
   reportQueue[reportHead][2] = x;
@@ -258,28 +297,70 @@ uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
   return queueReport(5);
 }
 
-uint8_t USB_queueConsumer(uint16_t usage) {
+uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) USB_CRITICAL {
+  return queueMouse(buttons, x, y, wheel);
+}
+
+static uint8_t queueConsumer(uint16_t usage) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
+  consumerState = usage;
   reportQueue[reportHead][0] = 5;
   reportQueue[reportHead][1] = usage;
   reportQueue[reportHead][2] = usage >> 8;
   return queueReport(3);
 }
 
+uint8_t USB_queueConsumer(uint16_t usage) USB_CRITICAL {
+  return queueConsumer(usage);
+}
+
 uint8_t USB_reportsPending(void) {
   return reportCount || UpPoint1_Busy;
 }
 
-void USB_reportPoll(void) {
+void USB_reportPoll(uint16_t now) USB_CRITICAL {
   uint8_t i;
-  if (UsbConfig == 0 || UpPoint1_Busy || reportCount == 0) {
+  uint8_t check;
+  if (!reportCount) {
+    uint8_t report = idleReport + 1;
+    for (check = 0; check < 3; check++) {
+      uint8_t rate = report == 1 ? USB_idleRate :
+                     report == 2 ? mouseIdleRate : consumerIdleRate;
+      uint16_t sent = report == 1 ? keyboardTime :
+                      report == 2 ? mouseTime : consumerTime;
+      if (rate && (uint16_t)(now - sent) >= ((uint16_t)rate << 2)) {
+        idleReport = report == 3 ? 0 : report;
+        if (report == 1) {
+          queueKeyboard(keyboardState);
+        } else if (report == 2) {
+          queueMouse(mouseState, 0, 0, 0);
+        } else {
+          queueConsumer(consumerState);
+        }
+        break;
+      }
+      report++;
+      if (report > 3) report = 1;
+    }
+  }
+  if (UsbConfig == 0 || UpPoint1_Busy || reportCount == 0 ||
+      (configWaiting && configTurn) ||
+      (UEP1_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) {
     return;
   }
   for (i = 0; i < reportLength[reportTail]; i++) {
     Ep1Buffer[64 + i] = reportQueue[reportTail][i];
   }
+  if (reportQueue[reportTail][0] == 1) {
+    keyboardTime = now;
+  } else if (reportQueue[reportTail][0] == 2) {
+    mouseTime = now;
+  } else if (reportQueue[reportTail][0] == 5) {
+    consumerTime = now;
+  }
+  configTurn = 1;
   UEP1_T_LEN = reportLength[reportTail];
   reportTail = (reportTail + 1) & 7;
   reportCount--;
@@ -292,4 +373,51 @@ uint8_t USB_asciiUsage(uint8_t c) {
     return 0;
   }
   return _asciimap[c];
+}
+
+void USB_setIdle(uint8_t report, uint8_t rate) {
+  if (!report) {
+    USB_globalIdleRate = rate;
+    USB_idleRate = mouseIdleRate = consumerIdleRate = rate;
+  } else if (report == 1) {
+    USB_idleRate = rate;
+  } else if (report == 2) {
+    mouseIdleRate = rate;
+  } else if (report == 5) {
+    consumerIdleRate = rate;
+  }
+}
+
+uint8_t USB_getIdle(uint8_t report) {
+  if (!report) return USB_globalIdleRate;
+  if (report == 1) return USB_idleRate;
+  if (report == 2) return mouseIdleRate;
+  if (report == 5) return consumerIdleRate;
+  return 0;
+}
+
+uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
+  uint8_t i;
+  data[0] = report;
+  if (report == 1) {
+    if (output) {
+      data[1] = keyboardLedStatus;
+      return 2;
+    }
+    for (i = 0; i < 8; i++) {
+      data[i + 1] = keyboardState[i];
+    }
+    return 9;
+  }
+  if (!output && report == 2) {
+    data[1] = mouseState; // Relative movement must not be replayed by GET_REPORT.
+    data[2] = data[3] = data[4] = 0;
+    return 5;
+  }
+  if (!output && report == 5) {
+    data[1] = consumerState;
+    data[2] = consumerState >> 8;
+    return 3;
+  }
+  return 0;
 }

@@ -198,7 +198,7 @@ void configDefaults(uint8_t variant) {
     for (i = 0; i < keys; i++) {
         activeConfig[offset + 2 * i] = (modifiers[i] << 4) | CONFIG_ACTION_KEY_TAP;
         activeConfig[offset + 2 * i + 1] = usages[i];
-        activeConfig[offset + 2 * (keys + 3) + i / 2] |= (i & 1) ? i << 4 : i;
+        activeConfig[offset + 2 * (keys + 3) + (i >> 1)] |= (i & 1) ? i << 4 : i;
     }
     activeConfig[offset + 2 * keys] = CONFIG_ACTION_MOUSE_CLICK;
     activeConfig[offset + 2 * keys + 1] = 4; // Middle mouse button
@@ -233,11 +233,11 @@ uint8_t configLedColor(uint8_t layer, uint8_t key) {
         return 6;
     }
     offset = 9 + layerSize(activeConfig[5] & 1) * layer;
-    colors = activeConfig[offset + 2 * (keys + 3) + key / 2];
+    colors = activeConfig[offset + 2 * (keys + 3) + (key >> 1)];
     return key & 1 ? colors >> 4 : colors & 15;
 }
 
-void configBinding(uint8_t layer, uint8_t input, uint8_t *first, uint8_t *second) {
+void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second) {
     uint8_t offset;
     if (layer >= configLayerCount() || input >= configKeyCount() + 3) {
         *first = 0;
@@ -250,7 +250,7 @@ void configBinding(uint8_t layer, uint8_t input, uint8_t *first, uint8_t *second
 }
 
 uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
-                    uint8_t *first, uint8_t *second) {
+                    __data uint8_t *first, __data uint8_t *second) {
     uint8_t keys = configKeyCount();
     uint8_t id;
     uint8_t count = (activeConfig[5] >> 1) & 63;

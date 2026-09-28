@@ -10,5 +10,6 @@ void actionsRotate(uint8_t clockwise);
 void actionsPoll(uint16_t now);
 void actionsClear(void);
 uint8_t actionsLayer(void);
+uint8_t actionsDropped(uint8_t rotation);
 
 #endif

@@ -16,18 +16,10 @@
 #include "src/protocol_firmware.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
-// Hardware connections
-#define LED_PIN         34
+// Hardware connections are fixed for both board variants.
 #define LED_FUNC        neopixel_show_P3_4
-#define KEY0_PIN        11
-#define KEY1_PIN        17
-#define KEY2_PIN        16
-#define KEY3_PIN        15
-#define KEY4_PIN        14
-#define KEY5_PIN        32
-#define ENC_A_PIN       30
-#define ENC_B_PIN       31
-#define BUTTON_PIN      33
+#define KEY_P1_MASK     (PHYSICAL_VARIANT ? 0xC2 : 0xF2)
+#define INPUT_P3_MASK   (PHYSICAL_VARIANT ? 0x0B : 0x0F)
 
 #define NUM_LEDS        (PHYSICAL_VARIANT ? 3 : 6)
 #define NUM_BYTES       (NUM_LEDS * 3)
@@ -35,9 +27,7 @@
 #define LED_UPDATE_MS   20
 #define ENTER_BOOTLOADER_MS 3000
 
-__code uint8_t KEY_PIN[6] = {
-  KEY0_PIN, KEY1_PIN, KEY2_PIN, KEY3_PIN, KEY4_PIN, KEY5_PIN,
-};
+__code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 __code int8_t encoderTransitions[16] = {
   0, -1, 1, 0,
   1, 0, 0, -1,
@@ -81,7 +71,8 @@ void enterBootloader() {
   actionsClear();
   uint16_t start = millis();
   while (USB_reportsPending() && (uint16_t)(millis() - start) < 100) {
-    USB_reportPoll();
+    USB_reportPoll(millis());
+    actionsPoll(millis());
   }
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     set_pixel_for_GRB_LED(ledData, i, 255, 0, 0);
@@ -93,12 +84,25 @@ void enterBootloader() {
   TMOD = 0;
   delayMicroseconds(50000);
   delayMicroseconds(50000);
+#ifdef __SDCC
   __asm__ ("lcall #0x3800");  // Jump to bootloader code
+#endif
   while (1);
 }
 
-void scanButton(uint8_t input, uint8_t pin, uint16_t now) {
-  uint8_t pressed = digitalRead(pin) == LOW;
+uint8_t readButton(uint8_t input) {
+  if (input == NUM_LEDS) {
+    return !P3_3;
+  }
+  return input == 5 ? !P3_2 : !(P1 & KEY_MASK[input]);
+}
+
+uint8_t readEncoder(void) {
+  return (P3_0 << 1) | P3_1;
+}
+
+void scanButton(uint8_t input, uint16_t now) {
+  uint8_t pressed = readButton(input);
   if (pressed != rawState[input]) {
     rawState[input] = pressed;
     rawChanged[input] = now;
@@ -119,7 +123,7 @@ void scanButton(uint8_t input, uint8_t pin, uint16_t now) {
 }
 
 void scanEncoder() {
-  uint8_t state = (digitalRead(ENC_A_PIN) << 1) | digitalRead(ENC_B_PIN);
+  uint8_t state = readEncoder();
   int8_t movement;
   if (state == encoderState) {
     return;
@@ -140,33 +144,33 @@ void scanEncoder() {
   }
 }
 
-void setup() {
-  protocolInit();
-  actionsInit();
-  pinMode(LED_PIN, OUTPUT);
-  for (uint8_t i = 0; i < configKeyCount(); i++) {
-    pinMode(KEY_PIN[i], INPUT_PULLUP);
+void firmwareApplyConfig(void) {
+  uint16_t now = millis();
+  actionsClear();
+  for (uint8_t i = 0; i <= NUM_LEDS; i++) {
+    rawState[i] = stableState[i] = readButton(i);
+    rawChanged[i] = now;
   }
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(ENC_A_PIN, INPUT_PULLUP);
-  pinMode(ENC_B_PIN, INPUT_PULLUP);
-  clearLeds();
-  for (uint8_t i = 0; i < configKeyCount(); i++) {
-    rawState[i] = stableState[i] = digitalRead(KEY_PIN[i]) == LOW;
-    rawChanged[i] = millis();
-  }
-  rawState[configKeyCount()] = stableState[configKeyCount()] =
-      digitalRead(BUTTON_PIN) == LOW;
-  rawChanged[configKeyCount()] = millis();
-  encoderState = (digitalRead(ENC_A_PIN) << 1) | digitalRead(ENC_B_PIN);
+  encoderState = readEncoder();
   encoderMovement = 0;
   lastLayer = actionsLayer();
-  lastLedUpdate = millis() - LED_UPDATE_MS;
+  lastLedUpdate = now - LED_UPDATE_MS;
   allowRunBootloader = 0;
+}
+
+void setup() {
+  protocolInit();
+  P1 |= KEY_P1_MASK;
+  P1_MOD_OC |= KEY_P1_MASK;
+  P1_DIR_PU |= KEY_P1_MASK;
+  P3 |= INPUT_P3_MASK;
+  P3_MOD_OC = (P3_MOD_OC | INPUT_P3_MASK) & ~0x10;
+  P3_DIR_PU |= INPUT_P3_MASK | 0x10; // P3.4 is the push-pull LED output.
+  clearLeds();
+  firmwareApplyConfig();
   USBInit();
   if (configLayerOptions(configStartupLayer()) & 2) {
-    if (digitalRead(KEY0_PIN) == LOW && digitalRead(KEY1_PIN) == LOW &&
-        digitalRead(KEY2_PIN) == LOW) {
+    if (readButton(0) && readButton(1) && readButton(2)) {
       enterBootloader();
     }
   }
@@ -174,17 +178,17 @@ void setup() {
 
 void loop() {
   uint16_t now = millis();
-  USB_reportPoll();
-  protocolPoll();
+  USB_reportPoll(now);
+  protocolPoll(now);
   for (uint8_t i = 0; i < configKeyCount(); i++) {
-    scanButton(i, KEY_PIN[i], now);
+    scanButton(i, now);
   }
-  scanButton(configKeyCount(), BUTTON_PIN, now);
+  scanButton(configKeyCount(), now);
   scanEncoder();
   actionsPoll(now);
   if (lastLayer != actionsLayer()) {
     lastLayer = actionsLayer();
-    encoderState = (digitalRead(ENC_A_PIN) << 1) | digitalRead(ENC_B_PIN);
+    encoderState = readEncoder();
     encoderMovement = 0;
     lastLedUpdate = now - LED_UPDATE_MS;
   }

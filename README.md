@@ -15,11 +15,10 @@ mode within ten seconds. Hold the encoder button for three seconds, or hold
 the first three keys during startup. The Upload task always invokes the
 programmer, even when the HEX file is already built.
 
-The firmware configuration work has started with the version 1 image codec in
-`src/config.c`. It validates a 128-byte image, provides built-in defaults for
-both physical variants, and exposes layer, binding, chord, and palette accessors.
-The byte format and palette are documented in `protocol/config-v1.md`. Run the
-codec checks with:
+The firmware uses the version 1 image codec in `src/config.c`. It validates a
+128-byte image, provides built-in defaults for both physical variants, and
+exposes layer, binding, chord, and palette accessors. The byte format and palette
+are documented in `protocol/config-v1.md`. Run the codec checks with:
 
 ```sh
 cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
@@ -27,16 +26,36 @@ cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
 /tmp/ch552-config-test
 ```
 
-The firmware now exposes the read-only HID protocol in `protocol/hid-v1.md`.
+The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
 At startup it reads and validates DataFlash, falling back to built-in defaults
-when flash is invalid. GET_INFO, GET_STATUS, READ_FLASH, and READ_ACTIVE are
-implemented. Run the protocol checks with:
+when flash is invalid. GET_INFO, GET_STATUS, READ_FLASH, READ_ACTIVE,
+BEGIN_WRITE, WRITE_CHUNK, COMMIT_WRITE, and ABORT_WRITE are implemented. Saves
+validate the full image, avoid programming unchanged bytes, write validity last,
+then verify actual DataFlash before applying the profile.
+
+Run the focused firmware checks with:
 
 ```sh
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
+  tests/config_test.c src/config.c -o /tmp/ch552-config-test
+/tmp/ch552-config-test
 cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
-  tests/protocol_test.c src/config.c src/protocol_firmware.c \
+  tests/protocol_test.c src/config.c src/protocol_firmware.c src/storage.c \
   -o /tmp/ch552-protocol-test
 /tmp/ch552-protocol-test
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
+  tests/actions_test.c src/config.c src/actions.c -o /tmp/ch552-actions-test
+/tmp/ch552-actions-test
+cc -std=c99 -Wall -Wextra -Werror -Wno-unknown-pragmas \
+  -Wno-pointer-to-int-cast -Wno-parentheses \
+  -I "$CH55XDUINO_PACKAGE_DIR/hardware/mcs51/0.0.25/variants/ch552" \
+  -I "$CH55XDUINO_PACKAGE_DIR/hardware/mcs51/0.0.25/cores/ch55xduino" \
+  tests/usb_test.c -o /tmp/ch552-usb-test
+/tmp/ch552-usb-test
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= \
+  -I tests/stubs -I src tests/input_test.c src/config.c src/actions.c \
+  -o /tmp/ch552-input-test
+/tmp/ch552-input-test
 ```
 
 The fixed action arrays and their blocking handlers have been removed. The
@@ -44,14 +63,7 @@ sketch now scans debounced buttons and complete encoder steps, while
 `src/actions.c` resolves bindings from the active image. The runtime handles
 keyboard and mouse holds, taps, toggles, scrolling, movement, consumer usages,
 strings, and layer actions. Short USB reports are queued, and temporary mouse
-movement and scrolling do not remain in later reports. Run the action checks
-with:
-
-```sh
-cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
-  tests/actions_test.c src/config.c src/actions.c -o /tmp/ch552-actions-test
-/tmp/ch552-actions-test
-```
+movement and scrolling do not remain in later reports.
 
 Chord recognition now uses the saved window (40 ms by default). Only physical
 keys participating in a configured chord wait; the encoder button is independent.
@@ -61,18 +73,18 @@ emit ordered press/release reports, even when the USB queue temporarily fills.
 Chord holds release on either key, and both keys must be up before retriggering.
 Layer changes resolve pending singles using their captured bindings.
 
-The action queue has eight entries. Rotation is accepted only when this queue
-is empty, reserving the other seven slots for one action per button.
-Excess rotation events are discarded. Repeated button taps can still exhaust
-all eight entries during a long string; in that case the newest transient action
-is discarded. Held outputs and their releases do not use this action queue.
-Long strings run one character at a time.
+The action queue has eight entries. Rotation is accepted only when the queue
+is empty, reserving seven entries for button actions. Saturated drop counters
+for button and rotation actions are available in GET_STATUS. Repeated button
+taps can fill the queue during a long string; the newest transient action is
+discarded and its counter advances. Held outputs and releases use a separate
+path. Long strings run one character at a time.
 
 The default build targets six keys. Set `board_build.physical_variant = 1` in
 `platformio.ini` for the three-key hardware, then run `pio run -t clean` and
-`pio run`. Both variants compile and pass host action checks. DataFlash upload,
-saving, and verification remain firmware work. USB discovery, control transfers,
-LED timing, and input behavior still need validation on physical hardware.
+`pio run`. Both variants compile and the codec, protocol, USB, action, and input
+host checks pass. USB discovery, control transfers, LED timing, DataFlash save,
+and input behavior still need validation on physical hardware.
 
 The build uses SDCC's small memory model for the sketch, core, and libraries.
 Temporary values use internal RAM; large persistent buffers remain explicitly
@@ -80,15 +92,12 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 13,566 of 14,336 code bytes (770 free), including
-chord recognition, compared with 14,124 before this phase. It uses 558 of 876
-application xRAM bytes (318 free), plus the separately reserved 148 USB bytes.
-The three-key build uses the same code size and 549 application xRAM bytes.
-Both maps leave 141 bytes for the internal stack, starting at `0x73`; runtime
-stack high-water usage has not yet been measured. A 128-byte staging buffer
-would leave 190 application xRAM bytes on the six-key board before upload
-bookkeeping, so a dedicated programming mode is not currently needed for RAM.
-Flash-code space still needs checking as persistence is added.
+The current image uses 14,210 of 14,336 code bytes (126 free) for both
+variants. The six-key build uses 631 of 876 application xRAM bytes (245 free);
+the three-key build uses 622 (254 free). Add 148 separately reserved USB bytes
+to the RAM total. The linker provides 139 bytes for the internal stack; runtime
+stack high-water usage still needs measurement on hardware. The 128-byte
+staging buffer fits in application xRAM without a separate programming mode.
 
 The project-local PlatformIO adapter may cache an earlier builder script, so
 clean before switching variants or after changing `src/*.c` files.

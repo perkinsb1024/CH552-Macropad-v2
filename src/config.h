@@ -46,8 +46,8 @@ uint8_t configKeyCount(void);
 uint8_t configChordWindowMs(void);
 uint8_t configLayerOptions(uint8_t layer);
 uint8_t configLedColor(uint8_t layer, uint8_t key);
-void configBinding(uint8_t layer, uint8_t input, uint8_t *first, uint8_t *second);
-uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, uint8_t *first, uint8_t *second);
+void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
+uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
 uint8_t configStringChar(uint8_t offset, uint8_t index);
 
 #endif
