@@ -279,3 +279,14 @@ uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     }
     return 0;
 }
+
+uint8_t configStringChar(uint8_t offset, uint8_t index) {
+    uint16_t position = (uint16_t)offset + index;
+    uint8_t start;
+    if (position >= activeConfig[4]) {
+        return 0;
+    }
+    start = 9 + layerSize(activeConfig[5] & 1) * configLayerCount() +
+            3 * ((activeConfig[5] >> 1) & 63);
+    return activeConfig[start + position];
+}

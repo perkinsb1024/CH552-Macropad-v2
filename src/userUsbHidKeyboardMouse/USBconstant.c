@@ -166,6 +166,18 @@ __code uint8_t ReportDescriptor[] = {
     0x09, 0x03,       //   USAGE (Configuration Reply)
     0x95, 0x1f,       //   REPORT_COUNT (31)
     0x81, 0x02,       //   INPUT (Data,Var,Abs)
+    0xc0,             // END_COLLECTION
+    0x05, 0x0c,       // USAGE_PAGE (Consumer)
+    0x09, 0x01,       // USAGE (Consumer Control)
+    0xa1, 0x01,       // COLLECTION (Application)
+    0x85, 0x05,       //   REPORT_ID (5)
+    0x15, 0x00,       //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x0f, //   LOGICAL_MAXIMUM (4095)
+    0x19, 0x00,       //   USAGE_MINIMUM (0)
+    0x2a, 0xff, 0x0f, //   USAGE_MAXIMUM (4095)
+    0x75, 0x10,       //   REPORT_SIZE (16)
+    0x95, 0x01,       //   REPORT_COUNT (1)
+    0x81, 0x00,       //   INPUT (Data,Ary,Abs)
     0xc0              // END_COLLECTION
 };
 

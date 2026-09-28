@@ -8,11 +8,6 @@
 #include "../protocol_firmware.h"
 #include "USBHIDKeyboardMouse.h"
 
-// Keyboard functions:
-
-void USB_EP2_IN();
-void USB_EP2_OUT();
-
 // clang-format off
 __xdata __at (EP0_ADDR) uint8_t Ep0Buffer[8];
 __xdata __at (EP1_ADDR) uint8_t Ep1Buffer[128];       //on page 47 of data sheet, the receive buffer need to be min(possible packet size+2,64), IN and OUT buffer, must be even address
@@ -32,8 +27,6 @@ volatile __xdata uint8_t UsbConfig;
 __code uint8_t *__data pDescr;
 
 volatile uint8_t usbMsgFlags = 0; // uint8_t usbMsgFlags copied from VUSB
-
-inline void NOP_Process(void) {}
 
 void USB_EP0_SETUP() {
   __data uint8_t len = USB_RX_LEN;
@@ -157,132 +150,23 @@ void USB_EP0_SETUP() {
         break;
       case USB_SET_INTERFACE:
         break;
-      case USB_CLEAR_FEATURE: // Clear Feature
-        if ((UsbSetupBuf->bRequestType & 0x1F) ==
-            USB_REQ_RECIP_DEVICE) // Clear the device featuee.
-        {
-          if ((((uint16_t)UsbSetupBuf->wValueH << 8) | UsbSetupBuf->wValueL) ==
-              0x01) {
-            if (ConfigurationDescriptor.Config.ConfigAttributes & 0x20) {
-              // wake up
-            } else {
-              len = 0xFF; // Failed
-            }
-          } else {
-            len = 0xFF; // Failed
-          }
-        } else if ((UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) ==
-                   USB_REQ_RECIP_ENDP) // endpoint
-        {
-          switch (UsbSetupBuf->wIndexL) {
-          case 0x84:
-            UEP4_CTRL =
-                UEP4_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) | UEP_T_RES_NAK;
-            break;
-          case 0x04:
-            UEP4_CTRL =
-                UEP4_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) | UEP_R_RES_ACK;
-            break;
-          case 0x83:
-            UEP3_CTRL =
-                UEP3_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) | UEP_T_RES_NAK;
-            break;
-          case 0x03:
-            UEP3_CTRL =
-                UEP3_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) | UEP_R_RES_ACK;
-            break;
-          case 0x82:
-            UEP2_CTRL =
-                UEP2_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) | UEP_T_RES_NAK;
-            break;
-          case 0x02:
-            UEP2_CTRL =
-                UEP2_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) | UEP_R_RES_ACK;
-            break;
-          case 0x81:
-            UEP1_CTRL =
-                UEP1_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) | UEP_T_RES_NAK;
-            break;
-          case 0x01:
-            UEP1_CTRL =
-                UEP1_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) | UEP_R_RES_ACK;
-            break;
-          default:
-            len = 0xFF; // Unsupported endpoint
-            break;
-          }
+      case USB_CLEAR_FEATURE:
+        if ((UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) !=
+                USB_REQ_RECIP_ENDP || UsbSetupBuf->wValueL != 0 ||
+            UsbSetupBuf->wValueH != 0 || UsbSetupBuf->wIndexH != 0) {
+          len = 0xFF;
+        } else if (UsbSetupBuf->wIndexL == 0x81) {
+          UEP1_CTRL = UEP1_CTRL & ~(bUEP_T_TOG | MASK_UEP_T_RES) |
+                      UEP_T_RES_NAK;
+        } else if (UsbSetupBuf->wIndexL == 0x01) {
+          UEP1_CTRL = UEP1_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) |
+                      UEP_R_RES_ACK;
         } else {
-          len = 0xFF; // Unsupported for non-endpoint
+          len = 0xFF;
         }
         break;
-      case USB_SET_FEATURE: // Set Feature
-        if ((UsbSetupBuf->bRequestType & 0x1F) ==
-            USB_REQ_RECIP_DEVICE) // Set  the device featuee.
-        {
-          if ((((uint16_t)UsbSetupBuf->wValueH << 8) | UsbSetupBuf->wValueL) ==
-              0x01) {
-            if (ConfigurationDescriptor.Config.ConfigAttributes & 0x20) {
-              // suspend
-
-              // while ( XBUS_AUX & bUART0_TX );    //Wait till uart0 sending
-              // complete SAFE_MOD = 0x55; SAFE_MOD = 0xAA; WAKE_CTRL =
-              // bWAK_BY_USB | bWAK_RXD0_LO | bWAK_RXD1_LO; //wake up by USB or
-              // RXD0/1 signal PCON |= PD; //sleep SAFE_MOD = 0x55; SAFE_MOD =
-              // 0xAA; WAKE_CTRL = 0x00;
-            } else {
-              len = 0xFF; // Failed
-            }
-          } else {
-            len = 0xFF; // Failed
-          }
-        } else if ((UsbSetupBuf->bRequestType & 0x1F) ==
-                   USB_REQ_RECIP_ENDP) // endpoint
-        {
-          if ((((uint16_t)UsbSetupBuf->wValueH << 8) | UsbSetupBuf->wValueL) ==
-              0x00) {
-            switch (((uint16_t)UsbSetupBuf->wIndexH << 8) |
-                    UsbSetupBuf->wIndexL) {
-            case 0x84:
-              UEP4_CTRL = UEP4_CTRL & (~bUEP_T_TOG) |
-                          UEP_T_RES_STALL; // Set endpoint4 IN STALL
-              break;
-            case 0x04:
-              UEP4_CTRL = UEP4_CTRL & (~bUEP_R_TOG) |
-                          UEP_R_RES_STALL; // Set endpoint4 OUT Stall
-              break;
-            case 0x83:
-              UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) |
-                          UEP_T_RES_STALL; // Set endpoint3 IN STALL
-              break;
-            case 0x03:
-              UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG) |
-                          UEP_R_RES_STALL; // Set endpoint3 OUT Stall
-              break;
-            case 0x82:
-              UEP2_CTRL = UEP2_CTRL & (~bUEP_T_TOG) |
-                          UEP_T_RES_STALL; // Set endpoint2 IN STALL
-              break;
-            case 0x02:
-              UEP2_CTRL = UEP2_CTRL & (~bUEP_R_TOG) |
-                          UEP_R_RES_STALL; // Set endpoint2 OUT Stall
-              break;
-            case 0x81:
-              UEP1_CTRL = UEP1_CTRL & (~bUEP_T_TOG) |
-                          UEP_T_RES_STALL; // Set endpoint1 IN STALL
-              break;
-            case 0x01:
-              UEP1_CTRL = UEP1_CTRL & (~bUEP_R_TOG) |
-                          UEP_R_RES_STALL; // Set endpoint1 OUT Stall
-            default:
-              len = 0xFF; // Failed
-              break;
-            }
-          } else {
-            len = 0xFF; // Failed
-          }
-        } else {
-          len = 0xFF; // Failed
-        }
+      case USB_SET_FEATURE:
+        len = 0xFF; // Remote wakeup is not advertised.
         break;
       case USB_GET_STATUS:
         Ep0Buffer[0] = 0x00;
@@ -381,100 +265,27 @@ void USB_EP0_OUT() {
 #pragma nooverlay
 void USBInterrupt(void) { // inline not really working in multiple files in SDCC
   if (UIF_TRANSFER) {
-    // Dispatch to service functions
-    __data uint8_t callIndex = USB_INT_ST & MASK_UIS_ENDP;
-    switch (USB_INT_ST & MASK_UIS_TOKEN) {
-    case UIS_TOKEN_OUT: { // SDCC will take IRAM if array of function pointer is
-                          // used.
-      switch (callIndex) {
-      case 0:
-        EP0_OUT_Callback();
-        break;
-      case 1:
-        EP1_OUT_Callback();
-        break;
-      case 2:
-        EP2_OUT_Callback();
-        break;
-      case 3:
-        EP3_OUT_Callback();
-        break;
-      case 4:
-        EP4_OUT_Callback();
-        break;
-      default:
-        break;
+    // Only endpoint 0 and the shared HID endpoint 1 are enabled.
+    if ((USB_INT_ST & MASK_UIS_ENDP) == 0) {
+      switch (USB_INT_ST & MASK_UIS_TOKEN) {
+        case UIS_TOKEN_SETUP:
+          USB_EP0_SETUP();
+          break;
+        case UIS_TOKEN_OUT:
+          USB_EP0_OUT();
+          break;
+        case UIS_TOKEN_IN:
+          USB_EP0_IN();
+          break;
       }
-    } break;
-    case UIS_TOKEN_SOF: { // SDCC will take IRAM if array of function pointer is
-                          // used.
-      switch (callIndex) {
-      case 0:
-        EP0_SOF_Callback();
-        break;
-      case 1:
-        EP1_SOF_Callback();
-        break;
-      case 2:
-        EP2_SOF_Callback();
-        break;
-      case 3:
-        EP3_SOF_Callback();
-        break;
-      case 4:
-        EP4_SOF_Callback();
-        break;
-      default:
-        break;
+    } else if ((USB_INT_ST & MASK_UIS_ENDP) == 1) {
+      if ((USB_INT_ST & MASK_UIS_TOKEN) == UIS_TOKEN_OUT) {
+        USB_EP1_OUT();
+      } else if ((USB_INT_ST & MASK_UIS_TOKEN) == UIS_TOKEN_IN) {
+        USB_EP1_IN();
       }
-    } break;
-    case UIS_TOKEN_IN: { // SDCC will take IRAM if array of function pointer is
-                         // used.
-      switch (callIndex) {
-      case 0:
-        EP0_IN_Callback();
-        break;
-      case 1:
-        EP1_IN_Callback();
-        break;
-      case 2:
-        EP2_IN_Callback();
-        break;
-      case 3:
-        EP3_IN_Callback();
-        break;
-      case 4:
-        EP4_IN_Callback();
-        break;
-      default:
-        break;
-      }
-    } break;
-    case UIS_TOKEN_SETUP: { // SDCC will take IRAM if array of function pointer
-                            // is used.
-      switch (callIndex) {
-      case 0:
-        EP0_SETUP_Callback();
-        break;
-      case 1:
-        EP1_SETUP_Callback();
-        break;
-      case 2:
-        EP2_SETUP_Callback();
-        break;
-      case 3:
-        EP3_SETUP_Callback();
-        break;
-      case 4:
-        EP4_SETUP_Callback();
-        break;
-      default:
-        break;
-      }
-    } break;
     }
-
-    UIF_TRANSFER = 0; // Clear interrupt flag
+    UIF_TRANSFER = 0;
   }
 
   // Device mode USB bus reset

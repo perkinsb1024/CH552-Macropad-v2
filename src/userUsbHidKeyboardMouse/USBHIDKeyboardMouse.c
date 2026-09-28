@@ -5,6 +5,7 @@
 #include "include/ch5xx_usb.h"
 #include "USBconstant.h"
 #include "USBhandler.h"
+#include "USBHIDKeyboardMouse.h"
 #include "../protocol_firmware.h"
 // clang-format on
 
@@ -154,28 +155,30 @@ __code uint8_t _asciimap[128] = {
     0             // DEL
 };
 
-typedef void (*pTaskFn)(void);
-
-void delayMicroseconds(uint16_t us);
+// Keep short input reports ahead of configuration replies.
+__xdata uint8_t reportQueue[8][9];
+__xdata uint8_t reportLength[8];
+__xdata uint8_t reportHead;
+__xdata uint8_t reportTail;
+__xdata uint8_t reportCount;
+__xdata uint8_t reportGeneration;
 
 void USBInit() {
-  USBDeviceCfg();         // Device mode configuration
-  USBDeviceEndPointCfg(); // Endpoint configuration
-  USBDeviceIntCfg();      // Interrupt configuration
+  USBDeviceCfg();
+  USBDeviceEndPointCfg();
+  USBDeviceIntCfg();
   UEP0_T_LEN = 0;
-  UEP1_T_LEN = 0; // Pre-use send length must be cleared
-  UEP2_T_LEN = 0;
+  UEP1_T_LEN = 0;
 }
 
 void USB_EP1_IN() {
   UEP1_T_LEN = 0;
-  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK; // Default NAK
-  UpPoint1_Busy = 0;                                       // Clear busy flag
+  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
+  UpPoint1_Busy = 0;
 }
 
 void USB_EP1_OUT() {
-  if (U_TOG_OK) // Discard unsynchronized packets
-  {
+  if (U_TOG_OK) {
     if (USB_RX_LEN == 2 && Ep1Buffer[0] == 1) {
       keyboardLedStatus = Ep1Buffer[1];
     } else if (USB_RX_LEN == 32 && Ep1Buffer[0] == 3) {
@@ -188,7 +191,7 @@ void USB_EP1_OUT() {
 
 uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply) {
   __data uint8_t i;
-  if (UsbConfig == 0 || UpPoint1_Busy) {
+  if (UsbConfig == 0 || UpPoint1_Busy || reportCount) {
     return 0;
   }
   for (i = 0; i < 32; i++) {
@@ -210,175 +213,86 @@ void USB_setKeyboardLedStatus(uint8_t leds) {
 
 void USB_EP1_reset(void) {
   UpPoint1_Busy = 0;
+  reportGeneration++;
+  USB_discardReports();
 }
 
-uint8_t USB_EP1_send(__data uint8_t reportID) {
-  if (UsbConfig == 0) {
+uint8_t USB_reportGeneration(void) {
+  return reportGeneration;
+}
+
+void USB_discardReports(void) {
+  reportCount = 0;
+  reportHead = 0;
+  reportTail = 0;
+}
+
+static uint8_t queueReport(uint8_t length) {
+  if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
+  reportLength[reportHead] = length;
+  reportHead = (reportHead + 1) & 7;
+  reportCount++;
+  return 1;
+}
 
-  __data uint16_t waitWriteCount = 0;
-
-  waitWriteCount = 0;
-  while (UpPoint1_Busy) { // wait for 250ms or give up
-    waitWriteCount++;
-    delayMicroseconds(5);
-    if (waitWriteCount >= 50000)
-      return 0;
+uint8_t USB_queueKeyboard(const __xdata uint8_t *keys) {
+  uint8_t i;
+  if (reportCount == 8 || UsbConfig == 0) {
+    return 0;
   }
-
-  if (reportID == 1) {
-    Ep1Buffer[64 + 0] = 1;
-    for (__data uint8_t i = 0; i < sizeof(HIDKey); i++) { // load data for
-                                                          // upload
-      Ep1Buffer[64 + 1 + i] = HIDKey[i];
-    }
-    UEP1_T_LEN = 1 + sizeof(HIDKey); // data length
-  } else if (reportID == 2) {
-    Ep1Buffer[64 + 0] = 2;
-    for (__data uint8_t i = 0; i < sizeof(HIDMouse);
-         i++) { // load data for upload
-      Ep1Buffer[64 + 1 + i] = ((uint8_t *)HIDMouse)[i];
-    }
-    UEP1_T_LEN = 1 + sizeof(HIDMouse); // data length
-  } else {
-    UEP1_T_LEN = 0;
+  reportQueue[reportHead][0] = 1;
+  for (i = 0; i < 8; i++) {
+    reportQueue[reportHead][i + 1] = keys[i];
   }
+  return queueReport(9);
+}
 
+uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+  if (reportCount == 8 || UsbConfig == 0) {
+    return 0;
+  }
+  reportQueue[reportHead][0] = 2;
+  reportQueue[reportHead][1] = buttons;
+  reportQueue[reportHead][2] = x;
+  reportQueue[reportHead][3] = y;
+  reportQueue[reportHead][4] = wheel;
+  return queueReport(5);
+}
+
+uint8_t USB_queueConsumer(uint16_t usage) {
+  if (reportCount == 8 || UsbConfig == 0) {
+    return 0;
+  }
+  reportQueue[reportHead][0] = 5;
+  reportQueue[reportHead][1] = usage;
+  reportQueue[reportHead][2] = usage >> 8;
+  return queueReport(3);
+}
+
+uint8_t USB_reportsPending(void) {
+  return reportCount || UpPoint1_Busy;
+}
+
+void USB_reportPoll(void) {
+  uint8_t i;
+  if (UsbConfig == 0 || UpPoint1_Busy || reportCount == 0) {
+    return;
+  }
+  for (i = 0; i < reportLength[reportTail]; i++) {
+    Ep1Buffer[64 + i] = reportQueue[reportTail][i];
+  }
+  UEP1_T_LEN = reportLength[reportTail];
+  reportTail = (reportTail + 1) & 7;
+  reportCount--;
   UpPoint1_Busy = 1;
-  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES |
-              UEP_T_RES_ACK; // upload data and respond ACK
-
-  return 1;
+  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
 }
 
-uint8_t Keyboard_press(__data uint8_t k) {
-  __data uint8_t i;
-  if (k >= 136) { // it's a non-printing key (not a modifier)
-    k = k - 136;
-  } else if (k >= 128) { // it's a modifier key
-    HIDKey[0] |= (1 << (k - 128));
-    k = 0;
-  } else { // it's a printing key
-    k = _asciimap[k];
-    if (!k) {
-      // setWriteError();
-      return 0;
-    }
-    if (k &
-        0x80) { // it's a capital letter or other character reached with shift
-      HIDKey[0] |= 0x02; // the left shift modifier
-      k &= 0x7F;
-    }
+uint8_t USB_asciiUsage(uint8_t c) {
+  if (c >= 128) {
+    return 0;
   }
-
-  // Add k to the key report only if it's not already present
-  // and if there is an empty slot.
-  if (HIDKey[2] != k && HIDKey[3] != k && HIDKey[4] != k && HIDKey[5] != k &&
-      HIDKey[6] != k && HIDKey[7] != k) {
-
-    for (i = 2; i < 8; i++) {
-      if (HIDKey[i] == 0x00) {
-        HIDKey[i] = k;
-        break;
-      }
-    }
-    if (i == 8) {
-      // setWriteError();
-      return 0;
-    }
-  }
-  USB_EP1_send(1);
-  return 1;
-}
-
-uint8_t Keyboard_release(__data uint8_t k) {
-  __data uint8_t i;
-  if (k >= 136) { // it's a non-printing key (not a modifier)
-    k = k - 136;
-  } else if (k >= 128) { // it's a modifier key
-    HIDKey[0] &= ~(1 << (k - 128));
-    k = 0;
-  } else { // it's a printing key
-    k = _asciimap[k];
-    if (!k) {
-      return 0;
-    }
-    if (k &
-        0x80) { // it's a capital letter or other character reached with shift
-      HIDKey[0] &= ~(0x02); // the left shift modifier
-      k &= 0x7F;
-    }
-  }
-
-  // Test the key report to see if k is present.  Clear it if it exists.
-  // Check all positions in case the key is present more than once (which it
-  // shouldn't be)
-  for (i = 2; i < 8; i++) {
-    if (0 != k && HIDKey[i] == k) {
-      HIDKey[i] = 0x00;
-    }
-  }
-
-  USB_EP1_send(1);
-  return 1;
-}
-
-void Keyboard_releaseAll(void) {
-  for (__data uint8_t i = 0; i < sizeof(HIDKey); i++) { // load data for upload
-    HIDKey[i] = 0;
-  }
-  USB_EP1_send(1);
-}
-
-uint8_t Keyboard_write(__data uint8_t c) {
-  __data uint8_t p = Keyboard_press(c); // Keydown
-  Keyboard_release(c);                  // Keyup
-  return p; // just return the result of press() since release() almost always
-            // returns 1
-}
-
-void Keyboard_print(const char *str) {
-  // using a generic pointer to handle pointer in any address space
-  __data uint8_t c;
-  while ((c = *str++)) {
-    Keyboard_write(c);
-  }
-}
-
-uint8_t Keyboard_getLEDStatus() {
-  // keyboardLedStatus is updated from USB_EP1_OUT
-  return keyboardLedStatus;
-}
-
-uint8_t Mouse_press(__data uint8_t k) {
-  HIDMouse[0] |= k;
-  USB_EP1_send(2);
-  return 1;
-}
-
-uint8_t Mouse_release(__data uint8_t k) {
-  HIDMouse[0] &= ~k;
-  USB_EP1_send(2);
-  return 1;
-}
-
-uint8_t Mouse_click(__data uint8_t k) {
-  Mouse_press(k);
-  delayMicroseconds(10000);
-  Mouse_release(k);
-  return 1;
-}
-
-uint8_t Mouse_move(__data int8_t x, __xdata int8_t y) {
-  HIDMouse[1] = x;
-  HIDMouse[2] = y;
-  USB_EP1_send(2);
-  return 1;
-}
-
-uint8_t Mouse_scroll(__data int8_t tilt) {
-  HIDMouse[3] = tilt;
-  USB_EP1_send(2);
-  return 1;
+  return _asciimap[c];
 }

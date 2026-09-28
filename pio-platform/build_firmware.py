@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+from configparser import ConfigParser
 from pathlib import Path
 
 
@@ -27,7 +28,13 @@ def locations():
     return hardware, sdcc, tools
 
 
-def build_firmware(project, build, clock, usb_ram, code_limit):
+def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=None):
+    if physical_variant is None:
+        settings = ConfigParser()
+        settings.read(project / "platformio.ini")
+        physical_variant = settings.get("env:ch552", "board_build.physical_variant", fallback="0")
+    if physical_variant not in ("0", "1"):
+        raise ValueError("physical_variant must be 0 or 1")
     hardware, sdcc_root, _ = locations()
     core = hardware / "cores/ch55xduino"
     variant = hardware / "variants/ch552"
@@ -45,6 +52,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit):
         "-c", "-Ddouble=float", "-DUSE_STDINT", "-D__PROG_TYPES_COMPAT__",
         "--model-large", "--int-long-reent", "-mmcs51", "-DCH552",
         f"-DF_CPU={clock}L", "-DF_EXT_OSC=0L", "-DARDUINO=10819",
+        f"-DPHYSICAL_VARIANT={physical_variant}",
         "-DARDUINO_ch55x", "-DARDUINO_ARCH_mcs51", f"-DUSER_USB_RAM={usb_ram}",
         f"-I{core}", f"-I{variant}", f"-I{ws2812}",
         f"-I{project}", f"-I{libroot / 'include'}",
@@ -71,6 +79,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit):
 
     sketch_rel = compile_source(sketch_source, "sketch")
     config_rel = compile_source(project / "src/config.c", "config")
+    actions_rel = compile_source(project / "src/actions.c", "actions")
     protocol_rel = compile_source(project / "src/protocol_firmware.c", "protocol_firmware")
     hid_sources = sorted((project / "src/userUsbHidKeyboardMouse").glob("*.c"))
     hid_rels = [compile_source(source, "hid_" + source.stem) for source in hid_sources]
@@ -92,7 +101,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit):
         f"-L{libroot / 'lib/large_int_calc_stack_auto'}",
         "--code-size", code_limit, "--xram-size", str(1024 - int(usb_ram)),
         "--xram-loc", usb_ram, "-mmcs51", "-DCH552",
-        sketch_rel, config_rel, protocol_rel, main_rel, *hid_rels, ws_rel, core_lib,
+        sketch_rel, config_rel, actions_rel, protocol_rel, main_rel, *hid_rels, ws_rel, core_lib,
         "-lmcs51", "-llibsdcc", "-lliblong", "-lliblonglong",
         "-llibint", "-llibfloat", "--out-fmt-ihx", "-o", firmware,
     )

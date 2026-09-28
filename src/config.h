@@ -12,6 +12,9 @@
 #ifndef PHYSICAL_VARIANT
 #define PHYSICAL_VARIANT CONFIG_SIX_KEYS
 #endif
+#if PHYSICAL_VARIANT != CONFIG_SIX_KEYS && PHYSICAL_VARIANT != CONFIG_THREE_KEYS
+#error "PHYSICAL_VARIANT must be 0 (six keys) or 1 (three keys)."
+#endif
 
 // Action numbers are part of the saved format.
 #define CONFIG_ACTION_NONE             0x0
@@ -45,5 +48,6 @@ uint8_t configLayerOptions(uint8_t layer);
 uint8_t configLedColor(uint8_t layer, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, uint8_t *first, uint8_t *second);
 uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, uint8_t *first, uint8_t *second);
+uint8_t configStringChar(uint8_t offset, uint8_t index);
 
 #endif

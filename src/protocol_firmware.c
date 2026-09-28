@@ -1,5 +1,6 @@
 #include "protocol_firmware.h"
 #include "config.h"
+#include "actions.h"
 
 uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply);
 void USB_EP1_receiveReady(void);
@@ -96,8 +97,8 @@ void protocolPoll(void) {
         protocolReply[18] = CONFIG_MAX_LAYERS;
         protocolReply[19] = CONFIG_SIZE;
         protocolReply[20] = 1; // Palette version
-        protocolReply[21] = 0; // Runtime actions are not active yet
-        protocolReply[22] = 0;
+        protocolReply[21] = 0xFF; // Supported actions 0–7
+        protocolReply[22] = 0xFF; // Supported actions 8–15
       }
     } else if (opcode == PROTOCOL_GET_STATUS) {
       if (offset || length) {
@@ -105,7 +106,7 @@ void protocolPoll(void) {
       } else {
         protocolReply[7] = 4;
         protocolReply[9] = flashValid;
-        protocolReply[10] = configStartupLayer();
+        protocolReply[10] = actionsLayer();
         protocolReply[11] = configStartupLayer();
         protocolReply[12] = 0; // No upload is active
       }

@@ -23,6 +23,10 @@ void USB_EP1_receiveReady(void) {
     ready++;
 }
 
+uint8_t actionsLayer(void) {
+    return configStartupLayer();
+}
+
 static void request(uint8_t opcode, uint8_t offset, uint8_t length) {
     uint8_t packet[32] = {3, 'U', 'M', 1};
     packet[4] = opcode;
@@ -44,7 +48,7 @@ int main(void) {
     assert(sent[8] == 0 && sent[7] == 14);
     assert(memcmp(sent + 9, "UMAC", 4) == 0);
     assert(sent[16] == 6 && sent[19] == 128);
-    assert(sent[21] == 0 && sent[22] == 0);
+    assert(sent[21] == 0xFF && sent[22] == 0xFF);
     request(2, 0, 0);
     assert(sent[8] == 0 && sent[9] == 1 && sent[10] == 0);
     request(4, 120, 8);

@@ -39,17 +39,35 @@ cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
 /tmp/ch552-protocol-test
 ```
 
-The current sketch still executes its original fixed bindings. DataFlash
-saving, layers, and the new action engine are subsequent firmware work. Do not
-upload a custom image to the pad yet: the loaded image can be read through HID
-but does not yet control the sketch's actions. USB discovery and control report
-handling still need validation on a physical device and desktop host.
+The fixed action arrays and their blocking handlers have been removed. The
+sketch now scans debounced buttons and complete encoder steps, while
+`src/actions.c` resolves bindings from the active image. The runtime handles
+keyboard and mouse holds, taps, toggles, scrolling, movement, consumer usages,
+strings, and layer actions. Short USB reports are queued, and temporary mouse
+movement and scrolling do not remain in later reports. Run the action checks
+with:
+
+```sh
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
+  tests/actions_test.c src/config.c src/actions.c -o /tmp/ch552-actions-test
+/tmp/ch552-actions-test
+```
+
+The default build targets six keys. Set `board_build.physical_variant = 1` in
+`platformio.ini` for the three-key hardware, then run `pio run -t clean` and
+`pio run`. The two variants were compiled separately; neither has been tested
+on a physical pad yet. Chord recognition and DataFlash saving remain firmware
+work. The action queue has eight entries and drops a new transient action when
+full; long strings run one character at a time. USB discovery and control
+report handling still need validation on a physical device and desktop host.
 
 The baseline build before this work used 118 bytes of internal data, 128 bytes
 of xRAM plus 130 initialized xRAM bytes, and a code image ending near `0x1C1F`.
-The current map uses 122 bytes of internal data, 422 bytes of xRAM plus 130
-initialized xRAM bytes, and its code image ends near `0x30AB`. The linker
-allows code through `0x37FF`; later milestones must continue checking the map.
+The current six-key map uses 122 bytes of internal data, 652 bytes of xRAM
+plus 29 initialized xRAM bytes, and its code image ends near `0x372C`. The
+linker allows code through `0x37FF`; later milestones must continue checking
+the map. The project-local PlatformIO adapter may cache an earlier builder
+script, so clean before switching variants or after changing `src/*.c` files.
 
 `platformio.ini` matches the Arduino settings: CH552 Board, 24 MHz internal
 clock at 5 V, user USB code with 148 bytes reserved, and P3.6 (D+) pull-up

@@ -28,6 +28,7 @@ def run_build(target, source, env):
         str(board.get("build.f_cpu")),
         str(board.get("build.usb_ram")),
         str(board.get("upload.maximum_size")),
+        str(board.get("build.physical_variant", 0)),
     ]
     return subprocess.call(command)
 

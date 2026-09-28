@@ -1,7 +1,8 @@
 # Macropad HID transport, version 1
 
 The USB device retains VID `0x1209` and PID `0xC55D`. Its product string is
-`Universal Macropad`. The existing keyboard and mouse reports use IDs 1 and 2.
+`Universal Macropad`. Keyboard and mouse reports use IDs 1 and 2; consumer
+controls use ID 5.
 A separate vendor-defined Application collection uses usage page `0xFF00`,
 usage `0x0001`. Report ID 3 carries 31-byte Output requests and report ID 4
 carries 31-byte Input replies. The USB interrupt endpoint packet size is 32
@@ -36,8 +37,8 @@ The current firmware phase implements these read-only opcodes:
 | 3 | READ_FLASH, offset and length 1–23 | Actual DataFlash bytes |
 | 4 | READ_ACTIVE, offset and length 1–23 | Active image bytes, including built-in defaults if flash is invalid |
 
-The action mask is zero during this read-only firmware phase. It will report
-the available action types once the new runtime engine is active.
+The action mask reports the sixteen implemented action types. Chord recognition
+is a separate profile feature and is not enabled in this firmware phase.
 
 Status codes are 0 success, 1 unsupported transport version, 2 unsupported
 opcode, 3 invalid offset or length, and 4 malformed packet. Error replies have
