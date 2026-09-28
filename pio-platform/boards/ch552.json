@@ -1,0 +1,17 @@
+{
+  "name": "CH552 Board",
+  "url": "https://github.com/DeqingSun/ch55xduino",
+  "vendor": "WCH",
+  "build": {
+    "mcu": "CH552",
+    "f_cpu": "24000000",
+    "usb_ram": 148
+  },
+  "upload": {
+    "maximum_size": 14336,
+    "maximum_ram_size": 876,
+    "bootcfg": 3,
+    "protocol": "usb",
+    "protocols": ["usb"]
+  }
+}

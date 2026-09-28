@@ -1,0 +1,9 @@
+{
+  "name": "ch55xduino-local",
+  "title": "CH55xDuino (local Arduino installation)",
+  "description": "Build CH55xDuino sketches with the installed Arduino core and SDCC tools",
+  "version": "0.1.0",
+  "homepage": "https://github.com/DeqingSun/ch55xduino",
+  "engines": { "platformio": ">=6.1.0" },
+  "packages": {}
+}
