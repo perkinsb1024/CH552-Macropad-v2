@@ -163,6 +163,94 @@ static void testRelativeLayer(void) {
     }
 }
 
+static void testOneShot(void) {
+    uint8_t type;
+    for (type = CONFIG_ACTION_SET_LAYER; type <= CONFIG_ACTION_RELATIVE_LAYER; type += 3) {
+        reset();
+        activeConfig[3] = 1;
+        activeConfig[9] = 0x10 | type;
+        activeConfig[10] = 1;
+        activeConfig[31 + 2] = CONFIG_ACTION_KEY_TAP;
+        activeConfig[31 + 3] = 4;
+        actionsInit();
+        actionsPress(0, 0);
+        actionsRelease(0);
+        assert(actionsLayer() == 1);
+        actionsPress(1, 1);
+        assert(actionsLayer() == 0);
+        actionsPoll(1);
+        assert(count == 1 && reports[0][0] == 1 && reports[0][3] == 4);
+        actionsPoll(10);
+        assert(count == 2 && reports[1][3] == 0);
+
+        reset();
+        activeConfig[3] = 1;
+        activeConfig[9] = 0x10 | type;
+        activeConfig[10] = 1;
+        activeConfig[31 + 14] = CONFIG_ACTION_SCROLL;
+        activeConfig[31 + 15] = 2;
+        actionsInit();
+        actionsPress(0, 0);
+        actionsRotate(1);
+        assert(actionsLayer() == 0);
+        actionsPoll(1);
+        actionsPoll(2);
+        assert(count == 2 && reports[0][0] == 2 && reports[0][4] == 1);
+        assert(reports[1][4] == 1);
+    }
+
+    reset();
+    activeConfig[3] = 1;
+    activeConfig[5] = 2; // One chord on layer 1: keys 1 and 2.
+    activeConfig[8] = 8; // 40 ms chord window.
+    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER;
+    activeConfig[10] = 1;
+    activeConfig[31 + 2] = CONFIG_ACTION_KEY_HOLD;
+    activeConfig[31 + 3] = 4;
+    activeConfig[53] = 0x15; // Pair (1, 2) on layer 1.
+    activeConfig[54] = CONFIG_ACTION_KEY_TAP;
+    activeConfig[55] = 7;
+    actionsInit();
+    actionsPress(0, 0);
+    actionsRelease(0);
+    actionsPress(1, 1);
+    actionsPoll(1);
+    assert(actionsLayer() == 1 && count == 0); // Keep waiting for the chord.
+    actionsPress(2, 2);
+    actionsPoll(2);
+    assert(actionsLayer() == 0 && count == 1 && reports[0][3] == 7);
+
+    // The same one-shot binding becomes a single held key on timeout.
+    actionsPoll(11);
+    actionsPoll(12);
+    actionsRelease(1);
+    actionsRelease(2);
+    count = 0;
+    actionsPress(0, 20);
+    actionsRelease(0);
+    actionsPress(1, 21);
+    actionsPoll(61);
+    assert(actionsLayer() == 0 && count == 1 && reports[0][3] == 4);
+    actionsRelease(1);
+    actionsPoll(62);
+    assert(count == 2 && reports[1][3] == 0);
+
+    // Encoder inputs resolve the earlier pending key first, then use the restored layer.
+    for (type = 0; type < 2; type++) {
+        actionsInit();
+        count = 0;
+        actionsPress(0, 0);
+        actionsRelease(0);
+        actionsPress(1, 1);
+        if (type) actionsRotate(1);
+        else actionsPress(6, 2);
+        actionsPoll(2);
+        assert(actionsLayer() == 0 && count == 2 && reports[0][3] == 4);
+        assert(reports[1][0] == 2);
+        assert(type ? reports[1][4] == 0xFF : reports[1][1] == 4);
+    }
+}
+
 static void testRolloverAndSequence(void) {
     uint8_t i;
     reset();
@@ -578,6 +666,7 @@ static void testClearAndOverflow(void) {
 }
 
 int main(void) {
+    testOneShot();
     testRelativeLayer();
     testRolloverBackpressure();
     testClearAndOverflow();

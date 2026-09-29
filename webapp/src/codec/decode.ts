@@ -45,7 +45,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
     case ActionCode.RelativeLayer: {
       const offset = toSigned(b1);
-      return nonZeroAux || offset < -3 || offset > 3 ? 'Invalid relative-layer offset' : { type: 'relativeLayer', offset };
+      return aux > 1 || offset < -3 || offset > 3 ? 'Invalid relative-layer offset' : aux ? { type: 'oneShotRelativeLayer', offset } : { type: 'relativeLayer', offset };
     }
     case ActionCode.KeyTap:
     case ActionCode.KeyHold:
@@ -79,9 +79,9 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     }
     case ActionCode.SetLayer:
     case ActionCode.MomentaryLayer: {
-      if (nonZeroAux || b1 >= layers) return `Layer ${b1 + 1} does not exist`;
+      if ((type === ActionCode.SetLayer ? aux > 1 : nonZeroAux) || b1 >= layers) return `Layer ${b1 + 1} does not exist`;
       if (rotation && type === ActionCode.MomentaryLayer) return 'Momentary layer bound to rotation';
-      const t = type === ActionCode.SetLayer ? 'setLayer' : 'momentaryLayer';
+      const t = type === ActionCode.SetLayer ? (aux ? 'oneShotSetLayer' : 'setLayer') : 'momentaryLayer';
       return { type: t, layer: b1 };
     }
     default:

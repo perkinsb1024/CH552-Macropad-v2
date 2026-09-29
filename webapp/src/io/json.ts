@@ -88,6 +88,7 @@ function action(v: unknown, what: string): Action {
     case 'none':
       return { type };
     case 'relativeLayer':
+    case 'oneShotRelativeLayer':
       return { type, offset: int(v.offset, `${what} offset`) };
     case 'keyTap':
     case 'keyHold':
@@ -107,6 +108,7 @@ function action(v: unknown, what: string): Action {
       if (typeof v.text !== 'string') throw new ImportError(`${what}: text must be a string.`);
       return { type, text: normalizeText(v.text) };
     case 'setLayer':
+    case 'oneShotSetLayer':
     case 'momentaryLayer':
       return { type, layer: int(v.layer, `${what} layer`) };
   }

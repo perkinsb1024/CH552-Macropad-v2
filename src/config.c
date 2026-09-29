@@ -72,7 +72,7 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
         case CONFIG_ACTION_NONE:
             return aux == 0 && param == 0;
         case CONFIG_ACTION_RELATIVE_LAYER:
-            return aux == 0 && (param <= 3 || param >= 0xFD);
+            return aux <= 1 && (param <= 3 || param >= 0xFD);
         case CONFIG_ACTION_KEY_TAP:
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
@@ -103,9 +103,9 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
             }
             return param == 0;
         case CONFIG_ACTION_SET_LAYER:
+            return aux <= 1 && param < layers;
         case CONFIG_ACTION_MOMENTARY_LAYER:
-            return aux == 0 && param < layers &&
-                   (!rotation || type != CONFIG_ACTION_MOMENTARY_LAYER);
+            return aux == 0 && param < layers && !rotation;
         default:
             return 0;
     }

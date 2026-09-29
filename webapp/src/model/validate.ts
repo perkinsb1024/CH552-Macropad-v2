@@ -21,6 +21,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'none':
       return null;
     case 'relativeLayer':
+    case 'oneShotRelativeLayer':
       return Number.isInteger(action.offset) && action.offset >= -3 && action.offset <= 3 ? null : 'Relative layer offset must be a whole number from -3 to 3.';
     case 'keyTap':
     case 'keyHold':
@@ -49,6 +50,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       return null;
     }
     case 'setLayer':
+    case 'oneShotSetLayer':
     case 'momentaryLayer':
       if (!Number.isInteger(action.layer) || action.layer < 0 || action.layer >= ctx.layerCount) return `Layer ${action.layer + 1} does not exist.`;
       return null;

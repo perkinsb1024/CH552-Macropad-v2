@@ -99,12 +99,22 @@ The action types are:
 | 7 | Scroll step | `0` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
 | 8 | Consumer tap | High four bits of the usage | Low eight bits of the usage |
 | 9 | String | `0` | String-pool offset |
-| A | Set layer | `0` | Layer index |
+| A | Set layer | `0` for persistent; `1` for one-shot | Layer index |
 | B | Momentary layer | `0` | Layer index |
 | C | Reserved | Rejected by current firmware | Rejected by current firmware |
-| D | Relative layer | `0` | Signed 8-bit offset from -3 to +3; added to the selected base-layer index with wraparound. `0` has no effect. |
+| D | Relative layer | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -3 to +3; added to the selected base-layer index with wraparound. `0` has no effect. |
 | E | Mouse X step | `0` | Signed 8-bit X delta from -127 to +127 |
 | F | Mouse Y step | `0` | Signed 8-bit Y delta from -127 to +127 |
+
+For action A and D, auxiliary value `0` changes the selected base layer
+persistently. Auxiliary value `1` makes that layer active for the next input
+action, then returns to the previously selected base layer. Other auxiliary
+values are invalid. Existing records with auxiliary value `0` retain their
+meaning; this extension does not change the configuration version.
+
+A chord-eligible press keeps the one-shot layer active through its chord window.
+The resolved single-key or chord action consumes it. The selected action runs
+to completion after returning, and held outputs retain their bindings until release.
 
 For scroll, X, and Y actions, interpret the parameter as a signed 8-bit
 two's-complement value. Thus `0x01`–`0x7F` mean +1 to +127, and

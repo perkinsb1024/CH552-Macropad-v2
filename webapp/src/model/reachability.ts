@@ -28,12 +28,12 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
   const edges = Array.from({ length: count }, () => new Set<number>());
   for (let source = 0; source < count; source++) {
     for (const action of actionsOnLayer(profile, source)) {
-      if (action.type === 'setLayer' && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
+      if ((action.type === 'setLayer' || action.type === 'oneShotSetLayer') && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
         edges[source]!.add(action.layer);
       } else if (action.type === 'momentaryLayer' && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
         edges[source]!.add(action.layer);
         edges[action.layer]!.add(source); // Releasing the momentary input returns to the prior layer.
-      } else if (action.type === 'relativeLayer' && Number.isInteger(action.offset) && action.offset >= -3 && action.offset <= 3) {
+      } else if ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && Number.isInteger(action.offset) && action.offset >= -3 && action.offset <= 3) {
         edges[source]!.add(relativeTargetLayer(source, action.offset, count));
       }
     }

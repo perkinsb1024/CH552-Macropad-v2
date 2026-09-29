@@ -27,8 +27,10 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
   { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
   { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
-  { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer while held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
+  { type: 'oneShotSetLayer', code: ActionCode.SetLayer, label: 'Switch to layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use a layer for the next action, then return to the previous layer.' },
   { type: 'relativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer', group: 'Layers', needsRelease: false, hint: 'Move forward or backward through layers, wrapping around. Zero has no effect.' },
+  { type: 'oneShotRelativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use the next relative layer for one action, then return to the previous layer.' },
+  { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer while held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
 ];
 
 const BY_TYPE = new Map(ACTION_DESCRIPTORS.map((d) => [d.type, d]));
@@ -52,6 +54,7 @@ export function blankAction(type: ActionType): Action {
     case 'none':
       return { type };
     case 'relativeLayer':
+    case 'oneShotRelativeLayer':
       return { type, offset: 1 };
     case 'keyTap':
     case 'keyHold':
@@ -70,6 +73,7 @@ export function blankAction(type: ActionType): Action {
     case 'string':
       return { type, text: '' };
     case 'setLayer':
+    case 'oneShotSetLayer':
     case 'momentaryLayer':
       return { type, layer: 0 };
   }
@@ -124,10 +128,14 @@ export function summarize(action: Action): string {
       return action.text.length ? `“${action.text.length > 14 ? action.text.slice(0, 13) + '…' : action.text}”` : 'Empty text';
     case 'setLayer':
       return `Layer ${action.layer + 1}`;
+    case 'oneShotSetLayer':
+      return `Layer ${action.layer + 1} (one-shot)`;
     case 'momentaryLayer':
       return `Layer ${action.layer + 1} (hold)`;
     case 'relativeLayer':
       return `Relative Layer: ${action.offset > 0 ? '+' : ''}${action.offset}`;
+    case 'oneShotRelativeLayer':
+      return `Relative Layer (one-shot): ${action.offset > 0 ? '+' : ''}${action.offset}`;
   }
 }
 

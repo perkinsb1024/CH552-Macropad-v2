@@ -12,8 +12,10 @@ export type Action =
   | { type: 'consumer'; usage: number }
   | { type: 'string'; text: string }
   | { type: 'setLayer'; layer: number }
+  | { type: 'oneShotSetLayer'; layer: number }
   | { type: 'momentaryLayer'; layer: number }
   | { type: 'relativeLayer'; offset: number }
+  | { type: 'oneShotRelativeLayer'; offset: number }
   | { type: 'mouseX'; delta: number }
   | { type: 'mouseY'; delta: number };
 

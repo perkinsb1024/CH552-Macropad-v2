@@ -81,10 +81,10 @@ Byte 0 holds the action type in its low nibble and auxiliary data in its high ni
 | 0x7 | Scroll step | Signed 8-bit vertical wheel-count magnitude; firmware emits one-count reports; auxiliary data zero |
 | 0x8 | Consumer-control tap | 12-bit usage: auxiliary nibble is high four bits, parameter is low eight bits |
 | 0x9 | String | Offset relative to string-pool start; auxiliary data zero |
-| 0xA | Set layer | Destination layer index; auxiliary data zero |
+| 0xA | Set layer | Destination layer index; auxiliary 0 persistent, 1 one-shot |
 | 0xB | Momentary layer | Destination layer while the physical button is held |
 | 0xC | Reserved | Rejected by current firmware; no action assigned |
-| 0xD | Relative layer | Auxiliary zero; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
+| 0xD | Relative layer | Auxiliary 0 persistent, 1 one-shot; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
 | 0xE | Mouse X step | Signed 8-bit relative X delta; auxiliary data zero |
 | 0xF | Mouse Y step | Signed 8-bit relative Y delta; auxiliary data zero |
 

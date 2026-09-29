@@ -215,7 +215,7 @@ export function Inspector() {
         </label>
       )}
 
-      {(action.type === 'setLayer' || action.type === 'momentaryLayer') && (
+      {(action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && (
         <label class="field">
           <span class="field-label">Target layer</span>
           <select value={action.layer} onChange={(e) => update({ ...action, layer: Number((e.target as HTMLSelectElement).value) })}>
@@ -225,7 +225,7 @@ export function Inspector() {
         </label>
       )}
 
-      {action.type === 'relativeLayer' && (
+      {(action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && (
         <label class="field">
           <span class="field-label">Relative offset</span>
           <select value={action.offset} onChange={(e) => update({ ...action, offset: Number((e.target as HTMLSelectElement).value) })}>

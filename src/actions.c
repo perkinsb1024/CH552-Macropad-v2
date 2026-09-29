@@ -29,6 +29,8 @@ __xdata uint8_t droppedButtons;
 __xdata uint8_t droppedRotation;
 __data uint8_t baseLayer;
 __data uint8_t effectiveLayer;
+// 0xFF means no one-shot layer is waiting to be consumed.
+__data uint8_t oneShotReturnLayer;
 __data uint8_t currentFirst;
 __xdata uint8_t currentSecond;
 __data uint8_t phase;
@@ -142,30 +144,39 @@ static uint8_t flushOutputs(void) {
   return 1;
 }
 
+static void updateLayer(void);
+
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
-  uint8_t type = actionType(first);
-  switch (type) {
+  if (oneShotReturnLayer != 0xFF) {
+    baseLayer = oneShotReturnLayer;
+    oneShotReturnLayer = 0xFF;
+    // Clear the old layer's playback before queuing the selected action.
+    updateLayer();
+  }
+  switch (actionType(first)) {
     case CONFIG_ACTION_NONE:
     case CONFIG_ACTION_KEY_HOLD:
     case CONFIG_ACTION_MOUSE_HOLD:
+    case CONFIG_ACTION_MOMENTARY_LAYER:
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
       latchedMouse[input] ^= second;
       break;
-    case CONFIG_ACTION_SET_LAYER:
-      baseLayer = second;
-      break;
-    case CONFIG_ACTION_MOMENTARY_LAYER:
-      break;
     case CONFIG_ACTION_RELATIVE_LAYER:
-      if (second) {
+      if (!second) break;
+      {
         uint8_t layers = configLayerCount();
         // Twelve is divisible by every supported layer count (1-4).
-        uint8_t next = baseLayer + second + 12;
-        while (next >= layers) next -= layers;
-        baseLayer = next;
+        second = baseLayer + second + 12;
+        while (second >= layers) second -= layers;
       }
+      // Fall through: both layer actions share the one-shot flag and assignment.
+    case CONFIG_ACTION_SET_LAYER:
+      if (first & 0x10) {
+        oneShotReturnLayer = baseLayer;
+      }
+      baseLayer = second;
       break;
     default:
       queueAction(first, second, rotation);
@@ -226,6 +237,7 @@ void actionsInit(void) {
   uint8_t i;
   baseLayer = configStartupLayer();
   effectiveLayer = baseLayer;
+  oneShotReturnLayer = 0xFF;
   pendingInput = 0;
   inputDown = 0;
   droppedButtons = 0;
@@ -298,7 +310,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   if (input < keys && chordPartner[input]) {
     return; // A chord cannot retrigger until both of its keys have been released.
   }
-  if (pendingInput && input < keys) {
+  if (pendingInput && (input < keys || oneShotReturnLayer != 0xFF)) {
     other = pendingInput - 1;
     if (input < keys && (uint16_t)(now - pendingSince) < configChordWindowMs() &&
         configChord(pendingLayer, other, input, &first, &second)) {
@@ -373,6 +385,10 @@ void actionsRotate(uint8_t clockwise) {
   uint8_t first;
   uint8_t second;
   uint8_t input = configKeyCount() + (clockwise ? 1 : 2);
+  if (pendingInput && oneShotReturnLayer != 0xFF) {
+    resolvePending();
+    updateLayer();
+  }
   configBinding(effectiveLayer, input, &first, &second);
   runAction(first, second, 1, clockwise ? 7 : 8);
   updateLayer();

@@ -20,6 +20,8 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
       return [code, 0];
     case 'relativeLayer':
       return [code, action.offset & 0xff];
+    case 'oneShotRelativeLayer':
+      return [code | 0x10, action.offset & 0xff];
     case 'keyTap':
     case 'keyHold':
       return [code | ((action.modifiers & 15) << 4), action.usage & 0xff];
@@ -42,6 +44,8 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
     case 'setLayer':
     case 'momentaryLayer':
       return [code, action.layer & 0xff];
+    case 'oneShotSetLayer':
+      return [code | 0x10, action.layer & 0xff];
   }
 }
 
