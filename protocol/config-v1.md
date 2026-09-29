@@ -58,9 +58,14 @@ nibble. Byte 1 holds the parameter. The types are:
 Rotation bindings cannot use keyboard hold, mouse hold, or momentary layer.
 Keyboard usages are zero or supported non-modifier HID usages `0x04`–`0x65`
 and `0x68`–`0x73`. A zero usage permits modifier-only actions. Palette version 2
-indices are RGB: `#FF0000`, `#FF6B5E`, `#FF4B00`, `#FFB400`, `#FFFF00`,
-`#00FF00`, `#40C820`, `#209696`, `#00FFFF`, `#0040FF`, `#0000FF`,
-`#8000FF`, `#FF00FF`, `#FF0064`, `#FFFFFF`, `#000000` (Off).
+uses these firmware RGB triplets by index: (255,0,0), (255,22,7), (255,16,0),
+(255,66,0), (255,124,0), (60,255,0), (100,200,20), (29,123,67),
+(0,255,200), (0,91,255), (0,0,255), (115,0,180), (255,0,194),
+(255,0,72), (255,255,255), and (0,0,0) (Off). The web editor uses separate
+hex colors chosen to make its on-screen swatches look as close as possible to
+the corresponding firmware colors; those display hex values are intentionally
+not exact conversions of the firmware RGB values. Only palette indices are
+stored in the configuration image.
 
 The editor's starter profile has two layers: Mac shortcuts followed by Windows
 shortcuts. Six-key pads use Undo, Copy, Paste, Redo, Cut, and Select all; three-

@@ -125,7 +125,7 @@ Keep configuration and transport buffers in explicitly assigned SDCC memory spac
 
 Add a configuration module that validates, loads, and accesses the serialized image. Read bindings directly from the selected layer record. Do not expand all four layers into separate arrays in RAM.
 
-Do not synthesize a fallback profile when flash is invalid. Keep keys, encoder actions, and LEDs inactive until the host uploads a valid profile, while preserving USB configuration access. Define a 16-entry firmware palette, including the six existing LED colors and ten documented additional choices. The web app must use the same indices and RGB values; palette entries are not uploaded.
+Do not synthesize a fallback profile when flash is invalid. Keep keys, encoder actions, and LEDs inactive until the host uploads a valid profile, while preserving USB configuration access. Define a 16-entry firmware palette, including the six existing LED colors and ten documented additional choices. The web app uses the same palette indices and appearance-matched display hex colors; its hex values may intentionally differ from the firmware RGB triplets. Palette entries are not uploaded.
 
 Replace the existing parallel configuration arrays with accessors into the active image. Replace the preprocessor test of INVERT_SCROLLING with a runtime check: the current bool variable cannot control a preprocessor #if expression.
 
