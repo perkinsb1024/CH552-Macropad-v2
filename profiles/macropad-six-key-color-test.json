@@ -1,0 +1,142 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 1,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "chordWindowMs": 40,
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "nextLayer"
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Red",
+        "Coral",
+        "Orange",
+        "Amber",
+        "Yellow",
+        "Green"
+      ],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 0,
+      "indicatorColor": 14
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "nextLayer"
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Leaf",
+        "Teal",
+        "Cyan",
+        "Azure",
+        "Blue",
+        "Violet"
+      ],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 0,
+      "indicatorColor": 14
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "nextLayer"
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Magenta",
+        "Rose",
+        "White",
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 3,
+      "indicatorColor": 14
+    }
+  ],
+  "chords": []
+}

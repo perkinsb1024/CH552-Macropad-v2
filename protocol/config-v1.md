@@ -22,7 +22,10 @@ once, 2 = blink once per layer number, 3 = dim background always on), and bits
 4–7 = palette index for the layer-indicator color. Holding the first three keys
 while powering up always enters the bootloader; this recovery gesture is not
 configurable. In dim-background mode, unpressed keys use a dimmed indicator
-color and pressed keys use their per-key color at full brightness. The unused
+color and pressed keys use their per-key color at full brightness. With palette
+version 3 firmware, indicator color index 15 in dim-background mode gives idle
+keys a dim rainbow that cycles smoothly across the keys. Index 15 remains Off
+for key colors and other indicator behaviors. The unused
 high LED nibble for three keys is zero.
 
 After the layers come the configured chords, each three bytes. The first byte
@@ -57,7 +60,7 @@ nibble. Byte 1 holds the parameter. The types are:
 
 Rotation bindings cannot use keyboard hold, mouse hold, or momentary layer.
 Keyboard usages are zero or supported non-modifier HID usages `0x04`–`0x65`
-and `0x68`–`0x73`. A zero usage permits modifier-only actions. Palette version 2
+and `0x68`–`0x73`. A zero usage permits modifier-only actions. Palette version 3
 uses these firmware RGB triplets by index: (255,0,0), (255,22,7), (255,16,0),
 (255,66,0), (255,124,0), (60,255,0), (100,200,20), (29,123,67),
 (0,255,200), (0,91,255), (0,0,255), (115,0,180), (255,0,194),

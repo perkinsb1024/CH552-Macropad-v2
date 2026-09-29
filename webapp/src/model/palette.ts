@@ -1,11 +1,11 @@
-/** Firmware palette version 2. Indices are stored on the device; RGB values are not. */
+/** Firmware palette version 3. Indices are stored on the device; RGB values are not. */
 export interface PaletteEntry {
   index: number;
   hex: string;
   name: string;
 }
 
-export const PALETTE_VERSION = 2;
+export const PALETTE_VERSION = 3;
 
 export const PALETTE: readonly PaletteEntry[] = [
   { index: 0, hex: '#FF0000', name: 'Red' },

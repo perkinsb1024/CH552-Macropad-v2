@@ -41,6 +41,13 @@ encoder middle-click and scroll directions, the encoder-hold bootloader option,
 and six original LED colors. A key's layer-selected LED color is shown while
 that key is held and clears on release.
 
+Palette version 3 adds a dim rainbow effect: choose **Dim background** for a
+layer's indicator behavior and **Rainbow** (palette index 15) for its indicator
+color. Idle LEDs cycle through colors with an offset across the keys; pressed
+keys still show their configured per-key colors. Index 15 remains Off for
+per-key colors and other indicator behaviors. On older firmware, this option
+still displays as Off in the editor.
+
 The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
 At startup it reads and validates DataFlash. If flash is invalid, the firmware
 keeps inputs inactive and blinks one red LED at 1 Hz until a valid profile is
@@ -109,9 +116,9 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,074 of 14,336 code bytes (262 free). It uses
-635 of 876 application xRAM bytes (241 free). Add 148 separately reserved USB
-bytes to the RAM total. The linker provides 138 bytes for the internal stack;
+The current six-key image uses 14,334 of 14,336 code bytes (2 free). It uses
+637 of 876 application xRAM bytes (239 free). Add 148 separately reserved USB
+bytes to the RAM total. The linker provides 132 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The
 128-byte staging buffer fits in application xRAM without a separate programming
 mode.

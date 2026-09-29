@@ -26,6 +26,7 @@
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_MS 100
+#define RAINBOW_FRAME_MS 10
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 __code int8_t encoderTransitions[16] = {
@@ -45,6 +46,8 @@ __xdata uint8_t lastLayer;
 __xdata uint8_t allowRunBootloader;
 __xdata uint8_t layerIndicatorPhasesLeft;
 __xdata uint8_t layerIndicatorDeadline;
+__xdata uint8_t rainbowChanged;
+__xdata uint8_t rainbowHue;
 __xdata uint16_t encoderPressedMs;
 #ifdef ENABLE_NO_CONFIG_LED_BLINK
 __xdata uint16_t noConfigBlinkChanged;
@@ -78,6 +81,8 @@ void updateLeds() {
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t blink = phases && !(phases & 1);
+  uint8_t rainbow = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON && palette == 15;
+  uint8_t hue = rainbowHue;
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
@@ -86,6 +91,7 @@ void updateLeds() {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
+    uint8_t wheel = hue;
     if (blink) {
       // Blink takes priority over per-key colors while the animation is on.
     } else if (stableState[i]) {
@@ -95,10 +101,29 @@ void updateLeds() {
     } else {
       off = 1;
     }
-    red = configPalette[color][0];
-    green = configPalette[color][1];
-    blue = configPalette[color][2];
-    if (dim) {
+    if (dim && rainbow) {
+      // Three linear color ramps form a dim, continuously cycling rainbow.
+      if (wheel < 85) {
+        red = (85 - wheel) >> 2;
+        green = wheel >> 2;
+        blue = 0;
+      } else if (wheel < 170) {
+        wheel -= 85;
+        red = 0;
+        green = (85 - wheel) >> 2;
+        blue = wheel >> 2;
+      } else {
+        wheel -= 170;
+        red = wheel >> 2;
+        green = 0;
+        blue = (85 - wheel) >> 2;
+      }
+    } else {
+      red = configPalette[color][0];
+      green = configPalette[color][1];
+      blue = configPalette[color][2];
+    }
+    if (dim && !rainbow) {
       red = dimIndicatorComponent(red);
       green = dimIndicatorComponent(green);
       blue = dimIndicatorComponent(blue);
@@ -110,6 +135,7 @@ void updateLeds() {
     ledPtr[1] = red;
     ledPtr[2] = blue;
     ledPtr += 3;
+    hue += 256 / NUM_LEDS;
   }
   displayLeds();
 }
@@ -233,6 +259,8 @@ void firmwareApplyConfig(void) {
   lastLayer = actionsLayer();
   allowRunBootloader = 0;
   layerIndicatorPhasesLeft = 0;
+  rainbowChanged = (uint8_t)now;
+  rainbowHue = 0;
   updateLeds();
 }
 
@@ -282,6 +310,12 @@ void loop() {
     startLayerIndicator(lastLayer, now);
   }
   serviceLayerIndicator(now);
+  if ((uint8_t)((uint8_t)now - rainbowChanged) >= RAINBOW_FRAME_MS &&
+      (configLayerOptions(actionsLayer()) & 0xFC) == 0xFC) {
+    rainbowChanged = (uint8_t)now;
+    rainbowHue++;
+    updateLeds();
+  }
   if (allowRunBootloader && stableState[configKeyCount()] &&
       (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
     enterBootloader();
