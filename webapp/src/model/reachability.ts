@@ -30,8 +30,6 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
       } else if (action.type === 'momentaryLayer' && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
         edges[source]!.add(action.layer);
         edges[action.layer]!.add(source); // Releasing the momentary input returns to the prior layer.
-      } else if (action.type === 'toggleLayer' && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
-        edges[source]!.add(action.layer === source ? startup : action.layer);
       } else if (action.type === 'nextLayer') {
         edges[source]!.add((source + 1) % count);
       }

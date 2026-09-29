@@ -50,18 +50,20 @@ nibble. Byte 1 holds the parameter. The types are:
 | 9 | String | Zero; string-pool offset |
 | A | Set layer | Zero; layer index |
 | B | Momentary layer | Zero; layer index |
-| C | Toggle layer | Zero; layer index |
+| C | Reserved | Rejected by current firmware |
 | D | Next layer | Both zero |
 | E | Mouse X step | Zero; signed X delta other than -128 |
 | F | Mouse Y step | Zero; signed Y delta other than -128 |
 
 Rotation bindings cannot use keyboard hold, mouse hold, or momentary layer.
 Keyboard usages are zero or supported non-modifier HID usages `0x04`–`0x65`
-and `0x68`–`0x73`. A zero usage permits modifier-only actions. The initial
-palette indices are RGB: `#FF2020`, `#40C820`, `#209696`, `#FF4B00`,
-`#0040FF`, `#FF0064`, `#000000`, `#FFFFFF`, `#FFB400`, `#FFFF00`,
-`#00FF00`, `#00FFFF`, `#0000FF`, `#8000FF`, `#FF00FF`, `#808080`.
+and `0x68`–`0x73`. A zero usage permits modifier-only actions. Palette version 2
+indices are RGB: `#FF0000`, `#FF6B5E`, `#FF4B00`, `#FFB400`, `#FFFF00`,
+`#00FF00`, `#40C820`, `#209696`, `#00FFFF`, `#0040FF`, `#0000FF`,
+`#8000FF`, `#FF00FF`, `#FF0064`, `#FFFFFF`, `#000000` (Off).
 
-The editor's six-key starter profile begins `4D 50 01 00 00 00 4A 86 08`.
-The three-key starter profile begins `4D 50 01 00 00 01 65 F0 08`. They use
-one layer, a 40 ms chord window, and no chords or strings.
+The editor's starter profile has two layers: Mac shortcuts followed by Windows
+shortcuts. Six-key pads use Undo, Copy, Paste, Redo, Cut, and Select all; three-
+key pads use the first three shortcuts on each layer. The layers use persistent
+white and yellow lighting respectively, and the profile has a 40 ms chord
+window with no chords or strings.

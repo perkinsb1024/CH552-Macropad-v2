@@ -240,7 +240,16 @@ select, input[type="number"], input[type="text"], input:not([type]), textarea {
   background: var(--bg-elev);
 }
 select {
-  appearance: auto;
+  appearance: none;
+  padding-right: 32px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--fg-muted) 50%),
+    linear-gradient(135deg, var(--fg-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
 }
 textarea {
   resize: vertical;
@@ -800,7 +809,8 @@ output {
 }
 .keycap.is-selected {
   border-color: var(--accent);
-  box-shadow: 0 4px 0 var(--key-edge), 0 0 0 3px var(--accent), 0 0 22px -4px var(--led-glow);
+  outline: 3px solid var(--accent);
+  outline-offset: 0;
 }
 .keycap.has-problem {
   border-color: var(--danger);

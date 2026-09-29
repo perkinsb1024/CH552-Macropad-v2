@@ -53,7 +53,7 @@ export function LayerOptions() {
                   aria-label={color.name}
                   aria-checked={layer.indicatorColor === color.index}
                   title={color.name}
-                  class={`swatch-btn ${layer.indicatorColor === color.index ? 'is-selected' : ''} ${color.index === 6 ? 'swatch-off' : ''}`}
+                  class={`swatch-btn ${layer.indicatorColor === color.index ? 'is-selected' : ''} ${color.index === 15 ? 'swatch-off' : ''}`}
                   style={`--c: ${color.hex}`}
                   onClick={() => updateProfile((d) => { d.layers[li]!.indicatorColor = color.index; })}
                 />

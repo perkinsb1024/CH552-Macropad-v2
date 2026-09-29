@@ -114,7 +114,7 @@ static uint8_t processRequest(void) {
       protocolReply[17] = protocolReply[16]; // LEDs per physical key
       protocolReply[18] = CONFIG_MAX_LAYERS;
       protocolReply[19] = CONFIG_SIZE;
-      protocolReply[20] = 1; // Palette version
+      protocolReply[20] = CONFIG_PALETTE_VERSION;
       protocolReply[21] = 0xFF;
       protocolReply[22] = 0xFF;
       break;

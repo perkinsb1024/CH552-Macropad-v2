@@ -279,7 +279,7 @@ export function addLayer(): void {
 export function layerReferences(p: Profile, layer: number): { actions: number; chords: number } {
   let actions = 0;
   const visit = (a: Action) => {
-    if ((a.type === 'setLayer' || a.type === 'momentaryLayer' || a.type === 'toggleLayer') && a.layer === layer) actions++;
+    if ((a.type === 'setLayer' || a.type === 'momentaryLayer') && a.layer === layer) actions++;
   };
   p.layers.forEach((l, li) => {
     if (li === layer) return;
@@ -302,7 +302,7 @@ export function removeLayer(layer: number): void {
     draft.layers.splice(layer, 1);
     draft.chords = draft.chords.filter((c) => c.layer !== layer).map((c) => (c.layer > layer ? { ...c, layer: c.layer - 1 } : c));
     const shift = (a: Action): Action => {
-      if ((a.type === 'setLayer' || a.type === 'momentaryLayer' || a.type === 'toggleLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
+      if ((a.type === 'setLayer' || a.type === 'momentaryLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
       return a;
     };
     for (const l of draft.layers) {

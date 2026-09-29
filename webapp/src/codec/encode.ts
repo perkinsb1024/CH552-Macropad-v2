@@ -40,7 +40,6 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
     }
     case 'setLayer':
     case 'momentaryLayer':
-    case 'toggleLayer':
       return [code, action.layer & 0xff];
   }
 }

@@ -11,16 +11,16 @@ import { ACTION_DESCRIPTORS, blankAction } from '../src/model/actions';
 
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
-describe('golden defaults from config-v1.md', () => {
+describe('default profile image headers', () => {
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 9))).toBe('4D 50 01 00 00 00 4A 86 08');
-    expect(imageCrc(image)).toBe(0x864a);
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 01 01 00 00');
+    expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 9))).toBe('4D 50 01 00 00 01 65 F0 08');
-    expect(imageCrc(image)).toBe(0xf065);
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 01 01 00 01');
+    expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
     for (const variant of [VARIANT_SIX_KEYS, VARIANT_THREE_KEYS] as Variant[]) {
@@ -55,7 +55,6 @@ describe('every action type round-trips', () => {
     { type: 'string', text: '' },
     { type: 'setLayer', layer: 1 },
     { type: 'momentaryLayer', layer: 2 },
-    { type: 'toggleLayer', layer: 3 },
     { type: 'nextLayer' },
     { type: 'mouseX', delta: -5 },
     { type: 'mouseY', delta: 100 },

@@ -1,8 +1,7 @@
-import { keyCount, type Variant, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_MIDDLE } from './constants';
+import { keyCount, type Variant, MOD_CTRL, MOD_GUI, MOD_SHIFT, LayerIndicatorBehavior } from './constants';
 import type { Action, Layer, Profile } from './types';
 
-const DEFAULT_USAGES = [0x29, 0x2c, 0x21, 0x50, 0x52, 0x4f];
-const DEFAULT_MODIFIERS = [0, MOD_ALT, MOD_CTRL | MOD_SHIFT | MOD_GUI, MOD_CTRL, MOD_CTRL, MOD_CTRL];
+const SHORTCUT_USAGES = [0x1d, 0x06, 0x19, 0x1d, 0x1b, 0x04]; // Z, C, V, Z, X, A
 
 export const NONE: Action = { type: 'none' };
 
@@ -14,29 +13,36 @@ export function emptyLayer(variant: Variant): Layer {
     encoderButton: NONE,
     clockwise: NONE,
     counterclockwise: NONE,
-    leds: Array.from({ length: keys }, () => 6),
+    leds: Array.from({ length: keys }, () => 15),
     bootloaderFromRun: false,
     indicatorBehavior: 0,
     indicatorColor: 0,
   };
 }
 
-/** Starter profile for new or unconfigured devices in the editor. */
-export function defaultLayer(variant: Variant): Layer {
+/** Starter Mac or Windows shortcut layer for a new profile. */
+function defaultLayer(variant: Variant, windows: boolean): Layer {
   const keys = keyCount(variant);
+  const modifier = windows ? MOD_CTRL : MOD_GUI;
+  const keyModifiers = [modifier, modifier, modifier, windows ? modifier : modifier | MOD_SHIFT, modifier, modifier];
+  const usages = [...SHORTCUT_USAGES];
+  if (windows) usages[3] = 0x1c; // Ctrl+Y is the conventional Windows redo.
   return {
-    keys: Array.from({ length: keys }, (_, i) => ({
-      type: 'keyTap',
-      usage: DEFAULT_USAGES[i]!,
-      modifiers: DEFAULT_MODIFIERS[i]!,
-    })),
-    encoderButton: { type: 'mouseClick', buttons: MOUSE_MIDDLE },
-    clockwise: { type: 'scroll', delta: -1 },
-    counterclockwise: { type: 'scroll', delta: 1 },
-    leds: Array.from({ length: keys }, (_, i) => i),
+    keys: Array.from({ length: keys }, (_, i) => {
+      const sourceIndex = keys === 6 ? (i + 3) % 6 : i;
+      return {
+        type: 'keyTap',
+        usage: usages[sourceIndex]!,
+        modifiers: keyModifiers[sourceIndex]!,
+      };
+    }),
+    encoderButton: { type: 'setLayer', layer: windows ? 0 : 1 },
+    clockwise: { type: 'scroll', delta: -2 },
+    counterclockwise: { type: 'scroll', delta: 2 },
+    leds: Array.from({ length: keys }, () => windows ? 4 : 14),
     bootloaderFromRun: true,
-    indicatorBehavior: 0,
-    indicatorColor: 0,
+    indicatorBehavior: LayerIndicatorBehavior.AlwaysOn,
+    indicatorColor: windows ? 4 : 14,
   };
 }
 
@@ -45,7 +51,7 @@ export function defaultProfile(variant: Variant): Profile {
     variant,
     startupLayer: 0,
     chordWindow: 8,
-    layers: [defaultLayer(variant)],
+    layers: [defaultLayer(variant, false), defaultLayer(variant, true)],
     chords: [],
   };
 }

@@ -26,7 +26,7 @@ export function DeviceView() {
     const action = layer.keys[index]!;
     const problem = actionProblem(action, { layerCount, rotation: false });
     const color = paletteHex(layer.leds[index]!);
-    const off = layer.leds[index] === 6;
+    const off = layer.leds[index] === 15;
     return (
       <button
         class={`keycap ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''}`}

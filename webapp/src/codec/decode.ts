@@ -76,11 +76,10 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       return { type: 'string', text };
     }
     case ActionCode.SetLayer:
-    case ActionCode.MomentaryLayer:
-    case ActionCode.ToggleLayer: {
+    case ActionCode.MomentaryLayer: {
       if (nonZeroAux || b1 >= layers) return `Layer ${b1 + 1} does not exist`;
       if (rotation && type === ActionCode.MomentaryLayer) return 'Momentary layer bound to rotation';
-      const t = type === ActionCode.SetLayer ? 'setLayer' : type === ActionCode.MomentaryLayer ? 'momentaryLayer' : 'toggleLayer';
+      const t = type === ActionCode.SetLayer ? 'setLayer' : 'momentaryLayer';
       return { type: t, layer: b1 };
     }
     default:

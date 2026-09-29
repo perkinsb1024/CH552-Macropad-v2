@@ -28,7 +28,6 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
   { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
   { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer while held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
-  { type: 'toggleLayer', code: ActionCode.ToggleLayer, label: 'Toggle layer', group: 'Layers', needsRelease: false, hint: 'Toggle between a layer and the startup layer.' },
   { type: 'nextLayer', code: ActionCode.NextLayer, label: 'Next layer', group: 'Layers', needsRelease: false, hint: 'Advance to the next layer, wrapping around.' },
 ];
 
@@ -67,7 +66,6 @@ export function blankAction(type: ActionType): Action {
       return { type, text: '' };
     case 'setLayer':
     case 'momentaryLayer':
-    case 'toggleLayer':
       return { type, layer: 0 };
   }
 }
@@ -123,8 +121,6 @@ export function summarize(action: Action): string {
       return `Layer ${action.layer + 1}`;
     case 'momentaryLayer':
       return `Layer ${action.layer + 1} (hold)`;
-    case 'toggleLayer':
-      return `Toggle L${action.layer + 1}`;
     case 'nextLayer':
       return 'Next layer';
   }

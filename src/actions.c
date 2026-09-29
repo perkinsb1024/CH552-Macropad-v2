@@ -161,9 +161,6 @@ static void runAction(uint8_t first, uint8_t second, uint8_t layer,
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
       break;
-    case CONFIG_ACTION_TOGGLE_LAYER:
-      baseLayer = baseLayer == second ? configStartupLayer() : second;
-      break;
     case CONFIG_ACTION_NEXT_LAYER:
       baseLayer++;
       if (baseLayer == configLayerCount()) {

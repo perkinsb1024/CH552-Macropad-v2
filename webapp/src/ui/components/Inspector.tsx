@@ -1,5 +1,5 @@
 import { useMemo } from 'preact/hooks';
-import { ACTION_DESCRIPTORS, blankAction, descriptor } from '../../model/actions';
+import { ACTION_DESCRIPTORS, blankAction } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, keyCount } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
@@ -71,14 +71,16 @@ function ScrollStep({ value, onChange }: { value: number; onChange(v: number): v
 }
 
 export function Inspector() {
-  const p = profile.value!;
+  const p = profile.value;
   const slot = selectedSlot.value;
-  const action = slot ? getAction(p, slot) : undefined;
+  const action = p && slot ? getAction(p, slot) : undefined;
   const rotation = slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
-  const layerCount = p.layers.length;
+  const layerCount = p?.layers.length ?? 0;
   const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation }) : null;
+  const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   const custom = useMemo(() => action?.type === 'consumer' && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
   const savedStrings = useMemo(() => {
+    if (!p) return [];
     const strings = new Set<string>();
     const add = (candidate: Action) => {
       if (candidate.type === 'string' && candidate.text.length > 0) strings.add(candidate.text);
@@ -93,7 +95,7 @@ export function Inspector() {
     return [...strings];
   }, [p]);
 
-  if (!slot || !action) {
+  if (!p || !slot || !action) {
     return (
       <section class="card inspector inspector-empty">
         <h2>Action editor</h2>
@@ -135,6 +137,7 @@ export function Inspector() {
       <label class="field">
         <span class="field-label">Action</span>
         <select value={action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
+          {!actionDescriptor && <option value={action.type} disabled>Unsupported saved action</option>}
           {GROUPS.map((group) => (
             <optgroup key={group} label={group}>
               {ACTION_DESCRIPTORS.filter((d) => d.group === group).map((d) => (
@@ -145,7 +148,7 @@ export function Inspector() {
             </optgroup>
           ))}
         </select>
-        <span class="hint">{descriptor(action.type).hint}</span>
+        <span class="hint">{actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
       </label>
 
       {(action.type === 'keyTap' || action.type === 'keyHold') && (
@@ -211,14 +214,13 @@ export function Inspector() {
         </label>
       )}
 
-      {(action.type === 'setLayer' || action.type === 'momentaryLayer' || action.type === 'toggleLayer') && (
+      {(action.type === 'setLayer' || action.type === 'momentaryLayer') && (
         <label class="field">
           <span class="field-label">Target layer</span>
           <select value={action.layer} onChange={(e) => update({ ...action, layer: Number((e.target as HTMLSelectElement).value) })}>
             {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}{i === slot.layer ? ' (this layer)' : ''}</option>)}
             {action.layer >= layerCount && <option value={action.layer}>Layer {action.layer + 1} (missing)</option>}
           </select>
-          {action.type === 'toggleLayer' && <span class="hint">Switches between the target and the startup layer ({layerName(p.startupLayer)}).</span>}
         </label>
       )}
 
@@ -233,7 +235,7 @@ export function Inspector() {
                 key={c.index}
                 role="radio"
                 aria-checked={layer.leds[keyIndex] === c.index}
-                class={`swatch-btn ${layer.leds[keyIndex] === c.index ? 'is-selected' : ''} ${c.index === 6 ? 'swatch-off' : ''}`}
+                class={`swatch-btn ${layer.leds[keyIndex] === c.index ? 'is-selected' : ''} ${c.index === 15 ? 'swatch-off' : ''}`}
                 style={`--c:${c.hex}`}
                 title={c.name}
                 onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds[keyIndex] = c.index; }, `led:${slot.layer}:${keyIndex}`)}

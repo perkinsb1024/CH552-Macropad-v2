@@ -104,7 +104,6 @@ function action(v: unknown, what: string): Action {
       return { type, text: normalizeText(v.text) };
     case 'setLayer':
     case 'momentaryLayer':
-    case 'toggleLayer':
       return { type, layer: int(v.layer, `${what} layer`) };
   }
 }

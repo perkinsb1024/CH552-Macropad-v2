@@ -2,12 +2,11 @@
 
 __xdata uint8_t activeConfig[CONFIG_SIZE];
 
-// The first six colors reproduce the original USER CONFIGURATION colors.
 __code uint8_t configPalette[16][3] = {
-    {255, 32, 32}, {64, 200, 32}, {32, 150, 150}, {255, 75, 0},
-    {0, 64, 255}, {255, 0, 100}, {0, 0, 0}, {255, 255, 255},
-    {255, 180, 0}, {255, 255, 0}, {0, 255, 0}, {0, 255, 255},
-    {0, 0, 255}, {128, 0, 255}, {255, 0, 255}, {128, 128, 128},
+    {255, 0, 0}, {255, 107, 94}, {255, 75, 0}, {255, 180, 0},
+    {255, 255, 0}, {0, 255, 0}, {64, 200, 32}, {32, 150, 150},
+    {0, 255, 255}, {0, 64, 255}, {0, 0, 255}, {128, 0, 255},
+    {255, 0, 255}, {255, 0, 100}, {255, 255, 255}, {0, 0, 0},
 };
 
 static uint8_t layerSize(uint8_t variant) {
@@ -92,7 +91,6 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
             return param == 0;
         case CONFIG_ACTION_SET_LAYER:
         case CONFIG_ACTION_MOMENTARY_LAYER:
-        case CONFIG_ACTION_TOGGLE_LAYER:
             return aux == 0 && param < layers &&
                    (!rotation || type != CONFIG_ACTION_MOMENTARY_LAYER);
         default:

@@ -16,8 +16,8 @@ static void testStarterFixture(uint8_t variant) {
     static const uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
     static const uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
     static const uint8_t colors[6][3] = {
-        {255, 32, 32}, {64, 200, 32}, {32, 150, 150},
-        {255, 75, 0}, {0, 64, 255}, {255, 0, 100},
+        {255, 0, 0}, {255, 107, 94}, {255, 75, 0},
+        {255, 180, 0}, {255, 255, 0}, {0, 255, 0},
     };
     uint8_t i;
     testLoadStarterProfile(variant);

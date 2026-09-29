@@ -11,7 +11,7 @@ describe('JSON import/export', () => {
     profile.chords.push({ layer: 1, keyA: 2, keyB: 4, action: { type: 'consumer', usage: 0xe9 } });
     const text = exportProfile(profile, { layerNames: ['Base', 'Media'] });
     const parsed = JSON.parse(text);
-    expect(parsed.layers[0].leds[0]).toBe('Red');
+    expect(parsed.layers[0].leds[0]).toBe('White');
     expect(parsed.chordWindowMs).toBe(40);
     const imported = importProfile(text);
     expect(imported.profile).toEqual(profile);

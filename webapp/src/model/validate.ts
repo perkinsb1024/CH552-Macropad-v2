@@ -3,7 +3,7 @@ import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
 import { computeCapacity } from './capacity';
-import { descriptor } from './actions';
+import { ACTION_DESCRIPTORS } from './actions';
 
 export interface ActionContext {
   layerCount: number;
@@ -13,8 +13,10 @@ export interface ActionContext {
 
 /** Returns a problem description, or null when the action is legal in this context. */
 export function actionProblem(action: Action, ctx: ActionContext): string | null {
-  const needsRelease = descriptor(action.type).needsRelease;
-  if (ctx.rotation && needsRelease) return `${descriptor(action.type).label} needs a release and cannot be bound to rotation.`;
+  const actionDescriptor = ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
+  if (!actionDescriptor) return 'This action type is no longer supported. Choose another action.';
+  const needsRelease = actionDescriptor.needsRelease;
+  if (ctx.rotation && needsRelease) return `${actionDescriptor.label} needs a release and cannot be bound to rotation.`;
   switch (action.type) {
     case 'none':
     case 'nextLayer':
@@ -47,7 +49,6 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     }
     case 'setLayer':
     case 'momentaryLayer':
-    case 'toggleLayer':
       if (!Number.isInteger(action.layer) || action.layer < 0 || action.layer >= ctx.layerCount) return `Layer ${action.layer + 1} does not exist.`;
       return null;
   }

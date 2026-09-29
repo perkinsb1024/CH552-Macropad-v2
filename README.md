@@ -109,12 +109,12 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current image uses 14,216 of 14,336 code bytes (120 free) for both
-variants. The six-key build uses 629 of 876 application xRAM bytes (247 free);
-the three-key build uses 620 (256 free). Add 148 separately reserved USB bytes
-to the RAM total. The linker provides 139 bytes for the internal stack; runtime
-stack high-water usage still needs measurement on hardware. The 128-byte
-staging buffer fits in application xRAM without a separate programming mode.
+The current six-key image uses 14,074 of 14,336 code bytes (262 free). It uses
+635 of 876 application xRAM bytes (241 free). Add 148 separately reserved USB
+bytes to the RAM total. The linker provides 138 bytes for the internal stack;
+runtime stack high-water usage still needs measurement on hardware. The
+128-byte staging buffer fits in application xRAM without a separate programming
+mode.
 
 The project-local PlatformIO adapter may cache an earlier builder script, so
 clean before switching variants or after changing `src/*.c` files.
