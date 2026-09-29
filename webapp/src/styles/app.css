@@ -803,6 +803,7 @@ output {
   display: flex;
   align-items: center;
   gap: 28px;
+  margin-bottom: 16px;
   padding: 26px 30px;
   border-radius: 22px;
   background: var(--device-body);
@@ -991,6 +992,7 @@ output {
 }
 .device-drag-hint {
   margin: 0 0 12px;
+  text-align: center;
 }
 /* ------------------------------------------------------------------------
    Chords

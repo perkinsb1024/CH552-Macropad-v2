@@ -37,7 +37,7 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
         modifiers: keyModifiers[sourceIndex]!,
       };
     }),
-    encoderButton: { type: 'setLayer', layer: windows ? 0 : 1 },
+    encoderButton: { type: 'relativeLayer', offset: 1 },
     clockwise: { type: 'scroll', delta: -2 },
     counterclockwise: { type: 'scroll', delta: 2 },
     leds: Array.from({ length: keys }, () => windows ? 4 : 14),

@@ -3,7 +3,7 @@
 | Image property | Value |
 | --- | --- |
 | Size | 128 bytes |
-| Unused bytes | Zero |
+| Unused bytes | `0` |
 | Multibyte values | Little endian |
 | Byte offsets and action codes | Fixed for format version 2 |
 
@@ -15,11 +15,11 @@ The nine-byte header is:
 | --- | --- | --- |
 | 0–1 | Marker | ASCII `MP` |
 | 2 | Format version | `2` |
-| 3 | Layers and startup layer | Bits 0–1: layer count minus one<br>Bits 2–3: startup layer<br>Bits 4–7: zero |
+| 3 | Layers and startup layer | Bits 0–1: layer count minus one<br>Bits 2–3: startup layer<br>Bits 4–7: `0` |
 | 4 | String-pool length | Number of used bytes in the string pool. |
-| 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: zero |
+| 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: `0` |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | Chord window | Bits 0–3: duration in 5 ms units<br>Bits 4–7: zero |
+| 8 | Chord window | Bits 0–3: duration in 5 ms units<br>Bits 4–7: `0` |
 
 | CRC16-CCITT-FALSE setting | Value |
 | --- | --- |
@@ -39,7 +39,7 @@ layer. Each binding uses the two-byte action encoding below.
 | Encoder button binding | 12–13 | 6–7 | Two-byte action |
 | Clockwise rotation binding | 14–15 | 8–9 | Two-byte action |
 | Counterclockwise rotation binding | 16–17 | 10–11 | Two-byte action |
-| Key LED palette indices | 18–20 | 12–13 | One nibble per key: even-numbered key in bits 0–3, odd-numbered key in bits 4–7. On three-key pads, bits 4–7 of byte 13 are zero. |
+| Key LED palette indices | 18–20 | 12–13 | One nibble per key: even-numbered key in bits 0–3, odd-numbered key in bits 4–7. On three-key pads, bits 4–7 of byte 13 are `0`. |
 | Layer options | 21 | 14 | Bit fields below |
 
 | Layer-option bits | Meaning | Encoding |
@@ -62,7 +62,7 @@ below are relative to the start of a chord.
 
 | Byte | Field | Encoding |
 | --- | --- | --- |
-| 0 | Chord identifier | Bits 0–3: physical-key pair index<br>Bits 4–5: layer index<br>Bits 6–7: zero |
+| 0 | Chord identifier | Bits 0–3: physical-key pair index<br>Bits 4–5: layer index<br>Bits 6–7: `0` |
 | 1–2 | Button action | Two-byte action encoding below |
 
 Pair indices enumerate `(0,1)`, `(0,2)`, and so on in lexicographic order.
@@ -84,24 +84,30 @@ string.
 
 The action types are:
 
-| Type | Action | Auxiliary data and parameter |
-| --- | --- | --- |
-| 0 | None | Both zero |
-| 1 | Keyboard tap | `Ctrl`/`Shift`/`Alt`/`GUI` mask; raw key usage |
-| 2 | Keyboard hold | Same encoding; button release ends hold |
-| 3 | Mouse click | Zero; button mask 1–7 |
-| 4 | Mouse double-click | Zero; button mask 1–7 |
-| 5 | Mouse hold | Zero; button mask 1–7 |
-| 6 | Mouse toggle | Zero; button mask 1–7 |
-| 7 | Scroll step | Zero; signed wheel-count magnitude other than -128. Firmware sends one-count reports for the requested magnitude. |
-| 8 | Consumer tap | High four and low eight bits of the usage |
-| 9 | String | Zero; string-pool offset |
-| A | Set layer | Zero; layer index |
-| B | Momentary layer | Zero; layer index |
-| C | Reserved | Rejected by current firmware |
-| D | Relative layer | Auxiliary zero; signed 8-bit parameter from -3 to +3. Add to the selected base-layer index and wrap by the configured layer count. Zero has no effect. |
-| E | Mouse X step | Zero; signed X delta other than -128 |
-| F | Mouse Y step | Zero; signed Y delta other than -128 |
+| Type | Action | Auxiliary data | Parameter |
+| --- | --- | --- | --- |
+| 0 | None | `0` | `0` |
+| 1 | Keyboard tap | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
+| 2 | Keyboard hold | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
+| 3 | Mouse click | `0` | Button mask 1–7 |
+| 4 | Mouse double-click | `0` | Button mask 1–7 |
+| 5 | Mouse hold | `0` | Button mask 1–7 |
+| 6 | Mouse toggle | `0` | Button mask 1–7 |
+| 7 | Scroll step | `0` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
+| 8 | Consumer tap | High four bits of the usage | Low eight bits of the usage |
+| 9 | String | `0` | String-pool offset |
+| A | Set layer | `0` | Layer index |
+| B | Momentary layer | `0` | Layer index |
+| C | Reserved | Rejected by current firmware | Rejected by current firmware |
+| D | Relative layer | `0` | Signed 8-bit offset from -3 to +3; added to the selected base-layer index with wraparound. `0` has no effect. |
+| E | Mouse X step | `0` | Signed 8-bit X delta from -127 to +127 |
+| F | Mouse Y step | `0` | Signed 8-bit Y delta from -127 to +127 |
+
+For scroll, X, and Y actions, interpret the parameter as a signed 8-bit
+two's-complement value. Thus `0x01`–`0x7F` mean +1 to +127, and
+`0x81`–`0xFF` mean -127 to -1. `0x00` means zero movement. Reject `0x80`,
+which represents -128 and is excluded so direction reversal can safely
+negate any accepted delta.
 
 Rotation bindings cannot use *Keyboard hold*, *Mouse hold*, or *Momentary layer*.
 For keyboard actions, the parameter byte is an HID key usage: `0` means no

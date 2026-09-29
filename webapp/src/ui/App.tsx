@@ -50,7 +50,7 @@ export function App() {
             <section class="card card-device">
               <LayerTabs />
               <DeviceView />
-              <p class="hint device-drag-hint">Drop in the center to swap; drop at an edge or between items to insert and push. Hold actions cannot move to encoder rotation.</p>
+              <p class="hint device-drag-hint">Drag actions onto an existing action to swap; drag to an edge or between items to insert and reorder. Hold actions cannot be moved to encoder rotation.</p>
               <ul class="legend device-legend">
                 <li><span class="swatch swatch-selected" /> Selected input</li>
                 <li><span class="swatch swatch-problem" /> Needs attention before saving</li>

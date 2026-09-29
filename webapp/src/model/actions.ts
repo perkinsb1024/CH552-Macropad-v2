@@ -127,7 +127,7 @@ export function summarize(action: Action): string {
     case 'momentaryLayer':
       return `Layer ${action.layer + 1} (hold)`;
     case 'relativeLayer':
-      return `Relative ${action.offset > 0 ? '+' : ''}${action.offset}`;
+      return `Relative Layer: ${action.offset > 0 ? '+' : ''}${action.offset}`;
   }
 }
 

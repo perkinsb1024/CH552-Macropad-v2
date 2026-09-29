@@ -10,7 +10,7 @@ import { getAction, layerName, profile, rememberedAction, removeChord, selectedS
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 
-const GROUPS = ['Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'None'] as const;
+const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers'] as const;
 
 function MouseButtons({ value, onChange }: { value: number; onChange(v: number): void }) {
   const buttons = [

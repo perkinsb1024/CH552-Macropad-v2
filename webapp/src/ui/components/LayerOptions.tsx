@@ -73,7 +73,7 @@ export function LayerOptions() {
               checked={layer.indicatorFullBrightness}
               onChange={(e) => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = (e.target as HTMLInputElement).checked; })}
             />
-            <span>Full brightness for idle LEDs</span>
+            <span>Full brightness for always-on LEDs</span>
           </label>
         )}
       </div>
