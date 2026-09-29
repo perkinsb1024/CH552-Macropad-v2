@@ -49,6 +49,9 @@ export const selectedSlot = signal<Slot | null>(null);
 export const draggedSlot = signal<Slot | null>(null);
 /** The layer currently being moved with native drag and drop. */
 export const draggedLayer = signal<number | null>(null);
+export type DropPosition = 'before' | 'after' | 'swap';
+export const slotDrop = signal<{ slot: Slot; position: DropPosition; rowBoundary?: boolean } | null>(null);
+export const layerDrop = signal<{ index: number; position: DropPosition } | null>(null);
 
 interface EditorSnapshot { profile: Profile; meta: LocalMetadata }
 interface HistoryEntry extends EditorSnapshot { key?: string; at: number }
@@ -228,6 +231,46 @@ function isRotationSlot(slot: Slot): boolean {
   return slot.kind === 'clockwise' || slot.kind === 'counterclockwise';
 }
 
+function slotOrder(p: Profile, slot: Slot): Slot[] | null {
+  if (!p.layers[slot.layer]) return null;
+  if (slot.kind === 'key') return p.layers[slot.layer]!.keys.map((_, index) => ({ kind: 'key', layer: slot.layer, index }));
+  if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
+    .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB)
+    .map((chord) => ({ kind: 'chord', layer: slot.layer, keyA: chord.keyA, keyB: chord.keyB }));
+  return [
+    { kind: 'clockwise', layer: slot.layer },
+    { kind: 'encoderButton', layer: slot.layer },
+    { kind: 'counterclockwise', layer: slot.layer },
+  ];
+}
+
+function insertionOrder<T>(items: T[], source: number, target: number, position: 'before' | 'after'): T[] {
+  const next = [...items];
+  const [moved] = next.splice(source, 1);
+  next.splice(target + (position === 'after' ? 1 : 0) - (source < target + (position === 'after' ? 1 : 0) ? 1 : 0), 0, moved!);
+  return next;
+}
+
+function insertionIndex(source: number, target: number, position: 'before' | 'after'): number {
+  const boundary = target + (position === 'after' ? 1 : 0);
+  return boundary - (source < boundary ? 1 : 0);
+}
+
+function putAction(p: Profile, slot: Slot, action: Action): void {
+  const layer = p.layers[slot.layer];
+  if (!layer) return;
+  switch (slot.kind) {
+    case 'key': layer.keys[slot.index] = action; break;
+    case 'encoderButton': layer.encoderButton = action; break;
+    case 'clockwise': layer.clockwise = action; break;
+    case 'counterclockwise': layer.counterclockwise = action; break;
+    case 'chord': {
+      const chord = p.chords.find((c) => c.layer === slot.layer && c.keyA === slot.keyA && c.keyB === slot.keyB);
+      if (chord) chord.action = action;
+    }
+  }
+}
+
 /** Whether moving either binding to the other input would be valid. */
 export function canSwapSlots(source: Slot, target: Slot): boolean {
   const p = profile.value;
@@ -239,6 +282,38 @@ export function canSwapSlots(source: Slot, target: Slot): boolean {
     !(isRotationSlot(source) && descriptor(targetAction.type).needsRelease);
 }
 
+export function canInsertSlot(source: Slot, target: Slot, position: 'before' | 'after'): boolean {
+  const p = profile.value;
+  if (!p || source.layer !== target.layer || source.kind !== target.kind &&
+      !(source.kind !== 'key' && source.kind !== 'chord' && target.kind !== 'key' && target.kind !== 'chord')) return false;
+  const order = slotOrder(p, source);
+  if (!order) return false;
+  const sourceIndex = order.findIndex((slot) => sameSlot(slot, source));
+  const targetIndex = order.findIndex((slot) => sameSlot(slot, target));
+  if (sourceIndex < 0 || targetIndex < 0 || insertionIndex(sourceIndex, targetIndex, position) === sourceIndex) return false;
+  const actions = order.map((slot) => getAction(p, slot));
+  if (actions.some((action) => !action)) return false;
+  return insertionOrder(actions as Action[], sourceIndex, targetIndex, position)
+    .every((action, index) => !isRotationSlot(order[index]!) || !descriptor(action.type).needsRelease);
+}
+
+export function insertSlotAction(source: Slot, target: Slot, position: 'before' | 'after'): void {
+  if (!canInsertSlot(source, target, position)) return;
+  const order = slotOrder(profile.value!, source)!;
+  const sourceIndex = order.findIndex((slot) => sameSlot(slot, source));
+  const targetIndex = order.findIndex((slot) => sameSlot(slot, target));
+  const destination = insertionIndex(sourceIndex, targetIndex, position);
+  updateProfile((draft) => {
+    const actions = insertionOrder(order.map((slot) => getAction(draft, slot)!), sourceIndex, targetIndex, position);
+    order.forEach((slot, index) => putAction(draft, slot, actions[index]!));
+    if (source.kind === 'key') {
+      const layer = draft.layers[source.layer]!;
+      layer.leds = insertionOrder(layer.leds, sourceIndex, targetIndex, position);
+    }
+  });
+  selectedSlot.value = order[destination]!;
+}
+
 /** Swaps the actions on two inputs. Key-to-key moves include their LED colors. */
 export function swapSlotActions(source: Slot, target: Slot): void {
   if (!canSwapSlots(source, target)) return;
@@ -247,23 +322,8 @@ export function swapSlotActions(source: Slot, target: Slot): void {
     const sourceAction = get(source);
     const targetAction = get(target);
     if (!sourceAction || !targetAction) return;
-    const put = (slot: Slot, action: Action) => {
-      const layer = draft.layers[slot.layer];
-      if (!layer) return;
-      switch (slot.kind) {
-        case 'key': layer.keys[slot.index] = action; break;
-        case 'encoderButton': layer.encoderButton = action; break;
-        case 'clockwise': layer.clockwise = action; break;
-        case 'counterclockwise': layer.counterclockwise = action; break;
-        case 'chord': {
-          const chord = draft.chords.find((c) => c.layer === slot.layer && c.keyA === slot.keyA && c.keyB === slot.keyB);
-          if (chord) chord.action = action;
-          break;
-        }
-      }
-    };
-    put(source, targetAction);
-    put(target, sourceAction);
+    putAction(draft, source, targetAction);
+    putAction(draft, target, sourceAction);
     if (source.kind === 'key' && target.kind === 'key') {
       const sourceLayer = draft.layers[source.layer]!;
       const targetLayer = draft.layers[target.layer]!;
@@ -273,13 +333,19 @@ export function swapSlotActions(source: Slot, target: Slot): void {
   selectedSlot.value = target;
 }
 
-/** Swaps two layer configurations while keeping layer-targeting actions attached to those configurations. */
-export function swapLayers(source: number, target: number): void {
+function layerOrder(count: number, source: number, target: number, position: 'before' | 'after'): number[] {
+  return insertionOrder(Array.from({ length: count }, (_, index) => index), source, target, position);
+}
+
+function applyLayerOrder(order: number[]): void {
   const p = profile.value;
-  if (!p || source === target || !p.layers[source] || !p.layers[target]) return;
-  const remap = (layer: number) => layer === source ? target : layer === target ? source : layer;
+  if (!p || order.every((oldIndex, newIndex) => oldIndex === newIndex)) return;
+  const remap = (oldIndex: number) => {
+    const mapped = order.indexOf(oldIndex);
+    return mapped < 0 ? oldIndex : mapped;
+  };
   updateProfile((draft) => {
-    [draft.layers[source], draft.layers[target]] = [draft.layers[target]!, draft.layers[source]!];
+    draft.layers = order.map((oldIndex) => draft.layers[oldIndex]!);
     draft.chords = draft.chords.map((chord) => ({ ...chord, layer: remap(chord.layer) }));
     const updateTarget = (action: Action): Action => (
       action.type === 'setLayer' || action.type === 'momentaryLayer'
@@ -297,6 +363,25 @@ export function swapLayers(source: number, target: number): void {
   });
   selectedLayer.value = remap(selectedLayer.value);
   if (selectedSlot.value) selectedSlot.value = { ...selectedSlot.value, layer: remap(selectedSlot.value.layer) } as Slot;
+}
+
+export function canInsertLayer(source: number, target: number, position: 'before' | 'after'): boolean {
+  const p = profile.value;
+  return !!p && !!p.layers[source] && !!p.layers[target] && insertionIndex(source, target, position) !== source;
+}
+
+export function insertLayer(source: number, target: number, position: 'before' | 'after'): void {
+  if (!canInsertLayer(source, target, position)) return;
+  applyLayerOrder(layerOrder(profile.value!.layers.length, source, target, position));
+}
+
+/** Swaps two layer configurations while keeping layer-targeting actions attached to those configurations. */
+export function swapLayers(source: number, target: number): void {
+  const p = profile.value;
+  if (!p || source === target || !p.layers[source] || !p.layers[target]) return;
+  const order = Array.from({ length: p.layers.length }, (_, index) => index);
+  [order[source], order[target]] = [order[target]!, order[source]!];
+  applyLayerOrder(order);
 }
 
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';

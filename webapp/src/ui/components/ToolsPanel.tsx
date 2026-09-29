@@ -23,7 +23,7 @@ export function ToolsPanel() {
         }} />
         <button class="btn" onClick={resetToDefaults} disabled={!profile.value}><IconRefresh /> Reset to starter profile</button>
       </div>
-      <p class="hint">Exports include readable action names and any layer names. Layer names live in this browser only and never use device storage.</p>
+      <p class="hint">Exports include readable action names. Layers are numbered in their current order.</p>
 
       {status && (
         <dl class="status-grid">

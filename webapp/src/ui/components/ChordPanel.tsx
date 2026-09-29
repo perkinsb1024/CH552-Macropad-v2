@@ -4,7 +4,8 @@ import { allPairs } from '../../model/pairs';
 import { summarize } from '../../model/actions';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { addChord, canSwapSlots, draggedSlot, profile, removeChord, selectedLayer, selectedSlot, swapSlotActions } from '../store';
+import { addChord, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, slotDrop, swapSlotActions } from '../store';
+import { dropPosition } from '../drag';
 import { IconPlus, IconTrash } from './Icons';
 
 export function ChordPanel() {
@@ -16,6 +17,23 @@ export function ChordPanel() {
   const available = allPairs(keys).filter(([a, b]) => !used.has(`${a}-${b}`));
   const [pick, setPick] = useState('');
   const first = available[0];
+  const gapTarget = (event: DragEvent): { slot: Slot; position: 'before' | 'after' } | null => {
+    let closest: { index: number; position: 'before' | 'after'; distance: number } | null = null;
+    const buttons = Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.chord-main'));
+    buttons.forEach((button, index) => {
+      const rect = button.getBoundingClientRect();
+      for (const position of ['before', 'after'] as const) {
+        const y = position === 'before' ? rect.top : rect.bottom;
+        const x = Math.max(rect.left, Math.min(event.clientX, rect.right));
+        const distance = Math.hypot(event.clientX - x, event.clientY - y);
+        if (!closest || distance < closest.distance) closest = { index, position, distance };
+      }
+    });
+    if (!closest) return null;
+    const { index, position } = closest as { index: number; position: 'before' | 'after' };
+    const chord = chords[index]!;
+    return { slot: { kind: 'chord', layer: li, keyA: chord.keyA, keyB: chord.keyB }, position };
+  };
 
   return (
     <section class="card">
@@ -25,19 +43,55 @@ export function ChordPanel() {
       </header>
       {chords.length === 0 && <p class="empty">No chords on this layer. Each chord uses 3 bytes of device storage.</p>}
       {chords.length > 0 && (
-        <ul class="chord-list">
+        <ul class="chord-list" onDragOver={(event) => {
+          if ((event.target as HTMLElement).closest('.chord')) return;
+          const source = draggedSlot.value;
+          const target = gapTarget(event);
+          if (source && target && canInsertSlot(source, target.slot, target.position)) {
+            event.preventDefault();
+            slotDrop.value = target;
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+          } else slotDrop.value = null;
+        }} onDrop={(event) => {
+          if ((event.target as HTMLElement).closest('.chord')) return;
+          event.preventDefault();
+          const source = draggedSlot.value;
+          const target = gapTarget(event);
+          if (source && target) insertSlotAction(source, target.slot, target.position);
+          draggedSlot.value = null;
+          slotDrop.value = null;
+        }}>
           {chords.map((c) => {
             const slot: Slot = { kind: 'chord', layer: li, keyA: c.keyA, keyB: c.keyB };
             const selected = JSON.stringify(selectedSlot.value) === JSON.stringify(slot);
             const problem = actionProblem(c.action, { layerCount: p.layers.length, rotation: false });
             const dragged = draggedSlot.value;
-            const invalidDrop = !!dragged && !canSwapSlots(dragged, slot);
-            const validDrop = !!dragged && !invalidDrop && JSON.stringify(dragged) !== JSON.stringify(slot);
+            const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
+            const intent = slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : null;
             return (
-              <li key={`${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${validDrop ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
-                <button class="chord-main" onClick={() => { selectedSlot.value = slot; }} draggable onDragStart={(event) => { draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; }} onDragOver={(event) => { const source = draggedSlot.value; if (source && canSwapSlots(source, slot)) { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'; } else if (event.dataTransfer) event.dataTransfer.dropEffect = 'none'; }} onDrop={(event) => { event.preventDefault(); const source = draggedSlot.value; if (source) swapSlotActions(source, slot); draggedSlot.value = null; }}>
+              <li key={`${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
+                <button class="chord-main" onClick={() => { selectedSlot.value = slot; }} draggable onDragStart={(event) => { draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
+                  const source = draggedSlot.value;
+                  const position = dropPosition(event, 'vertical');
+                  const valid = source && (position === 'swap' ? canSwapSlots(source, slot) : canInsertSlot(source, slot, position));
+                  if (!valid) { slotDrop.value = null; if (event.dataTransfer) event.dataTransfer.dropEffect = 'none'; return; }
+                  event.preventDefault();
+                  slotDrop.value = { slot, position };
+                  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                }} onDrop={(event) => {
+                  event.preventDefault();
+                  const source = draggedSlot.value;
+                  const position = slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : dropPosition(event, 'vertical');
+                  if (source) {
+                    if (position === 'swap') swapSlotActions(source, slot);
+                    else insertSlotAction(source, slot, position);
+                  }
+                  draggedSlot.value = null;
+                  slotDrop.value = null;
+                }}>
                   <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
                   <span class="chord-action">{summarize(c.action)}</span>
+                  {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
                 </button>
                 <button class="btn btn-icon btn-ghost" aria-label="Remove chord" onClick={() => removeChord(c)}><IconTrash /></button>
               </li>

@@ -704,6 +704,7 @@ output {
   margin-bottom: 16px;
 }
 .tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -756,16 +757,41 @@ output {
 .tab.is-dragging, .keycap.is-dragging, .enc-part.is-dragging, .chord-main.is-dragging {
   opacity: 0.45;
 }
-.tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 65%, transparent);
-}
 .keycap.drag-invalid, .enc-part.drag-invalid, .chord.drag-invalid .chord-main {
   cursor: not-allowed;
 }
 .keycap:not(.drag-invalid)[draggable="true"], .enc-part:not(.drag-invalid)[draggable="true"], .chord-main:not(.drag-invalid)[draggable="true"], .tab[draggable="true"] {
   cursor: grab;
 }
+.drop-line {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  background: #1680ff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #fff, 0 0 12px 3px rgb(22 128 255 / 0.75);
+}
+.keycap .drop-line, .tab .drop-line {
+  top: -6px;
+  bottom: -6px;
+  width: 5px;
+}
+.keycap .drop-line-before, .tab .drop-line-before { left: -9px; }
+.keycap .drop-line-after, .tab .drop-line-after { right: -9px; }
+.keycap .drop-line-row {
+  top: auto;
+  bottom: -10px;
+  left: -265px;
+  width: 382px;
+  height: 5px;
+}
+.enc-part .drop-line, .chord-main .drop-line {
+  left: -5px;
+  right: -5px;
+  height: 5px;
+}
+.enc-part .drop-line-before, .chord-main .drop-line-before { top: -7px; }
+.enc-part .drop-line-after, .chord-main .drop-line-after { bottom: -7px; }
 /* ------------------------------------------------------------------------
    Device view
    --------------------------------------------------------------------- */
@@ -799,10 +825,13 @@ output {
   height: 96px;
   padding: 10px 10px 9px;
   text-align: left;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 12px;
   border: 1px solid var(--key-edge);
-  background: var(--key-face);
+  background-image: linear-gradient(var(--led), var(--led)), var(--key-face);
+  background-position: top, center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: 100% 5px, cover;
   cursor: pointer;
   box-shadow: 0 4px 0 var(--key-edge), 0 6px 14px -6px rgb(0 0 0 / 0.5), 0 0 22px -4px var(--led-glow);
   transition: transform 80ms, box-shadow 120ms;
@@ -827,7 +856,6 @@ output {
   position: absolute;
   inset: 0 0 auto 0;
   height: 5px;
-  background: var(--led);
   opacity: 0.95;
 }
 .keycap-led::after {
@@ -915,6 +943,7 @@ output {
   width: 168px;
 }
 .enc-part {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -950,6 +979,13 @@ output {
   font-size: 12.5px;
   font-weight: 500;
 }
+.tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main {
+  z-index: 2;
+  border-color: #1680ff;
+  outline: 5px solid #1680ff;
+  outline-offset: 2px;
+  box-shadow: 0 0 18px 5px rgb(22 128 255 / 0.8);
+}
 .device-drag-hint {
   margin: 0 0 12px;
 }
@@ -979,6 +1015,7 @@ output {
   border-color: var(--danger);
 }
 .chord-main {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
