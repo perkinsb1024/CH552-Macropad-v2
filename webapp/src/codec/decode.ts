@@ -167,9 +167,10 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   let previous = -1;
   for (let i = 0; i < chordCount; i++, offset += CHORD_ENTRY_SIZE) {
     const id = image[offset]!;
-    const layer = id >> 4;
+    const layer = (id >> 4) & 3;
+    const global = !!(id & 0x80);
     const pair = id & 15;
-    if (id & 0xc0) return fail('malformed', `Chord ${i + 1}: reserved identifier bits set.`);
+    if (id & 0x40) return fail('malformed', `Chord ${i + 1}: reserved identifier bit set.`);
     if (layer >= layerCount) return fail('malformed', `Chord ${i + 1}: layer ${layer + 1} does not exist.`);
     if (pair >= pairCount(variant)) return fail('malformed', `Chord ${i + 1}: pair index ${pair} is invalid.`);
     if (id <= previous) return fail('malformed', `Chord ${i + 1}: identifiers are not strictly ascending.`);
@@ -177,7 +178,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const decoded = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, false, pool);
     if (typeof decoded === 'string') return fail('malformed', `Chord ${i + 1}: ${decoded}.`);
     const [keyA, keyB] = pairFromIndex(pair, keys);
-    chords.push({ layer, keyA, keyB, action: decoded });
+    chords.push({ layer, keyA, keyB, global, action: decoded });
   }
 
   if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');

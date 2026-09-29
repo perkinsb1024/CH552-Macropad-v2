@@ -35,6 +35,8 @@ export interface Layer {
 
 export interface Chord {
   layer: number;
+  /** Applies on every layer; layer remains its editor/home layer. */
+  global?: boolean;
   /** Lower physical key index. */
   keyA: number;
   /** Higher physical key index. */

@@ -419,6 +419,19 @@ export function removeChord(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB'>): void
   if (s?.kind === 'chord' && s.layer === chord.layer && s.keyA === chord.keyA && s.keyB === chord.keyB) selectedSlot.value = null;
 }
 
+export function setChordGlobal(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB'>, global: boolean, layer: number): void {
+  const p = profile.value;
+  if (!p) return;
+  const samePair = (c: Chord) => c.keyA === chord.keyA && c.keyB === chord.keyB;
+  if (global && p.chords.some((c) => c.global && samePair(c))) return;
+  if (!global && p.chords.some((c) => c.layer === layer && samePair(c) && c.layer !== chord.layer)) return;
+  updateProfile((draft) => {
+    const target = draft.chords.find((c) => c.layer === chord.layer && samePair(c));
+    if (target) { target.global = global; if (!global) target.layer = layer; }
+  });
+  selectedSlot.value = { kind: 'chord', layer: global ? chord.layer : layer, keyA: chord.keyA, keyB: chord.keyB };
+}
+
 export function addLayer(): void {
   const p = profile.value;
   if (!p || p.layers.length >= MAX_LAYERS) return;
@@ -436,7 +449,7 @@ export function addLayer(): void {
     if (source) {
       const newIndex = draft.layers.length - 1;
       draft.chords.push(...draft.chords
-        .filter((chord) => chord.layer === sourceIndex)
+        .filter((chord) => chord.layer === sourceIndex && !chord.global)
         .map((chord) => ({ ...chord, layer: newIndex, action: { ...chord.action } })));
     }
   });

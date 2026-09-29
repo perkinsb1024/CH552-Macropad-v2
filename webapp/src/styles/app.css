@@ -1009,6 +1009,7 @@ output {
   display: flex;
   align-items: center;
   gap: 4px;
+  padding-right: 4px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
 }
@@ -1043,6 +1044,18 @@ output {
 }
 .chord-action {
   font-weight: 500;
+}
+.chord-global {
+  color: var(--fg-muted);
+  background: var(--bg-sunken);
+}
+.chord-global.is-on {
+  color: #fff;
+  background: var(--accent);
+}
+.chord-global.is-on:hover:not(:disabled) {
+  color: #fff;
+  background: color-mix(in srgb, var(--accent) 88%, black);
 }
 .chord-add {
   display: flex;

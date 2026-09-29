@@ -101,6 +101,9 @@ At the exact deadline the first key becomes a single action. Brief single holds
 emit ordered press/release reports, even when the USB queue temporarily fills.
 Chord holds release on either key, and both keys must be up before retriggering.
 Layer changes resolve pending singles using their captured bindings.
+Bit 7 of a chord identifier makes that three-byte chord active on every layer.
+Layer-specific chords for the same key pair take precedence. Bit 6 remains
+reserved; existing images have bit 7 clear and keep their original behavior.
 
 The action queue has eight entries. Rotation is accepted only when the queue
 is empty, reserving seven entries for button actions. Saturated drop counters
@@ -121,9 +124,9 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,268 of 14,336 code bytes (68 free). It uses
-637 of 876 application xRAM bytes (239 free). Add 148 separately reserved USB
-bytes to the RAM total. The linker provides 130 bytes for the internal stack;
+The current six-key image uses 14,290 of 14,336 code bytes (46 free). It uses
+634 of 876 application xRAM bytes (242 free). Add 148 separately reserved USB
+bytes to the RAM total. The linker provides 132 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The
 128-byte staging buffer fits in application xRAM without a separate programming
 mode.

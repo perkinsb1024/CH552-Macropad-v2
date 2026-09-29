@@ -92,7 +92,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
 
   let offset = HEADER_SIZE + size * profile.layers.length;
   for (const chord of chords) {
-    image[offset] = chordId(chord.layer, chord.keyA, chord.keyB, keys);
+    image[offset] = chordId(chord.layer, chord.keyA, chord.keyB, keys, chord.global);
     const [b0, b1] = encodeAction(chord.action, offsets);
     image[offset + 1] = b0;
     image[offset + 2] = b1;

@@ -32,7 +32,7 @@ export interface ExportedProfile {
     indicatorColor: number;
     indicatorFullBrightness: boolean;
   }>;
-  chords: Array<{ layer: number; keys: [number, number]; action: Action }>;
+  chords: Array<{ layer: number; keys: [number, number]; global?: boolean; action: Action }>;
   localMetadata?: LocalMetadata;
 }
 
@@ -54,7 +54,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       indicatorColor: layer.indicatorColor,
       indicatorFullBrightness: layer.indicatorFullBrightness,
     })),
-    chords: profile.chords.map((c) => ({ layer: c.layer, keys: [c.keyA, c.keyB], action: c.action })),
+    chords: profile.chords.map((c) => ({ layer: c.layer, keys: [c.keyA, c.keyB], global: !!c.global, action: c.action })),
   };
   if (meta && (meta.layerNames?.some(Boolean) || meta.profileName)) out.localMetadata = meta;
   return JSON.stringify(out, null, 2) + '\n';
@@ -159,7 +159,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     if (!isRecord(c) || !Array.isArray(c.keys) || c.keys.length !== 2) throw new ImportError(`Chord ${i + 1} is malformed.`);
     const a = int(c.keys[0], `Chord ${i + 1} key`);
     const b = int(c.keys[1], `Chord ${i + 1} key`);
-    return { layer: int(c.layer, `Chord ${i + 1} layer`), keyA: Math.min(a, b), keyB: Math.max(a, b), action: action(c.action, `Chord ${i + 1}`) };
+    return { layer: int(c.layer, `Chord ${i + 1} layer`), keyA: Math.min(a, b), keyB: Math.max(a, b), global: bool(c.global, `Chord ${i + 1} global`), action: action(c.action, `Chord ${i + 1}`) };
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
   if (chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75) throw new ImportError('chordWindowMs must be 0–75 in steps of 5.');

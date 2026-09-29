@@ -4,16 +4,16 @@ import { allPairs } from '../../model/pairs';
 import { summarize } from '../../model/actions';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { addChord, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, slotDrop, swapSlotActions } from '../store';
+import { addChord, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, setChordGlobal, slotDrop, swapSlotActions } from '../store';
 import { dropPosition } from '../drag';
-import { IconPlus, IconTrash } from './Icons';
+import { IconGlobe, IconPlus, IconTrash } from './Icons';
 
 export function ChordPanel() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const keys = keyCount(p.variant);
-  const chords = p.chords.filter((c) => c.layer === li).sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB);
-  const used = new Set(chords.map((c) => `${c.keyA}-${c.keyB}`));
+  const chords = p.chords.filter((c) => c.layer === li || c.global).sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB || Number(!!a.global) - Number(!!b.global));
+  const used = new Set(p.chords.filter((c) => c.layer === li).map((c) => `${c.keyA}-${c.keyB}`));
   const available = allPairs(keys).filter(([a, b]) => !used.has(`${a}-${b}`));
   const [pick, setPick] = useState('');
   const first = available[0];
@@ -32,7 +32,7 @@ export function ChordPanel() {
     if (!closest) return null;
     const { index, position } = closest as { index: number; position: 'before' | 'after' };
     const chord = chords[index]!;
-    return { slot: { kind: 'chord', layer: li, keyA: chord.keyA, keyB: chord.keyB }, position };
+    return { slot: { kind: 'chord', layer: chord.layer, keyA: chord.keyA, keyB: chord.keyB }, position };
   };
 
   return (
@@ -62,14 +62,17 @@ export function ChordPanel() {
           slotDrop.value = null;
         }}>
           {chords.map((c) => {
-            const slot: Slot = { kind: 'chord', layer: li, keyA: c.keyA, keyB: c.keyB };
+            const slot: Slot = { kind: 'chord', layer: c.layer, keyA: c.keyA, keyB: c.keyB };
+            const globalConflict = p.chords.some((other) => other !== c && other.global && other.keyA === c.keyA && other.keyB === c.keyB);
+            const localConflict = p.chords.some((other) => other !== c && other.layer === li && other.keyA === c.keyA && other.keyB === c.keyB);
+            const globeDisabled = c.global ? localConflict : globalConflict;
             const selected = JSON.stringify(selectedSlot.value) === JSON.stringify(slot);
             const problem = actionProblem(c.action, { layerCount: p.layers.length, rotation: false });
             const dragged = draggedSlot.value;
             const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
             const intent = slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : null;
             return (
-              <li key={`${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
+              <li key={`${c.layer}-${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
                 <button class="chord-main" onClick={() => { selectedSlot.value = slot; }} draggable onDragStart={(event) => { draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
                   const source = draggedSlot.value;
                   const position = dropPosition(event, 'vertical');
@@ -93,7 +96,8 @@ export function ChordPanel() {
                   <span class="chord-action">{summarize(c.action)}</span>
                   {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
                 </button>
-                <button class="btn btn-icon btn-ghost" aria-label="Remove chord" onClick={() => removeChord(c)}><IconTrash /></button>
+                <button class={`btn btn-icon chord-global ${c.global ? 'is-on' : ''}`} aria-label={c.global ? 'Make chord local to this layer' : 'Make chord global'} aria-pressed={!!c.global} title={globeDisabled ? 'This key pair already has a chord at that scope' : c.global ? 'Active on all layers; click to make local to this layer' : 'Click to use this chord on all layers'} disabled={globeDisabled} onClick={() => setChordGlobal(c, !c.global, li)}><IconGlobe /></button>
+                <button class="btn btn-icon btn-danger" aria-label="Remove chord" onClick={() => removeChord(c)}><IconTrash /></button>
               </li>
             );
           })}

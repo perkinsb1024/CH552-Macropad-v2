@@ -62,12 +62,15 @@ below are relative to the start of a chord.
 
 | Byte | Field | Encoding |
 | --- | --- | --- |
-| 0 | Chord identifier | Bits 0–3: physical-key pair index<br>Bits 4–5: layer index<br>Bits 6–7: `0` |
+| 0 | Chord identifier | Bits 0–3: physical-key pair index<br>Bits 4–5: layer index<br>Bit 6: `0` (reserved)<br>Bit 7: `0` = layer-specific, `1` = global |
 | 1–2 | Button action | Two-byte action encoding below |
 
 Pair indices enumerate `(0,1)`, `(0,2)`, and so on in lexicographic order.
-Chord identifiers are strictly ascending. Multiple actions may share one
-string.
+The layer index must identify an existing layer. A global chord applies on
+every layer; its encoded layer index is retained as its home layer in the
+editor. When a layer-specific chord and a global chord have the same key pair,
+the layer-specific chord takes precedence on that layer. Chord identifiers are
+strictly ascending. Multiple actions may share one string.
 
 | String-pool property | Encoding |
 | --- | --- |

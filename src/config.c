@@ -160,7 +160,7 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     offset = 9 + size * layers;
     for (i = 0; i < chords; i++) {
         id = image[offset];
-        if ((id & 0xC0) || (id >> 4) >= layers ||
+        if ((id & 0x40) || ((id >> 4) & 3) >= layers ||
             (id & 15) >= (keys == 3 ? 3 : 15) ||
             (i && id <= previous) ||
             !actionValid(image, offset + 1, layers, 0, pool, used)) {
@@ -241,13 +241,11 @@ uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     }
     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
     for (i = 0; i < count; i++, offset += 3) {
-        if (activeConfig[offset] == id) {
+        if (activeConfig[offset] == id ||
+            (activeConfig[offset] & 0x8F) == (0x80 | (id & 15))) {
             *first = activeConfig[offset + 1];
             *second = activeConfig[offset + 2];
             return 1;
-        }
-        if (activeConfig[offset] > id) {
-            break;
         }
     }
     return 0;

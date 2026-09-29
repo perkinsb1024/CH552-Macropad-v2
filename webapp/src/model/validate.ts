@@ -111,6 +111,7 @@ export function validateProfile(profile: Profile): Issue[] {
   });
 
   const seen = new Set<string>();
+  const globalPairs = new Set<string>();
   for (const chord of profile.chords) {
     const slot: Slot = { kind: 'chord', layer: chord.layer, keyA: chord.keyA, keyB: chord.keyB };
     const where = slotLabel(slot);
@@ -125,6 +126,11 @@ export function validateProfile(profile: Profile): Issue[] {
     const id = `${chord.layer}:${chord.keyA}:${chord.keyB}`;
     if (seen.has(id)) issues.push({ where, message: 'Duplicate chord for this key pair.', slot });
     seen.add(id);
+    const pair = `${chord.keyA}:${chord.keyB}`;
+    if (chord.global) {
+      if (globalPairs.has(pair)) issues.push({ where, message: 'Only one global chord can use this key pair.', slot });
+      globalPairs.add(pair);
+    }
     const problem = actionProblem(chord.action, { layerCount, rotation: false });
     if (problem) issues.push({ where, message: problem, slot });
   }

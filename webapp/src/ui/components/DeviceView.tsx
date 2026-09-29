@@ -18,7 +18,7 @@ export function DeviceView() {
   const keys = keyCount(p.variant);
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
-  for (const c of p.chords) if (c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
+  for (const c of p.chords) if (c.global || c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
 
   const select = (slot: Slot) => { selectedSlot.value = slot; };
   const dragStart = (event: DragEvent, slot: Slot) => {

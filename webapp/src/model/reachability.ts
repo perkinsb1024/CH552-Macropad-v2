@@ -13,7 +13,9 @@ function actionsOnLayer(profile: Profile, layerIndex: number): Action[] {
     layer.encoderButton,
     layer.clockwise,
     layer.counterclockwise,
-    ...profile.chords.filter((chord) => chord.layer === layerIndex).map((chord) => chord.action),
+    ...profile.chords.filter((chord) => chord.layer === layerIndex ||
+      (chord.global && !profile.chords.some((local) => !local.global && local.layer === layerIndex &&
+        local.keyA === chord.keyA && local.keyB === chord.keyB))).map((chord) => chord.action),
   ];
 }
 
