@@ -196,6 +196,20 @@ export function getAction(p: Profile, slot: Slot): Action | undefined {
   }
 }
 
+export function clearSelectedAction(): void {
+  const slot = selectedSlot.value;
+  const p = profile.value;
+  if (!slot || !p) return;
+  const action = getAction(p, slot);
+  if (!action) return;
+  if (action.type !== 'none') {
+    rememberAction(slot, action);
+    setAction(slot, { type: 'none' });
+  } else if (slot.kind === 'key') {
+    updateProfile((draft) => { draft.layers[slot.layer]!.leds[slot.index] = 15; });
+  }
+}
+
 export function setAction(slot: Slot, action: Action): void {
   rememberAction(slot, action);
   updateProfile((draft) => {

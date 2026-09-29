@@ -1,7 +1,7 @@
 import { useEffect } from 'preact/hooks';
 import { FORMAT_VERSION } from '../model/constants';
 import { TRANSPORT_VERSION } from '../protocol/packet';
-import { connectSimulator, connection, profile, reconnectGranted } from './store';
+import { clearSelectedAction, connectSimulator, connection, dialog, getAction, profile, reconnectGranted, selectedSlot } from './store';
 import { TopBar } from './components/TopBar';
 import { Welcome } from './components/Welcome';
 import { ProfilePanel } from './components/ProfilePanel';
@@ -18,6 +18,24 @@ import { Toasts } from './components/Toasts';
 import { variantName } from '../model/constants';
 
 export function App() {
+  useEffect(() => {
+    const onDelete = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || (event.key !== 'Backspace' && event.key !== 'Delete') ||
+          event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || dialog.value) return;
+      const target = event.target;
+      if (target instanceof HTMLElement &&
+          (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))) return;
+      const p = profile.value;
+      const slot = selectedSlot.value;
+      if (!p || !slot || !getAction(p, slot)) return;
+      event.preventDefault();
+      // Holding Delete must not clear both the action and LED in a single press.
+      if (!event.repeat) clearSelectedAction();
+    };
+    window.addEventListener('keydown', onDelete);
+    return () => window.removeEventListener('keydown', onDelete);
+  }, []);
+
   useEffect(() => {
     // ?sim=six|three|blank opens the in-browser simulator (demo links, screenshots).
     const sim = new URLSearchParams(location.search).get('sim');

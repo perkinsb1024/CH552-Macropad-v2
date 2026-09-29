@@ -32,7 +32,7 @@ export function ToolsPanel() {
           <dt>Active layer</dt>
           <dd>Layer {status.currentLayer + 1}</dd>
           <dt>Firmware</dt>
-          <dd>Format v{c.kind === 'connected' ? c.connection.info.formatVersion : '?'} · palette v{c.kind === 'connected' ? c.connection.info.paletteVersion : '?'}</dd>
+          <dd>Format v{c.kind === 'connected' ? c.connection.info.formatVersion : '?'} · Palette v{c.kind === 'connected' ? c.connection.info.paletteVersion : '?'}</dd>
           {(status.droppedButtonActions > 0 || status.droppedRotationActions > 0) && (
             <>
               <dt>Dropped actions</dt>

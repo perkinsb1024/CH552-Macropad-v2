@@ -447,6 +447,11 @@ output {
   color: #626878;
   border: 1px dashed #9298a6;
 }
+.enc-part .shortcut-none {
+  background: transparent;
+  color: #b9bfcc;
+  border-color: #9298a6;
+}
 .keycap-label:has(.shortcut-pills) {
   display: block;
   overflow: visible;
