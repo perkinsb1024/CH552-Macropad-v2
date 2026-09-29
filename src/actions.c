@@ -43,10 +43,9 @@ __xdata uint8_t clicksLeft;
 __xdata uint8_t stringIndex;
 __data uint8_t consumerReleasePending;
 __xdata uint16_t deadline;
+__xdata uint8_t pointerRepeated;
 
-static uint8_t actionType(uint8_t first) {
-  return first & 15;
-}
+#define actionType(first) ((first) & 15)
 
 static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
@@ -82,6 +81,12 @@ static uint8_t mouseButtons(void) {
     buttons |= tempMouse;
   }
   return buttons;
+}
+
+static uint8_t movePointer(uint8_t type, int8_t delta) {
+  return USB_queueMouse(mouseButtons(),
+                        type == CONFIG_ACTION_MOUSE_X ? delta : 0,
+                        type == CONFIG_ACTION_MOUSE_Y ? delta : 0, 0);
 }
 
 static uint8_t addUsage(uint8_t usage) {
@@ -251,6 +256,7 @@ void actionsInit(void) {
   currentFirst = 0;
   phase = 0;
   consumerReleasePending = 0;
+  pointerRepeated = 0;
   tempOn = 0;
   tempMouse = 0;
   lastMouse = 0;
@@ -419,6 +425,11 @@ void actionsPoll(uint16_t now) {
   if (!flushOutputs()) {
     return;
   }
+  // Repeat only when the transport and queued taps are idle. The short interval
+  // permits an 8-bit clock; subtraction also works across timer wrap.
+  c = !currentFirst && !eventUsed && !USB_reportsPending() &&
+      (uint8_t)((uint8_t)now - pointerRepeated) >= 8;
+  if (c) pointerRepeated = now;
   for (i = 0; i < MAX_INPUTS; i++) {
     if (buttonPressed[i] == 2) {
       if (actionType(buttonFirst[i]) == CONFIG_ACTION_KEY_HOLD && buttonSecond[i]) {
@@ -432,6 +443,9 @@ void actionsPoll(uint16_t now) {
         }
       }
       buttonPressed[i] = 0;
+    } else if (c && buttonPressed[i] &&
+               (buttonFirst[i] & 0xFE) == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X)) {
+      movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
     }
   }
   if (!flushOutputs()) {
@@ -466,9 +480,8 @@ void actionsPoll(uint16_t now) {
       }
     } else if (type == CONFIG_ACTION_MOUSE_X || type == CONFIG_ACTION_MOUSE_Y) {
       int8_t delta = currentSecond;
-      if (!USB_queueMouse(mouseButtons(),
-                          type == CONFIG_ACTION_MOUSE_X ? delta : 0,
-                          type == CONFIG_ACTION_MOUSE_Y ? delta : 0, 0)) {
+      if (movePointer(type, delta)) {
+        pointerRepeated = now;
         currentFirst = 0;
       }
     } else if (type == CONFIG_ACTION_CONSUMER) {

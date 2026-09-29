@@ -119,9 +119,9 @@ export function summarize(action: Action): string {
     case 'scroll':
       return action.delta < 0 ? `Scroll up ${-action.delta}` : `Scroll down ${action.delta}`;
     case 'mouseX':
-      return `Pointer X ${action.delta > 0 ? '+' : ''}${action.delta}`;
+      return `Mouse ${action.delta < 0 ? 'left' : 'right'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
     case 'mouseY':
-      return `Pointer Y ${action.delta > 0 ? '+' : ''}${action.delta}`;
+      return `Mouse ${action.delta < 0 ? 'up' : 'down'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
     case 'consumer':
       return consumerName(action.usage);
     case 'string':

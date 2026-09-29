@@ -142,6 +142,21 @@ static void testActions(void) {
     uint8_t type;
     uint8_t param;
     uint8_t aux;
+    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+        for (aux = 0; aux < 16; aux++) {
+            testLoadStarterProfile(CONFIG_SIX_KEYS);
+            activeConfig[9] = (aux << 4) | type;
+            activeConfig[10] = 1;
+            seal();
+            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux <= 1));
+            activeConfig[9] = CONFIG_ACTION_NONE;
+            activeConfig[10] = 0;
+            activeConfig[23] = (aux << 4) | type;
+            activeConfig[24] = 1;
+            seal();
+            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux == 0));
+        }
+    }
     for (type = 0; type < 16; type++) {
         testLoadStarterProfile(CONFIG_SIX_KEYS);
         param = 0;

@@ -34,37 +34,29 @@ function MouseButtons({ value, onChange }: { value: number; onChange(v: number):
   );
 }
 
-function Delta({ label, value, onChange, hint }: { label: string; value: number; onChange(v: number): void; hint: string }) {
-  return (
-    <label class="field">
-      <span class="field-label">{label} <output>{value > 0 ? `+${value}` : value}</output></span>
-      <input type="range" min={-127} max={127} value={value} onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))} />
-      <div class="row">
-        <input type="number" min={-127} max={127} step={1} value={value} onInput={(e) => onChange(Number((e.target as HTMLInputElement).value))} aria-label={label} />
-        <span class="hint">{hint}</span>
-      </div>
-    </label>
-  );
-}
-
-function ScrollStep({ value, onChange }: { value: number; onChange(v: number): void }) {
+function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange }: {
+  label: string;
+  directionLabel: string;
+  negativeLabel: string;
+  positiveLabel: string;
+  hint: string;
+  value: number;
+  onChange(v: number): void;
+}) {
   const magnitude = Math.max(1, Math.min(127, Math.abs(value)));
-  const up = value < 0;
-  const setMagnitude = (next: number) => onChange((up ? -1 : 1) * Math.max(1, Math.min(127, Math.round(next))));
-  const setDirection = (nextUp: boolean) => onChange((nextUp ? -1 : 1) * magnitude);
+  const negative = value < 0;
+  const setMagnitude = (next: number) => onChange((negative ? -1 : 1) * Math.max(1, Math.min(127, Math.round(next))));
+  const setDirection = (nextNegative: boolean) => onChange((nextNegative ? -1 : 1) * magnitude);
   return (
     <div class="field">
-      <span class="field-label">Wheel step <output>{magnitude}</output></span>
-      <input type="range" min={1} max={127} step={1} value={magnitude} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
-      <div class="row">
-        <input type="number" min={1} max={127} step={1} value={magnitude} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} aria-label="Wheel step" />
-        <span class="hint">Wheel counts per press or encoder detent.</span>
-      </div>
+      <span class="field-label">{label} <output>{magnitude}</output></span>
+      <input type="range" min={1} max={127} step={1} value={magnitude} aria-label={label} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
+      <span class="hint">{hint}</span>
       <div class="field scroll-direction">
-        <span class="field-label">Scroll direction</span>
-        <div class="segmented" role="group" aria-label="Scroll direction">
-          <button type="button" class={up ? 'is-selected' : ''} aria-pressed={up} onClick={() => setDirection(true)}>Up</button>
-          <button type="button" class={!up ? 'is-selected' : ''} aria-pressed={!up} onClick={() => setDirection(false)}>Down</button>
+        <span class="field-label">{directionLabel}</span>
+        <div class="segmented" role="group" aria-label={directionLabel}>
+          <button type="button" class={negative ? 'is-selected' : ''} aria-pressed={negative} onClick={() => setDirection(true)}>{negativeLabel}</button>
+          <button type="button" class={!negative ? 'is-selected' : ''} aria-pressed={!negative} onClick={() => setDirection(false)}>{positiveLabel}</button>
         </div>
       </div>
     </div>
@@ -116,7 +108,8 @@ export function Inspector() {
     if ('usage' in next && 'usage' in action && 'modifiers' in next && 'modifiers' in action) update({ ...next, usage: action.usage, modifiers: action.modifiers });
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
-    else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta });
+    else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta,
+      ...((next.type === 'mouseX' || next.type === 'mouseY') && (action.type === 'mouseX' || action.type === 'mouseY') && action.hold ? { hold: true } : {}) });
     else if ('offset' in next && 'offset' in action) update({ ...next, offset: action.offset });
     else update(next);
   };
@@ -162,13 +155,24 @@ export function Inspector() {
       )}
 
       {action.type === 'scroll' && (
-        <ScrollStep value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+        <DirectionalStep label="Wheel step" directionLabel="Scroll direction" negativeLabel="Up" positiveLabel="Down" hint="Wheel counts per press or encoder detent." value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
       {action.type === 'mouseX' && (
-        <Delta label="Horizontal move" value={action.delta} onChange={(delta) => update({ ...action, delta })} hint="Pixels per step; negative moves left." />
+        <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
       {action.type === 'mouseY' && (
-        <Delta label="Vertical move" value={action.delta} onChange={(delta) => update({ ...action, delta })} hint="Pixels per step; negative moves up." />
+        <DirectionalStep label="Vertical move" directionLabel="Pointer direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+      )}
+
+      {(action.type === 'mouseX' || action.type === 'mouseY') && (
+        <div class="field">
+          <span class="field-label">Movement behavior</span>
+          <div class="segmented" role="group" aria-label="Movement behavior">
+            <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
+            <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} disabled={rotation} onClick={() => update({ ...action, hold: true })}>Hold</button>
+          </div>
+          <span class="hint">{rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
+        </div>
       )}
 
       {action.type === 'consumer' && (

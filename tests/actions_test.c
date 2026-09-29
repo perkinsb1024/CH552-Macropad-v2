@@ -308,6 +308,132 @@ static void testRotationOptions(void) {
     assert(reports[1][1] == 0);
 }
 
+static void testPointerSteps(void) {
+    const int8_t deltas[] = {-127, -1, 1, 127};
+    uint8_t type;
+    uint8_t i;
+    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+        for (i = 0; i < sizeof(deltas); i++) {
+            reset();
+            activeConfig[9] = type;
+            activeConfig[10] = (uint8_t)deltas[i];
+            actionsPress(0, 0);
+            actionsPoll(0);
+            assert(count == 1 && reports[0][0] == 2);
+            assert((int8_t)reports[0][2] == (type == CONFIG_ACTION_MOUSE_X ? deltas[i] : 0));
+            assert((int8_t)reports[0][3] == (type == CONFIG_ACTION_MOUSE_Y ? deltas[i] : 0));
+            actionsPoll(1); // Holding the key must not repeat the step.
+            assert(count == 1);
+            actionsRelease(0);
+            actionsPoll(2);
+            assert(count == 1);
+            actionsPress(0, 3);
+            actionsRelease(0); // A quick tap still sends exactly one step.
+            actionsPoll(3);
+            actionsPoll(4);
+            assert(count == 2);
+
+            reset();
+            activeConfig[23] = type; // Encoder clockwise binding.
+            activeConfig[24] = (uint8_t)deltas[i];
+            actionsRotate(1);
+            blocked = 1;
+            actionsPoll(0);
+            assert(count == 0);
+            blocked = 0;
+            actionsPoll(1); // Retry a rejected report without losing the step.
+            assert(count == 1 && reports[0][0] == 2);
+            assert((int8_t)reports[0][2] == (type == CONFIG_ACTION_MOUSE_X ? deltas[i] : 0));
+            assert((int8_t)reports[0][3] == (type == CONFIG_ACTION_MOUSE_Y ? deltas[i] : 0));
+            actionsPress(0, 2); // A later action must not be stuck behind movement.
+            actionsPoll(2);
+            assert(count == 2 && reports[1][0] == 1 && reports[1][3] == 0x29);
+        }
+    }
+}
+
+static void testPointerHold(void) {
+    uint8_t type;
+    uint8_t released;
+    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+        reset();
+        activeConfig[9] = type | CONFIG_MOUSE_MOVE_HOLD;
+        activeConfig[10] = 0xFF;
+        actionsPress(0, 0);
+        actionsPoll(0);
+        actionsPoll(7);
+        assert(count == 1);
+        actionsPoll(8);
+        assert(count == 2 && reports[1][0] == 2);
+        assert(reports[1][2] == (type == CONFIG_ACTION_MOUSE_X ? 0xFF : 0));
+        assert(reports[1][3] == (type == CONFIG_ACTION_MOUSE_Y ? 0xFF : 0));
+        actionsPoll(16);
+        assert(count == 3);
+        actionsRelease(0);
+        actionsPoll(24);
+        actionsPoll(100);
+        assert(count == 3);
+
+        actionsPress(0, 101);
+        actionsRelease(0);
+        actionsPoll(101);
+        actionsPoll(109);
+        assert(count == 4); // A quick hold-mode tap still moves once.
+
+        actionsPress(0, 65532);
+        actionsPoll(65532);
+        actionsPoll(3);
+        assert(count == 5);
+        blocked = 1;
+        actionsPoll(4);
+        assert(count == 5);
+        blocked = 0;
+        actionsPoll(12);
+        assert(count == 6); // Resume after backpressure across timer wrap.
+        actionsRelease(0);
+    }
+
+    // Both axes repeat independently, and unrelated key taps can still finish.
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MOUSE_X | CONFIG_MOUSE_MOVE_HOLD;
+    activeConfig[10] = 1;
+    activeConfig[11] = CONFIG_ACTION_MOUSE_Y | CONFIG_MOUSE_MOVE_HOLD;
+    activeConfig[12] = 2;
+    actionsPress(0, 0);
+    actionsPress(1, 0);
+    actionsPoll(0);
+    actionsPoll(1);
+    actionsPoll(9);
+    assert(count == 4 && reports[2][2] == 1 && reports[3][3] == 2);
+    actionsPress(2, 10);
+    actionsRelease(2);
+    actionsPoll(10);
+    assert(count == 5 && reports[4][0] == 1 && reports[4][3] == 0x21);
+    actionsPoll(18);
+    actionsPoll(19);
+    actionsRelease(0);
+    actionsPoll(27);
+    assert(reports[count - 1][2] == 0 && reports[count - 1][3] == 2);
+    actionsRelease(1);
+
+    // Either chord key ending its hold must stop repetition.
+    for (released = 0; released < 2; released++) {
+        reset();
+        activeConfig[5] = 2;
+        activeConfig[31] = 0;
+        activeConfig[32] = CONFIG_ACTION_MOUSE_X | CONFIG_MOUSE_MOVE_HOLD;
+        activeConfig[33] = 3;
+        actionsPress(0, 100);
+        actionsPress(1, 101);
+        actionsPoll(101);
+        actionsPoll(109);
+        assert(count == 2 && reports[1][2] == 3);
+        actionsRelease(released);
+        actionsPoll(117);
+        assert(count == 2);
+    }
+}
+
 static void testLayerCancelsConsumer(void) {
     reset();
     activeConfig[3] = 1;
@@ -666,6 +792,8 @@ static void testClearAndOverflow(void) {
 }
 
 int main(void) {
+    testPointerHold();
+    testPointerSteps();
     testOneShot();
     testRelativeLayer();
     testRolloverBackpressure();

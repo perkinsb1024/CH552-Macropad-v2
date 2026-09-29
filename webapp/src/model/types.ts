@@ -16,8 +16,8 @@ export type Action =
   | { type: 'momentaryLayer'; layer: number }
   | { type: 'relativeLayer'; offset: number }
   | { type: 'oneShotRelativeLayer'; offset: number }
-  | { type: 'mouseX'; delta: number }
-  | { type: 'mouseY'; delta: number };
+  | { type: 'mouseX'; delta: number; hold?: boolean }
+  | { type: 'mouseY'; delta: number; hold?: boolean };
 
 export type ActionType = Action['type'];
 

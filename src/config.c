@@ -84,9 +84,11 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
             return (!rotation || type != CONFIG_ACTION_MOUSE_HOLD) &&
                    aux == 0 && param > 0 && param <= 7;
         case CONFIG_ACTION_SCROLL:
+            if (aux) return 0;
+            // Fall through: all three actions share the signed delta limit.
         case CONFIG_ACTION_MOUSE_X:
         case CONFIG_ACTION_MOUSE_Y:
-            return aux == 0 && param != 0x80;
+            return aux <= !rotation && param != 0x80;
         case CONFIG_ACTION_CONSUMER:
             // The full 12-bit consumer usage is retained, including its high nibble.
             return aux != 0 || param != 0;

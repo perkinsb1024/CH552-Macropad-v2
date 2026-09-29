@@ -62,11 +62,14 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       return { type: t, buttons: b1 };
     }
     case ActionCode.Scroll:
+      if (nonZeroAux || b1 === 0x80) return 'Invalid relative delta';
+      return { type: 'scroll', delta: toSigned(b1) };
     case ActionCode.MouseX:
     case ActionCode.MouseY: {
-      if (nonZeroAux || b1 === 0x80) return 'Invalid relative delta';
-      const t = type === ActionCode.Scroll ? 'scroll' : type === ActionCode.MouseX ? 'mouseX' : 'mouseY';
-      return { type: t, delta: toSigned(b1) };
+      if (aux > 1 || b1 === 0x80) return 'Invalid relative delta';
+      if (rotation && aux) return 'Pointer hold bound to rotation';
+      const t = type === ActionCode.MouseX ? 'mouseX' : 'mouseY';
+      return { type: t, delta: toSigned(b1), ...(aux ? { hold: true } : {}) };
     }
     case ActionCode.Consumer:
       if (!nonZeroAux && !b1) return 'Consumer usage is zero';

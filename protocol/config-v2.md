@@ -103,8 +103,8 @@ The action types are:
 | B | Momentary layer | `0` | Layer index |
 | C | Reserved | Rejected by current firmware | Rejected by current firmware |
 | D | Relative layer | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -3 to +3; added to the selected base-layer index with wraparound. `0` has no effect. |
-| E | Mouse X step | `0` | Signed 8-bit X delta from -127 to +127 |
-| F | Mouse Y step | `0` | Signed 8-bit Y delta from -127 to +127 |
+| E | Mouse X movement | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
+| F | Mouse Y movement | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
 
 For action A and D, auxiliary value `0` changes the selected base layer
 persistently. Auxiliary value `1` makes that layer active for the next input
@@ -122,7 +122,19 @@ two's-complement value. Thus `0x01`–`0x7F` mean +1 to +127, and
 which represents -128 and is excluded so direction reversal can safely
 negate any accepted delta.
 
-Rotation bindings cannot use *Keyboard hold*, *Mouse hold*, or *Momentary layer*.
+For X and Y movement, auxiliary bit 0 (record byte 0, bit 4) selects hold mode.
+Auxiliary value `0` sends one movement step per press or encoder detent.
+Value `1` sends an initial step and repeats the delta while the input is held,
+at an 8 ms interval when USB is ready and queued actions have finished.
+Releasing a key, the encoder button, or either chord key stops new repeats.
+Held inputs retain their original bindings across layer changes, as other holds do.
+Repeat reports are skipped when USB is busy; they do not accumulate for later playback.
+Auxiliary values 2–15 are invalid. Existing tap records remain unchanged, and
+the configuration version remains 2. Firmware predating this extension accepts
+tap records but rejects hold records.
+
+Rotation bindings cannot use *Keyboard hold*, *Mouse hold*, *Momentary layer*,
+or X/Y movement in hold mode.
 For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
 With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for *Keyboard hold* actions).

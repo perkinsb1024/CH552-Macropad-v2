@@ -4,6 +4,14 @@ import { defaultProfile, emptyLayer } from '../src/model/defaults';
 import { VARIANT_SIX_KEYS, VARIANT_THREE_KEYS } from '../src/model/constants';
 
 describe('JSON import/export', () => {
+  it('preserves pointer hold and accepts older pointer actions without the option', () => {
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
+    profile.layers[0]!.keys[1] = { type: 'mouseY', delta: 1 };
+    const text = exportProfile(profile);
+    expect(importProfile(text).profile).toEqual(profile);
+    expect(() => importProfile(text.replace('"hold": true', '"hold": 1'))).toThrow(ImportError);
+  });
   it('round-trips with metadata', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers.push(emptyLayer(VARIANT_SIX_KEYS));

@@ -38,6 +38,10 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'scroll':
     case 'mouseX':
     case 'mouseY':
+      if (action.type !== 'scroll') {
+        if (action.hold !== undefined && typeof action.hold !== 'boolean') return 'Pointer hold must be on or off.';
+        if (ctx.rotation && action.hold) return 'Pointer hold needs a release and cannot be bound to rotation.';
+      }
       if (!Number.isInteger(action.delta) || action.delta < -127 || action.delta > 127) return 'Delta must be a whole number from -127 to 127.';
       if (action.delta === 0) return 'A zero step does nothing; choose a non-zero value.';
       return null;

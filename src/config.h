@@ -33,6 +33,7 @@
 #define CONFIG_ACTION_RELATIVE_LAYER   0xD
 #define CONFIG_ACTION_MOUSE_X          0xE
 #define CONFIG_ACTION_MOUSE_Y          0xF
+#define CONFIG_MOUSE_MOVE_HOLD         0x10
 
 // Per-layer option byte: full brightness bit 0, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01

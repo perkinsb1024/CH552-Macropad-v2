@@ -96,8 +96,19 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     hid_rels = [compile_source(source, "hid_" + source.stem) for source in hid_sources]
     main_rel = compile_source(project / "src/main.c", "core_main")
     core_sources = sorted(core.glob("*.c")) + sorted((core / "directGpioLut").glob("*.c"))
+    # SDCC links the whole timing object, including unused micros()/delay().
+    # This firmware only uses millis() and delayMicroseconds(); generate a local
+    # copy without the unused routines to leave room for held pointer movement.
+    timing_source = (core / "wiring.c").read_text()
+    for start, end in ((r"uint32_t micros\(\)", r"uint32_t millis\(\)"),
+                       (r"void delay\(__data uint32_t ms\)", r"void delayMicroseconds\(")):
+        timing_source, removed = re.subn(rf"(?ms)^{start}.*?(?=^{end})", "", timing_source)
+        if removed != 1:
+            raise RuntimeError("CH55xDuino timing source layout changed; cannot trim unused routines")
+    compact_timing = build / "wiring.c"
+    compact_timing.write_text(timing_source)
     core_rels = [
-        compile_source(source, "core_" + source.stem)
+        compile_source(compact_timing if source.name == "wiring.c" else source, "core_" + source.stem)
         for source in core_sources if source.name != "main.c"
     ]
     core_lib = build / "core.lib"

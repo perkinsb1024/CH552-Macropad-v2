@@ -68,6 +68,8 @@ describe('every action type round-trips', () => {
     { type: 'relativeLayer', offset: -3 },
     { type: 'mouseX', delta: -5 },
     { type: 'mouseY', delta: 100 },
+    { type: 'mouseX', delta: -1, hold: true },
+    { type: 'mouseY', delta: 127, hold: true },
   ];
   it('covers every supported code', () => {
     const types = new Set(samples.map((s) => s.type));
@@ -91,6 +93,42 @@ describe('every action type round-trips', () => {
       profile.layers[0]!.keys[0] = blankAction(d.type);
       expect(validateProfile(profile)).toEqual([]);
     }
+  });
+});
+
+describe('pointer hold auxiliary bit', () => {
+  it('keeps existing tap bytes and uses only auxiliary bit 0 for hold', () => {
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1 };
+    let image = encodeProfile(profile);
+    expect([...image.subarray(9, 11)]).toEqual([0x0e, 0xff]);
+    profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
+    image = encodeProfile(profile);
+    expect([...image.subarray(9, 11)]).toEqual([0x1e, 0xff]);
+    expect(image[2]).toBe(2);
+    image[9] = 0x2e;
+    sealImage(image);
+    expect(decodeImage(image).ok).toBe(false);
+  });
+
+  it('rejects hold on rotation in both the editor and decoder', () => {
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers[0]!.clockwise = { type: 'mouseY', delta: 1 };
+    const image = encodeProfile(profile);
+    image[23] = 0x1f;
+    sealImage(image);
+    expect(decodeImage(image).ok).toBe(false);
+    profile.layers[0]!.clockwise = { type: 'mouseY', delta: 1, hold: true };
+    expect(validateProfile(profile).some((issue) => issue.message.includes('release'))).toBe(true);
+    expect(() => encodeProfile(profile)).toThrow();
+  });
+
+  it('round-trips hold on the encoder button and chords', () => {
+    const profile = defaultProfile(VARIANT_THREE_KEYS);
+    profile.layers[0]!.encoderButton = { type: 'mouseY', delta: -127, hold: true };
+    profile.chords = [{ layer: 0, keyA: 0, keyB: 1, global: false, action: { type: 'mouseX', delta: 1, hold: true } }];
+    const decoded = decodeImage(encodeProfile(profile));
+    expect(decoded.ok && decoded.profile).toEqual(profile);
   });
 });
 

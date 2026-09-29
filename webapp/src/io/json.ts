@@ -99,9 +99,10 @@ function action(v: unknown, what: string): Action {
     case 'mouseToggle':
       return { type, buttons: int(v.buttons, `${what} buttons`) };
     case 'scroll':
+      return { type, delta: int(v.delta, `${what} delta`) };
     case 'mouseX':
     case 'mouseY':
-      return { type, delta: int(v.delta, `${what} delta`) };
+      return { type, delta: int(v.delta, `${what} delta`), ...(bool(v.hold, `${what} hold`) ? { hold: true } : {}) };
     case 'consumer':
       return { type, usage: int(v.usage, `${what} usage`) };
     case 'string':
