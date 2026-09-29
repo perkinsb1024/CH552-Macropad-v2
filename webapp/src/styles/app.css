@@ -817,6 +817,7 @@ output {
   gap: 14px;
 }
 .keycap {
+  --key-lip: var(--key-edge);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -827,24 +828,26 @@ output {
   text-align: left;
   overflow: visible;
   border-radius: 12px;
-  border: 1px solid var(--key-edge);
+  border: 0px solid var(--key-edge);
+  border-top: 0;
   background-image: linear-gradient(var(--led), var(--led)), var(--key-face);
   background-position: top, center;
   background-repeat: no-repeat, no-repeat;
   background-size: 100% 5px, cover;
   cursor: pointer;
-  box-shadow: 0 4px 0 var(--key-edge), 0 6px 14px -6px rgb(0 0 0 / 0.5), 0 0 22px -4px var(--led-glow);
+  box-shadow: 0 4px 0 var(--key-lip), 0 6px 14px -6px rgb(0 0 0 / 0.5), 0 0 22px -4px var(--led-glow);
   transition: transform 80ms, box-shadow 120ms;
   color: var(--fg);
 }
 .keycap:hover {
-  transform: translateY(-1px);
+  transform: translateY(0);
 }
 .keycap:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 var(--key-edge), 0 0 22px -4px var(--led-glow);
+  box-shadow: 0 2px 0 var(--key-lip), 0 0 22px -4px var(--led-glow);
 }
 .keycap.is-selected {
+  --key-lip: var(--accent);
   border-color: var(--accent);
   outline: 3px solid var(--accent);
   outline-offset: 0;
