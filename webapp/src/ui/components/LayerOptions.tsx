@@ -25,14 +25,6 @@ export function LayerOptions() {
       <header class="card-head">
         <h2>Layer options</h2>
       </header>
-      <label class="check">
-        <input type="checkbox" checked={layer.bootloaderFromRun} onChange={toggle('bootloaderFromRun')} />
-        <span>
-          <strong>Allow bootloader entry by holding the encoder</strong>
-          <span class="hint">Uses the layer active when the hold begins.</span>
-        </span>
-      </label>
-
       <div class="field layer-indicator-options">
         <label class="field" htmlFor="layer-indicator-behavior">
           <span class="field-label">Layer selection LEDs</span>
@@ -81,6 +73,17 @@ export function LayerOptions() {
           </label>
         )}
       </div>
+
+      <details class="layer-advanced">
+        <summary>Advanced</summary>
+        <label class="check">
+          <input type="checkbox" checked={layer.bootloaderFromRun} onChange={toggle('bootloaderFromRun')} />
+          <span>
+            <strong>Allow bootloader entry by long-pressing the encoder button</strong>
+            <span class="hint">Hold for three seconds. Uses the layer active when the hold begins.</span>
+          </span>
+        </label>
+      </details>
     </section>
   );
 }

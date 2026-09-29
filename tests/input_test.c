@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
 #include "stubs/Arduino.h"
@@ -16,6 +17,12 @@ volatile uint8_t USB_CTRL;
 uint8_t TMOD;
 volatile uint8_t EA;
 static uint32_t currentMs;
+static jmp_buf bootloaderJump;
+static uint8_t expectBootloader;
+// A held input reads low even when setup writes high to its pull-up latch.
+static uint8_t encoderHeldAtStartup;
+#undef P3_3
+#define P3_3 (encoderHeldAtStartup ? 0 : ((P3 >> 3) & 1))
 static uint8_t frames[32][9];
 static uint8_t frameCount;
 static uint8_t bytesWritten;
@@ -23,7 +30,13 @@ static uint8_t flash[CONFIG_SIZE];
 uint8_t activeConfigValid;
 
 uint32_t millis(void) { return currentMs; }
-void delayMicroseconds(uint16_t us) { (void)us; }
+void delayMicroseconds(uint16_t us) {
+    (void)us;
+    if (expectBootloader) {
+        assert(USB_CTRL == 0 && EA == 0 && TMOD == 0);
+        longjmp(bootloaderJump, 1);
+    }
+}
 void neopixel_show_P3_4(uint8_t *data, uint8_t length) {
     (void)data;
     bytesWritten = length;
@@ -238,5 +251,28 @@ int main(void) {
     assert(previewOptions == 0 && ledData[1] == 255);
     for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == (i == 1 ? 255 : 0));
 #endif
+    // Startup recovery uses only the encoder, even with invalid flash or a
+    // profile that disables runtime entry. Escape before the hardware jump.
+    for (uint8_t valid = 0; valid < 2; valid++) {
+        if (valid) {
+            testLoadStarterProfile(PHYSICAL_VARIANT);
+            activeConfig[30] &= ~CONFIG_LAYER_OPT_BOOTLOADER_RUN;
+            memcpy(flash, activeConfig, CONFIG_SIZE);
+        } else {
+            memset(flash, 0xFF, sizeof(flash));
+        }
+        P1 = P3 = 0xFF;
+        frameCount = 0;
+        setup(); // Released encoder boots normally.
+        encoderHeldAtStartup = 1;
+        expectBootloader = 1;
+        USB_CTRL = EA = TMOD = 1;
+        if (setjmp(bootloaderJump) == 0) {
+            setup();
+            assert(0 && "Encoder held at startup must enter bootloader");
+        }
+        expectBootloader = 0;
+        encoderHeldAtStartup = 0;
+    }
     return 0;
 }

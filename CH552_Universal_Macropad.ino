@@ -318,7 +318,7 @@ void setup() {
   clearLeds();
   firmwareApplyConfig();
   USBInit();
-  if (readButton(0) && readButton(1) && readButton(2)) {
+  if (readButton(NUM_LEDS)) {
     enterBootloader();
   }
 }

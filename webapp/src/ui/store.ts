@@ -623,6 +623,40 @@ export function resetToDefaults(): void {
 // ---------------------------------------------------------------------------
 // Device connection
 
+/** Publish status through the signal, and ignore replies from an old connection. */
+function updateDeviceStatus(conn: Connection, status: DeviceStatus): void {
+  const c = connection.peek();
+  if (c.kind !== 'connected' || c.connection !== conn) return;
+  conn.status = status;
+  connection.value = { ...c };
+}
+
+// Poll serially so slow replies cannot accumulate queued status requests.
+// Signal updates restart this effect; disconnect/reconnect cancels the old loop.
+effect(() => {
+  const c = connection.value;
+  if (c.kind !== 'connected') return;
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout>;
+  const poll = async () => {
+    try {
+      if (saveState.peek().phase !== 'busy') {
+        const status = await c.connection.client.getStatus();
+        if (!stopped) updateDeviceStatus(c.connection, status);
+      }
+    } catch {
+      // Keep the last known status on a transient failure and try again later.
+    } finally {
+      if (!stopped) timer = setTimeout(poll, 500);
+    }
+  };
+  timer = setTimeout(poll, 500);
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+  };
+});
+
 async function attach(transport: Transport, label: string): Promise<void> {
   connection.value = { kind: 'connecting', label };
   const client = new ConfigClient(transport);
@@ -723,7 +757,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
   const { client, info } = c.connection;
   try {
     const status = await client.getStatus();
-    c.connection.status = status;
+    updateDeviceStatus(c.connection, status);
     const flash = await client.readFlash();
     deviceFlash.value = flash;
     const decoded = decodeImage(flash, info.variant);
@@ -824,7 +858,7 @@ export async function save(): Promise<void> {
     deviceFlash.value = image;
     deviceDecode.value = { ok: true, profile: cloneProfile(p) };
     baseline.value = cloneProfile(p);
-    c.connection.status = await c.connection.client.getStatus().catch(() => c.connection.status);
+    updateDeviceStatus(c.connection, await c.connection.client.getStatus().catch(() => c.connection.status));
     saveState.value = { phase: 'saved', at: Date.now() };
     clearDraft(p.variant);
     notify('success', 'Saved and verified. All 128 bytes read back from flash match.');
@@ -834,7 +868,7 @@ export async function save(): Promise<void> {
     notify('error', `Save failed: ${message}`);
     if (connection.value.kind === 'connected') {
       await c.connection.client.abortWrite().catch(() => undefined);
-      c.connection.status = await c.connection.client.getStatus().catch(() => c.connection.status);
+      updateDeviceStatus(c.connection, await c.connection.client.getStatus().catch(() => c.connection.status));
     }
   }
 }

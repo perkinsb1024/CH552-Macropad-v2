@@ -49,7 +49,7 @@ layer. Each binding uses the two-byte action encoding below.
 | 2–3 | Layer-selection LED behavior | `0` = *Do not indicate*, `1` = *Blink once*, `2` = *Blink by layer number*, `3` = *Always on* |
 | 4–7 | Layer-indicator color | Palette index 0–15 |
 
-Holding the first three keys while powering up always enters the bootloader;
+Holding the encoder button while powering up always enters the bootloader;
 this recovery gesture is not configurable. In *Always on* mode, unpressed keys
 use the indicator color at the brightness selected by bit 0. Pressed keys use
 their per-key color at full brightness. With palette version 3 firmware,

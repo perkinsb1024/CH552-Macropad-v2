@@ -55,7 +55,7 @@ The six-key variant uses a 22-byte layer record; the three-key variant uses a 15
 
 Each binding occupies two bytes. Pack two LED palette indices per byte, with the even-numbered LED in the low nibble and the odd-numbered LED in the high nibble. The unused high nibble of the three-key variant's second LED byte must be zero.
 
-Layer-option bits are: bit 0 reserved and zero, bit 1 allows bootloader entry by holding the encoder, bits 2–3 select layer-indicator behavior, and bits 4–7 select the indicator color. Holding the first three keys at power-up always enters the bootloader.
+Layer-option bits are: bit 0 reserved and zero, bit 1 allows bootloader entry by long-pressing the encoder button, bits 2–3 select layer-indicator behavior, and bits 4–7 select the indicator color. Holding the first three keys at power-up always enters the bootloader.
 
 For the encoder-button hold gesture, capture the originating layer's bootloader-from-run setting when the button is pressed. This prevents a layer change during a hold from unexpectedly enabling the gesture. Preserve the unconditional first-three-keys power-up recovery gesture documented in README.md.
 

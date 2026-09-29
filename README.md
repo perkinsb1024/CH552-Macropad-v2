@@ -12,14 +12,14 @@ elsewhere, set `CH55XDUINO_PACKAGE_DIR` to the package directory.
 Run `pio run` to build. The output is `.pio/build/ch552/firmware.hex`.
 To flash over USB, run `pio run -t upload` and put the CH552 into bootloader
 mode within ten seconds. Hold the encoder button for three seconds, or hold
-the first three keys during startup. Holding the first three keys at power-up
+the encoder button during startup. Holding the encoder button at power-up
 always enters the bootloader and cannot be disabled in a profile. The Upload
 task always invokes the programmer, even when the HEX file is already built.
 
 To clear the saved profile for testing, run `pio run -t erase-config`. This
 temporarily uploads a small utility that invalidates the profile, then uploads
 the normal firmware again. With no profile, the keys and encoder stay inactive
-and one red LED blinks at 1 Hz; hold the first three keys while powering up to
+and one red LED blinks at 1 Hz; hold the encoder button while powering up to
 enter the recovery bootloader.
 
 The firmware uses the version 2 image codec in `src/config.c`. It validates a
@@ -70,9 +70,9 @@ controls usable. This probe adds no device flash overhead.
 `0` (or add `build_flags = -DENABLE_COLOR_PREVIEW=0` to `platformio.ini`) to
 exclude preview. Clean and rebuild after changing the flag. All flash
 optimizations remain in effect. Disabling preview saves **204 flash bytes and
-one xRAM byte** on either variant: the six-key build uses 14,130 code bytes
-(206 free) and 624 application xRAM bytes; the three-key build uses 14,127 code
-bytes (209 free) and 615 application xRAM bytes. Disabled firmware rejects both
+one xRAM byte** on either variant: the six-key build uses 14,110 code bytes
+(226 free) and 624 application xRAM bytes; the three-key build uses 14,107 code
+bytes (229 free) and 615 application xRAM bytes. Disabled firmware rejects both
 Preview Color and Cancel Preview as unsupported.
 
 The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
@@ -146,7 +146,7 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,334 of 14,336 code bytes (2 free). It uses
+The current six-key image uses 14,314 of 14,336 code bytes (22 free). It uses
 625 of 876 application xRAM bytes (251 free). Add 148 separately reserved USB
 bytes to the RAM total. The linker provides 133 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The
@@ -162,7 +162,7 @@ Preview adds one persistent byte and shares the existing LED renderer and
 rainbow animation. Layer-address calculations and flash comparison loops are
 shared to save code; string-pool address checks use overflow-checked byte
 arithmetic. Both variants use a code-memory lookup table for rainbow offsets. The three-key
-image uses 14,331 code bytes (5 free) and 616 application xRAM bytes, with
+image uses 14,311 code bytes (25 free) and 616 application xRAM bytes, with
 133 bytes available for the internal stack.
 
 The project-local PlatformIO adapter may cache an earlier builder script, so

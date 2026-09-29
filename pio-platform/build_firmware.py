@@ -133,7 +133,7 @@ def upload(build, bootcfg):
         bootcfg,
         build / "firmware.hex",
         "Enter CH552 bootloader mode now: hold the encoder button for 3 seconds "
-        "or hold the first three keys while powering on. Waiting up to 10 seconds.",
+        "or hold the encoder button while powering on. Waiting up to 10 seconds.",
     )
 
 
@@ -193,7 +193,7 @@ def erase_config(project, build, clock, usb_ram, code_limit, physical_variant, b
         bootcfg,
         build / "erase_config.hex",
         "Enter CH552 bootloader mode now: hold the encoder button for 3 seconds "
-        "or hold the first three keys while powering on. The temporary utility will "
+        "or hold the encoder button while powering on. The temporary utility will "
         "erase the saved profile and return to bootloader mode.",
     )
     print("Waiting for the CH552 bootloader to reconnect...", flush=True)
@@ -208,7 +208,7 @@ def erase_config(project, build, clock, usb_ram, code_limit, physical_variant, b
     except subprocess.CalledProcessError as error:
         raise RuntimeError(
             "The profile was cleared, but firmware restore could not connect. "
-            "Enter bootloader mode by holding the first three keys while powering "
+            "Enter bootloader mode by holding the encoder button while powering "
             "on, then run `pio run -t upload`."
         ) from error
 
