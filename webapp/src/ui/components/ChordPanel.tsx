@@ -4,7 +4,7 @@ import { allPairs } from '../../model/pairs';
 import { summarize } from '../../model/actions';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { addChord, profile, removeChord, selectedLayer, selectedSlot } from '../store';
+import { addChord, canSwapSlots, draggedSlot, profile, removeChord, selectedLayer, selectedSlot, swapSlotActions } from '../store';
 import { IconPlus, IconTrash } from './Icons';
 
 export function ChordPanel() {
@@ -30,9 +30,12 @@ export function ChordPanel() {
             const slot: Slot = { kind: 'chord', layer: li, keyA: c.keyA, keyB: c.keyB };
             const selected = JSON.stringify(selectedSlot.value) === JSON.stringify(slot);
             const problem = actionProblem(c.action, { layerCount: p.layers.length, rotation: false });
+            const dragged = draggedSlot.value;
+            const invalidDrop = !!dragged && !canSwapSlots(dragged, slot);
+            const validDrop = !!dragged && !invalidDrop && JSON.stringify(dragged) !== JSON.stringify(slot);
             return (
-              <li key={`${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''}`}>
-                <button class="chord-main" onClick={() => { selectedSlot.value = slot; }}>
+              <li key={`${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${validDrop ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
+                <button class="chord-main" onClick={() => { selectedSlot.value = slot; }} draggable onDragStart={(event) => { draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; }} onDragOver={(event) => { const source = draggedSlot.value; if (source && canSwapSlots(source, slot)) { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'; } else if (event.dataTransfer) event.dataTransfer.dropEffect = 'none'; }} onDrop={(event) => { event.preventDefault(); const source = draggedSlot.value; if (source) swapSlotActions(source, slot); draggedSlot.value = null; }}>
                   <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
                   <span class="chord-action">{summarize(c.action)}</span>
                 </button>

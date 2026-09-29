@@ -50,6 +50,7 @@ export function App() {
             <section class="card card-device">
               <LayerTabs />
               <DeviceView />
+              <p class="hint device-drag-hint">Drag a key, encoder action, or chord onto another binding to swap them. Hold actions cannot be moved to encoder rotation.</p>
               <ul class="legend device-legend">
                 <li><span class="swatch swatch-selected" /> Selected input</li>
                 <li><span class="swatch swatch-problem" /> Needs attention before saving</li>

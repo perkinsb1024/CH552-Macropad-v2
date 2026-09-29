@@ -3,7 +3,7 @@ import { paletteHex } from '../../model/palette';
 import { summarize } from '../../model/actions';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { profile, selectedLayer, selectedSlot } from '../store';
+import { canSwapSlots, draggedSlot, profile, selectedLayer, selectedSlot, swapSlotActions } from '../store';
 import { IconRotate } from './Icons';
 
 function sameSlot(a: Slot | null, b: Slot): boolean {
@@ -20,6 +20,27 @@ export function DeviceView() {
   for (const c of p.chords) if (c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
 
   const select = (slot: Slot) => { selectedSlot.value = slot; };
+  const dragStart = (event: DragEvent, slot: Slot) => {
+    draggedSlot.value = slot;
+    event.dataTransfer?.setData('application/x-macropad-slot', 'move');
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+  };
+  const dragEnd = () => { draggedSlot.value = null; };
+  const drop = (event: DragEvent, target: Slot) => {
+    event.preventDefault();
+    const source = draggedSlot.value;
+    if (source) swapSlotActions(source, target);
+    draggedSlot.value = null;
+  };
+  const dragOver = (event: DragEvent, target: Slot) => {
+    const source = draggedSlot.value;
+    if (!source || !canSwapSlots(source, target)) {
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  };
 
   const KeyCap = ({ index }: { index: number }) => {
     const slot: Slot = { kind: 'key', layer: li, index };
@@ -27,11 +48,19 @@ export function DeviceView() {
     const problem = actionProblem(action, { layerCount, rotation: false });
     const color = paletteHex(layer.leds[index]!);
     const off = layer.leds[index] === 15;
+    const dragged = draggedSlot.value;
+    const invalidDrop = !!dragged && !canSwapSlots(dragged, slot);
+    const validDrop = !!dragged && !invalidDrop && !sameSlot(dragged, slot);
     return (
       <button
-        class={`keycap ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''}`}
+        class={`keycap ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${validDrop ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-glow:${off ? 'transparent' : color}`}
         onClick={() => select(slot)}
+        draggable
+        onDragStart={(event) => dragStart(event, slot)}
+        onDragEnd={dragEnd}
+        onDragOver={(event) => dragOver(event, slot)}
+        onDrop={(event) => drop(event, slot)}
         aria-label={`Key ${index + 1}: ${summarize(action)}`}
       >
         <span class="keycap-led" aria-hidden="true" />
@@ -45,8 +74,11 @@ export function DeviceView() {
   const EncoderPart = ({ slot, label, icon }: { slot: Slot; label: string; icon?: preact.ComponentChildren }) => {
     const action = slot.kind === 'encoderButton' ? layer.encoderButton : slot.kind === 'clockwise' ? layer.clockwise : layer.counterclockwise;
     const problem = actionProblem(action, { layerCount, rotation: slot.kind !== 'encoderButton' });
+    const dragged = draggedSlot.value;
+    const invalidDrop = !!dragged && !canSwapSlots(dragged, slot);
+    const validDrop = !!dragged && !invalidDrop && !sameSlot(dragged, slot);
     return (
-      <button class={`enc-part ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''}`} onClick={() => select(slot)}>
+      <button class={`enc-part ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${validDrop ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={() => select(slot)} draggable onDragStart={(event) => dragStart(event, slot)} onDragEnd={dragEnd} onDragOver={(event) => dragOver(event, slot)} onDrop={(event) => drop(event, slot)}>
         <span class="enc-part-label">{icon}{label}</span>
         <span class="enc-part-value">{summarize(action)}</span>
       </button>

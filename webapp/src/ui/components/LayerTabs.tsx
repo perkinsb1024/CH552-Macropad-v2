@@ -1,11 +1,9 @@
-import { useState } from 'preact/hooks';
-import { addLayer, ask, closeDialog, layerName, meta, profile, removeLayer, selectedLayer, selectedSlot, setLayerName } from '../store';
+import { addLayer, ask, closeDialog, draggedLayer, layerName, profile, removeLayer, selectedLayer, selectedSlot, swapLayers } from '../store';
 import { MAX_LAYERS } from '../../model/constants';
 import { IconPlus, IconTrash } from './Icons';
 
 export function LayerTabs() {
   const p = profile.value!;
-  const [editing, setEditing] = useState<number | null>(null);
   const current = selectedLayer.value;
   const removeSelected = () => {
     ask({
@@ -27,26 +25,17 @@ export function LayerTabs() {
             key={i}
             role="tab"
             aria-selected={active}
-            class={`tab ${active ? 'tab-active' : ''}`}
+            class={`tab ${active ? 'tab-active' : ''} ${draggedLayer.value === i ? 'is-dragging' : ''} ${draggedLayer.value !== null && draggedLayer.value !== i ? 'is-drop-target' : ''}`}
             onClick={() => { selectedLayer.value = i; if (selectedSlot.value && selectedSlot.value.layer !== i) selectedSlot.value = null; }}
-            onDblClick={() => setEditing(i)}
-            title="Double-click to rename (name is stored in this browser only)"
+            title="Drag onto another layer to swap their configurations"
+            draggable
+            onDragStart={(event) => { draggedLayer.value = i; event.dataTransfer?.setData('application/x-macropad-layer', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }}
+            onDragEnd={() => { draggedLayer.value = null; }}
+            onDragOver={(event) => { if (draggedLayer.value !== null && draggedLayer.value !== i) { event.preventDefault(); if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'; } }}
+            onDrop={(event) => { event.preventDefault(); const source = draggedLayer.value; if (source !== null) swapLayers(source, i); draggedLayer.value = null; }}
           >
             <span class="tab-index">{i + 1}</span>
-            {editing === i ? (
-              <input
-                class="tab-rename"
-                autoFocus
-                value={meta.value.layerNames?.[i] ?? ''}
-                placeholder={`Layer ${i + 1}`}
-                onInput={(e) => setLayerName(i, (e.target as HTMLInputElement).value)}
-                onBlur={() => setEditing(null)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setEditing(null); }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span class="tab-name">{layerName(i)}</span>
-            )}
+            <span class="tab-name">{layerName(i)}</span>
             {p.startupLayer === i && <span class="tab-badge" title="Startup layer">start</span>}
           </button>
         );

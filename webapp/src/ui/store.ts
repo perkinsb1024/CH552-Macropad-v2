@@ -1,5 +1,6 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
+import { descriptor } from '../model/actions';
 import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { validateProfile } from '../model/validate';
@@ -44,6 +45,10 @@ export const baseline = signal<Profile | null>(null);
 export const meta = signal<LocalMetadata>({});
 export const selectedLayer = signal(0);
 export const selectedSlot = signal<Slot | null>(null);
+/** The binding currently being moved with native drag and drop. */
+export const draggedSlot = signal<Slot | null>(null);
+/** The layer currently being moved with native drag and drop. */
+export const draggedLayer = signal<number | null>(null);
 
 interface EditorSnapshot { profile: Profile; meta: LocalMetadata }
 interface HistoryEntry extends EditorSnapshot { key?: string; at: number }
@@ -215,6 +220,85 @@ export function setAction(slot: Slot, action: Action): void {
   }, `action:${slotMemoryKey(slot)}:${action.type}`);
 }
 
+function sameSlot(a: Slot, b: Slot): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function isRotationSlot(slot: Slot): boolean {
+  return slot.kind === 'clockwise' || slot.kind === 'counterclockwise';
+}
+
+/** Whether moving either binding to the other input would be valid. */
+export function canSwapSlots(source: Slot, target: Slot): boolean {
+  const p = profile.value;
+  if (!p || sameSlot(source, target)) return false;
+  const sourceAction = getAction(p, source);
+  const targetAction = getAction(p, target);
+  if (!sourceAction || !targetAction) return false;
+  return !(isRotationSlot(target) && descriptor(sourceAction.type).needsRelease) &&
+    !(isRotationSlot(source) && descriptor(targetAction.type).needsRelease);
+}
+
+/** Swaps the actions on two inputs. Key-to-key moves include their LED colors. */
+export function swapSlotActions(source: Slot, target: Slot): void {
+  if (!canSwapSlots(source, target)) return;
+  updateProfile((draft) => {
+    const get = (slot: Slot): Action | undefined => getAction(draft, slot);
+    const sourceAction = get(source);
+    const targetAction = get(target);
+    if (!sourceAction || !targetAction) return;
+    const put = (slot: Slot, action: Action) => {
+      const layer = draft.layers[slot.layer];
+      if (!layer) return;
+      switch (slot.kind) {
+        case 'key': layer.keys[slot.index] = action; break;
+        case 'encoderButton': layer.encoderButton = action; break;
+        case 'clockwise': layer.clockwise = action; break;
+        case 'counterclockwise': layer.counterclockwise = action; break;
+        case 'chord': {
+          const chord = draft.chords.find((c) => c.layer === slot.layer && c.keyA === slot.keyA && c.keyB === slot.keyB);
+          if (chord) chord.action = action;
+          break;
+        }
+      }
+    };
+    put(source, targetAction);
+    put(target, sourceAction);
+    if (source.kind === 'key' && target.kind === 'key') {
+      const sourceLayer = draft.layers[source.layer]!;
+      const targetLayer = draft.layers[target.layer]!;
+      [sourceLayer.leds[source.index], targetLayer.leds[target.index]] = [targetLayer.leds[target.index]!, sourceLayer.leds[source.index]!];
+    }
+  });
+  selectedSlot.value = target;
+}
+
+/** Swaps two layer configurations while keeping layer-targeting actions attached to those configurations. */
+export function swapLayers(source: number, target: number): void {
+  const p = profile.value;
+  if (!p || source === target || !p.layers[source] || !p.layers[target]) return;
+  const remap = (layer: number) => layer === source ? target : layer === target ? source : layer;
+  updateProfile((draft) => {
+    [draft.layers[source], draft.layers[target]] = [draft.layers[target]!, draft.layers[source]!];
+    draft.chords = draft.chords.map((chord) => ({ ...chord, layer: remap(chord.layer) }));
+    const updateTarget = (action: Action): Action => (
+      action.type === 'setLayer' || action.type === 'momentaryLayer'
+        ? { ...action, layer: remap(action.layer) }
+        : action
+    );
+    for (const layer of draft.layers) {
+      layer.keys = layer.keys.map(updateTarget);
+      layer.encoderButton = updateTarget(layer.encoderButton);
+      layer.clockwise = updateTarget(layer.clockwise);
+      layer.counterclockwise = updateTarget(layer.counterclockwise);
+    }
+    for (const chord of draft.chords) chord.action = updateTarget(chord.action);
+    draft.startupLayer = remap(draft.startupLayer);
+  });
+  selectedLayer.value = remap(selectedLayer.value);
+  if (selectedSlot.value) selectedSlot.value = { ...selectedSlot.value, layer: remap(selectedSlot.value.layer) } as Slot;
+}
+
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';
 type ActionMemory = Record<string, Partial<Record<Action['type'], Action>>>;
 function slotMemoryKey(slot: Slot): string { return JSON.stringify(slot); }
@@ -325,16 +409,7 @@ export function removeLayer(layer: number): void {
 }
 
 export function layerName(index: number): string {
-  return meta.value.layerNames?.[index]?.trim() || `Layer ${index + 1}`;
-}
-
-export function setLayerName(index: number, name: string): void {
-  if ((meta.value.layerNames?.[index] ?? '') === name) return;
-  const names = [...(meta.value.layerNames ?? [])];
-  while (names.length <= index) names.push('');
-  names[index] = name;
-  recordHistory(`layer-name:${index}`);
-  meta.value = { ...meta.value, layerNames: names };
+  return `Layer ${index + 1}`;
 }
 
 // ---------------------------------------------------------------------------
