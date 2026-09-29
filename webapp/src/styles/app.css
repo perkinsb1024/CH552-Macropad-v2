@@ -398,9 +398,58 @@ output {
   border-radius: var(--radius-sm);
   background: var(--bg-sunken);
 }
-.preview .plus {
-  margin: 0 4px;
-  color: var(--fg-faint);
+.shortcut-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.shortcut-modifiers {
+  display: contents;
+}
+.keycap-label .shortcut-pills {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.keycap-label .shortcut-modifiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 100%;
+}
+.shortcut-pill {
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  box-shadow: none;
+}
+.shortcut-modifier {
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  border-color: var(--line-strong);
+}
+.shortcut-key {
+  background: var(--accent-soft);
+  color: var(--fg);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+.shortcut-none {
+  background: color-mix(in srgb, white 90%, var(--bg-elev));
+  color: #626878;
+  border: 1px dashed #9298a6;
+}
+.keycap-label:has(.shortcut-pills) {
+  display: block;
+  overflow: visible;
 }
 .pill {
   display: inline-flex;
@@ -824,8 +873,8 @@ output {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
-  height: 96px;
-  padding: 10px 10px 9px;
+  min-height: 96px;
+  padding: 36px 10px 9px;
   text-align: left;
   overflow: visible;
   border-radius: 12px;
@@ -879,6 +928,7 @@ output {
   font-variant-numeric: tabular-nums;
 }
 .keycap-label {
+  flex-shrink: 0;
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1.25;
@@ -1041,8 +1091,22 @@ output {
   align-items: center;
   gap: 4px;
   color: var(--fg-muted);
+  flex-shrink: 0;
+}
+.chord-input {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  border-radius: 5px;
+  background: var(--sim-soft);
+  color: var(--sim);
+  border-color: color-mix(in srgb, var(--sim) 35%, var(--line));
 }
 .chord-action {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   font-weight: 500;
 }
 .chord-global {

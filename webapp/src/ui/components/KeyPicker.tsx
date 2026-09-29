@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
-import { KEYS, KEY_GROUPS, keyForCode, keyName } from '../../keys/keyboard';
+import { KEYS, KEY_GROUPS, keyForCode } from '../../keys/keyboard';
+import { ShortcutPills } from './ActionLabel';
 import { MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT } from '../../model/constants';
 
 interface Props {
@@ -73,10 +74,7 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
         </div>
       </div>
       <div class="preview">
-        {[...MODS.filter((m) => modifiers & m.bit).map((m) => m.label.split(' ')[0]!), ...(usage ? [keyName(usage)] : [])].map((part, i, arr) => (
-          <span key={i}><kbd>{part}</kbd>{i < arr.length - 1 && <span class="plus">+</span>}</span>
-        ))}
-        {!usage && !modifiers && <span class="muted">Nothing selected</span>}
+        <ShortcutPills usage={usage} modifiers={modifiers} />
       </div>
     </div>
   );

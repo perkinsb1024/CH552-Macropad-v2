@@ -6,6 +6,7 @@ import { actionProblem } from '../../model/validate';
 import { canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
 import { dropPosition } from '../drag';
 import { IconRotate } from './Icons';
+import { ActionLabel } from './ActionLabel';
 
 function sameSlot(a: Slot | null, b: Slot): boolean {
   return !!a && JSON.stringify(a) === JSON.stringify(b);
@@ -152,7 +153,7 @@ export function DeviceView() {
       >
         <span class="keycap-led" aria-hidden="true" />
         <span class="keycap-index">{index + 1}</span>
-        <span class="keycap-label">{summarize(action)}</span>
+        <span class="keycap-label"><ActionLabel action={action} /></span>
         {chordKeys.has(index) && <span class="keycap-chord" title="Part of a chord on this layer">chord</span>}
         {intent === 'before' || intent === 'after' ? <span class={`drop-line ${slotDrop.value?.rowBoundary ? 'drop-line-row' : `drop-line-${intent}`}`} aria-hidden="true" /> : null}
       </button>
@@ -168,7 +169,7 @@ export function DeviceView() {
     return (
       <button class={`enc-part ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={() => select(slot)} draggable onDragStart={(event) => dragStart(event, slot)} onDragEnd={dragEnd} onDragOver={(event) => dragOver(event, slot, 'vertical')} onDrop={(event) => drop(event, slot, 'vertical')}>
         <span class="enc-part-label">{icon}{label}</span>
-        <span class="enc-part-value">{summarize(action)}</span>
+        <span class="enc-part-value"><ActionLabel action={action} /></span>
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>
     );

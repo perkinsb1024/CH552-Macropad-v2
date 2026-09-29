@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { keyCount } from '../../model/constants';
 import { allPairs } from '../../model/pairs';
-import { summarize } from '../../model/actions';
+import { ActionLabel } from './ActionLabel';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
 import { addChord, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, setChordGlobal, slotDrop, swapSlotActions } from '../store';
@@ -92,8 +92,8 @@ export function ChordPanel() {
                   draggedSlot.value = null;
                   slotDrop.value = null;
                 }}>
-                  <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
-                  <span class="chord-action">{summarize(c.action)}</span>
+                  <span class="chord-keys" aria-label={`Keys ${c.keyA + 1} and ${c.keyB + 1}`}><kbd class="shortcut-pill chord-input">{c.keyA + 1}</kbd><kbd class="shortcut-pill chord-input">{c.keyB + 1}</kbd></span>
+                  <span class="chord-action"><ActionLabel action={c.action} /></span>
                   {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
                 </button>
                 <button class={`btn btn-icon chord-global ${c.global ? 'is-on' : ''}`} aria-label={c.global ? 'Make chord local to this layer' : 'Make chord global'} aria-pressed={!!c.global} title={globeDisabled ? 'This key pair already has a chord at that scope' : c.global ? 'Active on all layers; click to make local to this layer' : 'Click to use this chord on all layers'} disabled={globeDisabled} onClick={() => setChordGlobal(c, !c.global, li)}><IconGlobe /></button>

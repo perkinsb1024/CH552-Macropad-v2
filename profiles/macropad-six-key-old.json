@@ -1,0 +1,148 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 2,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "chordWindowMs": 50,
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "keyTap",
+          "usage": 4,
+          "modifiers": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 27,
+          "modifiers": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 29,
+          "modifiers": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 6,
+          "modifiers": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 25,
+          "modifiers": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 46,
+          "modifiers": 3
+        }
+      ],
+      "encoderButton": {
+        "type": "keyTap",
+        "usage": 22,
+        "modifiers": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Red",
+        "Leaf",
+        "Teal",
+        "Orange",
+        "Azure",
+        "Rose"
+      ],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 3,
+      "indicatorColor": 4,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "keyTap",
+          "usage": 4,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 27,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 29,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 6,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 25,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 46,
+          "modifiers": 10
+        }
+      ],
+      "encoderButton": {
+        "type": "keyTap",
+        "usage": 22,
+        "modifiers": 8
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Red",
+        "Leaf",
+        "Teal",
+        "Orange",
+        "Azure",
+        "Rose"
+      ],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 3,
+      "indicatorColor": 14,
+      "indicatorFullBrightness": false
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        3,
+        4
+      ],
+      "global": true,
+      "action": {
+        "type": "relativeLayer",
+        "offset": 1
+      }
+    }
+  ],
+  "localMetadata": {
+    "layerNames": [
+      "Windows",
+      "Mac"
+    ],
+    "profileName": "6-key old"
+  }
+}
