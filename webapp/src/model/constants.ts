@@ -1,7 +1,7 @@
-/** Shared constants from protocol/config-v1.md and protocol/hid-v1.md. */
+/** Shared constants from protocol/config-v2.md and protocol/hid-v1.md. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 1;
+export const FORMAT_VERSION = 2;
 export const HEADER_SIZE = 9;
 export const MAX_LAYERS = 4;
 export const CHORD_ENTRY_SIZE = 3;
@@ -65,6 +65,7 @@ export const MOUSE_LEFT = 1;
 export const MOUSE_RIGHT = 2;
 export const MOUSE_MIDDLE = 4;
 
+export const LAYER_OPT_FULL_BRIGHTNESS = 0x01;
 export const LAYER_OPT_BOOTLOADER_RUN = 0x02;
 export const LAYER_OPT_INDICATOR_SHIFT = 2;
 export const LAYER_OPT_COLOR_SHIFT = 4;

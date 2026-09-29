@@ -1,4 +1,4 @@
-import { IMAGE_SIZE, MAX_LAYERS, PAYLOAD_SIZE, type Variant } from '../model/constants';
+import { FORMAT_VERSION, IMAGE_SIZE, MAX_LAYERS, PAYLOAD_SIZE, type Variant } from '../model/constants';
 import { imageCrc } from '../codec/crc16';
 import { decodeImage } from '../codec/decode';
 import { encodeProfile } from '../codec/encode';
@@ -103,7 +103,7 @@ export class SimulatedDevice implements Transport {
     switch (opcode) {
       case Opcode.GetInfo:
         reply[6] = 14;
-        reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, 1, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, MAX_LAYERS, IMAGE_SIZE, PALETTE_VERSION, 0xff, 0xff], 8);
+        reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, FORMAT_VERSION, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, MAX_LAYERS, IMAGE_SIZE, PALETTE_VERSION, 0xff, 0xff], 8);
         return Status.Ok;
       case Opcode.GetStatus:
         reply[6] = 6;

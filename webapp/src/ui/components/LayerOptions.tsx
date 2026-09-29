@@ -6,7 +6,7 @@ const BEHAVIORS = [
   { value: LayerIndicatorBehavior.None, label: 'Do not indicate' },
   { value: LayerIndicatorBehavior.BlinkOnce, label: 'Blink once' },
   { value: LayerIndicatorBehavior.BlinkByLayer, label: 'Blink by layer number' },
-  { value: LayerIndicatorBehavior.AlwaysOn, label: 'Dim background' },
+  { value: LayerIndicatorBehavior.AlwaysOn, label: 'Always on' },
 ];
 
 export function LayerOptions() {
@@ -40,7 +40,7 @@ export function LayerOptions() {
           >
             {BEHAVIORS.map((behavior) => <option value={behavior.value}>{behavior.label}</option>)}
           </select>
-          {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys use a dim background color; pressed keys show their per-key color at full brightness. {rainbowAvailable ? 'Choose Rainbow for a slowly cycling color on idle keys.' : 'Rainbow requires palette version 3 firmware; older firmware displays Off.'}</span>}
+          {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys show the selected color or Rainbow; pressed keys show their per-key color. {rainbowAvailable ? '' : 'Rainbow requires palette version 3 firmware; older firmware displays Off.'}</span>}
           {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number when switching to this layer.</span>}
         </label>
         {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
@@ -65,6 +65,16 @@ export function LayerOptions() {
               })}
             </div>
           </div>
+        )}
+        {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && (
+          <label class="check">
+            <input
+              type="checkbox"
+              checked={layer.indicatorFullBrightness}
+              onChange={(e) => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = (e.target as HTMLInputElement).checked; })}
+            />
+            <span>Full brightness for idle LEDs</span>
+          </label>
         )}
       </div>
     </section>

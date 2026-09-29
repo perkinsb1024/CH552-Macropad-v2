@@ -1,6 +1,6 @@
 import {
   ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, MAX_LAYERS,
-  LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
+  LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile } from '../model/types';
@@ -146,7 +146,6 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       leds.push(i & 1 ? byte >> 4 : byte & 15);
     }
     const options = image[base + size - 1]!;
-    if (options & 0x01) return fail('malformed', `Layer ${li + 1}: reserved option bit is non-zero.`);
     const layer: Layer = {
       keys: actions.slice(0, keys),
       encoderButton: actions[keys]!,
@@ -156,6 +155,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       bootloaderFromRun: !!(options & LAYER_OPT_BOOTLOADER_RUN),
       indicatorBehavior: (options >> LAYER_OPT_INDICATOR_SHIFT) & 3,
       indicatorColor: options >> 4,
+      indicatorFullBrightness: !!(options & LAYER_OPT_FULL_BRIGHTNESS),
     };
     layers.push(layer);
   }

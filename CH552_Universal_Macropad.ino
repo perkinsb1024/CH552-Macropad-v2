@@ -102,28 +102,28 @@ void updateLeds() {
       off = 1;
     }
     if (dim && rainbow) {
-      // Three linear color ramps form a dim, continuously cycling rainbow.
+      // Three linear color ramps form a full-brightness cycling rainbow.
       if (wheel < 85) {
-        red = (85 - wheel) >> 2;
-        green = wheel >> 2;
+        red = (85 - wheel) * 3;
+        green = wheel * 3;
         blue = 0;
       } else if (wheel < 170) {
         wheel -= 85;
         red = 0;
-        green = (85 - wheel) >> 2;
-        blue = wheel >> 2;
+        green = (85 - wheel) * 3;
+        blue = wheel * 3;
       } else {
         wheel -= 170;
-        red = wheel >> 2;
+        red = wheel * 3;
         green = 0;
-        blue = (85 - wheel) >> 2;
+        blue = (85 - wheel) * 3;
       }
     } else {
       red = configPalette[color][0];
       green = configPalette[color][1];
       blue = configPalette[color][2];
     }
-    if (dim && !rainbow) {
+    if (dim && !(options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS)) {
       red = dimIndicatorComponent(red);
       green = dimIndicatorComponent(green);
       blue = dimIndicatorComponent(blue);

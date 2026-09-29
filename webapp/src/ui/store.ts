@@ -1,6 +1,6 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
-import { MAX_LAYERS, keyCount, type Variant } from '../model/constants';
+import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
@@ -10,7 +10,7 @@ import { decodeImage, peekHeader, type DecodeResult } from '../codec/decode';
 import { ConfigClient, ProtocolError, type SavePhase } from '../protocol/client';
 import { WebHidTransport, webHidSupported, type Transport } from '../protocol/transport';
 import { SimulatedDevice } from '../protocol/simulator';
-import type { DeviceInfo, DeviceStatus } from '../protocol/packet';
+import { TRANSPORT_VERSION, type DeviceInfo, type DeviceStatus } from '../protocol/packet';
 import { exportProfile, importProfile, type LocalMetadata } from '../io/json';
 import { clearDraft, loadDraft, storeDraft } from '../io/drafts';
 
@@ -111,7 +111,7 @@ export const encodable = computed(() => issues.value.length === 0);
 /** Whether the connected device can accept this profile. */
 export const canSave = computed(() => {
   const c = connection.value;
-  return c.kind === 'connected' && !!profile.value && encodable.value && profile.value.variant === c.connection.info.variant && saveState.value.phase !== 'busy';
+  return c.kind === 'connected' && c.connection.info.formatVersion === FORMAT_VERSION && !!profile.value && encodable.value && profile.value.variant === c.connection.info.variant && saveState.value.phase !== 'busy';
 });
 
 export type SaveState =
@@ -384,8 +384,8 @@ async function attach(transport: Transport, label: string): Promise<void> {
   const client = new ConfigClient(transport);
   try {
     const info = await client.getInfo();
-    if (info.transportVersion !== 1 || info.formatVersion !== 1) {
-      throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports v1 only.`);
+    if (info.transportVersion !== TRANSPORT_VERSION || info.formatVersion !== FORMAT_VERSION) {
+      throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports transport v${TRANSPORT_VERSION} / format v${FORMAT_VERSION}.`);
     }
     const status = await client.getStatus();
     const conn: Connection = { transport, client, info, status };
@@ -471,7 +471,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
       fromDevice = defaultProfile(info.variant);
       const header = peekHeader(flash);
       if (decoded.reason === 'unsupported-version') {
-        notify('error', `The saved profile uses format version ${header.version}, which this app cannot edit. Saving is disabled; you can export the raw bytes.`, 12000);
+        notify('error', `The saved profile uses format version ${header.version}, which this app cannot edit. You can export the raw bytes or replace the profile when saving.`, 12000);
       } else if (decoded.reason === 'no-magic') {
         notify('info', 'No profile is saved. The device is inactive until you save one; the editor loaded a starter profile.', 8000);
       } else {
@@ -524,14 +524,19 @@ export async function save(): Promise<void> {
   const c = connection.value;
   const p = profile.value;
   if (c.kind !== 'connected' || !p) return;
+  if (c.connection.info.formatVersion !== FORMAT_VERSION) {
+    notify('error', `This editor needs firmware with configuration format version ${FORMAT_VERSION} before it can save.`);
+    return;
+  }
   if (p.variant !== c.connection.info.variant) {
     notify('error', 'This profile is for the other hardware variant and cannot be saved to this device.');
     return;
   }
-  if (deviceDecode.value && !deviceDecode.value.ok && deviceDecode.value.reason === 'unsupported-version') {
+  if (deviceDecode.value && !deviceDecode.value.ok && deviceDecode.value.reason === 'unsupported-version' &&
+      deviceFlash.value && peekHeader(deviceFlash.value).version > FORMAT_VERSION) {
     ask({
-      title: 'Overwrite a newer-format profile?',
-      body: 'The device holds a profile in a format this app cannot read. Saving will replace it with a version 1 profile. Export the raw bytes first if you want a backup.',
+      title: 'Overwrite a newer profile?',
+      body: `The device holds a profile in a format this app cannot read. Saving will replace it with a version ${FORMAT_VERSION} profile. Export the raw bytes first if you want a backup.`,
       actions: [
         { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
         { label: 'Overwrite', tone: 'danger', onSelect: () => { closeDialog(); deviceDecode.value = null; void save(); } },

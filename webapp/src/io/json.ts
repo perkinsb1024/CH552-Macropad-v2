@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyScrollInversion } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 1;
+export const JSON_VERSION = 2;
 
 /** Optional editor annotations that never reach the device. */
 export interface LocalMetadata {
@@ -30,6 +30,7 @@ export interface ExportedProfile {
     bootloaderFromRun: boolean;
     indicatorBehavior: number;
     indicatorColor: number;
+    indicatorFullBrightness: boolean;
   }>;
   chords: Array<{ layer: number; keys: [number, number]; action: Action }>;
   localMetadata?: LocalMetadata;
@@ -51,6 +52,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       bootloaderFromRun: layer.bootloaderFromRun,
       indicatorBehavior: layer.indicatorBehavior,
       indicatorColor: layer.indicatorColor,
+      indicatorFullBrightness: layer.indicatorFullBrightness,
     })),
     chords: profile.chords.map((c) => ({ layer: c.layer, keys: [c.keyA, c.keyB], action: c.action })),
   };
@@ -129,7 +131,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (raw.version !== 1 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > 4) throw new ImportError('Profile must have 1–4 layers.');
@@ -146,6 +148,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       bootloaderFromRun: bool(l.bootloaderFromRun, 'bootloaderFromRun'),
       indicatorBehavior: l.indicatorBehavior === undefined ? 0 : int(l.indicatorBehavior, `Layer ${li + 1} indicatorBehavior`),
       indicatorColor: l.indicatorColor === undefined ? 0 : int(l.indicatorColor, `Layer ${li + 1} indicatorColor`),
+      indicatorFullBrightness: bool(l.indicatorFullBrightness, `Layer ${li + 1} indicatorFullBrightness`),
     };
     if (l.invertScroll === true) (layer as Layer & { invertScroll?: boolean }).invertScroll = true;
     return layer;

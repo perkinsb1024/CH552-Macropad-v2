@@ -17,6 +17,7 @@ export function emptyLayer(variant: Variant): Layer {
     bootloaderFromRun: false,
     indicatorBehavior: 0,
     indicatorColor: 0,
+    indicatorFullBrightness: false,
   };
 }
 
@@ -43,6 +44,7 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
     bootloaderFromRun: true,
     indicatorBehavior: LayerIndicatorBehavior.AlwaysOn,
     indicatorColor: windows ? 4 : 14,
+    indicatorFullBrightness: false,
   };
 }
 
@@ -66,6 +68,7 @@ export function migrateLegacyScrollInversion(profile: Profile): Profile {
     // Drafts saved by older editor versions do not contain these fields.
     layer.indicatorBehavior ??= 0;
     layer.indicatorColor ??= 0;
+    layer.indicatorFullBrightness ??= false;
     const legacy = layer as Layer & { invertScroll?: boolean };
     if (legacy.invertScroll) {
       if (layer.clockwise.type === 'scroll') layer.clockwise = { ...layer.clockwise, delta: -layer.clockwise.delta };

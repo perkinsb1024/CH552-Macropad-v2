@@ -146,9 +146,6 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     used = image[4];
     for (layer = 0; layer < layers; layer++) {
         offset = 9 + size * layer;
-        if (image[offset + size - 1] & CONFIG_LAYER_OPT_RESERVED_MASK) {
-            return 0;
-        }
         for (i = 0; i < keys + 3; i++) {
             if (!actionValid(image, offset + 2 * i, layers,
                              i >= keys + 1, pool, used)) {

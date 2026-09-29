@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 Universal Macropad. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v1.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v2.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.

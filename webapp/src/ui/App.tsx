@@ -1,4 +1,6 @@
 import { useEffect } from 'preact/hooks';
+import { FORMAT_VERSION } from '../model/constants';
+import { TRANSPORT_VERSION } from '../protocol/packet';
 import { connectSimulator, connection, profile, reconnectGranted } from './store';
 import { TopBar } from './components/TopBar';
 import { Welcome } from './components/Welcome';
@@ -68,7 +70,7 @@ export function App() {
         </main>
       )}
       <footer class="footer">
-        <span>Universal Macropad · config format v1 · transport v1</span>
+        <span>Universal Macropad · config format v{FORMAT_VERSION} · transport v{TRANSPORT_VERSION}</span>
         <span class="muted">Saves write the device's 128-byte DataFlash and read it back before reporting success.</span>
       </footer>
       <Dialog />

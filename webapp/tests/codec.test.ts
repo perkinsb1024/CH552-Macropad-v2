@@ -14,12 +14,12 @@ const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperC
 describe('default profile image headers', () => {
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 01 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 02 01 00 00');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 01 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 02 01 00 01');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -29,6 +29,14 @@ describe('default profile image headers', () => {
       expect(decoded.ok).toBe(true);
       if (decoded.ok) expect(decoded.profile).toEqual(profile);
     }
+  });
+  it('stores full brightness in layer option bit 0', () => {
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers[0]!.indicatorFullBrightness = true;
+    const image = encodeProfile(profile);
+    expect(image[30]! & 1).toBe(1);
+    const decoded = decodeImage(image);
+    expect(decoded.ok && decoded.profile.layers[0]!.indicatorFullBrightness).toBe(true);
   });
   it('rejects the other variant', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
@@ -107,6 +115,7 @@ describe('capacity', () => {
     it(`layers=${layers}`, () => {
       for (const variant of [VARIANT_SIX_KEYS, VARIANT_THREE_KEYS] as Variant[]) {
         const profile = defaultProfile(variant);
+        profile.layers = profile.layers.slice(0, layers);
         while (profile.layers.length < layers) profile.layers.push(emptyLayer(variant));
         expect(computeCapacity(profile).remaining).toBe(table[layers]![variant as 0 | 1]);
       }
@@ -114,6 +123,8 @@ describe('capacity', () => {
   }
   it('exact fit and one-byte overflow', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers = profile.layers.slice(0, 1);
+    profile.layers[0]!.encoderButton = { type: 'none' };
     profile.layers[0]!.keys[0] = { type: 'string', text: 'x'.repeat(96) }; // 97 bytes with terminator
     expect(computeCapacity(profile).remaining).toBe(0);
     expect(validateProfile(profile)).toEqual([]);
@@ -163,7 +174,6 @@ describe('capacity', () => {
 describe('chords', () => {
   it('sorts by identifier and round-trips', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
-    profile.layers.push(emptyLayer(VARIANT_SIX_KEYS));
     profile.chords = [
       { layer: 1, keyA: 0, keyB: 1, action: { type: 'keyTap', usage: 5, modifiers: 0 } },
       { layer: 0, keyA: 4, keyB: 5, action: { type: 'string', text: 'chord' } },
@@ -197,7 +207,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 2;
+    image[2] = 3;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });
@@ -247,13 +257,15 @@ describe('decoder rejections', () => {
   });
   it('storedCrc reads little-endian', () => {
     const image = base();
-    expect(storedCrc(image)).toBe(0xd111);
+    expect(storedCrc(image)).toBe(0xd3ba);
   });
 });
 
 describe('layer count changes', () => {
   it('removing a layer flags dangling references', () => {
     const profile: Profile = defaultProfile(VARIANT_SIX_KEYS);
+    profile.layers = profile.layers.slice(0, 1);
+    profile.layers[0]!.encoderButton = { type: 'none' };
     profile.layers.push(emptyLayer(VARIANT_SIX_KEYS));
     profile.layers[0]!.keys[0] = { type: 'setLayer', layer: 1 };
     profile.startupLayer = 1;

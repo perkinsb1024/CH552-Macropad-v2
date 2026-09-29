@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define CONFIG_SIZE 128
-#define CONFIG_VERSION 1
+#define CONFIG_VERSION 2
 #define CONFIG_PALETTE_VERSION 3
 #define CONFIG_MAX_LAYERS 4
 #define CONFIG_SIX_KEYS 0
@@ -34,8 +34,8 @@
 #define CONFIG_ACTION_MOUSE_X          0xE
 #define CONFIG_ACTION_MOUSE_Y          0xF
 
-// Per-layer option byte: bit 0 reserved, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.
-#define CONFIG_LAYER_OPT_RESERVED_MASK  0x01
+// Per-layer option byte: full brightness bit 0, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.
+#define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01
 #define CONFIG_LAYER_OPT_BOOTLOADER_RUN  0x02
 #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
 #define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C

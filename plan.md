@@ -243,7 +243,7 @@ Support versioned JSON import/export with readable action names and strings, plu
 - Firmware: keep the sketch as setup/loop orchestration; introduce C-compatible configuration, action, input, storage, and protocol modules under src.
 - USB: update the existing src/userUsbHidKeyboardMouse descriptor, handler, and report files, keeping changes local to this repository.
 - Web app: webapp/src modules for model, codec, protocol, HID transport, key mappings, palette, and UI.
-- Shared contract: protocol/config-v1.md, protocol/hid-v1.md, and golden JSON/binary fixtures for both physical variants used by firmware-side host tests and TypeScript tests.
+- Shared contract: protocol/config-v2.md, protocol/hid-v1.md, and golden JSON/binary fixtures for both physical variants used by firmware-side host tests and TypeScript tests.
 - Documentation: update README.md with build instructions, one-time firmware upgrade, configuration workflow, palette, string/layout limits, and interrupted-save recovery by reconnecting and saving again.
 
 ## 7. Implementation sequence and acceptance checks

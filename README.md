@@ -22,16 +22,16 @@ the normal firmware again. With no profile, the keys and encoder stay inactive
 and one red LED blinks at 1 Hz; hold the first three keys while powering up to
 enter the recovery bootloader.
 
-The firmware uses the version 1 image codec in `src/config.c`. It validates a
+The firmware uses the version 2 image codec in `src/config.c`. It validates a
 128-byte image and exposes layer, binding, chord, and palette accessors. It does
 not provide a fallback profile: when DataFlash has no valid image, physical
 inputs stay inactive and one red LED blinks at 1 Hz while USB configuration
 access remains available.
-The byte format and palette are documented in `protocol/config-v1.md`. Run the
+The byte format and palette are documented in `protocol/config-v2.md`. Run the
 codec checks with:
 
 ```sh
-cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
   tests/config_test.c src/config.c -o /tmp/ch552-config-test
 /tmp/ch552-config-test
 ```
@@ -41,12 +41,15 @@ encoder middle-click and scroll directions, the encoder-hold bootloader option,
 and six original LED colors. A key's layer-selected LED color is shown while
 that key is held and clears on release.
 
-Palette version 3 adds a dim rainbow effect: choose **Dim background** for a
-layer's indicator behavior and **Rainbow** (palette index 15) for its indicator
-color. Idle LEDs cycle through colors with an offset across the keys; pressed
-keys still show their configured per-key colors. Index 15 remains Off for
-per-key colors and other indicator behaviors. On older firmware, this option
-still displays as Off in the editor.
+Palette version 3 adds a rainbow effect: choose **Always on** for a layer's
+indicator behavior and **Rainbow** (palette index 15) for its indicator color.
+Idle LEDs cycle through colors with an offset across the keys. The **Full
+brightness for idle LEDs** option applies to both solid colors and Rainbow;
+pressed keys still show their configured per-key colors. Index 15 remains Off
+for per-key colors and other indicator behaviors. Configuration format version
+2 uses bit 0 of each layer's option byte for full brightness. The updated
+firmware will reject an existing version 1 profile; save a profile with the
+updated editor after flashing.
 
 The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
 At startup it reads and validates DataFlash. If flash is invalid, the firmware
@@ -60,7 +63,7 @@ then verify actual DataFlash before applying the profile.
 Run the focused firmware checks with:
 
 ```sh
-cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
+cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
   tests/config_test.c src/config.c -o /tmp/ch552-config-test
 /tmp/ch552-config-test
 cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -D__data= -I src \
@@ -116,9 +119,9 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,334 of 14,336 code bytes (2 free). It uses
+The current six-key image uses 14,282 of 14,336 code bytes (54 free). It uses
 637 of 876 application xRAM bytes (239 free). Add 148 separately reserved USB
-bytes to the RAM total. The linker provides 132 bytes for the internal stack;
+bytes to the RAM total. The linker provides 130 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The
 128-byte staging buffer fits in application xRAM without a separate programming
 mode.

@@ -1,4 +1,5 @@
 import { useRef } from 'preact/hooks';
+import { FORMAT_VERSION } from '../../model/constants';
 import { connection, deviceDecode, deviceFlash, exportJson, exportRawFlash, importJsonFile, profile, resetToDefaults } from '../store';
 import { IconDownload, IconRefresh, IconUpload } from './Icons';
 
@@ -27,7 +28,7 @@ export function ToolsPanel() {
       {status && (
         <dl class="status-grid">
           <dt>Saved profile</dt>
-          <dd>{decode?.ok ? 'Valid' : decode ? <span class="warn">{decode.reason === 'no-magic' ? 'None' : decode.reason === 'unsupported-version' ? 'Newer format' : 'Invalid'}</span> : '—'}</dd>
+          <dd>{decode?.ok ? 'Valid' : decode ? <span class="warn">{decode.reason === 'no-magic' ? 'None' : decode.reason === 'unsupported-version' ? 'Different format' : 'Invalid'}</span> : '—'}</dd>
           <dt>Active layer</dt>
           <dd>Layer {status.currentLayer + 1}</dd>
           <dt>Firmware</dt>
@@ -39,6 +40,9 @@ export function ToolsPanel() {
             </>
           )}
         </dl>
+      )}
+      {c.kind === 'connected' && c.connection.info.formatVersion !== FORMAT_VERSION && (
+        <p class="hint warn">Saving requires firmware with configuration format v{FORMAT_VERSION}.</p>
       )}
       {deviceFlash.value && decode && !decode.ok && (
         <button class="btn btn-small" onClick={exportRawFlash} title="Download the raw 128 flash bytes (also copies hex to the clipboard)">

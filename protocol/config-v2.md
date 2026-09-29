@@ -1,32 +1,39 @@
-# Macropad configuration image, version 1
+# Macropad configuration image, version 2
 
 The firmware uses one 128-byte image. All unused bytes are zero. Multibyte
-values are little endian. Byte offsets and action codes are fixed for version 1.
+values are little endian. Byte offsets and action codes are fixed for version 2.
 The firmware validates an entire image before using it.
 
-Bytes 0–1 are ASCII `MP`; byte 2 is version 1. Byte 3 holds layer count minus
-one in bits 0–1 and startup layer in bits 2–3. Byte 4 is the used string-pool
-length. Byte 5 holds the physical variant in bit 0 (six keys = 0, three keys =
-1) and the chord count in bits 1–6. Byte 8 holds the chord window in 5 ms units
-in its low nibble. All reserved bits are zero. Bytes 6–7 are CRC16-CCITT-FALSE:
-polynomial `0x1021`, initial value `0xFFFF`, no reflection, final XOR zero.
-The CRC covers bytes 0–5 and 8–127 in that order; its low byte is stored first.
+The nine-byte header is:
+
+| Byte | Field | Encoding |
+| --- | --- | --- |
+| 0–1 | Marker | ASCII `MP` |
+| 2 | Format version | `2` |
+| 3 | Layers and startup layer | Bits 0–1: layer count minus one<br>Bits 2–3: startup layer<br>Bits 4–7: zero |
+| 4 | String-pool length | Number of used bytes in the string pool. |
+| 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: zero |
+| 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
+| 8 | Chord window | Bits 0–3: duration in 5 ms units<br>Bits 4–7: zero |
+
+The CRC uses polynomial `0x1021`, initial value `0xFFFF`, no reflection, and
+final XOR zero. It covers bytes 0–5 and 8–127 in that order.
 
 Each layer occupies 22 bytes for six keys or 15 bytes for three keys, beginning
 at byte 9. A layer contains a two-byte binding for each physical key, then the
 encoder button, clockwise rotation, and counterclockwise rotation. LED palette
 indices follow, packed with the even key in the low nibble. The last byte has
-bit 0 reserved for future use and required to be zero, bit 1 = bootloader from
+bit 0 = full brightness for idle LEDs in Always on mode, bit 1 = bootloader from
 encoder hold, bits 2–3 = layer-selection LED behavior (0 = none, 1 = blink
-once, 2 = blink once per layer number, 3 = dim background always on), and bits
+once, 2 = blink once per layer number, 3 = always on), and bits
 4–7 = palette index for the layer-indicator color. Holding the first three keys
 while powering up always enters the bootloader; this recovery gesture is not
-configurable. In dim-background mode, unpressed keys use a dimmed indicator
-color and pressed keys use their per-key color at full brightness. With palette
-version 3 firmware, indicator color index 15 in dim-background mode gives idle
-keys a dim rainbow that cycles smoothly across the keys. Index 15 remains Off
-for key colors and other indicator behaviors. The unused
-high LED nibble for three keys is zero.
+configurable. In Always on mode, unpressed keys use a dimmed indicator color
+when bit 0 is clear or full brightness when it is set. Pressed keys use their
+per-key color at full brightness. With palette version 3 firmware, indicator
+color index 15 in Always on mode gives idle keys a rainbow that cycles across
+the keys at the selected brightness. Index 15 remains Off for key colors and
+other indicator behaviors. The unused high LED nibble for three keys is zero.
 
 After the layers come the configured chords, each three bytes. The first byte
 holds a physical-key pair index in bits 0–3 and a layer index in bits 4–5.

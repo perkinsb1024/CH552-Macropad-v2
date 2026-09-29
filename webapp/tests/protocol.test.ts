@@ -27,19 +27,18 @@ describe('client against simulator', () => {
     const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
     const client = new ConfigClient(device);
     const info = await client.getInfo();
-    expect(info).toMatchObject({ variant: 0, keyCount: 6, maxLayers: 4, imageSize: 128, actionMask: 0xffff });
+    expect(info).toMatchObject({ transportVersion: 1, formatVersion: 2, variant: 0, keyCount: 6, maxLayers: 4, imageSize: 128, actionMask: 0xffff });
     const status = await client.getStatus();
     expect(status.flashValid).toBe(true);
     const flash = await client.readFlash();
     expect(decodeImage(flash)).toMatchObject({ ok: true });
   });
-  it('blank flash reports invalid and serves defaults from READ_ACTIVE', async () => {
+  it('blank flash reports invalid with no active profile', async () => {
     const device = new SimulatedDevice({ variant: VARIANT_THREE_KEYS, blankFlash: true });
     const client = new ConfigClient(device);
     expect((await client.getStatus()).flashValid).toBe(false);
     expect(decodeImage(await client.readFlash())).toMatchObject({ ok: false, reason: 'no-magic' });
-    const active = decodeImage(await client.readActive());
-    expect(active.ok && active.profile).toEqual(defaultProfile(VARIANT_THREE_KEYS));
+    expect(decodeImage(await client.readActive())).toMatchObject({ ok: false, reason: 'no-magic' });
   });
   it('saves, verifies and reads back the same image', async () => {
     const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });

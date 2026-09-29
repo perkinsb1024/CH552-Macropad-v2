@@ -16,19 +16,23 @@ static void testStarterFixture(uint8_t variant) {
     static const uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
     static const uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
     static const uint8_t colors[6][3] = {
-        {255, 0, 0}, {255, 107, 94}, {255, 75, 0},
-        {255, 180, 0}, {255, 255, 0}, {0, 255, 0},
+        {255, 0, 0}, {255, 22, 7}, {255, 16, 0},
+        {255, 66, 0}, {255, 124, 0}, {60, 255, 0},
     };
     uint8_t i;
     testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0xF065 : 0x864A));
+    assert(configCrc(activeConfig) == (variant ? 0x8D02 : 0x57BD));
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
     assert(configKeyCount() == (variant ? 3 : 6));
     assert(configChordWindowMs() == 40);
-    assert(configLayerOptions(0) == 3);
+    assert(configLayerOptions(0) == CONFIG_LAYER_OPT_BOOTLOADER_RUN);
+    activeConfig[9 + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
+    seal();
+    assert(configValid(activeConfig, variant));
+    assert(configLayerOptions(0) & CONFIG_LAYER_OPT_FULL_BRIGHTNESS);
     for (i = 0; i < configKeyCount(); i++) {
         configBinding(0, i, &first, &second);
         assert((first & 15) == CONFIG_ACTION_KEY_TAP);
@@ -142,12 +146,17 @@ static void testActions(void) {
         } else if (type >= CONFIG_ACTION_MOUSE_CLICK &&
                    type <= CONFIG_ACTION_MOUSE_TOGGLE) {
             param = 1;
+        } else if (type == CONFIG_ACTION_SCROLL ||
+                   type == CONFIG_ACTION_MOUSE_X ||
+                   type == CONFIG_ACTION_MOUSE_Y) {
+            param = 1;
         } else if (type == CONFIG_ACTION_CONSUMER) {
             param = 0xE9;
             activeConfig[9] = 0x08; // Volume up
         } else if (type == CONFIG_ACTION_STRING) {
             activeConfig[4] = 1;
         }
+        if (type == 0xC) continue; // Reserved action code.
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();

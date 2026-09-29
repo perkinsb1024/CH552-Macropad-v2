@@ -30,6 +30,7 @@ export interface Layer {
   bootloaderFromRun: boolean;
   indicatorBehavior: LayerIndicatorBehavior;
   indicatorColor: number;
+  indicatorFullBrightness: boolean;
 }
 
 export interface Chord {
