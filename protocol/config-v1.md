@@ -45,7 +45,7 @@ nibble. Byte 1 holds the parameter. The types are:
 | 4 | Mouse double-click | Zero; button mask 1–7 |
 | 5 | Mouse hold | Zero; button mask 1–7 |
 | 6 | Mouse toggle | Zero; button mask 1–7 |
-| 7 | Scroll step | Zero; signed wheel delta other than -128 |
+| 7 | Scroll step | Zero; signed wheel-count magnitude other than -128. Firmware sends one-count reports for the requested magnitude. |
 | 8 | Consumer tap | High four and low eight bits of the usage |
 | 9 | String | Zero; string-pool offset |
 | A | Set layer | Zero; layer index |

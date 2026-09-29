@@ -78,7 +78,7 @@ Byte 0 holds the action type in its low nibble and auxiliary data in its high ni
 | 0x4 | Mouse double-click | Mouse button mask; auxiliary data zero |
 | 0x5 | Mouse hold | Mouse button mask; release with physical button |
 | 0x6 | Mouse toggle | Mouse button mask; alternate latched press/release |
-| 0x7 | Scroll step | Signed 8-bit vertical wheel delta; auxiliary data zero |
+| 0x7 | Scroll step | Signed 8-bit vertical wheel-count magnitude; firmware emits one-count reports; auxiliary data zero |
 | 0x8 | Consumer-control tap | 12-bit usage: auxiliary nibble is high four bits, parameter is low eight bits |
 | 0x9 | String | Offset relative to string-pool start; auxiliary data zero |
 | 0xA | Set layer | Destination layer index; auxiliary data zero |

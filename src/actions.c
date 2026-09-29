@@ -443,16 +443,23 @@ void actionsPoll(uint16_t now) {
     if (USB_reportsPending()) {
       return;
     }
-    if (type == CONFIG_ACTION_SCROLL || type == CONFIG_ACTION_MOUSE_X ||
-        type == CONFIG_ACTION_MOUSE_Y) {
+    if (type == CONFIG_ACTION_SCROLL) {
+      int8_t delta = currentSecond;
+      if (!delta) {
+        currentFirst = 0;
+      } else if (USB_queueMouse(mouseButtons(), 0, 0, delta < 0 ? -1 : 1)) {
+        currentSecond = delta < 0 ? delta + 1 : delta - 1;
+        if (!currentSecond) {
+          currentFirst = 0;
+        }
+      }
+    } else if (type == CONFIG_ACTION_MOUSE_X || type == CONFIG_ACTION_MOUSE_Y) {
       int8_t delta = currentSecond;
       if (!USB_queueMouse(mouseButtons(),
                           type == CONFIG_ACTION_MOUSE_X ? delta : 0,
-                          type == CONFIG_ACTION_MOUSE_Y ? delta : 0,
-                          type == CONFIG_ACTION_SCROLL ? delta : 0)) {
-        return;
+                          type == CONFIG_ACTION_MOUSE_Y ? delta : 0, 0)) {
+        currentFirst = 0;
       }
-      currentFirst = 0;
     } else if (type == CONFIG_ACTION_CONSUMER) {
       if (USB_queueConsumer(((uint16_t)currentFirst >> 4 << 8) | currentSecond)) {
         phase = 4;

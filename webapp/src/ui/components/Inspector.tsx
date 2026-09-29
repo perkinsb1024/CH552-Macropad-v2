@@ -57,7 +57,7 @@ function ScrollStep({ value, onChange }: { value: number; onChange(v: number): v
       <input type="range" min={1} max={127} step={1} value={magnitude} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
       <div class="row">
         <input type="number" min={1} max={127} step={1} value={magnitude} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} aria-label="Wheel step" />
-        <span class="hint">Each detent or press sends one step.</span>
+        <span class="hint">Wheel counts per press or encoder detent.</span>
       </div>
       <div class="field scroll-direction">
         <span class="field-label">Scroll direction</span>
