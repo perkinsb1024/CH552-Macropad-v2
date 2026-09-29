@@ -1,7 +1,7 @@
 import { useEffect } from 'preact/hooks';
 import { FORMAT_VERSION } from '../model/constants';
 import { TRANSPORT_VERSION } from '../protocol/packet';
-import { clearSelectedAction, connectSimulator, connection, dialog, getAction, profile, reconnectGranted, selectedSlot } from './store';
+import { clearSelectedAction, connectSimulator, connection, copySelectedConfiguration, cutSelectedConfiguration, dialog, getAction, pasteSelectedConfiguration, profile, reconnectGranted, selectedSlot } from './store';
 import { TopBar } from './components/TopBar';
 import { Welcome } from './components/Welcome';
 import { ProfilePanel } from './components/ProfilePanel';
@@ -18,6 +18,38 @@ import { Toasts } from './components/Toasts';
 import { variantName } from '../model/constants';
 
 export function App() {
+  useEffect(() => {
+    const isEditing = (target: EventTarget | null) => target instanceof HTMLElement &&
+      (target.isContentEditable || !!target.closest('input, textarea, select, [role="textbox"]'));
+    const onCopyOrCut = (event: ClipboardEvent) => {
+      if (event.defaultPrevented || dialog.value || isEditing(event.target) || !event.clipboardData) return;
+      const text = copySelectedConfiguration();
+      if (text === null) return;
+      event.clipboardData.setData('text/plain', text);
+      event.preventDefault();
+      if (event.type === 'cut') cutSelectedConfiguration();
+    };
+    const onPaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented || dialog.value || isEditing(event.target) || !event.clipboardData) return;
+      if (pasteSelectedConfiguration(event.clipboardData.getData('text/plain'))) event.preventDefault();
+    };
+    const onRepeat = (event: KeyboardEvent) => {
+      if (event.repeat && (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey &&
+          ['x', 'c', 'v'].includes(event.key.toLowerCase()) && !isEditing(event.target) &&
+          !dialog.value && selectedSlot.value) event.preventDefault();
+    };
+    window.addEventListener('copy', onCopyOrCut);
+    window.addEventListener('cut', onCopyOrCut);
+    window.addEventListener('paste', onPaste);
+    window.addEventListener('keydown', onRepeat);
+    return () => {
+      window.removeEventListener('copy', onCopyOrCut);
+      window.removeEventListener('cut', onCopyOrCut);
+      window.removeEventListener('paste', onPaste);
+      window.removeEventListener('keydown', onRepeat);
+    };
+  }, []);
+
   useEffect(() => {
     const onDelete = (event: KeyboardEvent) => {
       if (event.defaultPrevented || (event.key !== 'Backspace' && event.key !== 'Delete') ||

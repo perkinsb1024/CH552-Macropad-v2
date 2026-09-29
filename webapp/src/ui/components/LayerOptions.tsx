@@ -8,6 +8,7 @@ const BEHAVIORS = [
   { value: LayerIndicatorBehavior.BlinkByLayer, label: 'Blink by layer number' },
   { value: LayerIndicatorBehavior.AlwaysOn, label: 'Always on' },
 ];
+const BLINK_COUNTS = ['once', 'twice', 'three times', 'four times'];
 
 export function LayerOptions() {
   const p = profile.value!;
@@ -38,7 +39,7 @@ export function LayerOptions() {
             value={layer.indicatorBehavior}
             onChange={(e) => updateProfile((d) => { d.layers[li]!.indicatorBehavior = Number((e.target as HTMLSelectElement).value) as LayerIndicatorBehavior; })}
           >
-            {BEHAVIORS.map((behavior) => <option value={behavior.value}>{behavior.label}</option>)}
+            {BEHAVIORS.map((behavior) => <option value={behavior.value}>{behavior.label}{behavior.value === LayerIndicatorBehavior.BlinkByLayer ? ` (${BLINK_COUNTS[li]})` : ''}</option>)}
           </select>
           {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys show the selected color or Rainbow; pressed keys show their per-key color. {rainbowAvailable ? '' : 'Rainbow requires palette version 3 firmware; older firmware displays Off.'}</span>}
           {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number when switching to this layer.</span>}

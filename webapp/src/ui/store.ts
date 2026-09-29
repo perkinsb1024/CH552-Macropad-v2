@@ -3,7 +3,7 @@ import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { descriptor } from '../model/actions';
 import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
-import { validateProfile } from '../model/validate';
+import { actionProblem, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
@@ -283,6 +283,62 @@ function putAction(p: Profile, slot: Slot, action: Action): void {
       if (chord) chord.action = action;
     }
   }
+}
+
+const ACTION_CLIPBOARD_FORMAT = 'universal-macropad-action';
+
+export function copySelectedConfiguration(): string | null {
+  const p = profile.value;
+  const slot = selectedSlot.value;
+  if (!p || !slot) return null;
+  const action = getAction(p, slot);
+  if (!action) return null;
+  return JSON.stringify({
+    format: ACTION_CLIPBOARD_FORMAT,
+    version: 1,
+    action,
+    led: slot.kind === 'key' ? p.layers[slot.layer]!.leds[slot.index] : undefined,
+  });
+}
+
+export function cutSelectedConfiguration(): void {
+  const p = profile.value;
+  const slot = selectedSlot.value;
+  if (!p || !slot) return;
+  const action = getAction(p, slot);
+  if (!action) return;
+  rememberAction(slot, action);
+  updateProfile((draft) => {
+    putAction(draft, slot, { type: 'none' });
+    if (slot.kind === 'key') draft.layers[slot.layer]!.leds[slot.index] = 15;
+  });
+}
+
+/** Returns false for clipboard text belonging to another application. */
+export function pasteSelectedConfiguration(text: string): boolean {
+  const p = profile.value;
+  const slot = selectedSlot.value;
+  if (!p || !slot || !getAction(p, slot)) return false;
+  let copied: { format?: string; version?: number; action?: Action; led?: number };
+  try {
+    copied = JSON.parse(text);
+    if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || copied.version !== 1 || !copied.action) return false;
+    if (copied.led !== undefined && (!Number.isInteger(copied.led) || copied.led < 0 || copied.led > 15)) return false;
+    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot) });
+    if (problem) {
+      notify('error', `Cannot paste here: ${problem}`);
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  const action = copied.action;
+  rememberAction(slot, getAction(p, slot)!);
+  updateProfile((draft) => {
+    putAction(draft, slot, action);
+    if (slot.kind === 'key' && copied.led !== undefined) draft.layers[slot.layer]!.leds[slot.index] = copied.led;
+  });
+  return true;
 }
 
 /** Whether moving either binding to the other input would be valid. */
