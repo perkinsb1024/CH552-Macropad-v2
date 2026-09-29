@@ -1,7 +1,12 @@
 # Macropad configuration image, version 2
 
-The firmware uses one 128-byte image. All unused bytes are zero. Multibyte
-values are little endian. Byte offsets and action codes are fixed for version 2.
+| Image property | Value |
+| --- | --- |
+| Size | 128 bytes |
+| Unused bytes | Zero |
+| Multibyte values | Little endian |
+| Byte offsets and action codes | Fixed for format version 2 |
+
 The firmware validates an entire image before using it.
 
 The nine-byte header is:
@@ -16,40 +21,73 @@ The nine-byte header is:
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
 | 8 | Chord window | Bits 0–3: duration in 5 ms units<br>Bits 4–7: zero |
 
-The CRC uses polynomial `0x1021`, initial value `0xFFFF`, no reflection, and
-final XOR zero. It covers bytes 0–5 and 8–127 in that order.
+| CRC16-CCITT-FALSE setting | Value |
+| --- | --- |
+| Polynomial | `0x1021` |
+| Initial value | `0xFFFF` |
+| Input/output reflection | None |
+| Final XOR | `0x0000` |
+| Covered bytes, in order | 0–5, then 8–127 (skip the stored CRC at 6–7) |
 
-Each layer occupies 22 bytes for six keys or 15 bytes for three keys, beginning
-at byte 9. A layer contains a two-byte binding for each physical key, then the
-encoder button, clockwise rotation, and counterclockwise rotation. LED palette
-indices follow, packed with the even key in the low nibble. The last byte has
-bit 0 = full brightness for idle LEDs in Always on mode, bit 1 = bootloader from
-encoder hold, bits 2–3 = layer-selection LED behavior (0 = none, 1 = blink
-once, 2 = blink once per layer number, 3 = always on), and bits
-4–7 = palette index for the layer-indicator color. Holding the first three keys
-while powering up always enters the bootloader; this recovery gesture is not
-configurable. In Always on mode, unpressed keys use a dimmed indicator color
-when bit 0 is clear or full brightness when it is set. Pressed keys use their
-per-key color at full brightness. With palette version 3 firmware, indicator
-color index 15 in Always on mode gives idle keys a rainbow that cycles across
-the keys at the selected brightness. Index 15 remains Off for key colors and
-other indicator behaviors. The unused high LED nibble for three keys is zero.
+Layers begin at image byte 9. Layer `n` starts at byte `9 + n × layer size`,
+with `n` starting at zero. Byte ranges below are relative to the start of a
+layer. Each binding uses the two-byte action encoding below.
 
-After the layers come the configured chords, each three bytes. The first byte
-holds a physical-key pair index in bits 0–3 and a layer index in bits 4–5.
+| Field | Six-key bytes (22-byte layer) | Three-key bytes (15-byte layer) | Encoding |
+| --- | --- | --- | --- |
+| Physical-key bindings | 0–11 | 0–5 | Two bytes per key, in physical-key order |
+| Encoder button binding | 12–13 | 6–7 | Two-byte action |
+| Clockwise rotation binding | 14–15 | 8–9 | Two-byte action |
+| Counterclockwise rotation binding | 16–17 | 10–11 | Two-byte action |
+| Key LED palette indices | 18–20 | 12–13 | One nibble per key: even-numbered key in bits 0–3, odd-numbered key in bits 4–7. On three-key pads, bits 4–7 of byte 13 are zero. |
+| Layer options | 21 | 14 | Bit fields below |
+
+| Layer-option bits | Meaning | Encoding |
+| --- | --- | --- |
+| 0 | Idle LED brightness | `0` = dimmed, `1` = full brightness; applies in *Always on* mode |
+| 1 | Encoder-hold bootloader entry | `0` = disabled, `1` = enabled |
+| 2–3 | Layer-selection LED behavior | `0` = *Do not indicate*, `1` = *Blink once*, `2` = *Blink by layer number*, `3` = *Always on* |
+| 4–7 | Layer-indicator color | Palette index 0–15 |
+
+Holding the first three keys while powering up always enters the bootloader;
+this recovery gesture is not configurable. In *Always on* mode, unpressed keys
+use the indicator color at the brightness selected by bit 0. Pressed keys use
+their per-key color at full brightness. With palette version 3 firmware,
+indicator color index 15 in *Always on* mode gives idle keys a rainbow that cycles
+across the keys at the selected brightness. Index 15 remains *Off* for key colors
+and other indicator behaviors.
+
+After the layers come the configured chords, each three bytes. Byte ranges
+below are relative to the start of a chord.
+
+| Byte | Field | Encoding |
+| --- | --- | --- |
+| 0 | Chord identifier | Bits 0–3: physical-key pair index<br>Bits 4–5: layer index<br>Bits 6–7: zero |
+| 1–2 | Button action | Two-byte action encoding below |
+
 Pair indices enumerate `(0,1)`, `(0,2)`, and so on in lexicographic order.
-Chord identifiers are strictly ascending. The remaining two bytes are the
-chord's button action. The string pool immediately follows the chords. Strings
-are zero-terminated printable US ASCII, tab, or LF; action offsets must point
-to a string start. Multiple actions may share one string.
+Chord identifiers are strictly ascending. Multiple actions may share one
+string.
 
-Action byte 0 holds a type in the low nibble and auxiliary data in the high
-nibble. Byte 1 holds the parameter. The types are:
+| String-pool property | Encoding |
+| --- | --- |
+| Location | Immediately after the last chord |
+| Used length | Header byte 4 |
+| String encoding | Zero-terminated printable US ASCII (`0x20`–`0x7E`), tab (`0x09`), or LF (`0x0A`) |
+| Action offset | Zero-based byte offset from the start of the pool; must point to a string start |
+
+| Action byte | Field | Encoding |
+| --- | --- | --- |
+| 0, bits 0–3 | Type | Action code in the table below |
+| 0, bits 4–7 | Auxiliary data | Meaning depends on action type |
+| 1 | Parameter | Meaning depends on action type |
+
+The action types are:
 
 | Type | Action | Auxiliary data and parameter |
 | --- | --- | --- |
 | 0 | None | Both zero |
-| 1 | Keyboard tap | Ctrl/Shift/Alt/GUI mask; raw key usage |
+| 1 | Keyboard tap | `Ctrl`/`Shift`/`Alt`/`GUI` mask; raw key usage |
 | 2 | Keyboard hold | Same encoding; button release ends hold |
 | 3 | Mouse click | Zero; button mask 1–7 |
 | 4 | Mouse double-click | Zero; button mask 1–7 |
@@ -65,20 +103,37 @@ nibble. Byte 1 holds the parameter. The types are:
 | E | Mouse X step | Zero; signed X delta other than -128 |
 | F | Mouse Y step | Zero; signed Y delta other than -128 |
 
-Rotation bindings cannot use keyboard hold, mouse hold, or momentary layer.
-Keyboard usages are zero or supported non-modifier HID usages `0x04`–`0x65`
-and `0x68`–`0x73`. A zero usage permits modifier-only actions. Palette version 3
-uses these firmware RGB triplets by index: (255,0,0), (255,22,7), (255,16,0),
-(255,66,0), (255,124,0), (60,255,0), (100,200,20), (29,123,67),
-(0,255,200), (0,91,255), (0,0,255), (115,0,180), (255,0,194),
-(255,0,72), (255,255,255), and (0,0,0) (Off). The web editor uses separate
-hex colors chosen to make its on-screen swatches look as close as possible to
-the corresponding firmware colors; those display hex values are intentionally
-not exact conversions of the firmware RGB values. Only palette indices are
-stored in the configuration image.
+Rotation bindings cannot use *Keyboard hold*, *Mouse hold*, or *Momentary layer*.
+For keyboard actions, the parameter byte is an HID key usage: `0` means no
+non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
+With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for *Keyboard hold* actions).
 
-The editor's starter profile has two layers: Mac shortcuts followed by Windows
-shortcuts. Six-key pads use Undo, Copy, Paste, Redo, Cut, and Select all; three-
-key pads use the first three shortcuts on each layer. The layers use persistent
-white and yellow lighting respectively, and the profile has a 40 ms chord
-window with no chords or strings.
+Palette version 3 uses the following colors. The representative hex values are
+the web editor's display colors, chosen to resemble the firmware LEDs on
+screen; they are intentionally not exact conversions of the firmware RGB
+values. Only palette indices are stored in the configuration image.
+
+| Index | Firmware RGB | Representative hex | Display name | Swatch |
+| --- | --- | --- | --- | --- |
+| 0 | `(255, 0, 0)` | `#FF0000` | Red | ![Red](swatches/00.svg) |
+| 1 | `(255, 22, 7)` | `#FF6B5E` | Coral | ![Coral](swatches/01.svg) |
+| 2 | `(255, 16, 0)` | `#FF4B00` | Orange | ![Orange](swatches/02.svg) |
+| 3 | `(255, 66, 0)` | `#FFB400` | Amber | ![Amber](swatches/03.svg) |
+| 4 | `(255, 124, 0)` | `#FFFF00` | Yellow | ![Yellow](swatches/04.svg) |
+| 5 | `(60, 255, 0)` | `#00FF00` | Green | ![Green](swatches/05.svg) |
+| 6 | `(100, 200, 20)` | `#40C820` | Leaf | ![Leaf](swatches/06.svg) |
+| 7 | `(29, 123, 67)` | `#209696` | Teal | ![Teal](swatches/07.svg) |
+| 8 | `(0, 255, 200)` | `#00FFFF` | Cyan | ![Cyan](swatches/08.svg) |
+| 9 | `(0, 91, 255)` | `#0040FF` | Azure | ![Azure](swatches/09.svg) |
+| 10 | `(0, 0, 255)` | `#0000FF` | Blue | ![Blue](swatches/10.svg) |
+| 11 | `(115, 0, 180)` | `#8000FF` | Violet | ![Violet](swatches/11.svg) |
+| 12 | `(255, 0, 194)` | `#FF00FF` | Magenta | ![Magenta](swatches/12.svg) |
+| 13 | `(255, 0, 72)` | `#FF0064` | Rose | ![Rose](swatches/13.svg) |
+| 14 | `(255, 255, 255)` | `#FFFFFF` | White | ![White](swatches/14.svg) |
+| 15 | `(0, 0, 0)` | `#000000` | Off | ![Off](swatches/15.svg) |
+
+The editor's starter profile has two layers: *Mac shortcuts* followed by
+*Windows shortcuts*. Six-key pads use *Undo*, *Copy*, *Paste*, *Redo*, *Cut*,
+and *Select all*; three-key pads use the first three shortcuts on each layer.
+The layers use persistent *White* and *Yellow* lighting respectively, and the
+profile has a 40 ms chord window with no chords or strings.
