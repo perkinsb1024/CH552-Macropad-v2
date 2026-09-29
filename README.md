@@ -43,7 +43,9 @@ that key is held and clears on release.
 
 Palette version 3 adds a rainbow effect: choose **Always on** for a layer's
 indicator behavior and **Rainbow** (palette index 15) for its indicator color.
-Idle LEDs cycle through colors with an offset across the keys. The **Full
+Idle LEDs cycle through colors with an offset across the keys. On the six-key
+board, the rainbow follows the perimeter (6 → 5 → 4 → 1 → 2 → 3 → 6).
+The **Full
 brightness for idle LEDs** option applies to both solid colors and Rainbow;
 pressed keys still show their configured per-key colors. Index 15 remains Off
 for per-key colors and other indicator behaviors. Configuration format version
@@ -119,7 +121,7 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,282 of 14,336 code bytes (54 free). It uses
+The current six-key image uses 14,268 of 14,336 code bytes (68 free). It uses
 637 of 876 application xRAM bytes (239 free). Add 148 separately reserved USB
 bytes to the RAM total. The linker provides 130 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The

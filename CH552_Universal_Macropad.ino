@@ -26,9 +26,13 @@
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_MS 100
-#define RAINBOW_FRAME_MS 10
+#define RAINBOW_FRAME_MS 8
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
+#if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
+// Phase order around the six-key perimeter: 1 -> 2 -> 3 -> 6 -> 5 -> 4.
+__code uint8_t rainbowOffsets[6] = {0, 42, 84, 210, 168, 126};
+#endif
 __code int8_t encoderTransitions[16] = {
   0, -1, 1, 0,
   1, 0, 0, -1,
@@ -82,7 +86,9 @@ void updateLeds() {
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t blink = phases && !(phases & 1);
   uint8_t rainbow = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON && palette == 15;
+#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
   uint8_t hue = rainbowHue;
+#endif
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
@@ -91,7 +97,12 @@ void updateLeds() {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-    uint8_t wheel = hue;
+    uint8_t wheel;
+#if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
+    wheel = rainbowHue + rainbowOffsets[i];
+#else
+    wheel = hue;
+#endif
     if (blink) {
       // Blink takes priority over per-key colors while the animation is on.
     } else if (stableState[i]) {
@@ -135,7 +146,9 @@ void updateLeds() {
     ledPtr[1] = red;
     ledPtr[2] = blue;
     ledPtr += 3;
+#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
     hue += 256 / NUM_LEDS;
+#endif
   }
   displayLeds();
 }

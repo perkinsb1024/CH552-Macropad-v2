@@ -1,6 +1,6 @@
 {
   "format": "universal-macropad-profile",
-  "version": 1,
+  "version": 2,
   "variant": "six-key",
   "startupLayer": 0,
   "chordWindowMs": 40,
@@ -47,7 +47,8 @@
       ],
       "bootloaderFromRun": true,
       "indicatorBehavior": 0,
-      "indicatorColor": 14
+      "indicatorColor": 14,
+      "indicatorFullBrightness": false
     },
     {
       "keys": [
@@ -91,7 +92,8 @@
       ],
       "bootloaderFromRun": true,
       "indicatorBehavior": 0,
-      "indicatorColor": 14
+      "indicatorColor": 14,
+      "indicatorFullBrightness": false
     },
     {
       "keys": [
@@ -134,8 +136,54 @@
         "Off"
       ],
       "bootloaderFromRun": true,
+      "indicatorBehavior": 0,
+      "indicatorColor": 14,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "nextLayer"
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off",
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": true,
       "indicatorBehavior": 3,
-      "indicatorColor": 14
+      "indicatorColor": 15,
+      "indicatorFullBrightness": true
     }
   ],
   "chords": []
