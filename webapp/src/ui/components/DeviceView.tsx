@@ -62,9 +62,9 @@ export function DeviceView() {
         <div class="encoder">
           <div class="knob" aria-hidden="true"><div class="knob-mark" /></div>
           <div class="enc-parts">
-            <EncoderPart slot={{ kind: 'counterclockwise', layer: li }} label="Turn left" icon={<IconRotate ccw />} />
+            <EncoderPart slot={{ kind: 'clockwise', layer: li }} label="Turn left" icon={<IconRotate />} />
             <EncoderPart slot={{ kind: 'encoderButton', layer: li }} label="Press" />
-            <EncoderPart slot={{ kind: 'clockwise', layer: li }} label="Turn right" icon={<IconRotate />} />
+            <EncoderPart slot={{ kind: 'counterclockwise', layer: li }} label="Turn right" icon={<IconRotate ccw />} />
           </div>
         </div>
       </div>

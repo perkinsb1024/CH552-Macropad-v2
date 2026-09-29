@@ -78,6 +78,20 @@ export function Inspector() {
   const layerCount = p.layers.length;
   const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation }) : null;
   const custom = useMemo(() => action?.type === 'consumer' && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
+  const savedStrings = useMemo(() => {
+    const strings = new Set<string>();
+    const add = (candidate: Action) => {
+      if (candidate.type === 'string' && candidate.text.length > 0) strings.add(candidate.text);
+    };
+    for (const savedLayer of p.layers) {
+      savedLayer.keys.forEach(add);
+      add(savedLayer.encoderButton);
+      add(savedLayer.clockwise);
+      add(savedLayer.counterclockwise);
+    }
+    p.chords.forEach((chord) => add(chord.action));
+    return [...strings];
+  }, [p]);
 
   if (!slot || !action) {
     return (
@@ -184,6 +198,15 @@ export function Inspector() {
         <label class="field">
           <span class="field-label">Text <output>{action.text.length + 1} bytes</output></span>
           <textarea rows={4} value={action.text} spellcheck={false} onInput={(e) => update({ ...action, text: normalizeText((e.target as HTMLTextAreaElement).value) })} placeholder="Typed with the US keyboard layout" />
+          {savedStrings.length > 0 && (
+            <select aria-label="Reuse an existing string" value="" onChange={(e) => {
+              const text = (e.target as HTMLSelectElement).value;
+              if (text) update({ ...action, text });
+            }}>
+              <option value="">Reuse an existing string…</option>
+              {savedStrings.map((text) => <option key={text} value={text}>{text}</option>)}
+            </select>
+          )}
           <span class="hint">Printable ASCII, tab and newline only. Identical strings across layers and chords share one copy in device storage. Output depends on the host's keyboard layout.</span>
         </label>
       )}
