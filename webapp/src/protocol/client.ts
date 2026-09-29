@@ -114,7 +114,7 @@ export class ConfigClient {
     return this.readImage(Opcode.ReadFlash, onProgress);
   }
 
-  /** Reads the image currently in use (built-in defaults when flash is invalid). */
+  /** Reads the active RAM image, which is invalid when the device has no saved profile. */
   readActive(onProgress?: (fraction: number) => void): Promise<Uint8Array> {
     return this.readImage(Opcode.ReadActive, onProgress);
   }

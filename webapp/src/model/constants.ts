@@ -66,7 +66,6 @@ export const MOUSE_LEFT = 1;
 export const MOUSE_RIGHT = 2;
 export const MOUSE_MIDDLE = 4;
 
-export const LAYER_OPT_BOOTLOADER_BOOT = 0x01;
 export const LAYER_OPT_BOOTLOADER_RUN = 0x02;
 export const LAYER_OPT_INDICATOR_SHIFT = 2;
 export const LAYER_OPT_COLOR_SHIFT = 4;

@@ -34,8 +34,8 @@
 #define CONFIG_ACTION_MOUSE_X          0xE
 #define CONFIG_ACTION_MOUSE_Y          0xF
 
-// Per-layer option byte: boot bits 0–1, indicator behavior bits 2–3, palette bits 4–7.
-#define CONFIG_LAYER_OPT_BOOTLOADER_BOOT 0x01
+// Per-layer option byte: bit 0 reserved, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.
+#define CONFIG_LAYER_OPT_RESERVED_MASK  0x01
 #define CONFIG_LAYER_OPT_BOOTLOADER_RUN  0x02
 #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
 #define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C
@@ -52,7 +52,6 @@ extern __code uint8_t configPalette[16][3];
 
 uint16_t configCrc(const __xdata uint8_t *image);
 uint8_t configValid(const __xdata uint8_t *image, uint8_t variant);
-void configDefaults(uint8_t variant);
 uint8_t configLayerCount(void);
 uint8_t configStartupLayer(void);
 uint8_t configKeyCount(void);

@@ -20,7 +20,7 @@ export function ToolsPanel() {
           if (file) void importJsonFile(file);
           (e.target as HTMLInputElement).value = '';
         }} />
-        <button class="btn" onClick={resetToDefaults} disabled={!profile.value}><IconRefresh /> Reset to defaults</button>
+        <button class="btn" onClick={resetToDefaults} disabled={!profile.value}><IconRefresh /> Reset to starter profile</button>
       </div>
       <p class="hint">Exports include readable action names and any layer names. Layer names live in this browser only and never use device storage.</p>
 

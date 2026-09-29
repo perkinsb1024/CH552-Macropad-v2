@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+extern __xdata uint8_t activeConfigValid;
+
 void protocolInit(void);
 void protocolReset(void);
 uint8_t protocolReceive(const __xdata uint8_t *packet);

@@ -26,6 +26,7 @@ export class SimulatedDevice implements Transport {
   readonly flash = new Uint8Array(IMAGE_SIZE);
   readonly active = new Uint8Array(IMAGE_SIZE);
   flashValid = false;
+  private activeValid = false;
   private staging = new Uint8Array(IMAGE_SIZE);
   private uploadState: 0 | 1 | 2 = 0;
   private uploadNext = 0;
@@ -47,7 +48,8 @@ export class SimulatedDevice implements Transport {
 
   private boot(): void {
     this.flashValid = decodeImage(this.flash, this.options.variant).ok;
-    this.active.set(this.flashValid ? this.flash : encodeProfile(defaultProfile(this.options.variant)));
+    this.activeValid = this.flashValid;
+    this.active.set(this.flash);
     this.uploadState = 0;
   }
 
@@ -105,7 +107,7 @@ export class SimulatedDevice implements Transport {
         return Status.Ok;
       case Opcode.GetStatus:
         reply[6] = 6;
-        reply.set([this.flashValid ? 1 : 0, this.active[3]! >> 2 & 3, this.active[3]! >> 2 & 3, this.uploadState, 0, 0], 8);
+        reply.set([this.flashValid ? 1 : 0, this.activeValid ? this.active[3]! >> 2 & 3 : 0, this.activeValid ? this.active[3]! >> 2 & 3 : 0, this.uploadState, 0, 0], 8);
         return Status.Ok;
       case Opcode.ReadFlash:
         reply[6] = length;
@@ -150,6 +152,7 @@ export class SimulatedDevice implements Transport {
         }
         this.flash.set(this.staging);
         this.flashValid = true;
+        this.activeValid = true;
         this.active.set(this.staging);
         this.uploadState = 2;
         touchUpload();

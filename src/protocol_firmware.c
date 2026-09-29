@@ -35,6 +35,7 @@ __xdata uint8_t stagedConfig[CONFIG_SIZE];
 volatile __xdata uint8_t protocolState;
 volatile __xdata uint8_t resetPending;
 __xdata uint8_t flashValid;
+__xdata uint8_t activeConfigValid;
 __xdata uint8_t uploadState; // 0 idle, 1 receiving, 2 committed (retry acknowledgement).
 __xdata uint8_t uploadNext;
 __xdata uint16_t uploadCrc;
@@ -46,9 +47,7 @@ void protocolInit(void) {
     activeConfig[i] = storageRead(i);
   }
   flashValid = configValid(activeConfig, PHYSICAL_VARIANT);
-  if (!flashValid) {
-    configDefaults(PHYSICAL_VARIANT);
-  }
+  activeConfigValid = flashValid;
   protocolState = 0;
   uploadState = 0;
   resetPending = 0;
@@ -122,8 +121,8 @@ static uint8_t processRequest(void) {
     case PROTOCOL_GET_STATUS:
       protocolReply[7] = 6;
       protocolReply[9] = flashValid;
-      protocolReply[10] = actionsLayer();
-      protocolReply[11] = configStartupLayer();
+      protocolReply[10] = activeConfigValid ? actionsLayer() : 0;
+      protocolReply[11] = activeConfigValid ? configStartupLayer() : 0;
       protocolReply[12] = uploadState;
       protocolReply[13] = actionsDropped(0);
       protocolReply[14] = actionsDropped(1);
@@ -186,6 +185,7 @@ static uint8_t processRequest(void) {
       for (i = 0; i < CONFIG_SIZE; i++) {
         activeConfig[i] = stagedConfig[i];
       }
+      activeConfigValid = 1;
       firmwareApplyConfig();
       uploadState = 2;
       break;

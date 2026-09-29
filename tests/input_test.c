@@ -4,6 +4,7 @@
 #include "stubs/Arduino.h"
 #include "../src/config.h"
 #include "../src/actions.h"
+#include "config_fixture.h"
 
 uint8_t P1 = 0xFF;
 uint8_t P3 = 0xFF;
@@ -19,6 +20,7 @@ static uint8_t frames[32][9];
 static uint8_t frameCount;
 static uint8_t bytesWritten;
 static uint8_t flash[CONFIG_SIZE];
+uint8_t activeConfigValid;
 
 uint32_t millis(void) { return currentMs; }
 void delayMicroseconds(uint16_t us) { (void)us; }
@@ -70,9 +72,7 @@ uint8_t USB_EP1_sendConfig(const uint8_t *reply) { (void)reply; return 1; }
 void protocolReset(void) {}
 void protocolInit(void) {
     memcpy(activeConfig, flash, CONFIG_SIZE);
-    if (!configValid(activeConfig, PHYSICAL_VARIANT)) {
-        configDefaults(PHYSICAL_VARIANT);
-    }
+    activeConfigValid = configValid(activeConfig, PHYSICAL_VARIANT);
 }
 void protocolPoll(uint16_t now) { (void)now; }
 uint8_t protocolReceive(const uint8_t *packet) { (void)packet; return 0; }
@@ -85,7 +85,7 @@ static void tick(uint16_t now) {
 }
 
 int main(void) {
-    configDefaults(PHYSICAL_VARIANT);
+    testLoadStarterProfile(PHYSICAL_VARIANT);
     memcpy(flash, activeConfig, CONFIG_SIZE);
     P1 = P3 = 0xFF;
     setup();

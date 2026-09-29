@@ -1,6 +1,6 @@
 import {
   ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
-  LAYER_OPT_BOOTLOADER_BOOT, LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
+  LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
   LAYER_OPT_COLOR_SHIFT, keyCount, layerSize,
 } from '../model/constants';
 import type { Action, Profile } from '../model/types';
@@ -84,7 +84,6 @@ export function encodeProfile(profile: Profile): Uint8Array {
       image[ledBase + (i >> 1)]! |= i & 1 ? (led & 15) << 4 : led & 15;
     });
     image[base + size - 1] =
-      (layer.bootloaderFromBoot ? LAYER_OPT_BOOTLOADER_BOOT : 0) |
       (layer.bootloaderFromRun ? LAYER_OPT_BOOTLOADER_RUN : 0) |
       ((layer.indicatorBehavior & 3) << LAYER_OPT_INDICATOR_SHIFT) |
       ((layer.indicatorColor & 15) << LAYER_OPT_COLOR_SHIFT);

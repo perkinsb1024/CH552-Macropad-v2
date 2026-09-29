@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "../src/config.h"
+#include "config_fixture.h"
 
 static void seal(void) {
     uint16_t crc = configCrc(activeConfig);
@@ -9,7 +10,7 @@ static void seal(void) {
     activeConfig[7] = (uint8_t)(crc >> 8);
 }
 
-static void testDefaults(uint8_t variant) {
+static void testStarterFixture(uint8_t variant) {
     uint8_t first;
     uint8_t second;
     static const uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
@@ -19,7 +20,7 @@ static void testDefaults(uint8_t variant) {
         {255, 75, 0}, {0, 64, 255}, {255, 0, 100},
     };
     uint8_t i;
-    configDefaults(variant);
+    testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
     assert(configCrc(activeConfig) == (variant ? 0xF065 : 0x864A));
     assert(!configValid(activeConfig, variant ^ 1));
@@ -45,7 +46,7 @@ static void testDefaults(uint8_t variant) {
 }
 
 static void testInvalid(void) {
-    configDefaults(CONFIG_SIX_KEYS);
+    testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[8] = 0x18;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
@@ -54,15 +55,15 @@ static void testInvalid(void) {
     activeConfig[10] = 0xE0;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    configDefaults(CONFIG_SIX_KEYS);
+    testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOUSE_HOLD; // Clockwise rotation
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    configDefaults(CONFIG_SIX_KEYS);
+    testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[31] = 1;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    configDefaults(CONFIG_SIX_KEYS);
+    testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[6] ^= 1;
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
 }
@@ -73,7 +74,7 @@ static void testCapacityAndStrings(uint8_t variant) {
     uint8_t pool;
     uint8_t remaining;
     for (layers = 1; layers <= 4; layers++) {
-        configDefaults(variant);
+        testLoadStarterProfile(variant);
         activeConfig[3] = layers - 1;
         pool = 9 + size * layers;
         remaining = CONFIG_SIZE - pool;
@@ -87,7 +88,7 @@ static void testCapacityAndStrings(uint8_t variant) {
         seal();
         assert(!configValid(activeConfig, variant));
     }
-    configDefaults(variant);
+    testLoadStarterProfile(variant);
     pool = 9 + size;
     activeConfig[4] = 4;
     activeConfig[9] = CONFIG_ACTION_STRING;
@@ -109,7 +110,7 @@ static void testCapacityAndStrings(uint8_t variant) {
 static void testChords(void) {
     uint8_t first;
     uint8_t second;
-    configDefaults(CONFIG_THREE_KEYS);
+    testLoadStarterProfile(CONFIG_THREE_KEYS);
     activeConfig[5] = 1 | (2 << 1);
     activeConfig[24] = 0;
     activeConfig[25] = CONFIG_ACTION_KEY_TAP;
@@ -134,7 +135,7 @@ static void testActions(void) {
     uint8_t type;
     uint8_t param;
     for (type = 0; type < 16; type++) {
-        configDefaults(CONFIG_SIX_KEYS);
+        testLoadStarterProfile(CONFIG_SIX_KEYS);
         param = 0;
         if (type == CONFIG_ACTION_KEY_TAP || type == CONFIG_ACTION_KEY_HOLD) {
             param = 0x04;
@@ -152,24 +153,24 @@ static void testActions(void) {
         seal();
         assert(configValid(activeConfig, CONFIG_SIX_KEYS));
     }
-    configDefaults(CONFIG_SIX_KEYS);
+        testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    configDefaults(CONFIG_SIX_KEYS);
+    testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[9] = CONFIG_ACTION_SCROLL;
     activeConfig[10] = 0x80;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    configDefaults(CONFIG_THREE_KEYS);
+    testLoadStarterProfile(CONFIG_THREE_KEYS);
     activeConfig[22] = 0xF2;
     seal();
     assert(!configValid(activeConfig, CONFIG_THREE_KEYS));
 }
 
 int main(void) {
-    testDefaults(CONFIG_SIX_KEYS);
-    testDefaults(CONFIG_THREE_KEYS);
+    testStarterFixture(CONFIG_SIX_KEYS);
+    testStarterFixture(CONFIG_THREE_KEYS);
     testInvalid();
     testCapacityAndStrings(CONFIG_SIX_KEYS);
     testCapacityAndStrings(CONFIG_THREE_KEYS);

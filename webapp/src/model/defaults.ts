@@ -15,14 +15,13 @@ export function emptyLayer(variant: Variant): Layer {
     clockwise: NONE,
     counterclockwise: NONE,
     leds: Array.from({ length: keys }, () => 6),
-    bootloaderFromBoot: false,
     bootloaderFromRun: false,
     indicatorBehavior: 0,
     indicatorColor: 0,
   };
 }
 
-/** Reproduces the firmware's built-in defaults (configDefaults in firmware/src/config.c). */
+/** Starter profile for new or unconfigured devices in the editor. */
 export function defaultLayer(variant: Variant): Layer {
   const keys = keyCount(variant);
   return {
@@ -35,7 +34,6 @@ export function defaultLayer(variant: Variant): Layer {
     clockwise: { type: 'scroll', delta: -1 },
     counterclockwise: { type: 'scroll', delta: 1 },
     leds: Array.from({ length: keys }, (_, i) => i),
-    bootloaderFromBoot: true,
     bootloaderFromRun: true,
     indicatorBehavior: 0,
     indicatorColor: 0,

@@ -16,12 +16,14 @@ Each layer occupies 22 bytes for six keys or 15 bytes for three keys, beginning
 at byte 9. A layer contains a two-byte binding for each physical key, then the
 encoder button, clockwise rotation, and counterclockwise rotation. LED palette
 indices follow, packed with the even key in the low nibble. The last byte has
-option bit 0 = bootloader from boot, bit 1 = bootloader from encoder hold,
-bits 2–3 = layer-selection LED behavior (0 = none, 1 = blink once, 2 = blink
-once per layer number, 3 = dim background always on), and bits 4–7 = palette
-index for the layer-indicator color. In dim-background mode, unpressed keys use
-a dimmed indicator color and pressed keys use their per-key color at full
-brightness. The unused high LED nibble for three keys is zero.
+bit 0 reserved for future use and required to be zero, bit 1 = bootloader from
+encoder hold, bits 2–3 = layer-selection LED behavior (0 = none, 1 = blink
+once, 2 = blink once per layer number, 3 = dim background always on), and bits
+4–7 = palette index for the layer-indicator color. Holding the first three keys
+while powering up always enters the bootloader; this recovery gesture is not
+configurable. In dim-background mode, unpressed keys use a dimmed indicator
+color and pressed keys use their per-key color at full brightness. The unused
+high LED nibble for three keys is zero.
 
 After the layers come the configured chords, each three bytes. The first byte
 holds a physical-key pair index in bits 0–3 and a layer index in bits 4–5.
@@ -60,6 +62,6 @@ palette indices are RGB: `#FF2020`, `#40C820`, `#209696`, `#FF4B00`,
 `#0040FF`, `#FF0064`, `#000000`, `#FFFFFF`, `#FFB400`, `#FFFF00`,
 `#00FF00`, `#00FFFF`, `#0000FF`, `#8000FF`, `#FF00FF`, `#808080`.
 
-The built-in six-key default starts `4D 50 01 00 00 00 4A 86 08`.
-The built-in three-key default starts `4D 50 01 00 00 01 65 F0 08`.
-They use one layer, a 40 ms chord window, and no chords or strings.
+The editor's six-key starter profile begins `4D 50 01 00 00 00 4A 86 08`.
+The three-key starter profile begins `4D 50 01 00 00 01 65 F0 08`. They use
+one layer, a 40 ms chord window, and no chords or strings.

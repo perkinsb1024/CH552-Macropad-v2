@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "../src/actions.h"
+#include "config_fixture.h"
 #include "../src/config.h"
 
 static uint8_t reports[64][9];
@@ -52,7 +53,7 @@ uint8_t USB_reportGeneration(void) { return 0; }
 uint8_t USB_asciiUsage(uint8_t c) { return c == 'A' ? 0x84 : 0x04; }
 
 static void reset(void) {
-    configDefaults(CONFIG_SIX_KEYS);
+    testLoadStarterProfile(CONFIG_SIX_KEYS);
     actionsInit();
     count = 0;
     blocked = 0;
@@ -231,7 +232,7 @@ static void chordProfile(uint8_t variant, uint8_t action) {
     uint8_t offset = variant ? 24 : 31;
     uint16_t crc;
     reset();
-    configDefaults(variant);
+    testLoadStarterProfile(variant);
     activeConfig[5] |= 2; // One chord: keys 0 and 1 on layer 0.
     activeConfig[offset] = 0;
     activeConfig[offset + 1] = action;

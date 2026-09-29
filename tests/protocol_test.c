@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "../src/config.h"
+#include "config_fixture.h"
 #include "../src/protocol_firmware.h"
 
 static uint8_t flash[CONFIG_SIZE];
@@ -60,7 +61,7 @@ static void seal(uint8_t *image) {
 }
 
 static void reset(void) {
-    configDefaults(PHYSICAL_VARIANT);
+    testLoadStarterProfile(PHYSICAL_VARIANT);
     memcpy(original, activeConfig, CONFIG_SIZE);
     memcpy(flash, original, CONFIG_SIZE);
     memcpy(upload, original, CONFIG_SIZE);
@@ -246,7 +247,7 @@ static void testValidation(void) {
     chunks();
     request(7, 0, 0, 0);
     assert(sent[8] == 6 && !writes);
-    configDefaults(PHYSICAL_VARIANT ^ 1);
+    testLoadStarterProfile(PHYSICAL_VARIANT ^ 1);
     memcpy(upload, activeConfig, CONFIG_SIZE);
     memcpy(activeConfig, original, CONFIG_SIZE);
     begin();

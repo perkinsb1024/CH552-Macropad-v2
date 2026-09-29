@@ -37,7 +37,7 @@ before the window expires to activate a mapped chord.
 | 1 | GET_INFO, offset and length zero | `UMAC`, transport version, format version, physical variant, key count, LED count, maximum layers, image capacity, palette version, 16-bit action mask |
 | 2 | GET_STATUS, offset and length zero | Flash-valid flag, current layer, startup layer, upload state, saturated dropped button-action count, saturated dropped rotation-action count |
 | 3 | READ_FLASH, offset and length 1–23 | Actual DataFlash bytes |
-| 4 | READ_ACTIVE, offset and length 1–23 | Active image bytes, including built-in defaults if flash is invalid |
+| 4 | READ_ACTIVE, offset and length 1–23 | Active RAM image bytes; invalid flash means no active profile |
 | 5 | BEGIN_WRITE, offset zero, length 3 | Data bytes: image size 128, expected CRC low byte, expected CRC high byte. Starts a new upload and discards any prior staging. |
 | 6 | WRITE_CHUNK, next offset, length 1–23 | Copies the next sequential chunk. Identical duplicate chunks are acknowledged; conflicting or partially overlapping chunks are rejected. |
 | 7 | COMMIT_WRITE, offset and length zero | Validates the full image and CRC, saves changed DataFlash bytes, verifies all 128 bytes, then activates the configuration. Repeated commit is safe. |
@@ -62,10 +62,11 @@ bytes and compare them with the image it sent.
 For a changed image, firmware invalidates the two-byte magic, writes and checks
 the body, restores the magic last, and compares the stored image byte for byte.
 If a write fails, the previous active RAM configuration remains in use so the
-host can retry. An interrupted save may leave invalid flash; startup then loads
-built-in defaults without writing flash. Configuration activation releases
-held outputs, cancels pending actions, resets encoder state, and suppresses
-inputs that remain held until they are released.
+host can retry. An interrupted save may leave invalid flash; at startup, the
+device leaves keys and encoder actions inactive and blinks one red LED at 1 Hz
+until a valid profile is uploaded. USB configuration access remains available.
+Configuration activation releases held outputs, cancels pending actions, resets encoder state, and
+suppresses inputs that remain held until they are released.
 
 After a bus reset, an incomplete request is discarded. Configuration reports
 share the input endpoint with short keyboard, mouse, and consumer reports. The

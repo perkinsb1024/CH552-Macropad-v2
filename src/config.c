@@ -136,6 +136,9 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     used = image[4];
     for (layer = 0; layer < layers; layer++) {
         offset = 9 + size * layer;
+        if (image[offset + size - 1] & CONFIG_LAYER_OPT_RESERVED_MASK) {
+            return 0;
+        }
         for (i = 0; i < keys + 3; i++) {
             if (!actionValid(image, offset + 2 * i, layers,
                              i >= keys + 1, pool, used)) {
@@ -175,39 +178,6 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     }
     crc = configCrc(image);
     return image[6] == (uint8_t)crc && image[7] == (uint8_t)(crc >> 8);
-}
-
-void configDefaults(uint8_t variant) {
-    uint8_t i;
-    uint8_t keys = keyCount(variant);
-    static __code uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
-    static __code uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
-    uint8_t offset = 9;
-    uint16_t crc;
-    for (i = 0; i < CONFIG_SIZE; i++) {
-        activeConfig[i] = 0;
-    }
-    activeConfig[0] = 'M';
-    activeConfig[1] = 'P';
-    activeConfig[2] = CONFIG_VERSION;
-    activeConfig[5] = variant;
-    activeConfig[8] = 8; // 40 ms
-    for (i = 0; i < keys; i++) {
-        activeConfig[offset + 2 * i] = (modifiers[i] << 4) | CONFIG_ACTION_KEY_TAP;
-        activeConfig[offset + 2 * i + 1] = usages[i];
-        activeConfig[offset + 2 * (keys + 3) + (i >> 1)] |= (i & 1) ? i << 4 : i;
-    }
-    activeConfig[offset + 2 * keys] = CONFIG_ACTION_MOUSE_CLICK;
-    activeConfig[offset + 2 * keys + 1] = 4; // Middle mouse button
-    activeConfig[offset + 2 * (keys + 1)] = CONFIG_ACTION_SCROLL;
-    activeConfig[offset + 2 * (keys + 1) + 1] = (uint8_t)-1;
-    activeConfig[offset + 2 * (keys + 2)] = CONFIG_ACTION_SCROLL;
-    activeConfig[offset + 2 * (keys + 2) + 1] = 1;
-    activeConfig[offset + layerSize(variant) - 1] =
-        CONFIG_LAYER_OPT_BOOTLOADER_BOOT | CONFIG_LAYER_OPT_BOOTLOADER_RUN;
-    crc = configCrc(activeConfig);
-    activeConfig[6] = (uint8_t)crc;
-    activeConfig[7] = (uint8_t)(crc >> 8);
 }
 
 uint8_t configLayerCount(void) { return (activeConfig[3] & 3) + 1; }

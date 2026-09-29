@@ -356,8 +356,8 @@ export function resetToDefaults(): void {
   const p = profile.value;
   if (!p) return;
   ask({
-    title: 'Reset to factory defaults?',
-    body: 'All layers, chords and text in the editor will be replaced with the firmware defaults. Nothing is written to the device until you save.',
+    title: 'Reset to the starter profile?',
+    body: 'All layers, chords and text in the editor will be replaced with the starter profile. Nothing is written to the device until you save.',
     actions: [
       { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
       {
@@ -468,16 +468,14 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     if (decoded.ok) {
       fromDevice = decoded.profile;
     } else {
-      const active = decodeImage(await client.readActive(), info.variant);
-      if (!active.ok) throw new ProtocolError('The device reported an unreadable active configuration.');
-      fromDevice = active.profile;
+      fromDevice = defaultProfile(info.variant);
       const header = peekHeader(flash);
       if (decoded.reason === 'unsupported-version') {
         notify('error', `The saved profile uses format version ${header.version}, which this app cannot edit. Saving is disabled; you can export the raw bytes.`, 12000);
       } else if (decoded.reason === 'no-magic') {
-        notify('info', 'No saved profile on the device. Showing the built-in defaults it is currently using.', 8000);
+        notify('info', 'No profile is saved. The device is inactive until you save one; the editor loaded a starter profile.', 8000);
       } else {
-        notify('error', `The saved profile is invalid (${decoded.detail}) so the device is running defaults. Save to repair it.`, 12000);
+        notify('error', `The saved profile is invalid (${decoded.detail}). The device is inactive; the editor loaded a starter profile that you can save to repair it.`, 12000);
       }
     }
 

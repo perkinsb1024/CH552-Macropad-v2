@@ -12,13 +12,23 @@ elsewhere, set `CH55XDUINO_PACKAGE_DIR` to the package directory.
 Run `pio run` to build. The output is `.pio/build/ch552/firmware.hex`.
 To flash over USB, run `pio run -t upload` and put the CH552 into bootloader
 mode within ten seconds. Hold the encoder button for three seconds, or hold
-the first three keys during startup. The Upload task always invokes the
-programmer, even when the HEX file is already built.
+the first three keys during startup. Holding the first three keys at power-up
+always enters the bootloader and cannot be disabled in a profile. The Upload
+task always invokes the programmer, even when the HEX file is already built.
+
+To clear the saved profile for testing, run `pio run -t erase-config`. This
+temporarily uploads a small utility that invalidates the profile, then uploads
+the normal firmware again. With no profile, the keys and encoder stay inactive
+and one red LED blinks at 1 Hz; hold the first three keys while powering up to
+enter the recovery bootloader.
 
 The firmware uses the version 1 image codec in `src/config.c`. It validates a
-128-byte image, provides built-in defaults for both physical variants, and
-exposes layer, binding, chord, and palette accessors. The byte format and palette
-are documented in `protocol/config-v1.md`. Run the codec checks with:
+128-byte image and exposes layer, binding, chord, and palette accessors. It does
+not provide a fallback profile: when DataFlash has no valid image, physical
+inputs stay inactive and one red LED blinks at 1 Hz while USB configuration
+access remains available.
+The byte format and palette are documented in `protocol/config-v1.md`. Run the
+codec checks with:
 
 ```sh
 cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
@@ -26,14 +36,17 @@ cc -std=c99 -Wall -Wextra -Werror -D__xdata= -D__code= -I src \
 /tmp/ch552-config-test
 ```
 
-Built-in defaults preserve the original shortcuts, encoder middle-click and
-scroll directions, bootloader options, and six original LED colors. A key's
-layer-selected LED color is shown while that key is held and clears on release.
+The web app offers an editor starter profile with the original shortcuts,
+encoder middle-click and scroll directions, the encoder-hold bootloader option,
+and six original LED colors. A key's layer-selected LED color is shown while
+that key is held and clears on release.
 
 The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
-At startup it reads and validates DataFlash, falling back to built-in defaults
-when flash is invalid. GET_INFO, GET_STATUS, READ_FLASH, READ_ACTIVE,
-BEGIN_WRITE, WRITE_CHUNK, COMMIT_WRITE, and ABORT_WRITE are implemented. Saves
+At startup it reads and validates DataFlash. If flash is invalid, the firmware
+keeps inputs inactive and blinks one red LED at 1 Hz until a valid profile is
+uploaded. GET_INFO,
+GET_STATUS, READ_FLASH, READ_ACTIVE, BEGIN_WRITE, WRITE_CHUNK, COMMIT_WRITE,
+and ABORT_WRITE are implemented. Saves
 validate the full image, avoid programming unchanged bytes, write validity last,
 then verify actual DataFlash before applying the profile.
 

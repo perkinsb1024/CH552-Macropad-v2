@@ -13,20 +13,13 @@ export function LayerOptions() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
-  const toggle = (key: 'bootloaderFromBoot' | 'bootloaderFromRun') => (e: Event) =>
+  const toggle = (key: 'bootloaderFromRun') => (e: Event) =>
     updateProfile((d) => { d.layers[li]![key] = (e.target as HTMLInputElement).checked; });
   return (
     <section class="card">
       <header class="card-head">
         <h2>Layer options</h2>
       </header>
-      <label class="check">
-        <input type="checkbox" checked={layer.bootloaderFromBoot} disabled={li !== p.startupLayer} onChange={toggle('bootloaderFromBoot')} />
-        <span>
-          <strong>Allow bootloader entry at power-up</strong>
-          <span class="hint">{li === p.startupLayer ? 'Only the startup layer can enable this.' : `Available only on the startup layer (${p.startupLayer + 1}).`}</span>
-        </span>
-      </label>
       <label class="check">
         <input type="checkbox" checked={layer.bootloaderFromRun} onChange={toggle('bootloaderFromRun')} />
         <span>

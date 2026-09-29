@@ -46,6 +46,10 @@ __xdata uint8_t allowRunBootloader;
 __xdata uint8_t layerIndicatorPhasesLeft;
 __xdata uint8_t layerIndicatorDeadline;
 __xdata uint16_t encoderPressedMs;
+#ifdef ENABLE_NO_CONFIG_LED_BLINK
+__xdata uint16_t noConfigBlinkChanged;
+__xdata uint8_t noConfigBlinkOn;
+#endif
 
 void displayLeds() {
   LED_FUNC(ledData, NUM_BYTES);
@@ -67,6 +71,7 @@ uint8_t dimIndicatorComponent(uint8_t value) {
 }
 
 void updateLeds() {
+  if (!activeConfigValid) return;
   uint8_t layer = actionsLayer();
   uint8_t options = configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
@@ -216,6 +221,7 @@ void scanEncoder() {
 }
 
 void firmwareApplyConfig(void) {
+  if (!activeConfigValid) return;
   uint16_t now = millis();
   actionsClear();
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
@@ -241,10 +247,8 @@ void setup() {
   clearLeds();
   firmwareApplyConfig();
   USBInit();
-  if (configLayerOptions(configStartupLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_BOOT) {
-    if (readButton(0) && readButton(1) && readButton(2)) {
-      enterBootloader();
-    }
+  if (readButton(0) && readButton(1) && readButton(2)) {
+    enterBootloader();
   }
 }
 
@@ -252,6 +256,19 @@ void loop() {
   uint16_t now = millis();
   USB_reportPoll(now);
   protocolPoll(now);
+  if (!activeConfigValid) {
+#ifdef ENABLE_NO_CONFIG_LED_BLINK
+    if ((uint16_t)(now - noConfigBlinkChanged) >= 500) {
+      noConfigBlinkChanged = now;
+      noConfigBlinkOn = !noConfigBlinkOn;
+      ledData[0] = 0;
+      ledData[1] = noConfigBlinkOn ? 255 : 0;
+      ledData[2] = 0;
+      displayLeds();
+    }
+#endif
+    return;
+  }
   for (uint8_t i = 0; i < configKeyCount(); i++) {
     scanButton(i, now);
   }
