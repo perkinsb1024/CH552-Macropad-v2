@@ -99,7 +99,7 @@ The action types are:
 | A | Set layer | Zero; layer index |
 | B | Momentary layer | Zero; layer index |
 | C | Reserved | Rejected by current firmware |
-| D | Next layer | Both zero |
+| D | Relative layer | Auxiliary zero; signed 8-bit parameter from -3 to +3. Add to the selected base-layer index and wrap by the configured layer count. Zero has no effect. |
 | E | Mouse X step | Zero; signed X delta other than -128 |
 | F | Mouse Y step | Zero; signed Y delta other than -128 |
 

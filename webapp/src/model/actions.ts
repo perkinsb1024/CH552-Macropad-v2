@@ -28,7 +28,7 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
   { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
   { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer while held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
-  { type: 'nextLayer', code: ActionCode.NextLayer, label: 'Next layer', group: 'Layers', needsRelease: false, hint: 'Advance to the next layer, wrapping around.' },
+  { type: 'relativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer', group: 'Layers', needsRelease: false, hint: 'Move forward or backward through layers, wrapping around. Zero has no effect.' },
 ];
 
 const BY_TYPE = new Map(ACTION_DESCRIPTORS.map((d) => [d.type, d]));
@@ -42,12 +42,17 @@ export function descriptorForCode(code: number): ActionDescriptor | undefined {
   return BY_CODE.get(code as ActionCode);
 }
 
+export function relativeTargetLayer(source: number, offset: number, layerCount: number): number {
+  return ((source + offset) % layerCount + layerCount) % layerCount;
+}
+
 /** A fresh, valid instance of the given action type. */
 export function blankAction(type: ActionType): Action {
   switch (type) {
     case 'none':
-    case 'nextLayer':
       return { type };
+    case 'relativeLayer':
+      return { type, offset: 1 };
     case 'keyTap':
     case 'keyHold':
       return { type, usage: 0x04, modifiers: 0 };
@@ -121,8 +126,8 @@ export function summarize(action: Action): string {
       return `Layer ${action.layer + 1}`;
     case 'momentaryLayer':
       return `Layer ${action.layer + 1} (hold)`;
-    case 'nextLayer':
-      return 'Next layer';
+    case 'relativeLayer':
+      return `Relative ${action.offset > 0 ? '+' : ''}${action.offset}`;
   }
 }
 

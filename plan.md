@@ -83,8 +83,8 @@ Byte 0 holds the action type in its low nibble and auxiliary data in its high ni
 | 0x9 | String | Offset relative to string-pool start; auxiliary data zero |
 | 0xA | Set layer | Destination layer index; auxiliary data zero |
 | 0xB | Momentary layer | Destination layer while the physical button is held |
-| 0xC | Toggle layer | Toggle selected base layer between destination and startup layer |
-| 0xD | Next layer | Advance selected base layer cyclically; remaining fields zero |
+| 0xC | Reserved | Rejected by current firmware; no action assigned |
+| 0xD | Relative layer | Auxiliary zero; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
 | 0xE | Mouse X step | Signed 8-bit relative X delta; auxiliary data zero |
 | 0xF | Mouse Y step | Signed 8-bit relative Y delta; auxiliary data zero |
 
@@ -94,7 +94,7 @@ Limit mouse X/Y and wheel parameters to -127 through +127 to match the HID repor
 
 Encoder rotation accepts actions that complete on a detent, including key taps, clicks, scrolling, consumer taps, strings, and persistent layer changes. Reject keyboard hold, mouse hold, and momentary layer actions for rotation because there is no corresponding physical release. The encoder button supports normal button actions.
 
-All 16 action codes are allocated. Future action families require a versioned extension or a revised encoding, rather than silently reinterpreting saved data.
+Action code 0xC remains reserved. Assigning it in the future requires updating firmware validation, the editor, and the format documentation. Additional action families beyond this slot require a versioned extension or revised encoding.
 
 ### String pool and capacity
 
@@ -147,7 +147,7 @@ Track ownership of pressed keys, modifiers, and mouse buttons so releasing one a
 
 Maintain a selected base layer and bounded momentary overrides. The most recently pressed, still-held momentary layer takes precedence; releasing it restores the next override or the base layer.
 
-Resolve each immediate button binding on its debounced press; for a chord-eligible key, capture the effective layer and its single-key binding while awaiting the second press. Retain a triggered single-key or chord action until its defined release. Releasing a key after switching layers must release the original action, not look up a different action in the new layer. On an effective layer change, resolve any pending single-key action from its captured layer and stop matching it against new-layer chords. Set/toggle/next-layer actions change the selected base layer. After any effective layer change, update LED colors and discard partial encoder movement so it cannot trigger an action in the new layer.
+Resolve each immediate button binding on its debounced press; for a chord-eligible key, capture the effective layer and its single-key binding while awaiting the second press. Retain a triggered single-key or chord action until its defined release. Releasing a key after switching layers must release the original action, not look up a different action in the new layer. On an effective layer change, resolve any pending single-key action from its captured layer and stop matching it against new-layer chords. Set-layer and nonzero relative-layer actions change the selected base layer. After any effective layer change, update LED colors and discard partial encoder movement so it cannot trigger an action in the new layer.
 
 Clear latched mouse toggles on effective layer changes, releasing only the outputs they own. Cancel pending string/tap sequences from the previous layer cleanly. Ordinary held physical key and mouse actions keep their original ownership until release. Momentary-layer bookkeeping survives the transition it caused.
 

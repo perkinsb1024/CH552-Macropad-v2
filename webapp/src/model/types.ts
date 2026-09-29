@@ -13,7 +13,7 @@ export type Action =
   | { type: 'string'; text: string }
   | { type: 'setLayer'; layer: number }
   | { type: 'momentaryLayer'; layer: number }
-  | { type: 'nextLayer' }
+  | { type: 'relativeLayer'; offset: number }
   | { type: 'mouseX'; delta: number }
   | { type: 'mouseY'; delta: number };
 

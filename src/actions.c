@@ -161,10 +161,13 @@ static void runAction(uint8_t first, uint8_t second, uint8_t layer,
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
       break;
-    case CONFIG_ACTION_NEXT_LAYER:
-      baseLayer++;
-      if (baseLayer == configLayerCount()) {
-        baseLayer = 0;
+    case CONFIG_ACTION_RELATIVE_LAYER:
+      if (second) {
+        uint8_t layers = configLayerCount();
+        // Twelve is divisible by every supported layer count (1-4).
+        uint8_t next = baseLayer + second + 12;
+        while (next >= layers) next -= layers;
+        baseLayer = next;
       }
       break;
     default:

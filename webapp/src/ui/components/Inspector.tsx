@@ -1,5 +1,5 @@
 import { useMemo } from 'preact/hooks';
-import { ACTION_DESCRIPTORS, blankAction } from '../../model/actions';
+import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, keyCount } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
@@ -116,6 +116,7 @@ export function Inspector() {
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
     else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta });
+    else if ('offset' in next && 'offset' in action) update({ ...next, offset: action.offset });
     else update(next);
   };
 
@@ -221,6 +222,16 @@ export function Inspector() {
             {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}{i === slot.layer ? ' (this layer)' : ''}</option>)}
             {action.layer >= layerCount && <option value={action.layer}>Layer {action.layer + 1} (missing)</option>}
           </select>
+        </label>
+      )}
+
+      {action.type === 'relativeLayer' && (
+        <label class="field">
+          <span class="field-label">Relative offset</span>
+          <select value={action.offset} onChange={(e) => update({ ...action, offset: Number((e.target as HTMLSelectElement).value) })}>
+            {[-3, -2, -1, 0, 1, 2, 3].filter((offset) => offset !== 0 || action.offset === 0).map((offset) => <option key={offset} value={offset}>{offset > 0 ? `+${offset}` : offset}{offset === 0 ? ' (no effect)' : ''}</option>)}
+          </select>
+          <span class="hint">Layer {slot.layer + 1} → Layer {relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}{action.offset === 0 ? ' (no effect)' : ''}</span>
         </label>
       )}
 

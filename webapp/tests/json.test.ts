@@ -26,4 +26,9 @@ describe('JSON import/export', () => {
     expect(() => importProfile(text.replace('"startupLayer": 0', '"startupLayer": 3'))).toThrow(ImportError);
     expect(() => importProfile(text.replace('"a\\r\\nb"', '"é"'))).toThrow(ImportError);
   });
+  it('imports a legacy nextLayer JSON action as a zero-offset action', () => {
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    const text = exportProfile(profile).replace('"type": "keyTap"', '"type": "nextLayer"');
+    expect(importProfile(text).profile.layers[0]!.keys[0]).toEqual({ type: 'relativeLayer', offset: 0 });
+  });
 });

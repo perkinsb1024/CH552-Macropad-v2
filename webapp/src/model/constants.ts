@@ -51,7 +51,7 @@ export const enum ActionCode {
   String = 0x9,
   SetLayer = 0xa,
   MomentaryLayer = 0xb,
-  NextLayer = 0xd,
+  RelativeLayer = 0xd,
   MouseX = 0xe,
   MouseY = 0xf,
 }

@@ -43,8 +43,10 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
   switch (type) {
     case ActionCode.None:
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
-    case ActionCode.NextLayer:
-      return nonZeroAux || b1 ? 'Next-layer action has non-zero data' : { type: 'nextLayer' };
+    case ActionCode.RelativeLayer: {
+      const offset = toSigned(b1);
+      return nonZeroAux || offset < -3 || offset > 3 ? 'Invalid relative-layer offset' : { type: 'relativeLayer', offset };
+    }
     case ActionCode.KeyTap:
     case ActionCode.KeyHold:
       if (rotation && type === ActionCode.KeyHold) return 'Key hold bound to rotation';

@@ -7,7 +7,7 @@ import { VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, type Variant } from '../src/model
 import type { Action, Profile } from '../src/model/types';
 import { computeCapacity } from '../src/model/capacity';
 import { validateProfile } from '../src/model/validate';
-import { ACTION_DESCRIPTORS, blankAction } from '../src/model/actions';
+import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/model/actions';
 
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
@@ -63,11 +63,11 @@ describe('every action type round-trips', () => {
     { type: 'string', text: '' },
     { type: 'setLayer', layer: 1 },
     { type: 'momentaryLayer', layer: 2 },
-    { type: 'nextLayer' },
+    { type: 'relativeLayer', offset: -3 },
     { type: 'mouseX', delta: -5 },
     { type: 'mouseY', delta: 100 },
   ];
-  it('covers all 16 codes', () => {
+  it('covers every supported code', () => {
     const types = new Set(samples.map((s) => s.type));
     for (const d of ACTION_DESCRIPTORS) expect(types.has(d.type)).toBe(true);
   });
@@ -89,6 +89,35 @@ describe('every action type round-trips', () => {
       profile.layers[0]!.keys[0] = blankAction(d.type);
       expect(validateProfile(profile)).toEqual([]);
     }
+  });
+});
+
+describe('relative layer action', () => {
+  it('round-trips signed offsets, including the legacy zero byte', () => {
+    for (let offset = -3; offset <= 3; offset++) {
+      const profile = defaultProfile(VARIANT_SIX_KEYS);
+      profile.layers[0]!.keys[0] = { type: 'relativeLayer', offset };
+      const image = encodeProfile(profile);
+      expect(image[9]).toBe(0x0d);
+      expect(image[10]).toBe(offset & 0xff);
+      const decoded = decodeImage(image);
+      expect(decoded.ok && decoded.profile.layers[0]!.keys[0]).toEqual({ type: 'relativeLayer', offset });
+    }
+  });
+  it('rejects offsets outside -3 through 3', () => {
+    for (const byte of [4, 0xfc]) {
+      const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
+      image[9] = 0x0d;
+      image[10] = byte;
+      sealImage(image);
+      expect(decodeImage(image).ok).toBe(false);
+    }
+  });
+  it('wraps the target preview for any layer count', () => {
+    expect(relativeTargetLayer(0, 2, 4)).toBe(2);
+    expect(relativeTargetLayer(0, -1, 4)).toBe(3);
+    expect(relativeTargetLayer(0, -3, 1)).toBe(0);
+    expect(relativeTargetLayer(2, 0, 4)).toBe(2);
   });
 });
 
@@ -153,18 +182,18 @@ describe('capacity', () => {
   it('max chords on six-key four-layer', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers = [0, 1, 2, 3].map(() => emptyLayer(VARIANT_SIX_KEYS));
-    for (let i = 0; i < 10; i++) profile.chords.push({ layer: Math.floor(i / 3), keyA: i % 3, keyB: 5, action: { type: 'nextLayer' } });
+    for (let i = 0; i < 10; i++) profile.chords.push({ layer: Math.floor(i / 3), keyA: i % 3, keyB: 5, action: { type: 'relativeLayer', offset: 1 } });
     expect(computeCapacity(profile).remaining).toBe(1);
     expect(validateProfile(profile)).toEqual([]);
     const decoded = decodeImage(encodeProfile(profile));
     expect(decoded.ok).toBe(true);
-    profile.chords.push({ layer: 3, keyA: 3, keyB: 4, action: { type: 'nextLayer' } });
+    profile.chords.push({ layer: 3, keyA: 3, keyB: 4, action: { type: 'relativeLayer', offset: 1 } });
     expect(computeCapacity(profile).remaining).toBe(-2);
   });
   it('three-key four-layer holds all 12 chords', () => {
     const profile = defaultProfile(VARIANT_THREE_KEYS);
     profile.layers = [0, 1, 2, 3].map(() => emptyLayer(VARIANT_THREE_KEYS));
-    for (let l = 0; l < 4; l++) for (const [a, b] of [[0, 1], [0, 2], [1, 2]]) profile.chords.push({ layer: l, keyA: a!, keyB: b!, action: { type: 'nextLayer' } });
+    for (let l = 0; l < 4; l++) for (const [a, b] of [[0, 1], [0, 2], [1, 2]]) profile.chords.push({ layer: l, keyA: a!, keyB: b!, action: { type: 'relativeLayer', offset: 1 } });
     expect(computeCapacity(profile).remaining).toBe(23);
     const decoded = decodeImage(encodeProfile(profile));
     expect(decoded.ok && decoded.profile.chords.length).toBe(12);
@@ -190,9 +219,9 @@ describe('chords', () => {
   it('rejects duplicates and dangling layers', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.chords = [
-      { layer: 0, keyA: 0, keyB: 1, action: { type: 'nextLayer' } },
-      { layer: 0, keyA: 0, keyB: 1, action: { type: 'nextLayer' } },
-      { layer: 2, keyA: 0, keyB: 1, action: { type: 'nextLayer' } },
+      { layer: 0, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } },
+      { layer: 0, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } },
+      { layer: 2, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } },
     ];
     expect(validateProfile(profile).length).toBe(2);
   });

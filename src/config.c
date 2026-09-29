@@ -70,8 +70,9 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
     uint8_t start;
     switch (type) {
         case CONFIG_ACTION_NONE:
-        case CONFIG_ACTION_NEXT_LAYER:
             return aux == 0 && param == 0;
+        case CONFIG_ACTION_RELATIVE_LAYER:
+            return aux == 0 && (param <= 3 || param >= 0xFD);
         case CONFIG_ACTION_KEY_TAP:
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&

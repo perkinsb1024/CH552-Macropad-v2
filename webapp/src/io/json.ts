@@ -80,13 +80,15 @@ function bool(v: unknown, what: string): boolean {
 }
 
 function action(v: unknown, what: string): Action {
+  if (isRecord(v) && v.type === 'nextLayer') return { type: 'relativeLayer', offset: 0 };
   if (!isRecord(v) || typeof v.type !== 'string' || !TYPES.has(v.type as Action['type'])) throw new ImportError(`${what}: unknown action.`);
   const type = v.type as Action['type'];
   descriptor(type);
   switch (type) {
     case 'none':
-    case 'nextLayer':
       return { type };
+    case 'relativeLayer':
+      return { type, offset: int(v.offset, `${what} offset`) };
     case 'keyTap':
     case 'keyHold':
       return { type, usage: int(v.usage ?? 0, `${what} usage`), modifiers: int(v.modifiers ?? 0, `${what} modifiers`) };

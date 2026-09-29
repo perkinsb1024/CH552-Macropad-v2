@@ -17,8 +17,9 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
   const code = descriptor(action.type).code;
   switch (action.type) {
     case 'none':
-    case 'nextLayer':
       return [code, 0];
+    case 'relativeLayer':
+      return [code, action.offset & 0xff];
     case 'keyTap':
     case 'keyHold':
       return [code | ((action.modifiers & 15) << 4), action.usage & 0xff];

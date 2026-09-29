@@ -19,8 +19,9 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
   if (ctx.rotation && needsRelease) return `${actionDescriptor.label} needs a release and cannot be bound to rotation.`;
   switch (action.type) {
     case 'none':
-    case 'nextLayer':
       return null;
+    case 'relativeLayer':
+      return Number.isInteger(action.offset) && action.offset >= -3 && action.offset <= 3 ? null : 'Relative layer offset must be a whole number from -3 to 3.';
     case 'keyTap':
     case 'keyHold':
       if (!Number.isInteger(action.usage) || !isSupportedUsage(action.usage)) return `Key usage 0x${action.usage.toString(16)} is not supported.`;

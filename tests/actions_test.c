@@ -108,6 +108,61 @@ static void testLayerAndOwnership(void) {
     assert(reports[count - 1][3] == 0);
 }
 
+static void testRelativeLayer(void) {
+    uint8_t layers;
+    int8_t offset;
+    int8_t target;
+    reset();
+    activeConfig[3] = 3; // Four layers, starting at layer 1.
+    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+    activeConfig[10] = 2;
+    activeConfig[9 + 22 * 2 + 2] = CONFIG_ACTION_RELATIVE_LAYER;
+    activeConfig[9 + 22 * 2 + 3] = 0xFF;
+    actionsInit();
+    actionsPress(0, 0);
+    assert(actionsLayer() == 2); // Layer 1 + 2 = layer 3.
+    actionsRelease(0);
+    actionsPress(1, 1);
+    assert(actionsLayer() == 1); // Layer 3 - 1 = layer 2.
+    actionsRelease(1);
+
+    reset();
+    activeConfig[3] = 3;
+    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+    activeConfig[10] = 0xFF;
+    actionsInit();
+    actionsPress(0, 0);
+    assert(actionsLayer() == 3); // Layer 1 - 1 wraps to layer 4.
+    actionsRelease(0);
+
+    reset();
+    activeConfig[3] = 0; // One layer still accepts the full offset range.
+    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+    activeConfig[10] = 0xFD;
+    actionsInit();
+    actionsPress(0, 0);
+    assert(actionsLayer() == 0);
+    actionsRelease(0);
+    activeConfig[10] = 0;
+    actionsPress(0, 1);
+    assert(actionsLayer() == 0); // Existing zero-byte records are no-ops.
+
+    for (layers = 1; layers <= 4; layers++) {
+        for (offset = -3; offset <= 3; offset++) {
+            reset();
+            activeConfig[3] = layers - 1;
+            activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+            activeConfig[10] = (uint8_t)offset;
+            actionsInit();
+            actionsPress(0, 0);
+            target = offset;
+            while (target < 0) target += layers;
+            while (target >= layers) target -= layers;
+            assert(actionsLayer() == target);
+        }
+    }
+}
+
 static void testRolloverAndSequence(void) {
     uint8_t i;
     reset();
@@ -149,10 +204,10 @@ static void testRolloverAndSequence(void) {
 
 static void testRotationOptions(void) {
     reset();
-    activeConfig[30] |= 1; // Invert encoder scrolling on this layer.
+    activeConfig[30] |= 1; // Full LED brightness does not change scrolling.
     actionsRotate(1);
     actionsPoll(0);
-    assert(reports[0][4] == 1);
+    assert(reports[0][4] == 0xFF);
 
     reset();
     activeConfig[23] = CONFIG_ACTION_MOUSE_TOGGLE;
@@ -523,6 +578,7 @@ static void testClearAndOverflow(void) {
 }
 
 int main(void) {
+    testRelativeLayer();
     testRolloverBackpressure();
     testClearAndOverflow();
     testMultipleChords();
