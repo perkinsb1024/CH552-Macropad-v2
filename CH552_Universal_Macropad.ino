@@ -32,6 +32,8 @@ __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 #if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
 // Phase order around the six-key perimeter: 1 -> 2 -> 3 -> 6 -> 5 -> 4.
 __code uint8_t rainbowOffsets[6] = {0, 42, 84, 210, 168, 126};
+#else
+__code uint8_t rainbowOffsets[3] = {0, 85, 170};
 #endif
 __code int8_t encoderTransitions[16] = {
   0, -1, 1, 0,
@@ -52,23 +54,16 @@ __xdata uint8_t layerIndicatorPhasesLeft;
 __xdata uint8_t layerIndicatorDeadline;
 __xdata uint8_t rainbowChanged;
 __xdata uint8_t rainbowHue;
+// With invalid config, input scanning is inactive: reuse this timer for the error LED.
 __xdata uint16_t encoderPressedMs;
-#ifdef ENABLE_NO_CONFIG_LED_BLINK
-__xdata uint16_t noConfigBlinkChanged;
-__xdata uint8_t noConfigBlinkOn;
-#endif
 
 void displayLeds() {
   LED_FUNC(ledData, NUM_BYTES);
 }
 
 void clearLeds() {
-  __xdata uint8_t *ledPtr = ledData;
-  for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    ledPtr[0] = 0;
-    ledPtr[1] = 0;
-    ledPtr[2] = 0;
-    ledPtr += 3;
+  for (uint8_t i = 0; i < NUM_BYTES; i++) {
+    ledData[i] = 0;
   }
   displayLeds();
 }
@@ -86,9 +81,6 @@ void updateLeds() {
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t blink = phases && !(phases & 1);
   uint8_t rainbow = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON && palette == 15;
-#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
-  uint8_t hue = rainbowHue;
-#endif
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
@@ -98,11 +90,7 @@ void updateLeds() {
     uint8_t green;
     uint8_t blue;
     uint8_t wheel;
-#if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
     wheel = rainbowHue + rainbowOffsets[i];
-#else
-    wheel = hue;
-#endif
     if (blink) {
       // Blink takes priority over per-key colors while the animation is on.
     } else if (stableState[i]) {
@@ -146,9 +134,6 @@ void updateLeds() {
     ledPtr[1] = red;
     ledPtr[2] = blue;
     ledPtr += 3;
-#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
-    hue += 256 / NUM_LEDS;
-#endif
   }
   displayLeds();
 }
@@ -260,8 +245,13 @@ void scanEncoder() {
 }
 
 void firmwareApplyConfig(void) {
-  if (!activeConfigValid) return;
   uint16_t now = millis();
+  if (!activeConfigValid) {
+    encoderPressedMs = now;
+    ledData[1] = 255;
+    displayLeds();
+    return;
+  }
   actionsClear();
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
@@ -298,16 +288,11 @@ void loop() {
   USB_reportPoll(now);
   protocolPoll(now);
   if (!activeConfigValid) {
-#ifdef ENABLE_NO_CONFIG_LED_BLINK
-    if ((uint16_t)(now - noConfigBlinkChanged) >= 500) {
-      noConfigBlinkChanged = now;
-      noConfigBlinkOn = !noConfigBlinkOn;
-      ledData[0] = 0;
-      ledData[1] = noConfigBlinkOn ? 255 : 0;
-      ledData[2] = 0;
+    if ((uint16_t)(now - encoderPressedMs) >= 500) {
+      encoderPressedMs = now;
+      ledData[1] ^= 255;
       displayLeds();
     }
-#endif
     return;
   }
   for (uint8_t i = 0; i < configKeyCount(); i++) {

@@ -124,12 +124,21 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,290 of 14,336 code bytes (46 free). It uses
-634 of 876 application xRAM bytes (242 free). Add 148 separately reserved USB
-bytes to the RAM total. The linker provides 132 bytes for the internal stack;
+The current six-key image uses 14,228 of 14,336 code bytes (108 free). It uses
+624 of 876 application xRAM bytes (252 free). Add 148 separately reserved USB
+bytes to the RAM total. The linker provides 133 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The
 128-byte staging buffer fits in application xRAM without a separate programming
 mode.
+
+The invalid-config indicator starts red on the first key and toggles every
+500 ms. It reuses the encoder hold timer while inputs are inactive, and uses
+the LED buffer itself for its on/off state, so no extra persistent RAM is needed.
+The action queue stores only the two resolved action bytes per entry; unused
+playback metadata was removed without changing queue capacity or behavior.
+Both variants use a code-memory lookup table for rainbow offsets. The three-key
+image uses 14,225 code bytes (111 free) and 615 application xRAM bytes, with
+133 bytes available for the internal stack.
 
 The project-local PlatformIO adapter may cache an earlier builder script, so
 clean before switching variants or after changing `src/*.c` files.

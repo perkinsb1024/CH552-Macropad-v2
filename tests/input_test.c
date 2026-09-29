@@ -85,6 +85,38 @@ static void tick(uint16_t now) {
 }
 
 int main(void) {
+    // Invalid flash lights only the first key and leaves physical inputs inactive.
+    memset(flash, 0xFF, sizeof(flash));
+    setup();
+    assert(!activeConfigValid);
+    assert(ledData[1] == 255);
+    for (uint8_t i = 0; i < NUM_BYTES; i++) {
+        assert(ledData[i] == (i == 1 ? 255 : 0));
+    }
+    P1 &= ~0x02;
+    tick(499);
+    assert(ledData[1] == 255 && frameCount == 0);
+    tick(500);
+    assert(ledData[1] == 0 && frameCount == 0);
+    tick(1000);
+    assert(ledData[1] == 255 && frameCount == 0);
+    // A USB reset reapplies the error indicator and restarts its timer.
+    currentMs = 65500;
+    firmwareApplyConfig();
+    tick(463);
+    assert(ledData[1] == 255);
+    tick(464);
+    assert(ledData[1] == 0); // 500 ms, including the 16-bit timer wrap.
+
+    // Applying a valid profile replaces the error light with normal layer LEDs.
+    P1 = P3 = 0xFF;
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfigValid = 1;
+    firmwareApplyConfig();
+    for (uint8_t i = 0; i < NUM_BYTES; i++) {
+        assert(ledData[i] == 0);
+    }
+    currentMs = 0;
     testLoadStarterProfile(PHYSICAL_VARIANT);
     memcpy(flash, activeConfig, CONFIG_SIZE);
     P1 = P3 = 0xFF;
@@ -101,7 +133,7 @@ int main(void) {
     tick(0);
     tick(10);
     assert(frameCount == 1 && frames[0][0] == 1 && frames[0][3] == 0x29);
-    assert(ledData[0] == 32 && ledData[1] == 255 && ledData[2] == 32);
+    assert(ledData[0] == 0 && ledData[1] == 255 && ledData[2] == 0);
     P1 |= 0x02;
     tick(11);
     tick(21);

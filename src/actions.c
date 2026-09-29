@@ -20,7 +20,8 @@ __xdata uint8_t pendingLayer;
 __xdata uint16_t pendingSince;
 __data uint8_t lastMouse;
 __xdata uint8_t lastReportGeneration;
-__xdata uint8_t eventData[EVENT_COUNT][3];
+// Bindings are resolved before queuing; playback only needs the action bytes.
+__xdata uint8_t eventData[EVENT_COUNT][2];
 __xdata uint8_t eventHead;
 __xdata uint8_t eventTail;
 __data uint8_t eventUsed;
@@ -30,8 +31,6 @@ __data uint8_t baseLayer;
 __data uint8_t effectiveLayer;
 __data uint8_t currentFirst;
 __xdata uint8_t currentSecond;
-__xdata uint8_t currentLayer;
-__xdata uint8_t currentRotation;
 __data uint8_t phase;
 __xdata uint8_t tempFirst;
 __xdata uint8_t tempSecond;
@@ -47,8 +46,7 @@ static uint8_t actionType(uint8_t first) {
   return first & 15;
 }
 
-static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t layer,
-                           uint8_t rotation) {
+static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
       (rotation && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
     if (rotation) {
@@ -62,7 +60,6 @@ static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t layer,
   }
   eventData[eventHead][0] = first;
   eventData[eventHead][1] = second;
-  eventData[eventHead][2] = layer | (rotation ? 0x80 : 0);
   eventHead = (eventHead + 1) & (EVENT_COUNT - 1);
   eventUsed++;
   return 1;
@@ -145,8 +142,8 @@ static uint8_t flushOutputs(void) {
   return 1;
 }
 
-static void runAction(uint8_t first, uint8_t second, uint8_t layer,
-                      uint8_t rotation, uint8_t input) {
+static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
+                      uint8_t input) {
   uint8_t type = actionType(first);
   switch (type) {
     case CONFIG_ACTION_NONE:
@@ -171,7 +168,7 @@ static void runAction(uint8_t first, uint8_t second, uint8_t layer,
       }
       break;
     default:
-      queueAction(first, second, layer, rotation);
+      queueAction(first, second, rotation);
       break;
   }
 }
@@ -184,7 +181,7 @@ static void resolvePending(void) {
   input = pendingInput - 1;
   pendingInput = 0;
   buttonPressed[input] = 1;
-  runAction(buttonFirst[input], buttonSecond[input], pendingLayer, 0, input);
+  runAction(buttonFirst[input], buttonSecond[input], 0, input);
 }
 
 static void updateLayer(void) {
@@ -315,7 +312,7 @@ void actionsPress(uint8_t input, uint16_t now) {
       buttonPressed[input] = 0;
       buttonPressed[other] = 1;
       orderPress(other);
-      runAction(first, second, pendingLayer, 0, other);
+      runAction(first, second, 0, other);
       updateLayer();
       return;
     }
@@ -337,7 +334,7 @@ void actionsPress(uint8_t input, uint16_t now) {
     }
   }
   buttonPressed[input] = 1;
-  runAction(buttonFirst[input], buttonSecond[input], effectiveLayer, 0, input);
+  runAction(buttonFirst[input], buttonSecond[input], 0, input);
   updateLayer();
 }
 
@@ -377,7 +374,7 @@ void actionsRotate(uint8_t clockwise) {
   uint8_t second;
   uint8_t input = configKeyCount() + (clockwise ? 1 : 2);
   configBinding(effectiveLayer, input, &first, &second);
-  runAction(first, second, effectiveLayer, 1, clockwise ? 7 : 8);
+  runAction(first, second, 1, clockwise ? 7 : 8);
   updateLayer();
 }
 
@@ -427,8 +424,6 @@ void actionsPoll(uint16_t now) {
   if (!currentFirst && eventUsed) {
     currentFirst = eventData[eventTail][0];
     currentSecond = eventData[eventTail][1];
-    currentLayer = eventData[eventTail][2] & 3;
-    currentRotation = eventData[eventTail][2] & 0x80;
     eventTail = (eventTail + 1) & (EVENT_COUNT - 1);
     eventUsed--;
     phase = 0;
