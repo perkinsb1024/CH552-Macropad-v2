@@ -176,5 +176,67 @@ int main(void) {
     activeConfig[30] = 2; // Bootloader hold is disabled on this layer.
     scanButton(configKeyCount(), 3100);
     assert(!allowRunBootloader);
+#if ENABLE_COLOR_PREVIEW
+    // Preview overrides held keys and restores the configured output on cancel.
+    P1 = P3 = 0xFF;
+    currentMs = 4000;
+    firmwareApplyConfig();
+    P1 &= ~0x02;
+    firmwareApplyConfig();
+    firmwarePreviewColor(0x85); // Full cyan on every LED.
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+        assert(ledData[3*i] == 255 && ledData[3*i+1] == 0 && ledData[3*i+2] == 200);
+    }
+    tick(5000);
+    assert(previewOptions == 0x85); // No timeout.
+    firmwarePreviewColor(0);
+    assert(ledData[1] == 255 && ledData[3] == 0);
+    P1 |= 0x02;
+    firmwareApplyConfig();
+    firmwarePreviewColor(0x84); // Same dimming as an always-on layer indicator.
+    assert(ledData[0] == 15 && ledData[2] == 13);
+    firmwarePreviewColor(0xF5);
+    for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+    firmwarePreviewColor(0xFD);
+    uint8_t prior[NUM_BYTES];
+    memcpy(prior, ledData, NUM_BYTES);
+    tick(5006);
+    assert(memcmp(prior, ledData, NUM_BYTES) != 0 && previewOptions == 0xFD);
+    firmwarePreviewColor(0xFC);
+    for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] <= 15);
+    // Even a debounced no-op press/release or a partial encoder turn cancels.
+    activeConfig[9] = activeConfig[10] = 0;
+    firmwarePreviewColor(5);
+    P1 &= ~0x02;
+    tick(5010);
+    tick(5020);
+    assert(previewOptions == 0);
+    firmwarePreviewColor(5);
+    P1 |= 0x02;
+    tick(5021);
+    tick(5031);
+    assert(previewOptions == 0);
+    firmwarePreviewColor(5);
+    P3 &= ~1;
+    tick(5032);
+    assert(previewOptions == 0);
+    firmwarePreviewColor(5);
+    P3 &= ~8; // Encoder button.
+    tick(5033);
+    tick(5043);
+    assert(previewOptions == 0);
+    // Invalid flash still scans cancellation inputs, without emitting actions.
+    activeConfigValid = 0;
+    P1 = P3 = 0xFF;
+    firmwareApplyConfig();
+    firmwarePreviewColor(0xFD);
+    tick(5050);
+    assert(previewOptions == 0xFD);
+    P1 &= ~0x02;
+    tick(5051);
+    tick(5061);
+    assert(previewOptions == 0 && ledData[1] == 255);
+    for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == (i == 1 ? 255 : 0));
+#endif
     return 0;
 }

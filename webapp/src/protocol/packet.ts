@@ -11,6 +11,7 @@ export const enum Opcode {
   WriteChunk = 6,
   CommitWrite = 7,
   AbortWrite = 8,
+  PreviewColor = 9,
 }
 
 export const enum Status {

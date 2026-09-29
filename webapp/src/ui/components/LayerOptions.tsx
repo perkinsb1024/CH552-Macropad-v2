@@ -2,6 +2,8 @@ import { LayerIndicatorBehavior } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
 import { connection, profile, selectedLayer, updateProfile } from '../store';
 
+import { ColorPreview } from './ColorPreview';
+
 const BEHAVIORS = [
   { value: LayerIndicatorBehavior.None, label: 'Do not indicate' },
   { value: LayerIndicatorBehavior.BlinkOnce, label: 'Blink once' },
@@ -65,6 +67,7 @@ export function LayerOptions() {
                 );
               })}
             </div>
+            <ColorPreview color={layer.indicatorColor} fullBrightness={!rainbow || layer.indicatorFullBrightness} rainbow={rainbow} />
           </div>
         )}
         {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && (

@@ -8,7 +8,7 @@ describe('JSON import/export', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers.push(emptyLayer(VARIANT_SIX_KEYS));
     profile.layers[1]!.keys[2] = { type: 'string', text: 'line1\nline2' };
-    profile.chords.push({ layer: 1, keyA: 2, keyB: 4, action: { type: 'consumer', usage: 0xe9 } });
+    profile.chords.push({ layer: 1, keyA: 2, keyB: 4, global: false, action: { type: 'consumer', usage: 0xe9 } });
     const text = exportProfile(profile, { layerNames: ['Base', 'Media'] });
     const parsed = JSON.parse(text);
     expect(parsed.layers[0].leds[0]).toBe('White');

@@ -25,14 +25,17 @@ static uint8_t writeByte(uint8_t offset, uint8_t value) {
   return storageRead(offset) == value;
 }
 
-uint8_t storageSave(const __xdata uint8_t *image) {
+static uint8_t matches(const __xdata uint8_t *image) {
   uint8_t i;
   for (i = 0; i < CONFIG_SIZE; i++) {
-    if (storageRead(i) != image[i]) {
-      break;
-    }
+    if (storageRead(i) != image[i]) return 0;
   }
-  if (i == CONFIG_SIZE) {
+  return 1;
+}
+
+uint8_t storageSave(const __xdata uint8_t *image) {
+  uint8_t i;
+  if (matches(image)) {
     return 1; // A retry of an unchanged save does not consume flash writes.
   }
   if (!writeByte(0, 0) || !writeByte(1, 0)) {
@@ -47,11 +50,6 @@ uint8_t storageSave(const __xdata uint8_t *image) {
   if (!writeByte(1, 'P') || !writeByte(0, 'M')) {
     return 0;
   }
-  for (i = 0; i < CONFIG_SIZE; i++) {
-    if (storageRead(i) != image[i]) {
-      return 0;
-    }
-  }
   // The caller validated the image and its CRC before this byte-for-byte check.
-  return 1;
+  return matches(image);
 }

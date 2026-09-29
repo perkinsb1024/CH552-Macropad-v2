@@ -23,6 +23,7 @@ export interface Connection {
   client: ConfigClient;
   info: DeviceInfo;
   status: DeviceStatus;
+  previewSupported: boolean | null;
 }
 
 export type ConnectionState =
@@ -631,7 +632,8 @@ async function attach(transport: Transport, label: string): Promise<void> {
       throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports transport v${TRANSPORT_VERSION} / format v${FORMAT_VERSION}.`);
     }
     const status = await client.getStatus();
-    const conn: Connection = { transport, client, info, status };
+    const previewSupported = await client.detectPreviewSupport();
+    const conn: Connection = { transport, client, info, status, previewSupported };
     transport.onDisconnect(() => handleDisconnect(conn));
     connection.value = { kind: 'connected', connection: conn };
     await loadFromDevice({ initial: true });
@@ -673,6 +675,26 @@ export async function reconnectGranted(): Promise<boolean> {
 export async function connectSimulator(variant: Variant, blankFlash = false): Promise<void> {
   const device = new SimulatedDevice({ variant, blankFlash, latency: 4 });
   await attach(device, device.name);
+}
+
+export async function previewColor(color: number, fullBrightness = true, rainbow = false): Promise<void> {
+  const c = connection.value;
+  if (c.kind !== 'connected' || c.connection.previewSupported === false) return;
+  try {
+    await c.connection.client.previewColor(color, fullBrightness, rainbow);
+  } catch (error) {
+    notify('error', `Color preview failed: ${(error as Error).message}`);
+  }
+}
+
+export async function cancelPreview(): Promise<void> {
+  const c = connection.value;
+  if (c.kind !== 'connected' || c.connection.previewSupported === false) return;
+  try {
+    await c.connection.client.cancelPreview();
+  } catch (error) {
+    notify('error', `Cancel preview failed: ${(error as Error).message}`);
+  }
 }
 
 export async function disconnect(): Promise<void> {

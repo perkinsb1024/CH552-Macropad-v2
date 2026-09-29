@@ -15,6 +15,7 @@ static uint8_t writeValues[256];
 static unsigned writes;
 static int failAfter;
 static unsigned applies;
+static uint8_t preview;
 static uint16_t now;
 static uint8_t busy;
 static uint8_t resetOnWrite;
@@ -53,6 +54,7 @@ void USB_EP1_receiveReady(void) {}
 uint8_t actionsLayer(void) { return configStartupLayer(); }
 uint8_t actionsDropped(uint8_t rotation) { return rotation ? 9 : 3; }
 void firmwareApplyConfig(void) { applies++; }
+void firmwarePreviewColor(uint8_t options) { preview = options; }
 
 static void seal(uint8_t *image) {
     uint16_t crc = configCrc(image);
@@ -148,7 +150,7 @@ static void testReads(void) {
     request(3, 6, 1, 0);
     assert(sent[9] == flash[6]);
     request(4, 6, 1, 0);
-    assert(sent[9] != flash[6]);
+    assert(sent[9] == flash[6]); // Boot copies even invalid flash into the inactive RAM image.
 }
 
 static void testSaveAndRetry(void) {
@@ -330,13 +332,54 @@ static void testFailedWrites(void) {
         failAfter = cut;
         request(7, 0, 0, 0);
         protocolInit(); // Power loss at every individual write boundary.
-        assert(memcmp(activeConfig, original, CONFIG_SIZE) == 0);
+        assert(memcmp(activeConfig, flash, CONFIG_SIZE) == 0);
+        assert(activeConfigValid == (cut == 0));
         request(2, 0, 0, 0);
         assert(sent[9] == (cut == 0));
     }
 }
 
+static void testPreview(void) {
+    reset();
+#if ENABLE_COLOR_PREVIEW
+    request(9, 0xFD, 0, 0); // Full-brightness Rainbow.
+    assert(sent[8] == 0 && preview == 0xFD && !writes && !applies);
+    request(9, 0x24, 0, 0); // Dim orange.
+    assert(sent[8] == 0 && preview == 0x24);
+    request(9, 0xF5, 0, 0); // Per-key Off, not Rainbow.
+    assert(sent[8] == 0 && preview == 0xF5);
+    request(9, 0x02, 0, 0);
+    assert(sent[8] == 3 && preview == 0xF5);
+    prepare(9, 0, 0, 0);
+    packet[9] = 1;
+    sendPacket();
+    assert(sent[8] == 4 && preview == 0xF5);
+    request(9, 0, 1, 0);
+    assert(sent[8] == 3 && preview == 0xF5);
+    request(9, 0, 0, 0);
+    assert(sent[8] == 0 && preview == 0);
+    flash[0] = 0;
+    protocolInit();
+    request(9, 5, 0, 0);
+    assert(sent[8] == 0 && preview == 5); // No valid config required.
+    // Preview traffic must not extend a pending upload's lifetime.
+    begin();
+    chunks();
+    now = 4999;
+    request(9, 5, 0, 0);
+    now = 5000;
+    request(7, 0, 0, 0);
+    assert(sent[8] == 5 && !writes);
+#else
+    request(9, 0, 0, 0); // Cancel doubles as the web app's support probe.
+    assert(sent[8] == 2 && !writes && !applies);
+    request(9, 0xFD, 0, 0);
+    assert(sent[8] == 2 && !writes && !applies);
+#endif
+}
+
 int main(void) {
+    testPreview();
     testReads();
     testSaveAndRetry();
     testSequenceAndAbort();

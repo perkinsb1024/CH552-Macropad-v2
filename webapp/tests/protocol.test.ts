@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SimulatedDevice } from '../src/protocol/simulator';
-import { ConfigClient, ProtocolError } from '../src/protocol/client';
+import { ConfigClient, ProtocolError, TimeoutError } from '../src/protocol/client';
 import { buildRequest, parseReply, Opcode, Status } from '../src/protocol/packet';
 import { encodeProfile } from '../src/codec/encode';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
@@ -23,6 +23,78 @@ describe('packet framing', () => {
 });
 
 describe('client against simulator', () => {
+  it('probes support by canceling preview, including on blank flash', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS, blankFlash: true });
+    const client = new ConfigClient(device);
+    await client.previewColor(15, true, true);
+    expect(await client.detectPreviewSupport()).toBe(true);
+    expect(device.previewOptions).toBe(0);
+    expect((await client.getStatus()).flashValid).toBe(false);
+  });
+  it('recognizes firmware without preview without disrupting other commands', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS, previewSupported: false });
+    const client = new ConfigClient(device);
+    expect(await client.detectPreviewSupport()).toBe(false);
+    await expect(client.cancelPreview()).rejects.toMatchObject({ status: Status.BadOpcode });
+    expect((await client.getInfo()).keyCount).toBe(6);
+  });
+  it('leaves support unknown after a timeout and sends only one probe', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
+    const client = new ConfigClient(device, { timeoutMs: 10, retries: 3 });
+    let requests = 0;
+    device.send = async () => { requests++; };
+    expect(await client.detectPreviewSupport()).toBeNull();
+    expect(requests).toBe(1);
+  });
+  it('does not mistake other protocol errors for lack of support', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
+    const client = new ConfigClient(device);
+    const send = device.send.bind(device);
+    device.send = (payload) => {
+      const malformed = payload.slice();
+      malformed[6] = 1; // BadRange: cancel requires zero length.
+      return send(malformed);
+    };
+    expect(await client.detectPreviewSupport()).toBeNull();
+  });
+  it('previews without changing config, cancels on input, and supports blank flash', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS, blankFlash: true });
+    const client = new ConfigClient(device);
+    const before = await client.readFlash();
+    await client.previewColor(15, true, true);
+    expect(device.previewOptions).toBe(0xfd);
+    await client.getStatus();
+    expect(device.previewOptions).toBe(0xfd);
+    await client.previewColor(8, false);
+    expect(device.previewOptions).toBe(0x84);
+    device.triggerInput();
+    expect(device.previewOptions).toBe(0);
+    await client.previewColor(15);
+    expect(device.previewOptions).toBe(0xf5);
+    await client.cancelPreview();
+    await client.cancelPreview();
+    expect(device.previewOptions).toBe(0);
+    expect(await client.readFlash()).toEqual(before);
+    expect(await client.readActive()).toEqual(before);
+    await expect(client.previewColor(16)).rejects.toThrow(RangeError);
+    await expect(client.previewColor(-1)).rejects.toThrow(RangeError);
+  });
+  it('does not restart an input-canceled preview after a lost acknowledgment', async () => {
+    const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
+    const client = new ConfigClient(device, { timeoutMs: 10, retries: 3 });
+    // Process the command but swallow the reply, then cancel with physical input.
+    device.onReply = () => () => undefined;
+    const send = device.send.bind(device);
+    let requests = 0;
+    device.send = async (payload) => {
+      requests++;
+      await send(payload);
+      device.triggerInput();
+    };
+    await expect(client.previewColor(0)).rejects.toBeInstanceOf(TimeoutError);
+    expect(requests).toBe(1);
+    expect(device.previewOptions).toBe(0);
+  });
   it('identifies the device and reads flash', async () => {
     const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
     const client = new ConfigClient(device);

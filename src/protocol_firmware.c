@@ -15,6 +15,7 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_WRITE_CHUNK 6
 #define PROTOCOL_COMMIT_WRITE 7
 #define PROTOCOL_ABORT_WRITE 8
+#define PROTOCOL_PREVIEW_COLOR 9
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -97,7 +98,7 @@ static uint8_t processRequest(void) {
     if (!length || (uint16_t)offset + length > CONFIG_SIZE) {
       return PROTOCOL_BAD_RANGE;
     }
-  } else if (offset || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
+  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
     return PROTOCOL_BAD_RANGE;
   }
   switch (opcode) {
@@ -189,6 +190,14 @@ static uint8_t processRequest(void) {
       firmwareApplyConfig();
       uploadState = 2;
       break;
+#if ENABLE_COLOR_PREVIEW
+    case PROTOCOL_PREVIEW_COLOR:
+      if (offset && ((offset & 0x06) != 0x04)) {
+        return PROTOCOL_BAD_RANGE;
+      }
+      firmwarePreviewColor(offset);
+      break;
+#endif
     case PROTOCOL_ABORT_WRITE:
       uploadState = 0;
       break;
@@ -228,7 +237,8 @@ void protocolPoll(uint16_t now) {
     protocolReply[6] = protocolInbox[6];
     status = processRequest();
     protocolReply[8] = status;
-    if (!status && protocolInbox[4] >= PROTOCOL_BEGIN_WRITE) {
+    if (!status && protocolInbox[4] >= PROTOCOL_BEGIN_WRITE &&
+        protocolInbox[4] <= PROTOCOL_ABORT_WRITE) {
       uploadTime = now;
     }
     protocolState = 2;

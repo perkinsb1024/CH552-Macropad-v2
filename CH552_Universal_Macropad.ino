@@ -54,7 +54,12 @@ __xdata uint8_t layerIndicatorPhasesLeft;
 __xdata uint8_t layerIndicatorDeadline;
 __xdata uint8_t rainbowChanged;
 __xdata uint8_t rainbowHue;
-// With invalid config, input scanning is inactive: reuse this timer for the error LED.
+#if ENABLE_COLOR_PREVIEW
+__xdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
+#else
+#define previewOptions 0
+#endif
+// With invalid config, actions are inactive: reuse this timer for the error LED.
 __xdata uint16_t encoderPressedMs;
 
 void displayLeds() {
@@ -73,9 +78,9 @@ uint8_t dimIndicatorComponent(uint8_t value) {
 }
 
 void updateLeds() {
-  if (!activeConfigValid) return;
+  if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
-  uint8_t options = configLayerOptions(layer);
+  uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
   uint8_t phases = layerIndicatorPhasesLeft;
@@ -85,12 +90,16 @@ void updateLeds() {
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
     uint8_t dim = 0;
-    uint8_t off = 0;
     uint8_t red;
     uint8_t green;
     uint8_t blue;
     uint8_t wheel;
     wheel = rainbowHue + rainbowOffsets[i];
+#if ENABLE_COLOR_PREVIEW
+    if (previewOptions) {
+      dim = 1;
+    } else
+#endif
     if (blink) {
       // Blink takes priority over per-key colors while the animation is on.
     } else if (stableState[i]) {
@@ -98,7 +107,7 @@ void updateLeds() {
     } else if (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) {
       dim = 1;
     } else {
-      off = 1;
+      color = 15;
     }
     if (dim && rainbow) {
       // Three linear color ramps form a full-brightness cycling rainbow.
@@ -118,17 +127,15 @@ void updateLeds() {
         blue = (85 - wheel) * 3;
       }
     } else {
-      red = configPalette[color][0];
-      green = configPalette[color][1];
-      blue = configPalette[color][2];
+      const __code uint8_t *rgb = configPalette[color];
+      red = *rgb++;
+      green = *rgb++;
+      blue = *rgb;
     }
     if (dim && !(options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS)) {
       red = dimIndicatorComponent(red);
       green = dimIndicatorComponent(green);
       blue = dimIndicatorComponent(blue);
-    }
-    if (off) {
-      red = green = blue = 0;
     }
     ledPtr[0] = green;
     ledPtr[1] = red;
@@ -137,6 +144,21 @@ void updateLeds() {
   }
   displayLeds();
 }
+
+#if ENABLE_COLOR_PREVIEW
+void firmwarePreviewColor(uint8_t options) {
+  previewOptions = options;
+  if (!options && !activeConfigValid) {
+    clearLeds();
+    ledData[1] = 255;
+    encoderPressedMs = millis();
+    displayLeds();
+  } else {
+    updateLeds();
+  }
+}
+
+#endif
 
 void startLayerIndicator(uint8_t layer, uint16_t now) {
   uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
@@ -207,8 +229,12 @@ void scanButton(uint8_t input, uint16_t now) {
   if (pressed != stableState[input] &&
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
+#if ENABLE_COLOR_PREVIEW
+    if (previewOptions) firmwarePreviewColor(0);
+    if (!activeConfigValid) return;
+#endif
     if (pressed) {
-      if (input == configKeyCount()) {
+      if (input == NUM_LEDS) {
         allowRunBootloader = configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN;
         encoderPressedMs = now;
       }
@@ -228,8 +254,14 @@ void scanEncoder() {
   if (state == encoderState) {
     return;
   }
+#if ENABLE_COLOR_PREVIEW
+  if (previewOptions) firmwarePreviewColor(0);
+#endif
   movement = encoderTransitions[(encoderState << 2) | state];
   encoderState = state;
+#if ENABLE_COLOR_PREVIEW
+  if (!activeConfigValid) return;
+#endif
   if (movement == 0) {
     encoderMovement = 0; // A skipped state is not a complete detent.
   } else {
@@ -246,18 +278,26 @@ void scanEncoder() {
 
 void firmwareApplyConfig(void) {
   uint16_t now = millis();
+#if !ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) {
     encoderPressedMs = now;
     ledData[1] = 255;
     displayLeds();
     return;
   }
-  actionsClear();
+#endif
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
     rawChanged[i] = now;
   }
   encoderState = readEncoder();
+#if ENABLE_COLOR_PREVIEW
+  if (!activeConfigValid) {
+    if (!previewOptions) firmwarePreviewColor(0);
+    return;
+  }
+#endif
+  actionsClear();
   encoderMovement = 0;
   lastLayer = actionsLayer();
   allowRunBootloader = 0;
@@ -287,6 +327,7 @@ void loop() {
   uint16_t now = millis();
   USB_reportPoll(now);
   protocolPoll(now);
+#if !ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) {
     if ((uint16_t)(now - encoderPressedMs) >= 500) {
       encoderPressedMs = now;
@@ -295,11 +336,33 @@ void loop() {
     }
     return;
   }
-  for (uint8_t i = 0; i < configKeyCount(); i++) {
+#endif
+  for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     scanButton(i, now);
   }
-  scanButton(configKeyCount(), now);
   scanEncoder();
+  if ((uint8_t)((uint8_t)now - rainbowChanged) >= RAINBOW_FRAME_MS &&
+#if ENABLE_COLOR_PREVIEW
+      ((previewOptions ? previewOptions :
+        (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) == 0xFC)
+#else
+      (configLayerOptions(actionsLayer()) & 0xFC) == 0xFC)
+#endif
+  {
+    rainbowChanged = (uint8_t)now;
+    rainbowHue++;
+    updateLeds();
+  }
+#if ENABLE_COLOR_PREVIEW
+  if (!activeConfigValid) {
+    if (!previewOptions && (uint16_t)(now - encoderPressedMs) >= 500) {
+      encoderPressedMs = now;
+      ledData[1] ^= 255;
+      displayLeds();
+    }
+    return;
+  }
+#endif
   actionsPoll(now);
   if (lastLayer != actionsLayer()) {
     lastLayer = actionsLayer();
@@ -308,13 +371,7 @@ void loop() {
     startLayerIndicator(lastLayer, now);
   }
   serviceLayerIndicator(now);
-  if ((uint8_t)((uint8_t)now - rainbowChanged) >= RAINBOW_FRAME_MS &&
-      (configLayerOptions(actionsLayer()) & 0xFC) == 0xFC) {
-    rainbowChanged = (uint8_t)now;
-    rainbowHue++;
-    updateLeds();
-  }
-  if (allowRunBootloader && stableState[configKeyCount()] &&
+  if (allowRunBootloader && stableState[NUM_LEDS] &&
       (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
     enterBootloader();
   }

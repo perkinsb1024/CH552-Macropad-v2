@@ -28,7 +28,8 @@ export interface ClientOptions {
 
 /**
  * Request/reply client with one outstanding request, timeouts and bounded retries.
- * All commands are idempotent per hid-v1.md, so a lost reply is safe to retry.
+ * Upload commands are idempotent. Preview starts are not automatically retried:
+ * an intervening physical input may already have canceled the effect.
  */
 export class ConfigClient {
   private sequence = Math.floor(Math.random() * 256);
@@ -41,10 +42,10 @@ export class ConfigClient {
     this.retries = options.retries ?? 3;
   }
 
-  private async exchange(opcode: Opcode, offset = 0, data?: Uint8Array, length?: number): Promise<Reply> {
+  private async exchange(opcode: Opcode, offset = 0, data?: Uint8Array, length?: number, retries = this.retries): Promise<Reply> {
     const run = async (): Promise<Reply> => {
       let lastError: unknown;
-      for (let attempt = 0; attempt <= this.retries; attempt++) {
+      for (let attempt = 0; attempt <= retries; attempt++) {
         const sequence = this.sequence = (this.sequence + 1) & 0xff;
         try {
           return await this.once(opcode, sequence, offset, data, length);
@@ -117,6 +118,27 @@ export class ConfigClient {
   /** Reads the active RAM image, which is invalid when the device has no saved profile. */
   readActive(onProgress?: (fraction: number) => void): Promise<Uint8Array> {
     return this.readImage(Opcode.ReadActive, onProgress);
+  }
+
+  /** One cancel request probes support; transport failures leave it unknown. */
+  async detectPreviewSupport(): Promise<boolean | null> {
+    try {
+      await this.exchange(Opcode.PreviewColor, 0, undefined, undefined, 0);
+      return true;
+    } catch (error) {
+      if (error instanceof ProtocolError && error.status === Status.BadOpcode) return false;
+      return null;
+    }
+  }
+
+  /** Preview uses layer-style option bits; index 15 is Off unless rainbow is requested. */
+  async previewColor(color: number, fullBrightness = true, rainbow = false): Promise<void> {
+    if (!Number.isInteger(color) || color < 0 || color > 15) throw new RangeError('invalid palette color');
+    await this.exchange(Opcode.PreviewColor, (color << 4) | (rainbow ? 12 : 4) | (fullBrightness ? 1 : 0), undefined, undefined, 0);
+  }
+
+  async cancelPreview(): Promise<void> {
+    await this.exchange(Opcode.PreviewColor);
   }
 
   async abortWrite(): Promise<void> {

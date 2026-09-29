@@ -15,6 +15,8 @@ export interface SimulatorOptions {
   latency?: number;
   /** Fail flash verification on the next commit (for testing error handling). */
   failNextCommit?: boolean;
+  /** Model firmware built with ENABLE_COLOR_PREVIEW=0 (or older firmware). */
+  previewSupported?: boolean;
 }
 
 /**
@@ -26,6 +28,7 @@ export class SimulatedDevice implements Transport {
   readonly flash = new Uint8Array(IMAGE_SIZE);
   readonly active = new Uint8Array(IMAGE_SIZE);
   flashValid = false;
+  previewOptions = 0;
   private activeValid = false;
   private staging = new Uint8Array(IMAGE_SIZE);
   private uploadState: 0 | 1 | 2 = 0;
@@ -94,7 +97,7 @@ export class SimulatedDevice implements Transport {
     for (let i = dataEnd; i < PAYLOAD_SIZE; i++) if (inbox[i]) return Status.BadPacket;
     if (opcode === Opcode.ReadFlash || opcode === Opcode.ReadActive || opcode === Opcode.WriteChunk) {
       if (!length || offset + length > IMAGE_SIZE) return Status.BadRange;
-    } else if (offset || (opcode === Opcode.BeginWrite ? length !== 3 : length !== 0)) {
+    } else if ((offset && opcode !== Opcode.PreviewColor) || (opcode === Opcode.BeginWrite ? length !== 3 : length !== 0)) {
       return Status.BadRange;
     }
     const touchUpload = () => {
@@ -158,6 +161,11 @@ export class SimulatedDevice implements Transport {
         touchUpload();
         return Status.Ok;
       }
+      case Opcode.PreviewColor:
+        if (this.options.previewSupported === false) return Status.BadOpcode;
+        if (offset && (offset & 0x06) !== 0x04) return Status.BadRange;
+        this.previewOptions = offset;
+        return Status.Ok;
       case Opcode.AbortWrite:
         this.uploadState = 0;
         return Status.Ok;
@@ -174,6 +182,11 @@ export class SimulatedDevice implements Transport {
   onDisconnect(listener: () => void): () => void {
     this.disconnectListeners.add(listener);
     return () => this.disconnectListeners.delete(listener);
+  }
+
+  /** Any physical input cancels preview, including an unmapped input. */
+  triggerInput(): void {
+    this.previewOptions = 0;
   }
 
   /** Simulates unplugging the device. */

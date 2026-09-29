@@ -42,6 +42,27 @@ before the window expires to activate a mapped chord.
 | 6 | WRITE_CHUNK, next offset, length 1–23 | Copies the next sequential chunk. Identical duplicate chunks are acknowledged; conflicting or partially overlapping chunks are rejected. |
 | 7 | COMMIT_WRITE, offset and length zero | Validates the full image and CRC, saves changed DataFlash bytes, verifies all 128 bytes, then activates the configuration. Repeated commit is safe. |
 | 8 | ABORT_WRITE, offset and length zero | Discards staging without changing flash or the active profile. |
+| 9 | PREVIEW_COLOR, options in offset, length zero | Overrides every LED; offset zero cancels. Empty reply. |
+
+PREVIEW_COLOR uses the offset byte as compact LED options: bits 4–7 are the
+palette index, bit 0 selects full brightness, bit 2 enables preview, and bit 3
+allows Rainbow at index 15. Bit 1 must be zero. Any nonzero options byte must
+have bit 2 set. Index 15 is Off when bit 3 is clear. Dimming and rainbow timing
+match the always-on layer indicator. Preview works even without a valid saved
+profile and changes neither the active image nor flash. It remains active until
+explicit cancellation or any debounced button edge / encoder state transition,
+including unmapped inputs and partial encoder turns. Inputs retain their normal
+actions. Configuration saves preserve preview. Preview commands do not refresh
+the upload timeout. Older firmware and
+builds with `ENABLE_COLOR_PREVIEW=0` reject opcode 9 as unsupported. The editor
+sends one cancel command (offset zero) on every connection: success enables
+preview, BAD_OPCODE disables it, and any other error leaves support unknown.
+This intentionally cancels any existing preview and adds no capability bytes
+to GET_INFO.
+
+A preview start should not be automatically retried after a timeout: a physical
+input may have canceled the original command before its acknowledgment was lost.
+Canceling preview is safe to retry.
 
 Status codes are 0 success, 1 unsupported transport version, 2 unsupported
 opcode, 3 invalid offset or length, 4 malformed packet, 5 incomplete upload,

@@ -103,6 +103,9 @@ static void testCapacityAndStrings(uint8_t variant) {
     activeConfig[pool + 3] = 0;
     seal();
     assert(configValid(activeConfig, variant));
+    assert(configStringChar(2, 0) == 'B');
+    assert(configStringChar(255, 3) == 0); // Must reject an 8-bit address wrap.
+    assert(configStringChar(2, 255) == 0);
     activeConfig[10] = 1;
     seal();
     assert(!configValid(activeConfig, variant));

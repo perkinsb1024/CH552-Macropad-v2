@@ -62,6 +62,8 @@ describe('every action type round-trips', () => {
     { type: 'string', text: 'hello\tworld\n' },
     { type: 'string', text: '' },
     { type: 'setLayer', layer: 1 },
+    { type: 'oneShotSetLayer', layer: 1 },
+    { type: 'oneShotRelativeLayer', offset: -1 },
     { type: 'momentaryLayer', layer: 2 },
     { type: 'relativeLayer', offset: -3 },
     { type: 'mouseX', delta: -5 },
@@ -204,9 +206,9 @@ describe('chords', () => {
   it('sorts by identifier and round-trips', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.chords = [
-      { layer: 1, keyA: 0, keyB: 1, action: { type: 'keyTap', usage: 5, modifiers: 0 } },
-      { layer: 0, keyA: 4, keyB: 5, action: { type: 'string', text: 'chord' } },
-      { layer: 0, keyA: 0, keyB: 2, action: { type: 'mouseClick', buttons: 2 } },
+      { layer: 1, keyA: 0, keyB: 1, global: false, action: { type: 'keyTap', usage: 5, modifiers: 0 } },
+      { layer: 0, keyA: 4, keyB: 5, global: false, action: { type: 'string', text: 'chord' } },
+      { layer: 0, keyA: 0, keyB: 2, global: false, action: { type: 'mouseClick', buttons: 2 } },
     ];
     const image = encodeProfile(profile);
     const chordBase = 9 + 22 * 2;
@@ -219,9 +221,9 @@ describe('chords', () => {
   it('rejects duplicates and dangling layers', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.chords = [
-      { layer: 0, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } },
-      { layer: 0, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } },
-      { layer: 2, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } },
+      { layer: 0, keyA: 0, keyB: 1, global: false, action: { type: 'relativeLayer', offset: 1 } },
+      { layer: 0, keyA: 0, keyB: 1, global: false, action: { type: 'relativeLayer', offset: 1 } },
+      { layer: 2, keyA: 0, keyB: 1, global: false, action: { type: 'relativeLayer', offset: 1 } },
     ];
     expect(validateProfile(profile).length).toBe(2);
   });
@@ -286,6 +288,8 @@ describe('decoder rejections', () => {
   });
   it('storedCrc reads little-endian', () => {
     const image = base();
+    image[6] = 0xba;
+    image[7] = 0xd3;
     expect(storedCrc(image)).toBe(0xd3ba);
   });
 });

@@ -193,9 +193,13 @@ uint8_t configStartupLayer(void) { return (activeConfig[3] >> 2) & 3; }
 uint8_t configKeyCount(void) { return keyCount(activeConfig[5] & 1); }
 uint8_t configChordWindowMs(void) { return (activeConfig[8] & 15) * 5; }
 
+// Share the active-image layer address calculation across all accessors.
+static uint8_t layerOffset(uint8_t layer) {
+    return 9 + layerSize(activeConfig[5] & 1) * layer;
+}
+
 uint8_t configLayerOptions(uint8_t layer) {
-    uint8_t size = (activeConfig[5] & 1) ? 15 : 22;
-    return activeConfig[8 + size * (layer + 1)];
+    return activeConfig[layerOffset(layer + 1) - 1];
 }
 
 uint8_t configLedColor(uint8_t layer, uint8_t key) {
@@ -205,7 +209,7 @@ uint8_t configLedColor(uint8_t layer, uint8_t key) {
     if (layer >= configLayerCount() || key >= keys) {
         return 6;
     }
-    offset = 9 + layerSize(activeConfig[5] & 1) * layer;
+    offset = layerOffset(layer);
     colors = activeConfig[offset + 2 * (keys + 3) + (key >> 1)];
     return key & 1 ? colors >> 4 : colors & 15;
 }
@@ -217,7 +221,7 @@ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data u
         *second = 0;
         return;
     }
-    offset = 9 + layerSize(activeConfig[5] & 1) * layer + 2 * input;
+    offset = layerOffset(layer) + 2 * input;
     *first = activeConfig[offset];
     *second = activeConfig[offset + 1];
 }
@@ -227,7 +231,7 @@ uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     uint8_t keys = configKeyCount();
     uint8_t id;
     uint8_t count = (activeConfig[5] >> 1) & 63;
-    uint8_t offset = 9 + layerSize(activeConfig[5] & 1) * configLayerCount();
+    uint8_t offset = layerOffset(configLayerCount());
     uint8_t i;
     uint8_t swap;
     if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
@@ -252,12 +256,12 @@ uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
 }
 
 uint8_t configStringChar(uint8_t offset, uint8_t index) {
-    uint16_t position = (uint16_t)offset + index;
+    uint8_t position = offset + index;
     uint8_t start;
-    if (position >= activeConfig[4]) {
+    if (position < offset || position >= activeConfig[4]) {
         return 0;
     }
-    start = 9 + layerSize(activeConfig[5] & 1) * configLayerCount() +
+    start = layerOffset(configLayerCount()) +
             3 * ((activeConfig[5] >> 1) & 63);
     return activeConfig[start + position];
 }

@@ -7,6 +7,7 @@ import { normalizeText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
 import { actionProblem, slotLabel } from '../../model/validate';
 import { getAction, layerName, profile, rememberedAction, removeChord, selectedSlot, setAction, updateProfile } from '../store';
+import { ColorPreview } from './ColorPreview';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 
@@ -261,6 +262,7 @@ export function Inspector() {
               </button>
             )}
           </div>
+          <ColorPreview color={layer.leds[keyIndex]!} />
         </div>
       )}
     </section>

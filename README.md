@@ -53,12 +53,34 @@ for per-key colors and other indicator behaviors. Configuration format version
 firmware will reject an existing version 1 profile; save a profile with the
 updated editor after flashing.
 
+Both web app color palettes offer **Preview Color** and **Cancel Preview** when
+a device with preview support is connected. Preview lights every LED using the selected color, with
+Rainbow and the full-brightness setting supported for always-on layer colors.
+Per-key colors and blinking indicator colors preview at full brightness; their
+Off swatch remains Off. Canceling or any physical input restores normal LEDs,
+even when that input has no assigned action. Preview works with blank flash,
+persists through saves, and never changes a profile or writes flash. Updated
+firmware is required. On each connection, the editor sends one Cancel Preview
+command to detect support, also ending any existing preview. Unsupported firmware
+shows an availability message in place of both controls; a timeout or another
+error leaves support unknown and the
+controls usable. This probe adds no device flash overhead.
+
+`ENABLE_COLOR_PREVIEW` in `src/protocol_firmware.h` defaults to `1`. Set it to
+`0` (or add `build_flags = -DENABLE_COLOR_PREVIEW=0` to `platformio.ini`) to
+exclude preview. Clean and rebuild after changing the flag. All flash
+optimizations remain in effect. Disabling preview saves **204 flash bytes and
+one xRAM byte** on either variant: the six-key build uses 14,130 code bytes
+(206 free) and 624 application xRAM bytes; the three-key build uses 14,127 code
+bytes (209 free) and 615 application xRAM bytes. Disabled firmware rejects both
+Preview Color and Cancel Preview as unsupported.
+
 The firmware exposes the HID configuration protocol in `protocol/hid-v1.md`.
 At startup it reads and validates DataFlash. If flash is invalid, the firmware
 keeps inputs inactive and blinks one red LED at 1 Hz until a valid profile is
 uploaded. GET_INFO,
 GET_STATUS, READ_FLASH, READ_ACTIVE, BEGIN_WRITE, WRITE_CHUNK, COMMIT_WRITE,
-and ABORT_WRITE are implemented. Saves
+ABORT_WRITE, and PREVIEW_COLOR are implemented. Saves
 validate the full image, avoid programming unchanged bytes, write validity last,
 then verify actual DataFlash before applying the profile.
 
@@ -124,8 +146,8 @@ in xRAM. Unused legacy HID buffers were removed, and fixed default lookup tables
 now live in code memory. Momentary layer ordering uses bounded ranks, avoiding
 a press counter wrapping while a layer key remains held.
 
-The current six-key image uses 14,228 of 14,336 code bytes (108 free). It uses
-624 of 876 application xRAM bytes (252 free). Add 148 separately reserved USB
+The current six-key image uses 14,334 of 14,336 code bytes (2 free). It uses
+625 of 876 application xRAM bytes (251 free). Add 148 separately reserved USB
 bytes to the RAM total. The linker provides 133 bytes for the internal stack;
 runtime stack high-water usage still needs measurement on hardware. The
 128-byte staging buffer fits in application xRAM without a separate programming
@@ -136,8 +158,11 @@ The invalid-config indicator starts red on the first key and toggles every
 the LED buffer itself for its on/off state, so no extra persistent RAM is needed.
 The action queue stores only the two resolved action bytes per entry; unused
 playback metadata was removed without changing queue capacity or behavior.
-Both variants use a code-memory lookup table for rainbow offsets. The three-key
-image uses 14,225 code bytes (111 free) and 615 application xRAM bytes, with
+Preview adds one persistent byte and shares the existing LED renderer and
+rainbow animation. Layer-address calculations and flash comparison loops are
+shared to save code; string-pool address checks use overflow-checked byte
+arithmetic. Both variants use a code-memory lookup table for rainbow offsets. The three-key
+image uses 14,331 code bytes (5 free) and 616 application xRAM bytes, with
 133 bytes available for the internal stack.
 
 The project-local PlatformIO adapter may cache an earlier builder script, so
