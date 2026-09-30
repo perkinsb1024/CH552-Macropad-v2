@@ -166,11 +166,13 @@ export function Inspector() {
 
       {(action.type === 'mouseX' || action.type === 'mouseY') && (
         <div class="field">
-          <span class="field-label">Movement behavior</span>
-          <div class="segmented" role="group" aria-label="Movement behavior">
-            <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
-            <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} disabled={rotation} onClick={() => update({ ...action, hold: true })}>Hold</button>
-          </div>
+          {!rotation && <>
+            <span class="field-label">Movement behavior</span>
+            <div class="segmented" role="group" aria-label="Movement behavior">
+              <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
+              <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
+            </div>
+          </>}
           <span class="hint">{rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
         </div>
       )}

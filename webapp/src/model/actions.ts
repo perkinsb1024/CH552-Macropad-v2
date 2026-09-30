@@ -40,6 +40,12 @@ export function descriptor(type: ActionType): ActionDescriptor {
   return BY_TYPE.get(type)!;
 }
 
+/** Includes actions whose release requirement depends on their settings. */
+export function actionNeedsRelease(action: Action): boolean {
+  return descriptor(action.type).needsRelease ||
+    ((action.type === 'mouseX' || action.type === 'mouseY') && !!action.hold);
+}
+
 export function descriptorForCode(code: number): ActionDescriptor | undefined {
   return BY_CODE.get(code as ActionCode);
 }

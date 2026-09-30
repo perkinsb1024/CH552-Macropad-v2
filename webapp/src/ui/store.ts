@@ -1,6 +1,6 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
-import { descriptor } from '../model/actions';
+import { actionNeedsRelease } from '../model/actions';
 import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { actionProblem, validateProfile } from '../model/validate';
@@ -351,8 +351,8 @@ export function canSwapSlots(source: Slot, target: Slot): boolean {
   const sourceAction = getAction(p, source);
   const targetAction = getAction(p, target);
   if (!sourceAction || !targetAction) return false;
-  return !(isRotationSlot(target) && descriptor(sourceAction.type).needsRelease) &&
-    !(isRotationSlot(source) && descriptor(targetAction.type).needsRelease);
+  return !(isRotationSlot(target) && actionNeedsRelease(sourceAction)) &&
+    !(isRotationSlot(source) && actionNeedsRelease(targetAction));
 }
 
 export function canInsertSlot(source: Slot, target: Slot, position: 'before' | 'after'): boolean {
@@ -367,7 +367,7 @@ export function canInsertSlot(source: Slot, target: Slot, position: 'before' | '
   const actions = order.map((slot) => getAction(p, slot));
   if (actions.some((action) => !action)) return false;
   return insertionOrder(actions as Action[], sourceIndex, targetIndex, position)
-    .every((action, index) => !isRotationSlot(order[index]!) || !descriptor(action.type).needsRelease);
+    .every((action, index) => !isRotationSlot(order[index]!) || !actionNeedsRelease(action));
 }
 
 export function insertSlotAction(source: Slot, target: Slot, position: 'before' | 'after'): void {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
 import { VARIANT_SIX_KEYS } from '../src/model/constants';
-import { canInsertSlot, canSwapSlots, insertLayer, insertSlotAction, profile, selectedLayer, selectedSlot, swapLayers, swapSlotActions } from '../src/ui/store';
+import { canInsertSlot, canSwapSlots, copySelectedConfiguration, insertLayer, insertSlotAction, pasteSelectedConfiguration, profile, selectedLayer, selectedSlot, swapLayers, swapSlotActions } from '../src/ui/store';
 
 describe('drag and drop swaps', () => {
   beforeEach(() => {
@@ -32,6 +32,78 @@ describe('drag and drop swaps', () => {
     expect(canSwapSlots(key, turn)).toBe(false);
     swapSlotActions(key, turn);
     expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'keyHold', usage: 4, modifiers: 0 });
+  });
+
+  it.each(['mouseX', 'mouseY'] as const)('rejects %s hold swaps onto either encoder turn in either direction', (type) => {
+    const key = { kind: 'key', layer: 0, index: 0 } as const;
+    profile.value!.layers[0]!.keys[0] = { type, delta: 10, hold: true };
+    for (const kind of ['clockwise', 'counterclockwise'] as const) {
+      const turn = { kind, layer: 0 };
+      const before = structuredClone(profile.value);
+      expect(canSwapSlots(key, turn)).toBe(false);
+      expect(canSwapSlots(turn, key)).toBe(false);
+      swapSlotActions(key, turn);
+      swapSlotActions(turn, key);
+      expect(profile.value).toEqual(before);
+    }
+  });
+
+  it.each(['mouseX', 'mouseY'] as const)('rejects encoder insertions that move %s hold onto a turn', (type) => {
+    const press = { kind: 'encoderButton', layer: 0 } as const;
+    profile.value!.layers[0]!.encoderButton = { type, delta: -10, hold: true };
+    for (const kind of ['clockwise', 'counterclockwise'] as const) {
+      for (const position of ['before', 'after'] as const) {
+        const turn = { kind, layer: 0 };
+        const before = structuredClone(profile.value);
+        expect(canInsertSlot(press, turn, position)).toBe(false);
+        expect(canInsertSlot(turn, press, position)).toBe(false);
+        insertSlotAction(press, turn, position);
+        insertSlotAction(turn, press, position);
+        expect(profile.value).toEqual(before);
+      }
+    }
+  });
+
+  it.each(['mouseX', 'mouseY'] as const)('allows %s taps on turns and holds on buttons', (type) => {
+    const key = { kind: 'key', layer: 0, index: 0 } as const;
+    const press = { kind: 'encoderButton', layer: 0 } as const;
+    const turn = { kind: 'clockwise', layer: 0 } as const;
+    profile.value!.layers[0]!.keys[0] = { type, delta: 10, hold: true };
+    expect(canSwapSlots(key, press)).toBe(true);
+    for (const hold of [undefined, false]) {
+      profile.value!.layers[0]!.keys[0] = { type, delta: 10, hold };
+      expect(canSwapSlots(key, turn)).toBe(true);
+      profile.value!.layers[0]!.encoderButton = { type, delta: 10, hold };
+      expect(canInsertSlot(press, turn, 'before')).toBe(true);
+    }
+  });
+
+  it.each(['mouseX', 'mouseY'] as const)('rejects pasting %s hold onto either turn but allows buttons and taps', (type) => {
+    const key = { kind: 'key', layer: 0, index: 0 } as const;
+    const action = { type, delta: 10, hold: true };
+    profile.value!.layers[0]!.keys[0] = action;
+    selectedSlot.value = key;
+    const clipboard = copySelectedConfiguration()!;
+    for (const kind of ['clockwise', 'counterclockwise'] as const) {
+      selectedSlot.value = { kind, layer: 0 };
+      const before = structuredClone(profile.value);
+      expect(pasteSelectedConfiguration(clipboard)).toBe(true);
+      expect(profile.value).toEqual(before);
+    }
+    selectedSlot.value = { kind: 'encoderButton', layer: 0 };
+    expect(pasteSelectedConfiguration(clipboard)).toBe(true);
+    expect(profile.value!.layers[0]!.encoderButton).toEqual(action);
+
+    for (const hold of [undefined, false]) {
+      profile.value!.layers[0]!.keys[0] = { type, delta: 10, hold };
+      selectedSlot.value = key;
+      const tapClipboard = copySelectedConfiguration()!;
+      for (const kind of ['clockwise', 'counterclockwise'] as const) {
+        selectedSlot.value = { kind, layer: 0 };
+        expect(pasteSelectedConfiguration(tapClipboard)).toBe(true);
+        expect(profile.value!.layers[0]![kind]).toEqual(hold === undefined ? { type, delta: 10 } : { type, delta: 10, hold });
+      }
+    }
   });
 
   it('moves whole layers and preserves their layer targets, chords, and startup layer', () => {

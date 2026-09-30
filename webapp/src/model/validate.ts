@@ -3,7 +3,7 @@ import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
 import { computeCapacity } from './capacity';
-import { ACTION_DESCRIPTORS } from './actions';
+import { ACTION_DESCRIPTORS, actionNeedsRelease } from './actions';
 
 export interface ActionContext {
   layerCount: number;
@@ -15,8 +15,10 @@ export interface ActionContext {
 export function actionProblem(action: Action, ctx: ActionContext): string | null {
   const actionDescriptor = ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   if (!actionDescriptor) return 'This action type is no longer supported. Choose another action.';
-  const needsRelease = actionDescriptor.needsRelease;
-  if (ctx.rotation && needsRelease) return `${actionDescriptor.label} needs a release and cannot be bound to rotation.`;
+  if (ctx.rotation && actionNeedsRelease(action)) {
+    const label = action.type === 'mouseX' || action.type === 'mouseY' ? 'Pointer hold' : actionDescriptor.label;
+    return `${label} needs a release and cannot be bound to rotation.`;
+  }
   switch (action.type) {
     case 'none':
       return null;
@@ -40,7 +42,6 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'mouseY':
       if (action.type !== 'scroll') {
         if (action.hold !== undefined && typeof action.hold !== 'boolean') return 'Pointer hold must be on or off.';
-        if (ctx.rotation && action.hold) return 'Pointer hold needs a release and cannot be bound to rotation.';
       }
       if (!Number.isInteger(action.delta) || action.delta < -127 || action.delta > 127) return 'Delta must be a whole number from -127 to 127.';
       if (action.delta === 0) return 'A zero step does nothing; choose a non-zero value.';
