@@ -5,8 +5,8 @@ import { selectedSlot } from '../store';
 import { IconChevron, IconSearch } from './Icons';
 
 const FILTERS = [
-  { value: 'windows', label: 'Windows' },
   { value: 'mac', label: 'Mac' },
+  { value: 'windows', label: 'Windows' },
 ] as const;
 
 export function Shortcuts() {

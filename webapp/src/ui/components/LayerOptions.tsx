@@ -63,14 +63,20 @@ export function LayerOptions() {
           </div>
         )}
         {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && (
-          <label class="check">
-            <input
-              type="checkbox"
-              checked={layer.indicatorFullBrightness}
-              onChange={(e) => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = (e.target as HTMLInputElement).checked; })}
-            />
-            <span>Full brightness for always-on LEDs</span>
-          </label>
+          <div class="segmented" role="group" aria-label="Always-on LED brightness">
+            <button
+              type="button"
+              class={layer.indicatorFullBrightness ? 'is-selected' : ''}
+              aria-pressed={layer.indicatorFullBrightness}
+              onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = true; })}
+            >Full Brightness</button>
+            <button
+              type="button"
+              class={!layer.indicatorFullBrightness ? 'is-selected' : ''}
+              aria-pressed={!layer.indicatorFullBrightness}
+              onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = false; })}
+            >Dim</button>
+          </div>
         )}
       </div>
 
