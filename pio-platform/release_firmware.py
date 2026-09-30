@@ -10,19 +10,34 @@ sys.dont_write_bytecode = True
 from build_firmware import build_firmware
 
 
+FIRMWARE_PATHS = [
+    "CH552_Universal_Macropad.ino",
+    "platformio.ini",
+    ":(glob)src/**/*.c",
+    ":(glob)src/**/*.h",
+    ":(glob)pio-platform/**/*.c",
+    ":(glob)pio-platform/**/*.h",
+    ":(glob)pio-platform/**/*.py",
+    ":(glob)pio-platform/**/*.json",
+]
+
+
 def git_output(project, *args):
     return subprocess.check_output(
         ["git", "-C", str(project), *args], text=True
     ).strip()
 
 
+def firmware_is_dirty(project):
+    return bool(git_output(
+        project, "status", "--porcelain", "--untracked-files=all", "--", *FIRMWARE_PATHS
+    ))
+
+
 def release_firmware(project, build, clock, usb_ram, code_limit):
     # Git extends the abbreviation if eight characters are not unique locally.
     revision = git_output(project, "rev-parse", "--short=8", "HEAD")
-    firmware_paths = ["CH552_Universal_Macropad.ino", "src", "platformio.ini", "pio-platform"]
-    dirty = bool(git_output(
-        project, "status", "--porcelain", "--untracked-files=all", "--", *firmware_paths
-    ))
+    dirty = firmware_is_dirty(project)
     suffix = f"dirty-{revision}" if dirty else revision
     if dirty:
         print("Firmware sources have uncommitted changes; filenames will include 'dirty'.", flush=True)

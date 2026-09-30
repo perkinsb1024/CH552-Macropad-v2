@@ -99,7 +99,9 @@ This rebuilds both variants in separate build folders, without changing your sel
 
 Filenames include the key count and the current commit's unique short Git hash, for example `ch552-macropad-3-key-a1b2c3d4.hex`. Git uses at least eight characters and extends the hash if needed to distinguish it from other objects in the local repository.
 
-If firmware or build files have uncommitted changes, the name includes `dirty` before the hash, such as `ch552-macropad-6-key-dirty-a1b2c3d4.hex`. Commit those changes before generating files that should match a specific revision. README and image edits do not mark the firmware dirty.
+The `dirty` marker only counts uncommitted changes to the main firmware sketch, `platformio.ini`, C source and header files under `src/`, and C, header, Python and JSON files under `pio-platform/`. This includes staged changes, deletions and new files. Other changes, including documentation, images, the web app, tests, release binaries and Python caches, do not count.
+
+When those firmware or PlatformIO files have changes, the name includes `dirty` before the hash, such as `ch552-macropad-6-key-dirty-a1b2c3d4.hex`. Commit those changes before generating files that should match a specific revision.
 
 After both builds and exports succeed, older generated HEX files are deleted so `releases/` keeps only the latest three-key and six-key pair. If a build fails, the previous release files are kept.
 
@@ -114,7 +116,7 @@ The following instructions and photo apply to the CH552G board shown in the orig
 1. Unplug the macropad from USB
 2. Remove the bottom screws and acrylic plates to expose the CH552G chip
 3. Locate **USB D+ (pin 12)** and **3.3 V (pin 16)**. On the pictured board, with the USB-C port toward the top, these are the fifth pin from the left and the leftmost pin on the top row, respectively.
-4. Prepare a temporary connection between these pins. The photo below shows a button fitted for this purpose; the original project also describes using a jumper wire or metal tweezers.
+4. Prepare a temporary connection between these pins. You can solder in a simple button (as shown in the photo below), or a pair of small jumper wires. You can also (carefully) bridge the pins with a pair of fine-tipped metal tweezers.
 5. Start the upload command:
 
    ```sh
@@ -195,7 +197,7 @@ The production files are written to `webapp/dist/`. This repository's [GitHub Ac
 ## Troubleshooting
 
 - **Missing CH55xDuino component:** Install board package version 0.0.25 and check `CH55XDUINO_PACKAGE_DIR` if you use a custom location
-- **Upload cannot find the device:** Use a USB data cable, wait for the upload prompt, and enter the bootloader within ten seconds. Factory firmware generally needs the hardware method.
+- **Upload cannot find the device:** Use a USB-A to USB-C cable with data pins (this cheap board omits the necessary 5.1k pulldown resistors for USB-C cables to supply power), wait for the upload prompt, and enter the bootloader within ten seconds. Factory firmware generally needs the hardware method.
 - **Macropad does not appear in the browser:** Use a supported desktop browser, HTTPS or localhost, and this firmware. Reconnect USB after uploading.
 - **One red LED blinks and inputs do nothing:** Connect the configurator and save a valid profile
 - **The wrong keys respond:** Check the physical variant in `platformio.ini`, clean the build, and upload again
