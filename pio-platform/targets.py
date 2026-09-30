@@ -37,3 +37,25 @@ env.AddCustomTarget(
     description="Clear the saved macropad profile and restore the normal firmware",
     always_build=True,
 )
+
+
+def run_releases(target, source, env):
+    return subprocess.call([
+        sys.executable,
+        str(project / "pio-platform" / "release_firmware.py"),
+        str(project),
+        str(build),
+        str(board.get("build.f_cpu")),
+        str(board.get("build.usb_ram")),
+        str(board.get("upload.maximum_size")),
+    ])
+
+
+env.AddCustomTarget(
+    name="releases",
+    dependencies=[],
+    actions=run_releases,
+    title="Build Release HEX Files",
+    description="Build three-key and six-key firmware into releases with Git revision filenames",
+    always_build=True,
+)

@@ -1,3 +1,4 @@
 .pio/
 .pio-core/
 **/.DS_Store
+__pycache__/
