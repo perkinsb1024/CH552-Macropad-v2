@@ -25,3 +25,7 @@ and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/st
 Do not add older-firmware encoding or UI branches to the active editor.
 
 The root serves the active v3 editor; there is intentionally no frozen v3 build yet.
+
+`npm run dev` also serves these frozen HTML pages directly. The archive middleware
+bypasses the active editor's HTML transformation and SPA fallback, so development
+archive URLs behave like the deployed static site. Unknown archive paths return 404.

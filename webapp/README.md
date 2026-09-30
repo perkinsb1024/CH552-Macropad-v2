@@ -26,6 +26,10 @@ npm run preview    # serve dist/ locally
 
 ## Trying it without hardware
 
+The current editor waits for **Connect macropad** before opening hardware, even if
+the browser has previously granted access. Firmware-version notices only appear
+after an explicit connection attempt.
+
 The connect button's dropdown offers a simulated macropad that implements the same
 protocol handler as the firmware, including invalid-flash and failed-commit paths.
 `?sim=six`, `?sim=three`, or `?sim=blank` in the URL auto-connects the simulator,

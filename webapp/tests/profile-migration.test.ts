@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { siteUrl } from '../src/site';
 import { encodeProfile } from '../src/codec/encode';
 import { sealImage } from '../src/codec/crc16';
 import { defaultProfile } from '../src/model/defaults';
@@ -51,7 +52,7 @@ describe('device profile migration', () => {
     await connectSimulator(0);
     expect(connection.value.kind).toBe('disconnected');
     expect(canSave.value).toBe(false);
-    expect(archivedFirmware.value).toEqual({ version: 2, url: './versions/format-v2/' });
+    expect(archivedFirmware.value).toEqual({ version: 2, url: siteUrl('versions/format-v2/') });
     expect(flashReads).not.toHaveBeenCalled();
     expect(writes).not.toHaveBeenCalled();
     vi.restoreAllMocks();

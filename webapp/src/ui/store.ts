@@ -1,4 +1,5 @@
 import { computed, effect, signal } from '@preact/signals';
+import { siteUrl } from '../site';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease } from '../model/actions';
 import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
@@ -143,7 +144,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: './versions/format-v2/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -670,7 +671,7 @@ async function attach(transport: Transport, label: string): Promise<void> {
     if (info.transportVersion !== TRANSPORT_VERSION || info.formatVersion !== FORMAT_VERSION) {
       const archive = ARCHIVED_CONFIGURATORS[info.formatVersion];
       if (archive && info.transportVersion === TRANSPORT_VERSION) {
-        archivedFirmware.value = { version: info.formatVersion, url: archive };
+        archivedFirmware.value = { version: info.formatVersion, url: siteUrl(archive) };
       }
       throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports format ${FORMAT_VERSION} over transport v${TRANSPORT_VERSION}.`);
     }
@@ -701,18 +702,6 @@ export async function connectHid(): Promise<void> {
   }
   if (!transport) return; // user cancelled the chooser
   await attach(transport, transport.name);
-}
-
-export async function reconnectGranted(): Promise<boolean> {
-  if (!hidSupported) return false;
-  try {
-    const transport = await WebHidTransport.reconnectGranted();
-    if (!transport) return false;
-    await attach(transport, transport.name);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function connectSimulator(variant: Variant, blankFlash = false): Promise<void> {
