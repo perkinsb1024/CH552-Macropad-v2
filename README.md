@@ -2,10 +2,12 @@
 
 > [!NOTE]
 > **A Note on LLM Usage:**
+>
 > This project was built with significant help from an LLM (`codex`).
-> Any project of mine that uses help from an LLM will contain this message at the top of the README. If a project does not contain this message, it was fully written by a human (me).
+>
+> Any project of mine that uses help from an LLM will contain this message at the top of the README. If a project does not contain this message, it was fully written by me (a human)
 
-<img src="images/macropad.jpg" alt="A three-key macropad with an encoder wheel" width="60%">
+<img src="images/macropad.jpg" alt="A three-key macropad with an encoder wheel" width="85%">
 
 _A three-key macropad of the type this project supports_
 
@@ -123,11 +125,12 @@ The following instructions and photo apply to the CH552G board shown in the orig
 7. Wait for the upload to finish. If it times out, unplug the macropad and repeat the upload and bootloader-entry steps.
 8. Unplug the macropad before removing any temporary wiring or reassembling it, then reconnect it for configuration
 
-![A button wired to enter the CH552G bootloader](images/bootloader_button.jpg)
+<img src="images/bootloader_button.jpg" alt="A  button wired to enter the CH552G bootloader" width="70%">
 
-_An example bootloader button from the original project_
+_An example of using a temporary button to enter the bootloader before uploading firmware_
 
-> **Warning:** Avoid bridging adjacent pins, especially ground (pin 14). Shorting a supply to ground can damage the board or USB port. Pin locations in the photo are specific to that board orientation.
+> [!CAUTION]
+> **Warning:** Avoid bridging adjacent pins, especially ground (pin 14). Shorting a supply to ground can damage the board or USB port
 
 ### Later Uploads: Use the Encoder Button
 
