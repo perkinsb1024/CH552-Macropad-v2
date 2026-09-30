@@ -24,7 +24,7 @@ export function ProfilePanel() {
           <span class="hint">
             {p.chordWindow === 0
               ? 'Chord recognition is disabled. Saved chords are kept but never trigger, and keys act immediately.'
-              : `A key that belongs to a chord waits up to ${p.chordWindow * 5} ms for its partner before acting alone. Keys without chords are not delayed.`}
+              : `A key that belongs to a chord waits up to ${p.chordWindow * 5}ms for its partner before acting alone. Keys without chords are not delayed.`}
           </span>
         </label>
       </div>

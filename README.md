@@ -11,13 +11,13 @@
 
 _A three-key macropad of the type this project supports_
 
-This project is an update to my [CH552-macropad](https://github.com/perkinsb1024/CH552-macropad) project, a replacement firmware for generic wired USB macropads based on the [CH55xDuino library](https://github.com/DeqingSun/ch55xduino/).
+This project is an update to my original [CH552-macropad](https://github.com/perkinsb1024/CH552-macropad) project, a replacement firmware for generic wired USB macropads based on the [CH55xDuino library](https://github.com/DeqingSun/ch55xduino/).
 
 Compared to the previous version, this project adds:
 - A browser-based configurator, so you can update the device profile without editing or compiling the firmware
   - Drag and drop / copy and paste support
   - Importing and exporting of JSON profiles
-  - Virtual device so you can play with configurations before setting up the hardware (add `?sim=three` or `?sim=six` to the end of the configurator URL)
+  - Virtual device so you can play with configurations before setting up the hardware ([virtual 3-key](https://perkinsb1024.github.io/CH552-Macropad-v2/?sim=three) and [virtual 6-key](https://perkinsb1024.github.io/CH552-Macropad-v2/?sim=six))
 - Custom encoder wheel actions
 - Layers
    - Including support for LED layer indicators (blink or always-on)

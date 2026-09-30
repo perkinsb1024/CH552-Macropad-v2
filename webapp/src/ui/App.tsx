@@ -10,6 +10,7 @@ import { DeviceView } from './components/DeviceView';
 import { ChordPanel } from './components/ChordPanel';
 import { LayerOptions } from './components/LayerOptions';
 import { Inspector } from './components/Inspector';
+import { Shortcuts } from './components/Shortcuts';
 import { StorageMeter } from './components/StorageMeter';
 import { IssuesPanel } from './components/IssuesPanel';
 import { ToolsPanel } from './components/ToolsPanel';
@@ -114,6 +115,7 @@ export function App() {
           </div>
           <aside class="column column-side">
             <Inspector />
+            <Shortcuts />
             <IssuesPanel />
             <StorageMeter />
             <ToolsPanel />

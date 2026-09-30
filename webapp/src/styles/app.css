@@ -327,6 +327,93 @@ output {
   color: var(--fg);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
 }
+.shortcuts-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.shortcuts-content[hidden] {
+  display: none;
+}
+.shortcuts-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.shortcuts-toggle svg {
+  color: var(--fg-muted);
+  transition: transform 150ms ease;
+}
+.shortcuts-toggle[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+.shortcuts-content {
+  margin-top: 12px;
+}
+.shortcuts-search {
+  position: relative;
+}
+.shortcuts-search > svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-muted);
+  pointer-events: none;
+}
+.shortcuts-search input {
+  appearance: none;
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  color: var(--fg);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+.shortcuts-search input::placeholder {
+  color: var(--fg-muted);
+}
+.shortcuts-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-elev);
+  box-shadow: var(--focus);
+}
+.shortcuts h2, .shortcuts p {
+  margin: 0;
+}
+.shortcut-library {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.shortcut-preset {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--bg-sunken);
+  color: var(--fg);
+  cursor: grab;
+}
+.shortcut-preset:hover {
+  background: var(--bg-elev);
+  border-color: var(--accent);
+}
+.shortcut-preset:active {
+  cursor: grabbing;
+}
 .scroll-direction {
   margin-top: 8px;
 }

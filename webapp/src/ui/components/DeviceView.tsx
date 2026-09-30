@@ -4,7 +4,7 @@ import { summarize } from '../../model/actions';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
 import { canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
-import { dropPosition } from '../drag';
+import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconRotate } from './Icons';
 import { ActionLabel } from './ActionLabel';
 
@@ -23,6 +23,8 @@ export function DeviceView() {
 
   const select = (slot: Slot) => { selectedSlot.value = slot; };
   const dragStart = (event: DragEvent, slot: Slot) => {
+    setRoundedDragImage(event);
+    endShortcutDrag();
     draggedSlot.value = slot;
     event.dataTransfer?.setData('application/x-macropad-slot', 'move');
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
@@ -32,6 +34,7 @@ export function DeviceView() {
     ? canSwapSlots(source, target)
     : canInsertSlot(source, target, position);
   const drop = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical') => {
+    if (shortcutDrop(event, target)) return;
     event.preventDefault();
     const source = draggedSlot.value;
     const position = slotDrop.value && sameSlot(slotDrop.value.slot, target)
@@ -43,6 +46,7 @@ export function DeviceView() {
     dragEnd();
   };
   const dragOver = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical') => {
+    if (shortcutDragOver(event, target)) return;
     const source = draggedSlot.value;
     const position = dropPosition(event, orientation);
     if (!source || !valid(source, target, position)) {
