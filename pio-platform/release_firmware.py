@@ -43,6 +43,14 @@ def release_firmware(project, build, clock, usb_ram, code_limit):
         temporary.replace(destination)
         print(f"Release: {destination}", flush=True)
 
+    # Keep the previous files until the new pair has been exported successfully.
+    latest_names = {name for _, name in artifacts}
+    for keys in (3, 6):
+        for previous in releases.glob(f"ch552-macropad-{keys}-key-*.hex"):
+            if previous.name not in latest_names and previous.is_file():
+                previous.unlink()
+                print(f"Removed previous release: {previous.name}", flush=True)
+
 
 if __name__ == "__main__":
     project, build, clock, usb_ram, code_limit = sys.argv[1:]

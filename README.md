@@ -32,6 +32,8 @@ You can configure:
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
+Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware)
+
 ### 1. Install the Tools
 
 1. Install [PlatformIO IDE for VS Code](https://platformio.org/install/ide?install=vscode), or [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) if you prefer the command line
@@ -97,7 +99,7 @@ Filenames include the key count and the current commit's unique short Git hash, 
 
 If firmware or build files have uncommitted changes, the name includes `dirty` before the hash, such as `ch552-macropad-6-key-dirty-a1b2c3d4.hex`. Commit those changes before generating files that should match a specific revision. README and image edits do not mark the firmware dirty.
 
-Running the command again at the same revision replaces the matching files. Files from older revisions are kept.
+After both builds and exports succeed, older generated HEX files are deleted so `releases/` keeps only the latest three-key and six-key pair. If a build fails, the previous release files are kept.
 
 ## How To Upload the Firmware
 
