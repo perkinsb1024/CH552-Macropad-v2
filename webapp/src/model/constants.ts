@@ -1,7 +1,11 @@
-/** Shared constants from protocol/config-v2.md and protocol/hid-v1.md. */
+/** Shared constants from protocol/config-v3.md and protocol/hid-v1.md. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 2;
+export const FORMAT_VERSION = 3;
+export type ConfigFormatVersion = 2 | 3;
+export function isSupportedFormatVersion(version: number): version is ConfigFormatVersion {
+  return version === 2 || version === FORMAT_VERSION;
+}
 export const HEADER_SIZE = 9;
 export const MAX_LAYERS = 4;
 export const CHORD_ENTRY_SIZE = 3;
@@ -72,7 +76,7 @@ export const LAYER_OPT_COLOR_SHIFT = 4;
 
 export const enum LayerIndicatorBehavior {
   None = 0,
-  BlinkOnce = 1,
+  TimedOn = 1,
   BlinkByLayer = 2,
   AlwaysOn = 3,
 }

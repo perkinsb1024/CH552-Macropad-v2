@@ -51,6 +51,7 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
 export function defaultProfile(variant: Variant): Profile {
   return {
     variant,
+    transparentBlack: false,
     startupLayer: 0,
     chordWindow: 8,
     layers: [defaultLayer(variant, false), defaultLayer(variant, true)],
@@ -62,13 +63,21 @@ export function cloneProfile(profile: Profile): Profile {
   return structuredClone(profile);
 }
 
-/** Converts profiles from the former per-layer scroll inversion option. */
-export function migrateLegacyScrollInversion(profile: Profile): Profile {
+/** Upgrade older editor profiles without changing bindings or palette indices.
+ * Indicator value 1 now means timed-on; transparency defaults to disabled.
+ */
+export function migrateLegacyProfile(profile: Profile): Profile {
+  profile.transparentBlack ??= false;
+  const migrateAction = (action: Action): Action =>
+    (action as { type: string }).type === 'nextLayer' ? { type: 'relativeLayer', offset: 0 } : action;
   for (const layer of profile.layers) {
-    // Drafts saved by older editor versions do not contain these fields.
     layer.indicatorBehavior ??= 0;
     layer.indicatorColor ??= 0;
     layer.indicatorFullBrightness ??= false;
+    layer.keys = layer.keys.map(migrateAction);
+    layer.encoderButton = migrateAction(layer.encoderButton);
+    layer.clockwise = migrateAction(layer.clockwise);
+    layer.counterclockwise = migrateAction(layer.counterclockwise);
     const legacy = layer as Layer & { invertScroll?: boolean };
     if (legacy.invertScroll) {
       if (layer.clockwise.type === 'scroll') layer.clockwise = { ...layer.clockwise, delta: -layer.clockwise.delta };
@@ -76,5 +85,6 @@ export function migrateLegacyScrollInversion(profile: Profile): Profile {
     }
     delete legacy.invertScroll;
   }
+  for (const chord of profile.chords) chord.action = migrateAction(chord.action);
   return profile;
 }

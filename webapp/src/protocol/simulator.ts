@@ -1,4 +1,4 @@
-import { FORMAT_VERSION, IMAGE_SIZE, MAX_LAYERS, PAYLOAD_SIZE, type Variant } from '../model/constants';
+import { FORMAT_VERSION, IMAGE_SIZE, MAX_LAYERS, PAYLOAD_SIZE, type ConfigFormatVersion, type Variant } from '../model/constants';
 import { imageCrc } from '../codec/crc16';
 import { decodeImage } from '../codec/decode';
 import { encodeProfile } from '../codec/encode';
@@ -9,6 +9,7 @@ import type { ReplyListener, Transport } from './transport';
 
 export interface SimulatorOptions {
   variant: Variant;
+  formatVersion?: ConfigFormatVersion;
   /** Start with empty flash so the "no saved profile" path is exercised. */
   blankFlash?: boolean;
   /** Artificial per-request latency in ms. */
@@ -40,7 +41,7 @@ export class SimulatedDevice implements Transport {
   private closed = false;
 
   constructor(readonly options: SimulatorOptions) {
-    const defaults = encodeProfile(defaultProfile(options.variant));
+    const defaults = encodeProfile(defaultProfile(options.variant), this.formatVersion);
     if (!options.blankFlash) this.flash.set(defaults);
     this.boot();
   }
@@ -49,8 +50,12 @@ export class SimulatedDevice implements Transport {
     return `Simulated ${this.options.variant ? 'three' : 'six'}-key macropad`;
   }
 
+  get formatVersion(): ConfigFormatVersion {
+    return this.options.formatVersion ?? FORMAT_VERSION;
+  }
+
   private boot(): void {
-    this.flashValid = decodeImage(this.flash, this.options.variant).ok;
+    this.flashValid = this.flash[2] === this.formatVersion && decodeImage(this.flash, this.options.variant).ok;
     this.activeValid = this.flashValid;
     this.active.set(this.flash);
     this.uploadState = 0;
@@ -106,7 +111,7 @@ export class SimulatedDevice implements Transport {
     switch (opcode) {
       case Opcode.GetInfo:
         reply[6] = 14;
-        reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, FORMAT_VERSION, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, MAX_LAYERS, IMAGE_SIZE, PALETTE_VERSION, 0xff, 0xff], 8);
+        reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, this.formatVersion, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, MAX_LAYERS, IMAGE_SIZE, PALETTE_VERSION, 0xff, 0xff], 8);
         return Status.Ok;
       case Opcode.GetStatus:
         reply[6] = 6;
@@ -146,7 +151,7 @@ export class SimulatedDevice implements Transport {
         if (this.uploadState !== 1 || this.uploadNext !== IMAGE_SIZE) return Status.Incomplete;
         const crc = imageCrc(this.staging);
         if (crc !== this.uploadCrc || this.staging[6] !== (crc & 0xff) || this.staging[7] !== crc >> 8) return Status.BadCrc;
-        if (!decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
+        if (this.staging[2] !== this.formatVersion || !decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
         if (this.options.failNextCommit) {
           this.options.failNextCommit = false;
           this.flash[0] = 0; // invalidated magic, as after an interrupted save

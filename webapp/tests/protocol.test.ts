@@ -99,7 +99,7 @@ describe('client against simulator', () => {
     const device = new SimulatedDevice({ variant: VARIANT_SIX_KEYS });
     const client = new ConfigClient(device);
     const info = await client.getInfo();
-    expect(info).toMatchObject({ transportVersion: 1, formatVersion: 2, variant: 0, keyCount: 6, maxLayers: 4, imageSize: 128, actionMask: 0xffff });
+    expect(info).toMatchObject({ transportVersion: 1, formatVersion: 3, variant: 0, keyCount: 6, maxLayers: 4, imageSize: 128, actionMask: 0xffff });
     const status = await client.getStatus();
     expect(status.flashValid).toBe(true);
     const flash = await client.readFlash();

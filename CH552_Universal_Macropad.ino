@@ -25,7 +25,7 @@
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
-#define LAYER_INDICATOR_PHASE_MS 100
+#define LAYER_INDICATOR_PHASE_TICKS 125 // 500 ms in 4 ms ticks; signed deadline < 128 ticks.
 #define RAINBOW_FRAME_MS 6
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
@@ -84,8 +84,8 @@ void updateLeds() {
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
   uint8_t phases = layerIndicatorPhasesLeft;
-  uint8_t blink = phases && !(phases & 1);
-  uint8_t rainbow = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON && palette == 15;
+  uint8_t rainbow = palette == 15 &&
+      (previewOptions ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : (behavior & 1));
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
@@ -100,15 +100,18 @@ void updateLeds() {
       dim = 1;
     } else
 #endif
-    if (blink) {
-      // Blink takes priority over per-key colors while the animation is on.
+    if (phases) {
+      // Both animations override key colors, including dark blink phases.
       dim = 1;
-    } else if (stableState[i]) {
-      color = configLedColor(layer, i);
-    } else if (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) {
-      dim = 1;
+      if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) color = 15;
+    } else if (stableState[i] &&
+               ((color = configLedColor(layer, i)) != 15 ||
+                !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
+      // Opaque pressed-key colors stay at full brightness.
     } else {
-      color = 15;
+      color = palette;
+      if (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) dim = 1;
+      else color = 15;
     }
     if (dim && rainbow) {
       // Three linear color ramps form a full-brightness cycling rainbow.
@@ -164,22 +167,21 @@ void firmwarePreviewColor(uint8_t options) {
 void startLayerIndicator(uint8_t layer, uint16_t now) {
   uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   layerIndicatorPhasesLeft = 0;
-  if (behavior == CONFIG_LAYER_INDICATOR_BLINK_ONCE ||
+  if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
       behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
-    layerIndicatorPhasesLeft = 2 *
-        (behavior == CONFIG_LAYER_INDICATOR_BLINK_ONCE ? 1 : layer + 1);
-    layerIndicatorDeadline = (uint8_t)(now + LAYER_INDICATOR_PHASE_MS);
+    layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 3 : 2 * (layer + 1);
+    layerIndicatorDeadline = (uint8_t)((now >> 2) + LAYER_INDICATOR_PHASE_TICKS);
   }
   updateLeds();
 }
 
 void serviceLayerIndicator(uint16_t now) {
   if (!layerIndicatorPhasesLeft ||
-      (int8_t)((uint8_t)now - layerIndicatorDeadline) < 0) {
+      (int8_t)((uint8_t)(now >> 2) - layerIndicatorDeadline) < 0) {
     return;
   }
   layerIndicatorPhasesLeft--;
-  layerIndicatorDeadline += LAYER_INDICATOR_PHASE_MS;
+  layerIndicatorDeadline += LAYER_INDICATOR_PHASE_TICKS;
   updateLeds();
 }
 
@@ -344,10 +346,10 @@ void loop() {
   scanEncoder();
   if ((uint8_t)((uint8_t)now - rainbowChanged) >= RAINBOW_FRAME_MS &&
 #if ENABLE_COLOR_PREVIEW
-      ((previewOptions ? previewOptions :
-        (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) == 0xFC)
+      ((previewOptions ? (previewOptions & 8 ? previewOptions : 0) :
+        (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xF4) == 0xF4)
 #else
-      (configLayerOptions(actionsLayer()) & 0xFC) == 0xFC)
+      (configLayerOptions(actionsLayer()) & 0xF4) == 0xF4)
 #endif
   {
     rainbowChanged = (uint8_t)now;

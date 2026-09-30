@@ -243,7 +243,7 @@ static void testValidation(void) {
     request(7, 0, 0, 0);
     assert(sent[8] == 7 && !writes);
     reset();
-    upload[3] |= 0x80;
+    upload[3] = 0x0D; // Two layers with an out-of-range startup layer (3).
     seal(upload);
     begin();
     chunks();

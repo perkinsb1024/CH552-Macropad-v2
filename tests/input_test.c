@@ -97,11 +97,11 @@ static void tick(uint16_t now) {
     loop();
 }
 
-static void assertIndicatorLeds(uint8_t full, uint8_t lit) {
+static void assertIndicatorLeds(uint8_t full, uint8_t lit, uint8_t held) {
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
         // Key zero is held with its red per-key color. The indicator is amber.
         assert(ledData[3*i] == (lit ? (full ? 66 : 5) : 0));
-        assert(ledData[3*i+1] == (lit ? (full ? 255 : 15) : (i == 0 ? 255 : 0)));
+        assert(ledData[3*i+1] == (lit ? (full ? 255 : 15) : (i == 0 && held ? 255 : 0)));
         assert(ledData[3*i+2] == 0);
     }
 }
@@ -138,27 +138,123 @@ static void testIndicatorBrightness(void) {
                     }
                     continue;
                 }
-                uint8_t phases = 2 * (behavior == CONFIG_LAYER_INDICATOR_BLINK_ONCE ? 1 : layer + 1);
+                uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
+                uint8_t phases = timed ? 3 : 2 * (layer + 1);
                 assert(layerIndicatorPhasesLeft == phases);
-                assertIndicatorLeds(full, 1);
+                assertIndicatorLeds(full, 1, 0);
                 for (uint8_t phase = 1; phase <= phases; phase++) {
-                    uint16_t deadline = (uint16_t)(65500u + 100u * phase);
+                    uint16_t deadline = (uint16_t)(65500u + 500u * phase);
                     serviceLayerIndicator((uint16_t)(deadline - 1));
                     assert(layerIndicatorPhasesLeft == phases - phase + 1);
                     serviceLayerIndicator(deadline);
                     assert(layerIndicatorPhasesLeft == phases - phase);
-                    assertIndicatorLeds(full, !(phase & 1) && phase < phases);
+                    assertIndicatorLeds(full, (timed || !(phase & 1)) && phase < phases, phase == phases);
                 }
-                serviceLayerIndicator((uint16_t)(65500u + 100u * (phases + 1)));
-                assertIndicatorLeds(full, 0);
+                serviceLayerIndicator((uint16_t)(65500u + 500u * (phases + 1)));
+                assertIndicatorLeds(full, 0, 1);
             }
         }
     }
     P1 = P3 = 0xFF;
 }
 
+static void testTransparencyAndRainbow(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    uint8_t colorOffset = 9 + 2 * (NUM_LEDS + 3);
+    uint8_t optionsOffset = 9 + size - 1;
+    uint8_t before[NUM_BYTES];
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfigValid = 1;
+    activeConfig[colorOffset] |= 15; // Key zero has an Off pressed color.
+    P1 = P3 = 0xFF;
+    P1 &= ~0x02;
+    for (uint8_t full = 0; full < 2; full++) {
+        activeConfig[optionsOffset] = 0x3C | full; // Always-on amber.
+        activeConfig[5] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
+        firmwareApplyConfig();
+        assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
+        activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+        updateLeds();
+        assertIndicatorLeds(full, 1, 0);
+        activeConfig[colorOffset] &= 0xF0; // A nonblack pressed color remains full brightness.
+        updateLeds();
+        assert(ledData[0] == 0 && ledData[1] == 255 && ledData[2] == 0);
+        activeConfig[colorOffset] |= 15;
+        // Transparency has no background to reveal in None mode.
+        activeConfig[optionsOffset] = 0;
+        updateLeds();
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+        // Rainbow is identical whether the transparent key is held or idle.
+        activeConfig[optionsOffset] = 0xFC | full;
+        updateLeds();
+        memcpy(before, ledData, NUM_BYTES);
+        stableState[0] = 0;
+        updateLeds();
+        assert(memcmp(before, ledData, NUM_BYTES) == 0);
+        stableState[0] = 1;
+        activeConfig[5] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
+        updateLeds();
+        assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
+        // Timed Rainbow overrides an opaque black pressed key, then expires.
+        activeConfig[optionsOffset] = 0xF4 | full;
+        currentMs = 6000;
+        firmwareApplyConfig();
+        startLayerIndicator(0, currentMs);
+        memcpy(before, ledData, NUM_BYTES);
+        tick(6006);
+        assert(memcmp(before, ledData, NUM_BYTES) != 0);
+        if (!full) for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] <= 15);
+        tick(6500);
+        tick(7000);
+        tick(7499);
+        assert(layerIndicatorPhasesLeft == 1);
+        tick(7500);
+        assert(layerIndicatorPhasesLeft == 0);
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+        tick(7506); // Rainbow service must not relight an expired indication.
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+        // Black numbered blinks stay black even with transparency enabled.
+        activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+        activeConfig[optionsOffset] = 0xF8 | full;
+        startLayerIndicator(0, currentMs);
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+    }
+    P1 = P3 = 0xFF;
+}
+
+static void testMomentaryIndicatorCancellation(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    memcpy(activeConfig + 9 + size, activeConfig + 9, size);
+    activeConfig[3] = 1; // Two layers, starting on zero.
+    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+    activeConfig[10] = 1;
+    activeConfig[9 + size - 1] = 0x3C; // Always-on amber beneath the momentary layer.
+    activeConfig[9 + 2 * size - 1] = 0xF4; // Timed Rainbow on the momentary layer.
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+    currentMs = 8000;
+    firmwareApplyConfig();
+    assertIndicatorLeds(0, 1, 0);
+    P1 &= ~0x02;
+    rawState[0] = stableState[0] = 1;
+    actionsPress(0, currentMs);
+    tick(8000);
+    assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 3);
+    P1 |= 0x02;
+    rawState[0] = stableState[0] = 0;
+    actionsRelease(0);
+    tick(8050);
+    assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 0);
+    assertIndicatorLeds(0, 1, 0);
+    tick(8500); // The canceled Rainbow must not reappear at its former deadline.
+    assertIndicatorLeds(0, 1, 0);
+}
+
 int main(void) {
     testIndicatorBrightness();
+    testTransparencyAndRainbow();
+    testMomentaryIndicatorCancellation();
     currentMs = 0;
     frameCount = 0;
     // Invalid flash lights only the first key and leaves physical inputs inactive.

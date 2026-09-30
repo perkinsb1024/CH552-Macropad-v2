@@ -22,7 +22,7 @@ static void testStarterFixture(uint8_t variant) {
     uint8_t i;
     testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0x8D02 : 0x57BD));
+    assert(configCrc(activeConfig) == (variant ? 0xDFCD : 0x0572));
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
@@ -53,7 +53,7 @@ static void testInvalid(void) {
     testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[8] = 0x18;
     seal();
-    assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+    assert(configValid(activeConfig, CONFIG_SIX_KEYS));
     activeConfig[8] = 8;
     activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
     activeConfig[10] = 0xE0;
@@ -66,10 +66,31 @@ static void testInvalid(void) {
     testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[31] = 1;
     seal();
-    assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+    assert(configValid(activeConfig, CONFIG_SIX_KEYS));
     testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[6] ^= 1;
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+}
+
+static void testHeaderAndIgnoredFields(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        testLoadStarterProfile(variant);
+        activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+        activeConfig[3] |= 0xF0;
+        activeConfig[8] |= 0xF0;
+        activeConfig[127] = 0xFF;
+        seal();
+        assert(configValid(activeConfig, variant));
+        assert(configLayerCount() == 1 && configStartupLayer() == 0);
+        assert(configKeyCount() == (variant ? 3 : 6));
+        assert(configChordWindowMs() == 40);
+        // Ignored bytes are still covered by CRC.
+        activeConfig[127] ^= 1;
+        assert(!configValid(activeConfig, variant));
+        activeConfig[2] = 2;
+        seal();
+        assert(!configValid(activeConfig, variant));
+    }
 }
 
 static void testCapacityAndStrings(uint8_t variant) {
@@ -224,13 +245,14 @@ static void testActions(void) {
     testLoadStarterProfile(CONFIG_THREE_KEYS);
     activeConfig[22] = 0xF2;
     seal();
-    assert(!configValid(activeConfig, CONFIG_THREE_KEYS));
+    assert(configValid(activeConfig, CONFIG_THREE_KEYS));
 }
 
 int main(void) {
     testStarterFixture(CONFIG_SIX_KEYS);
     testStarterFixture(CONFIG_THREE_KEYS);
     testInvalid();
+    testHeaderAndIgnoredFields();
     testCapacityAndStrings(CONFIG_SIX_KEYS);
     testCapacityAndStrings(CONFIG_THREE_KEYS);
     testChords();

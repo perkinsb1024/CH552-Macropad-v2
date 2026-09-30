@@ -48,6 +48,7 @@ export interface Chord {
 
 export interface Profile {
   variant: Variant;
+  transparentBlack: boolean;
   startupLayer: number;
   /** Chord window in 5 ms units, 0–15. Zero disables chords. */
   chordWindow: number;

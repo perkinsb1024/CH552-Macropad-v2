@@ -12,14 +12,53 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
+  it('encodes supported target versions and refuses incompatible or unknown formats', () => {
+    const profile = defaultProfile(VARIANT_SIX_KEYS);
+    const v2 = encodeProfile(profile, 2);
+    const v3 = encodeProfile(profile, 3);
+    expect(v2[2]).toBe(2);
+    expect(imageCrc(v2)).toBe(storedCrc(v2));
+    expect([...v2.subarray(8)]).toEqual([...v3.subarray(8)]);
+    expect(() => encodeProfile(profile, 4)).toThrow('not supported');
+    profile.transparentBlack = true;
+    expect(() => encodeProfile(profile, 2)).toThrow('Transparent black requires');
+    expect(encodeProfile(profile, 3)[5]! & 0x80).toBe(0x80);
+  });
+  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 3', (variant) => {
+    const profile = defaultProfile(variant);
+    profile.layers[0]!.indicatorBehavior = 1;
+    profile.layers[0]!.indicatorColor = 8;
+    profile.layers[0]!.indicatorFullBrightness = true;
+    profile.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: { type: 'setLayer', layer: 1 } }];
+    const legacy = encodeProfile(profile);
+    legacy[2] = 2;
+    sealImage(legacy);
+    const decoded = decodeImage(legacy);
+    expect(decoded.ok && decoded.profile).toEqual(profile);
+    if (!decoded.ok) throw new Error(decoded.detail);
+    const upgraded = encodeProfile(decoded.profile);
+    expect(upgraded[2]).toBe(3);
+    expect([...upgraded.subarray(8)]).toEqual([...legacy.subarray(8)]);
+    legacy[6] = legacy[6]! ^ 1;
+    expect(decodeImage(legacy)).toMatchObject({ ok: false, reason: 'bad-crc' });
+  });
+  it('round-trips transparency in header bit 7 without changing chord count', () => {
+    const profile = defaultProfile(VARIANT_THREE_KEYS);
+    profile.transparentBlack = true;
+    profile.chords = [{ layer: 0, keyA: 0, keyB: 1, global: false, action: { type: 'setLayer', layer: 1 } }];
+    const image = encodeProfile(profile);
+    expect(image[5]).toBe(0x83);
+    const decoded = decodeImage(image);
+    expect(decoded.ok && decoded.profile).toEqual(profile);
+  });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 02 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 03 01 00 00');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 02 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 03 01 00 01');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -105,7 +144,7 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x1e, 0xff]);
-    expect(image[2]).toBe(2);
+    expect(image[2]).toBe(3);
     image[9] = 0x2e;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -276,7 +315,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 3;
+    image[2] = 4;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });

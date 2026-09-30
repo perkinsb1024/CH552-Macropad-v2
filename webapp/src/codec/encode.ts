@@ -51,8 +51,8 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
 }
 
 /** Produces the canonical 128-byte image. Throws EncodeError when the profile is invalid. */
-export function encodeProfile(profile: Profile): Uint8Array {
-  const issues = validateProfile(profile);
+export function encodeProfile(profile: Profile, formatVersion = FORMAT_VERSION): Uint8Array {
+  const issues = validateProfile(profile, formatVersion);
   if (issues.length) throw new EncodeError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));
 
   const keys = keyCount(profile.variant);
@@ -70,10 +70,10 @@ export function encodeProfile(profile: Profile): Uint8Array {
   const chords = sortedChords(profile);
   image[0] = 0x4d; // M
   image[1] = 0x50; // P
-  image[2] = FORMAT_VERSION;
+  image[2] = formatVersion;
   image[3] = (profile.layers.length - 1) | (profile.startupLayer << 2);
   image[4] = poolLength;
-  image[5] = profile.variant | (chords.length << 1);
+  image[5] = profile.variant | (chords.length << 1) | (profile.transparentBlack ? 0x80 : 0);
   image[8] = profile.chordWindow & 15;
 
   profile.layers.forEach((layer, li) => {

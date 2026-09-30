@@ -4,7 +4,6 @@ import {
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile } from '../model/types';
-import { migrateLegacyScrollInversion } from '../model/defaults';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
 import { isSupportedUsage } from '../keys/keyboard';
@@ -102,9 +101,9 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (image[2] !== FORMAT_VERSION) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected ${FORMAT_VERSION}).`);
+  if (image[2] !== 2 && image[2] !== FORMAT_VERSION) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2 or ${FORMAT_VERSION}).`);
+  if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   if (image[3]! & 0xf0) return fail('malformed', 'Reserved bits set in byte 3.');
-  if (image[5]! & 0x80) return fail('malformed', 'Reserved bit set in byte 5.');
   if (image[8]! & 0xf0) return fail('malformed', 'Reserved bits set in chord-window byte.');
 
   const variant = (image[5]! & 1) as Variant;
@@ -188,6 +187,6 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
 
   return {
     ok: true,
-    profile: migrateLegacyScrollInversion({ variant, startupLayer, chordWindow: image[8]! & 15, layers, chords }),
+    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, layers, chords },
   };
 }

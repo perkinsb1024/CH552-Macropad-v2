@@ -4,6 +4,20 @@ import { defaultProfile, emptyLayer } from '../src/model/defaults';
 import { VARIANT_SIX_KEYS, VARIANT_THREE_KEYS } from '../src/model/constants';
 
 describe('JSON import/export', () => {
+  it('preserves transparency and migrates older profile versions with transparency off', () => {
+    const profile = defaultProfile(VARIANT_THREE_KEYS);
+    profile.transparentBlack = true;
+    const text = exportProfile(profile);
+    expect(importProfile(text).profile).toEqual(profile);
+    for (const version of [1, 2]) {
+      const legacy = JSON.parse(text);
+      legacy.version = version;
+      delete legacy.transparentBlack;
+      expect(importProfile(JSON.stringify(legacy)).profile).toEqual({ ...profile, transparentBlack: false });
+    }
+    expect(() => importProfile(text.replace('"version": 3', '"version": 4'))).toThrow(ImportError);
+    expect(() => importProfile(text.replace('"transparentBlack": true', '"transparentBlack": 1'))).toThrow(ImportError);
+  });
   it('preserves pointer hold and accepts older pointer actions without the option', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
@@ -34,7 +48,7 @@ describe('JSON import/export', () => {
     expect(() => importProfile(text.replace('"startupLayer": 0', '"startupLayer": 3'))).toThrow(ImportError);
     expect(() => importProfile(text.replace('"a\\r\\nb"', '"é"'))).toThrow(ImportError);
   });
-  it('imports a legacy nextLayer JSON action as a zero-offset action', () => {
+  it('migrates legacy nextLayer actions', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     const text = exportProfile(profile).replace('"type": "keyTap"', '"type": "nextLayer"');
     expect(importProfile(text).profile.layers[0]!.keys[0]).toEqual({ type: 'relativeLayer', offset: 0 });

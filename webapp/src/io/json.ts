@@ -4,10 +4,10 @@ import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
 import { PALETTE } from '../model/palette';
 import { normalizeText } from '../model/strings';
-import { migrateLegacyScrollInversion } from '../model/defaults';
+import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 2;
+export const JSON_VERSION = 3;
 
 /** Optional editor annotations that never reach the device. */
 export interface LocalMetadata {
@@ -20,6 +20,7 @@ export interface ExportedProfile {
   version: typeof JSON_VERSION;
   variant: 'six-key' | 'three-key';
   startupLayer: number;
+  transparentBlack: boolean;
   chordWindowMs: number;
   layers: Array<{
     keys: Action[];
@@ -42,6 +43,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
     version: JSON_VERSION,
     variant: profile.variant === VARIANT_THREE_KEYS ? 'three-key' : 'six-key',
     startupLayer: profile.startupLayer,
+    transparentBlack: profile.transparentBlack,
     chordWindowMs: profile.chordWindow * 5,
     layers: profile.layers.map((layer) => ({
       keys: layer.keys,
@@ -136,7 +138,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (raw.version !== 1 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (raw.version !== 1 && raw.version !== 2 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > 4) throw new ImportError('Profile must have 1–4 layers.');
@@ -166,8 +168,8 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
   if (chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75) throw new ImportError('chordWindowMs must be 0–75 in steps of 5.');
-  const imported: Profile = { variant, startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
-  const profile = migrateLegacyScrollInversion(imported);
+  const profile: Profile = { variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  migrateLegacyProfile(profile);
   const issues = validateProfile(profile);
   if (issues.length) throw new ImportError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));
   const meta: LocalMetadata = {};

@@ -1,7 +1,7 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease } from '../model/actions';
-import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
+import { FORMAT_VERSION, MAX_LAYERS, isSupportedFormatVersion, keyCount, type ConfigFormatVersion, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { actionProblem, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
@@ -108,7 +108,11 @@ export function redo(): void {
   restoreEditor(next);
 }
 
-export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
+export const targetFormatVersion = computed(() => {
+  const c = connection.value;
+  return c.kind === 'connected' ? c.connection.info.formatVersion : FORMAT_VERSION;
+});
+export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value, targetFormatVersion.value) : []));
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
@@ -122,7 +126,7 @@ export const encodable = computed(() => issues.value.length === 0);
 /** Whether the connected device can accept this profile. */
 export const canSave = computed(() => {
   const c = connection.value;
-  return c.kind === 'connected' && c.connection.info.formatVersion === FORMAT_VERSION && !!profile.value && encodable.value && profile.value.variant === c.connection.info.variant && saveState.value.phase !== 'busy';
+  return c.kind === 'connected' && isSupportedFormatVersion(c.connection.info.formatVersion) && !!profile.value && encodable.value && profile.value.variant === c.connection.info.variant && saveState.value.phase !== 'busy';
 });
 
 export type SaveState =
@@ -664,8 +668,8 @@ async function attach(transport: Transport, label: string): Promise<void> {
   const client = new ConfigClient(transport);
   try {
     const info = await client.getInfo();
-    if (info.transportVersion !== TRANSPORT_VERSION || info.formatVersion !== FORMAT_VERSION) {
-      throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports transport v${TRANSPORT_VERSION} / format v${FORMAT_VERSION}.`);
+    if (info.transportVersion !== TRANSPORT_VERSION || !isSupportedFormatVersion(info.formatVersion)) {
+      throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app reads formats 2 and ${FORMAT_VERSION} over transport v${TRANSPORT_VERSION}.`);
     }
     const status = await client.getStatus();
     const previewSupported = await client.detectPreviewSupport();
@@ -708,8 +712,8 @@ export async function reconnectGranted(): Promise<boolean> {
   }
 }
 
-export async function connectSimulator(variant: Variant, blankFlash = false): Promise<void> {
-  const device = new SimulatedDevice({ variant, blankFlash, latency: 4 });
+export async function connectSimulator(variant: Variant, blankFlash = false, formatVersion: ConfigFormatVersion = FORMAT_VERSION): Promise<void> {
+  const device = new SimulatedDevice({ variant, blankFlash, formatVersion, latency: 4 });
   await attach(device, device.name);
 }
 
@@ -768,6 +772,9 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     let fromDevice: Profile;
     if (decoded.ok) {
       fromDevice = decoded.profile;
+      if (peekHeader(flash).version === 2 && info.formatVersion === FORMAT_VERSION) {
+        notify('info', 'Version 2 profile upgraded in the editor: Blink once becomes On for 1.5 seconds, and transparency is off. Save to apply it to this format 3 device.', 12000);
+      }
     } else {
       fromDevice = defaultProfile(info.variant);
       const header = peekHeader(flash);
@@ -825,8 +832,8 @@ export async function save(): Promise<void> {
   const c = connection.value;
   const p = profile.value;
   if (c.kind !== 'connected' || !p) return;
-  if (c.connection.info.formatVersion !== FORMAT_VERSION) {
-    notify('error', `This editor needs firmware with configuration format version ${FORMAT_VERSION} before it can save.`);
+  if (!isSupportedFormatVersion(c.connection.info.formatVersion)) {
+    notify('error', `This editor supports saving configuration formats v2 and v${FORMAT_VERSION}.`);
     return;
   }
   if (p.variant !== c.connection.info.variant) {
@@ -847,7 +854,7 @@ export async function save(): Promise<void> {
   }
   let image: Uint8Array;
   try {
-    image = encodeProfile(p);
+    image = encodeProfile(p, c.connection.info.formatVersion);
   } catch (error) {
     notify('error', (error as Error).message);
     return;

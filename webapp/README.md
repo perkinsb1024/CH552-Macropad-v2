@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 Universal Macropad. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v2.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v3.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -77,3 +77,10 @@ Add a udev rule so the browser can open the HID interface, then replug:
 ```
 KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="c55d", MODE="0666"
 ```
+
+The editor upgrades version 2 binary profiles, version 1/2 JSON profiles, and older
+local drafts to format 3. Blink once becomes the 1.5-second timed indication;
+transparency defaults to off. Upgrades stay in the editor until saved. The editor reads and saves both
+format 2 and format 3 firmware, selecting the connected device’s format.
+On format 2 devices it shows Blink once and the original blink timing;
+transparency must be off before saving. Existing bindings, colors, and metadata are retained.

@@ -1,12 +1,12 @@
 import { LayerIndicatorBehavior } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
-import { connection, profile, selectedLayer, updateProfile } from '../store';
+import { connection, profile, selectedLayer, targetFormatVersion, updateProfile } from '../store';
 
 import { ColorPreview } from './ColorPreview';
 
 const BEHAVIORS = [
   { value: LayerIndicatorBehavior.None, label: 'Do not indicate' },
-  { value: LayerIndicatorBehavior.BlinkOnce, label: 'Blink once' },
+  { value: LayerIndicatorBehavior.TimedOn, label: 'On for 1.5 seconds' },
   { value: LayerIndicatorBehavior.BlinkByLayer, label: 'Blink by layer number' },
   { value: LayerIndicatorBehavior.AlwaysOn, label: 'Always on' },
 ];
@@ -16,8 +16,10 @@ export function LayerOptions() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
+  const legacy = targetFormatVersion.value === 2;
   const rainbowAvailable = connection.value.kind !== 'connected' || connection.value.connection.info.paletteVersion >= 3;
-  const rainbow = layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn;
+  const rainbow = rainbowAvailable && (layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn || (!legacy && layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn));
+  const brightnessAvailable = !legacy || layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn;
   const toggle = (key: 'bootloaderFromRun') => (e: Event) =>
     updateProfile((d) => { d.layers[li]![key] = (e.target as HTMLInputElement).checked; });
   return (
@@ -33,10 +35,11 @@ export function LayerOptions() {
             value={layer.indicatorBehavior}
             onChange={(e) => updateProfile((d) => { d.layers[li]!.indicatorBehavior = Number((e.target as HTMLSelectElement).value) as LayerIndicatorBehavior; })}
           >
-            {BEHAVIORS.map((behavior) => <option value={behavior.value}>{behavior.label}{behavior.value === LayerIndicatorBehavior.BlinkByLayer ? ` (${BLINK_COUNTS[li]})` : ''}</option>)}
+            {BEHAVIORS.map((behavior) => <option value={behavior.value}>{legacy && behavior.value === LayerIndicatorBehavior.TimedOn ? 'Blink once' : behavior.label}{behavior.value === LayerIndicatorBehavior.BlinkByLayer ? ` (${BLINK_COUNTS[li]})` : ''}</option>)}
           </select>
           {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys show the selected color or Rainbow; pressed keys show their per-key color. {rainbowAvailable ? '' : 'Rainbow requires palette version 3 firmware; older firmware displays Off.'}</span>}
-          {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number when switching to this layer.</span>}
+          {layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn && <span class="hint">{legacy ? 'Blinks once after switching. Older format v2 firmware blinks at full brightness.' : 'Shows the layer color or Rainbow for 1.5 seconds after switching. Overrides pressed-key colors.'}</span>}
+          {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">{legacy ? 'Blinks once per layer number with the original fast timing. Pressed-key colors can appear between blinks; older format v2 firmware blinks at full brightness.' : 'Blinks once per layer number: 0.5 seconds on, 0.5 seconds off. Overrides key colors throughout the indication.'}</span>}
         </label>
         {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
           <div class="field">
@@ -59,10 +62,10 @@ export function LayerOptions() {
                 );
               })}
             </div>
-            <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={rainbow} />
+            <ColorPreview color={layer.indicatorColor} fullBrightness={!brightnessAvailable || layer.indicatorFullBrightness} rainbow={rainbow} />
           </div>
         )}
-        {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
+        {layer.indicatorBehavior !== LayerIndicatorBehavior.None && brightnessAvailable && (
           <div class="segmented" role="group" aria-label="Layer indicator brightness">
             <button
               type="button"

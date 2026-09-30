@@ -126,12 +126,9 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     uint8_t previous = 0;
     uint8_t id;
     uint16_t end;
-    uint16_t padding;
     uint16_t crc;
     if (variant > CONFIG_THREE_KEYS || image[0] != 'M' || image[1] != 'P' ||
-        image[2] != CONFIG_VERSION || (image[3] & 0xF0) ||
-        (image[5] & 0x80) || ((image[5] & 1) != variant) ||
-        (image[8] & 0xF0)) {
+        image[2] != CONFIG_VERSION || ((image[5] & 1) != variant)) {
         return 0;
     }
     layers = (image[3] & 3) + 1;
@@ -155,14 +152,11 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
                 return 0;
             }
         }
-        if (keys == 3 && (image[offset + 13] & 0xF0)) {
-            return 0;
-        }
     }
     offset = 9 + size * layers;
     for (i = 0; i < chords; i++) {
         id = image[offset];
-        if ((id & 0x40) || ((id >> 4) & 3) >= layers ||
+        if (((id >> 4) & 3) >= layers ||
             (id & 15) >= (keys == 3 ? 3 : 15) ||
             (i && id <= previous) ||
             !actionValid(image, offset + 1, layers, 0, pool, used)) {
@@ -178,11 +172,6 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
         if (image[pool + i] != 0 && image[pool + i] != 9 &&
             image[pool + i] != 10 &&
             (image[pool + i] < 32 || image[pool + i] > 126)) {
-            return 0;
-        }
-    }
-    for (padding = end; padding < CONFIG_SIZE; padding++) {
-        if (image[padding]) {
             return 0;
         }
     }
