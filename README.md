@@ -125,7 +125,7 @@ The following instructions and photo apply to the CH552G board shown in the orig
 7. Wait for the upload to finish. If it times out, unplug the macropad and repeat the upload and bootloader-entry steps.
 8. Unplug the macropad before removing any temporary wiring or reassembling it, then reconnect it for configuration
 
-<img src="images/bootloader_button.jpg" alt="A  button wired to enter the CH552G bootloader" width="70%">
+<img src="images/bootloader_button.jpg" alt="A button wired to enter the CH552G bootloader" width="70%">
 
 _An example of using a temporary button to enter the bootloader before uploading firmware_
 
@@ -144,6 +144,10 @@ If the device cannot run the firmware, use the hardware method above to recover 
 ## Configuring Your Macropad
 
 ### Use the Hosted Web App
+
+<img src="images/configurator.png" alt="A screenshot of the Configurator Web App" width="85%">
+
+_The Configurator Web App_
 
 No local web app installation is needed. Open the **[Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)** in desktop Chrome, Edge, or another browser with WebHID support.
 
