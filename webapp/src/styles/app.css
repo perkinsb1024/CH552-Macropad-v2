@@ -393,7 +393,14 @@ output {
 .shortcut-library {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 8px;
+  max-height: min(300px, 40vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 4px;
+  min-height: 0;
 }
 .shortcut-preset {
   display: inline-flex;
@@ -401,6 +408,8 @@ output {
   max-width: 100%;
   padding: 5px 10px;
   font-size: 12.5px;
+  text-align: left;
+  overflow-wrap: anywhere;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--bg-sunken);
