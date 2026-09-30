@@ -11,9 +11,21 @@
 
 _A three-key macropad of the type this project supports_
 
-This project is an update to [CH552-macropad](https://github.com/perkinsb1024/CH552-macropad), a replacement firmware for generic wired USB macropads based on the [CH55xDuino library](https://github.com/DeqingSun/ch55xduino/).
+This project is an update to my [CH552-macropad](https://github.com/perkinsb1024/CH552-macropad) project, a replacement firmware for generic wired USB macropads based on the [CH55xDuino library](https://github.com/DeqingSun/ch55xduino/).
 
-This version adds a browser-based configurator, so you can change shortcuts, custom encoder actions, layers, and LED colors without editing or recompiling the firmware. Profiles are saved on the macropad; the configurator does not need to stay open during normal use.
+Compared to the previous version, this project adds:
+- A browser-based configurator, so you can update the device profile without editing or compiling the firmware
+  - Drag and drop / copy and paste support
+  - Importing and exporting of JSON profiles
+  - Virtual device so you can play with configurations before setting up the hardware (add `?sim=three` or `?sim=six` to the end of the configurator URL)
+- Custom encoder wheel actions
+- Layers
+   - Including support for LED layer indicators (blink or always-on)
+- Chords (multi-key inputs)
+- Mouse-move actions
+- Rainbow RGB effect (come on, what good is a keyboard without it?)
+
+Profiles are saved on the macropad; the configurator does not need to stay open during normal use.
 
 **[Open the Macropad Configurator in GitHub Pages](https://perkinsb1024.github.io/CH552-Macropad-v2/)**
 
@@ -147,7 +159,7 @@ If the device cannot run the firmware, use the hardware method above to recover 
 
 ### Use the Hosted Web App
 
-<img src="images/configurator.png" alt="A screenshot of the Configurator Web App" width="85%">
+<img src="images/configurator.png" alt="A screenshot of the Configurator Web App" width="100%">
 
 _The Configurator Web App_
 
