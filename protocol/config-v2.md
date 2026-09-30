@@ -44,7 +44,7 @@ layer. Each binding uses the two-byte action encoding below.
 
 | Layer-option bits | Meaning | Encoding |
 | --- | --- | --- |
-| 0 | Idle LED brightness | `0` = dimmed, `1` = full brightness; applies in *Always on* mode |
+| 0 | Layer-indicator brightness | `0` = dimmed, `1` = full brightness; applies in *Blink once*, *Blink by layer number*, and *Always on* modes |
 | 1 | Encoder-hold bootloader entry | `0` = disabled, `1` = enabled |
 | 2–3 | Layer-selection LED behavior | `0` = *Do not indicate*, `1` = *Blink once*, `2` = *Blink by layer number*, `3` = *Always on* |
 | 4–7 | Layer-indicator color | Palette index 0–15 |
@@ -52,7 +52,9 @@ layer. Each binding uses the two-byte action encoding below.
 Holding the encoder button while powering up always enters the bootloader;
 this recovery gesture is not configurable. In *Always on* mode, unpressed keys
 use the indicator color at the brightness selected by bit 0. Pressed keys use
-their per-key color at full brightness. With palette version 3 firmware,
+their per-key color at full brightness. Both blink modes also use the indicator
+color at the brightness selected by bit 0, overriding pressed-key colors during
+each lit phase. With palette version 3 firmware,
 indicator color index 15 in *Always on* mode gives idle keys a rainbow that cycles
 across the keys at the selected brightness. Index 15 remains *Off* for key colors
 and other indicator behaviors.

@@ -59,11 +59,11 @@ export function LayerOptions() {
                 );
               })}
             </div>
-            <ColorPreview color={layer.indicatorColor} fullBrightness={!rainbow || layer.indicatorFullBrightness} rainbow={rainbow} />
+            <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={rainbow} />
           </div>
         )}
-        {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && (
-          <div class="segmented" role="group" aria-label="Always-on LED brightness">
+        {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
+          <div class="segmented" role="group" aria-label="Layer indicator brightness">
             <button
               type="button"
               class={layer.indicatorFullBrightness ? 'is-selected' : ''}

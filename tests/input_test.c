@@ -97,7 +97,70 @@ static void tick(uint16_t now) {
     loop();
 }
 
+static void assertIndicatorLeds(uint8_t full, uint8_t lit) {
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+        // Key zero is held with its red per-key color. The indicator is amber.
+        assert(ledData[3*i] == (lit ? (full ? 66 : 5) : 0));
+        assert(ledData[3*i+1] == (lit ? (full ? 255 : 15) : (i == 0 ? 255 : 0)));
+        assert(ledData[3*i+2] == 0);
+    }
+}
+
+static void testIndicatorBrightness(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    for (uint8_t layer = 1; layer < CONFIG_MAX_LAYERS; layer++) {
+        memcpy(activeConfig + 9 + size * layer, activeConfig + 9, size);
+    }
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+    P1 &= ~0x02; // Hold key zero throughout the animation.
+    for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
+        activeConfig[3] = 3 | (layer << 2); // Four layers; select startup layer.
+        for (uint8_t behavior = CONFIG_LAYER_INDICATOR_NONE;
+             behavior <= CONFIG_LAYER_INDICATOR_ALWAYS_ON; behavior++) {
+            for (uint8_t full = 0; full < 2; full++) {
+                activeConfig[9 + size * (layer + 1) - 1] =
+                    (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                    (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) | full;
+                currentMs = 65500;
+                firmwareApplyConfig();
+                startLayerIndicator(layer, currentMs);
+                if (behavior == CONFIG_LAYER_INDICATOR_NONE ||
+                    behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) {
+                    assert(layerIndicatorPhasesLeft == 0);
+                    // Always-on indicators leave the held key at full brightness.
+                    assert(ledData[0] == 0 && ledData[1] == 255 && ledData[2] == 0);
+                    for (uint8_t i = 1; i < NUM_LEDS; i++) {
+                        assert(ledData[3*i] == (behavior ? (full ? 66 : 5) : 0));
+                        assert(ledData[3*i+1] == (behavior ? (full ? 255 : 15) : 0));
+                        assert(ledData[3*i+2] == 0);
+                    }
+                    continue;
+                }
+                uint8_t phases = 2 * (behavior == CONFIG_LAYER_INDICATOR_BLINK_ONCE ? 1 : layer + 1);
+                assert(layerIndicatorPhasesLeft == phases);
+                assertIndicatorLeds(full, 1);
+                for (uint8_t phase = 1; phase <= phases; phase++) {
+                    uint16_t deadline = (uint16_t)(65500u + 100u * phase);
+                    serviceLayerIndicator((uint16_t)(deadline - 1));
+                    assert(layerIndicatorPhasesLeft == phases - phase + 1);
+                    serviceLayerIndicator(deadline);
+                    assert(layerIndicatorPhasesLeft == phases - phase);
+                    assertIndicatorLeds(full, !(phase & 1) && phase < phases);
+                }
+                serviceLayerIndicator((uint16_t)(65500u + 100u * (phases + 1)));
+                assertIndicatorLeds(full, 0);
+            }
+        }
+    }
+    P1 = P3 = 0xFF;
+}
+
 int main(void) {
+    testIndicatorBrightness();
+    currentMs = 0;
+    frameCount = 0;
     // Invalid flash lights only the first key and leaves physical inputs inactive.
     memset(flash, 0xFF, sizeof(flash));
     setup();

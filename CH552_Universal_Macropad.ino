@@ -102,6 +102,7 @@ void updateLeds() {
 #endif
     if (blink) {
       // Blink takes priority over per-key colors while the animation is on.
+      dim = 1;
     } else if (stableState[i]) {
       color = configLedColor(layer, i);
     } else if (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) {
