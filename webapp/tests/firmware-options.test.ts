@@ -20,22 +20,22 @@ function text(node: unknown): string {
 
 afterEach(() => disconnect());
 
-describe('firmware-specific indicator options', () => {
-  it.each([2, 3] as const)('shows the actual mode and rainbow support on format %s', async (format) => {
-    await connectSimulator(0, false, format);
+describe('current firmware indicator options', () => {
+  it('shows the timed mode, rainbow, dimming, and transparency', async () => {
+    await connectSimulator(0);
     selectedLayer.value = 0;
     updateProfile((p) => { p.layers[0]!.indicatorBehavior = 1; p.layers[0]!.indicatorColor = 15; });
     const nodes = elements(LayerOptions());
     const mode = nodes.find((node) => node.type === 'option' && node.props.value === 1)!;
-    expect(text(mode)).toBe(format === 2 ? 'Blink once' : 'On for 1.5 seconds');
-    const off = nodes.find((node) => node.props.role === 'radio' && node.props['aria-label'] === (format === 2 ? 'Off' : 'Rainbow'));
+    expect(text(mode)).toBe('On for 1.5 seconds');
+    const off = nodes.find((node) => node.props.role === 'radio' && node.props['aria-label'] === 'Rainbow');
     expect(off).toBeDefined();
-    expect(nodes.find((node) => node.type === ColorPreview)!.props.rainbow).toBe(format === 3);
-    expect(nodes.some((node) => node.props['aria-label'] === 'Layer indicator brightness')).toBe(format === 3);
+    expect(nodes.find((node) => node.type === ColorPreview)!.props.rainbow).toBe(true);
+    expect(nodes.some((node) => node.props['aria-label'] === 'Layer indicator brightness')).toBe(true);
     const transparency = elements(ProfilePanel()).find((node) => node.type === 'input' && node.props.type === 'checkbox')!;
-    expect(transparency.props.disabled).toBe(format === 2);
-    // An imported enabled flag can always be turned off, including on v2.
+    expect(transparency.props.disabled).toBe(undefined);
+    // Transparency remains editable for the current firmware.
     updateProfile((p) => { p.transparentBlack = true; });
-    expect(elements(ProfilePanel()).find((node) => node.type === 'input' && node.props.type === 'checkbox')!.props.disabled).toBe(false);
+    expect(elements(ProfilePanel()).find((node) => node.type === 'input' && node.props.type === 'checkbox')!.props.disabled).toBeUndefined();
   });
 });

@@ -2,9 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
 import { sealImage } from '../src/codec/crc16';
 import { defaultProfile } from '../src/model/defaults';
+import { ConfigClient } from '../src/protocol/client';
 import { Opcode } from '../src/protocol/packet';
 import { SimulatedDevice } from '../src/protocol/simulator';
-import { canSave, connection, connectSimulator, disconnect, issues, profile, save, saveState, updateProfile } from '../src/ui/store';
+import { canSave, connection, connectSimulator, disconnect, profile, save, archivedFirmware } from '../src/ui/store';
 
 afterEach(async () => { await disconnect(); vi.restoreAllMocks(); });
 
@@ -40,43 +41,22 @@ describe('device profile migration', () => {
     expect(device.flashValid).toBe(true);
   });
 
-  it.each([0, 1] as const)('saves and verifies format 2 on an older variant %s device', async (variant) => {
-    await connectSimulator(variant, false, 2);
-    const c = connection.value;
-    if (c.kind !== 'connected') throw new Error('connection failed');
-    expect(profile.value).toEqual(defaultProfile(variant));
-    expect(canSave.value).toBe(true);
-    updateProfile((p) => {
-      p.layers[0]!.indicatorBehavior = 1;
-      p.layers[0]!.indicatorColor = 8;
-      p.layers[0]!.keys[0] = { type: 'string', text: 'legacy save' };
-      p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: { type: 'setLayer', layer: 1 } }];
+  it('offers the archived editor instead of connecting to version 2 firmware', async () => {
+    const originalGetInfo = ConfigClient.prototype.getInfo;
+    vi.spyOn(ConfigClient.prototype, 'getInfo').mockImplementation(async function (this: ConfigClient) {
+      return { ...await originalGetInfo.call(this), formatVersion: 2 };
     });
-    await save();
-    const device = c.connection.transport as SimulatedDevice;
-    expect(saveState.value.phase).toBe('saved');
-    expect(device.flash).toEqual(encodeProfile(profile.value!, 2));
-    expect(device.flash[2]).toBe(2);
-    expect(device.flash[5]! & 0x80).toBe(0);
-    expect(device.flashValid).toBe(true);
-  });
-
-  it('requires explicitly disabling imported transparency before saving to v2', async () => {
-    await connectSimulator(0, false, 2);
-    const c = connection.value;
-    if (c.kind !== 'connected') throw new Error('connection failed');
-    const device = c.connection.transport as SimulatedDevice;
-    const before = device.flash.slice();
-    updateProfile((p) => { p.transparentBlack = true; });
+    const writes = vi.spyOn(ConfigClient.prototype, 'saveImage');
+    const flashReads = vi.spyOn(ConfigClient.prototype, 'readFlash');
+    await connectSimulator(0);
+    expect(connection.value.kind).toBe('disconnected');
     expect(canSave.value).toBe(false);
-    expect(issues.value.some((issue) => issue.message.includes('Transparent black requires'))).toBe(true);
-    await save();
-    expect(device.flash).toEqual(before);
-    expect(profile.value!.transparentBlack).toBe(true);
-    updateProfile((p) => { p.transparentBlack = false; });
-    expect(canSave.value).toBe(true);
-    await save();
-    expect(saveState.value.phase).toBe('saved');
-    expect(device.flash[2]).toBe(2);
+    expect(archivedFirmware.value).toEqual({ version: 2, url: './versions/format-v2/' });
+    expect(flashReads).not.toHaveBeenCalled();
+    expect(writes).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+    await connectSimulator(0);
+    expect(connection.value.kind).toBe('connected');
+    expect(archivedFirmware.value).toBeNull();
   });
 });

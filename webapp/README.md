@@ -66,21 +66,35 @@ either the draft or the device profile.
 ## Deploying to GitHub Pages
 
 `vite.config.ts` uses a relative `base`, so the build works from any path.
-`.github/workflows/deploy-pages.yml` builds, tests, and publishes `webapp/dist`;
-move it to the repository's `.github/workflows/` directory and enable Pages with the
-"GitHub Actions" source.
+`.github/workflows/deploy-pages.yml` builds, tests, and publishes `webapp/dist`
+when webapp changes are pushed to `main`, or when run manually. In the repository's
+**Settings → Pages**, the publishing source must be **GitHub Actions**. Existing
+Pages deployments using this workflow need no additional website configuration,
+custom domain, or deployment environment for archives.
 
-## Linux device access
+The active format 3 editor is served at the project site's root. Frozen
+configurators are checked into `public/versions/` and copied into `dist/versions/`
+by Vite on every build. The build verifies each archived file's SHA-256 against
+its `archive.json`, so a failed archive check prevents deployment. No old editor
+is rebuilt from dependencies in CI.
 
-Add a udev rule so the browser can open the HID interface, then replug:
+- `versions/` lists available editors.
+- `versions/format-v2/` serves the v2 editor built from commit
+  `417f276fda788f71dfcd38d781ddc67306988739`.
+- There is no frozen v3 editor yet; v3 remains active at the root.
 
-```
-KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="c55d", MODE="0666"
-```
+The footer links to the archive list. Detecting format 2 firmware presents a
+persistent link to its archived editor and closes the connection without reading
+or writing profiles. The active editor has one firmware encoder and one set of
+indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
+record the minimal hosting adjustments to the v2 build.
 
-The editor upgrades version 2 binary profiles, version 1/2 JSON profiles, and older
-local drafts to format 3. Blink once becomes the 1.5-second timed indication;
-transparency defaults to off. Upgrades stay in the editor until saved. The editor reads and saves both
-format 2 and format 3 firmware, selecting the connected device’s format.
-On format 2 devices it shows Blink once and the original blink timing;
-transparency must be off before saving. Existing bindings, colors, and metadata are retained.
+Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
+The active editor can still recover/migrate drafts under the former shared key,
+but never reads, overwrites, or clears the archived editor's namespace.
+
+Version 2 binary profiles, version 1/2 JSON files, and older drafts can still be
+migrated into the active format 3 editor after a firmware upgrade. Bindings and
+colors are preserved; Blink once becomes the timed indication and transparency
+defaults to off. Firmware does not migrate flash itself: save the migrated profile
+through the active editor to activate inputs after upgrading.

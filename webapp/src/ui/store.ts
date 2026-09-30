@@ -1,7 +1,7 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease } from '../model/actions';
-import { FORMAT_VERSION, MAX_LAYERS, isSupportedFormatVersion, keyCount, type ConfigFormatVersion, type Variant } from '../model/constants';
+import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { actionProblem, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
@@ -108,11 +108,7 @@ export function redo(): void {
   restoreEditor(next);
 }
 
-export const targetFormatVersion = computed(() => {
-  const c = connection.value;
-  return c.kind === 'connected' ? c.connection.info.formatVersion : FORMAT_VERSION;
-});
-export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value, targetFormatVersion.value) : []));
+export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
@@ -126,7 +122,7 @@ export const encodable = computed(() => issues.value.length === 0);
 /** Whether the connected device can accept this profile. */
 export const canSave = computed(() => {
   const c = connection.value;
-  return c.kind === 'connected' && isSupportedFormatVersion(c.connection.info.formatVersion) && !!profile.value && encodable.value && profile.value.variant === c.connection.info.variant && saveState.value.phase !== 'busy';
+  return c.kind === 'connected' && c.connection.info.formatVersion === FORMAT_VERSION && !!profile.value && encodable.value && profile.value.variant === c.connection.info.variant && saveState.value.phase !== 'busy';
 });
 
 export type SaveState =
@@ -146,6 +142,8 @@ export interface Toast {
   text: string;
 }
 export const toasts = signal<Toast[]>([]);
+export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: './versions/format-v2/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -664,12 +662,17 @@ effect(() => {
 });
 
 async function attach(transport: Transport, label: string): Promise<void> {
+  archivedFirmware.value = null;
   connection.value = { kind: 'connecting', label };
   const client = new ConfigClient(transport);
   try {
     const info = await client.getInfo();
-    if (info.transportVersion !== TRANSPORT_VERSION || !isSupportedFormatVersion(info.formatVersion)) {
-      throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app reads formats 2 and ${FORMAT_VERSION} over transport v${TRANSPORT_VERSION}.`);
+    if (info.transportVersion !== TRANSPORT_VERSION || info.formatVersion !== FORMAT_VERSION) {
+      const archive = ARCHIVED_CONFIGURATORS[info.formatVersion];
+      if (archive && info.transportVersion === TRANSPORT_VERSION) {
+        archivedFirmware.value = { version: info.formatVersion, url: archive };
+      }
+      throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports format ${FORMAT_VERSION} over transport v${TRANSPORT_VERSION}.`);
     }
     const status = await client.getStatus();
     const previewSupported = await client.detectPreviewSupport();
@@ -712,8 +715,8 @@ export async function reconnectGranted(): Promise<boolean> {
   }
 }
 
-export async function connectSimulator(variant: Variant, blankFlash = false, formatVersion: ConfigFormatVersion = FORMAT_VERSION): Promise<void> {
-  const device = new SimulatedDevice({ variant, blankFlash, formatVersion, latency: 4 });
+export async function connectSimulator(variant: Variant, blankFlash = false): Promise<void> {
+  const device = new SimulatedDevice({ variant, blankFlash, latency: 4 });
   await attach(device, device.name);
 }
 
@@ -832,8 +835,8 @@ export async function save(): Promise<void> {
   const c = connection.value;
   const p = profile.value;
   if (c.kind !== 'connected' || !p) return;
-  if (!isSupportedFormatVersion(c.connection.info.formatVersion)) {
-    notify('error', `This editor supports saving configuration formats v2 and v${FORMAT_VERSION}.`);
+  if (c.connection.info.formatVersion !== FORMAT_VERSION) {
+    notify('error', `This editor needs firmware with configuration format v${FORMAT_VERSION} before it can save.`);
     return;
   }
   if (p.variant !== c.connection.info.variant) {
@@ -854,7 +857,7 @@ export async function save(): Promise<void> {
   }
   let image: Uint8Array;
   try {
-    image = encodeProfile(p, c.connection.info.formatVersion);
+    image = encodeProfile(p);
   } catch (error) {
     notify('error', (error as Error).message);
     return;

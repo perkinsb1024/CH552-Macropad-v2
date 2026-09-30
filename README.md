@@ -173,7 +173,7 @@ No local web app installation is needed. Open the **[Macropad Configurator](http
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-Configuration format 3 adds a 1.5-second layer indication, slower numbered blinks, and a global transparent-black key LED option. The configurator upgrades version 2 device profiles, version 1/2 JSON exports, and older editor drafts. Bindings and colors are preserved; Blink once becomes On for 1.5 seconds, and transparency defaults to off. After updating the firmware, load your existing profile and save it to apply format 3. Firmware does not migrate saved flash itself, and physical inputs remain inactive until the upgraded profile is saved. The editor reads and saves both format 2 and format 3 firmware, automatically encoding the connected device’s version. On format 2 devices it shows Blink once and the original timing; transparency is unavailable. Imported profiles with transparency enabled must have it turned off before saving to format 2.
+Configuration format 3 adds a 1.5-second layer indication, slower numbered blinks, and a global transparent-black key LED option. The configurator upgrades version 2 device profiles, version 1/2 JSON exports, and older editor drafts. Bindings and colors are preserved; Blink once becomes On for 1.5 seconds, and transparency defaults to off. After updating the firmware, load your existing profile and save it to apply format 3. Firmware does not migrate saved flash itself, and physical inputs remain inactive until the upgraded profile is saved. The active editor edits and saves format 3 firmware. For older firmware, use the [archived format 2 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v2/). The active editor links to that archive when it detects format 2 firmware.
 
 Use **Export JSON** and **Import JSON** in the Tools panel to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -206,7 +206,7 @@ npm run build
 npm run preview
 ```
 
-The production files are written to `webapp/dist/`. This repository's [GitHub Actions workflow](.github/workflows/deploy-pages.yml) tests, builds and publishes the configurator when changes under `webapp/` are pushed to `main`.
+The production files are written to `webapp/dist/`. This repository's [GitHub Actions workflow](.github/workflows/deploy-pages.yml) tests, builds and publishes the configurator and its frozen archives when changes under `webapp/` are pushed to `main`. The active editor lives at the site's root; [archived editors](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) live under `versions/`. No separate Pages site or tag deployment is needed.
 
 ## Troubleshooting
 

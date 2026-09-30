@@ -12,18 +12,6 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
-  it('encodes supported target versions and refuses incompatible or unknown formats', () => {
-    const profile = defaultProfile(VARIANT_SIX_KEYS);
-    const v2 = encodeProfile(profile, 2);
-    const v3 = encodeProfile(profile, 3);
-    expect(v2[2]).toBe(2);
-    expect(imageCrc(v2)).toBe(storedCrc(v2));
-    expect([...v2.subarray(8)]).toEqual([...v3.subarray(8)]);
-    expect(() => encodeProfile(profile, 4)).toThrow('not supported');
-    profile.transparentBlack = true;
-    expect(() => encodeProfile(profile, 2)).toThrow('Transparent black requires');
-    expect(encodeProfile(profile, 3)[5]! & 0x80).toBe(0x80);
-  });
   it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 3', (variant) => {
     const profile = defaultProfile(variant);
     profile.layers[0]!.indicatorBehavior = 1;

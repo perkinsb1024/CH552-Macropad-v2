@@ -16,14 +16,13 @@ Version 3 replaces blink-once behavior with a timed indication and adds transpar
 black key LEDs. The web editor reads version 2 images, imports version 1/2 JSON profiles, and
 upgrades older editor drafts. Bindings and palette indices are preserved;
 indicator value 1 becomes timed-on, and transparency defaults to disabled.
-Offline encoding defaults to version 3; device saves encode the connected
-firmware’s version (2 or 3). Version 2 encoding requires transparency to be off. Firmware accepts only version 3
+The active editor encodes and saves only version 3. Firmware format 2 uses a
+separate frozen editor at `versions/format-v2/`. Firmware accepts only version 3
 and does not migrate flash itself. After upgrading firmware, load and save the
 existing profile through the matching editor to activate physical inputs.
-The editor also reads and saves format 2 firmware, showing Blink once and
-the original timing for those devices. The timed mode and transparent-black
-setting require format 3 firmware; the editor does not silently discard an
-enabled transparency flag when targeting format 2.
+When the active editor detects format 2 firmware, it offers the archived
+format 2 editor instead of connecting. Migration of older saved data into
+format 3 remains available after upgrading firmware.
 
 The nine-byte header is:
 

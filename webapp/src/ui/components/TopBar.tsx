@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ask, canRedo, canSave, canUndo, closeDialog, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
 import { IconCheck, IconChevron, IconRefresh, IconSave, IconUsb, IconWarning } from './Icons';
-import { isSupportedFormatVersion, variantName } from '../../model/constants';
+import { FORMAT_VERSION, variantName } from '../../model/constants';
 
 function ConnectMenu() {
   const [open, setOpen] = useState(false);
@@ -51,7 +51,7 @@ function SaveButton() {
   let title = 'Write the profile to the device and verify it';
   if (c.kind !== 'connected') title = 'Connect a macropad to save';
   else if (p && p.variant !== c.connection.info.variant) title = `This profile is for the ${variantName(p.variant).toLowerCase()} variant`;
-  else if (!isSupportedFormatVersion(c.connection.info.formatVersion)) title = 'This firmware configuration format is not supported';
+  else if (c.connection.info.formatVersion !== FORMAT_VERSION) title = 'This firmware configuration format is not supported';
   else if (!canSave.value) title = 'Fix the listed problems before saving';
   return (
     <button class={`btn btn-primary ${dirty.value && canSave.value ? 'btn-attention' : ''}`} disabled={!canSave.value} onClick={() => void save()} title={title}>

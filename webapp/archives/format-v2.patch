@@ -1,0 +1,25 @@
+--- a/webapp/src/io/drafts.ts
++++ b/webapp/src/io/drafts.ts
+@@ -2,7 +2,7 @@
+ import { migrateLegacyScrollInversion } from '../model/defaults';
+ import type { LocalMetadata } from './json';
+ 
+-const PREFIX = 'universal-macropad:';
++const PREFIX = 'universal-macropad:format-v2:';
+ 
+ export interface Draft {
+   profile: Profile;
+--- a/webapp/index.html
++++ b/webapp/index.html
+@@ -6,9 +6,10 @@
+     <meta name="color-scheme" content="light dark" />
+     <meta name="description" content="Configure the Universal Macropad over WebHID: layers, chords, encoder, LEDs." />
+     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+-    <title>Universal Macropad Configurator</title>
++    <title>Universal Macropad Configurator — Archived format v2</title>
+   </head>
+   <body>
++    <nav aria-label="Configurator version" style="max-width:1400px;margin:0 auto;padding:12px 24px;font:14px system-ui,sans-serif;text-align:center">Archived configurator for firmware format v2 · <a href="../../">Open the latest configurator</a></nav>
+     <div id="app"></div>
+     <noscript>This configurator needs JavaScript enabled.</noscript>
+     <script type="module" src="./src/main.tsx"></script>

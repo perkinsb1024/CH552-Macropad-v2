@@ -16,6 +16,7 @@ import { IssuesPanel } from './components/IssuesPanel';
 import { ToolsPanel } from './components/ToolsPanel';
 import { Dialog } from './components/Dialog';
 import { Toasts } from './components/Toasts';
+import { ArchivedFirmwareNotice } from './components/ArchivedFirmwareNotice';
 import { variantName } from '../model/constants';
 
 export function App() {
@@ -86,6 +87,7 @@ export function App() {
   return (
     <div class="app">
       <TopBar />
+      <ArchivedFirmwareNotice />
       {!p ? (
         <Welcome />
       ) : (
@@ -124,6 +126,7 @@ export function App() {
       )}
       <footer class="footer">
         <span>Universal Macropad · config format v{FORMAT_VERSION} · transport v{TRANSPORT_VERSION}</span>
+        <a href="./versions/">Older firmware configurators</a>
         <span class="muted">Saves write the device's 128-byte DataFlash and read it back before reporting success.</span>
       </footer>
       <Dialog />

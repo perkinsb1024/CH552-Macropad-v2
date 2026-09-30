@@ -1,0 +1,17 @@
+{
+  "formatVersion": 2,
+  "sourceCommit": "417f276fda788f71dfcd38d781ddc67306988739",
+  "sourcePatch": "webapp/archives/format-v2.patch",
+  "nodeVersion": "20.16.0",
+  "changes": [
+    "Archive banner and link to latest editor",
+    "Separate format-v2 local draft namespace"
+  ],
+  "sha256": {
+    "assets/index-CAhbJe-k.css": "e1e4806d7c1e5895de4828b2929e7f748f8e302c61c6755e6b6274aa39a9a2f3",
+    "assets/index-MIBBb4yQ.js": "b9f40f259de9b24bac512e45c210a1b24d49c8d5696033b0277f6c564f457746",
+    "assets/index-MIBBb4yQ.js.map": "8f623e4c1e9123dc14f240bb8423e30c9ca852149fc810fda8da1e4b8e4641b7",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "73652a76228baa6bd1dd4649976db5091fd64733c42f66d71f4b3158cb90eaee"
+  }
+}

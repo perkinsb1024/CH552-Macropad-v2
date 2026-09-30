@@ -1,5 +1,5 @@
-# Deploys the configurator to GitHub Pages. Move this file to the repository's
-# .github/workflows/ directory; paths below assume the app lives in webapp/.
+# Deploy the latest configurator and frozen archives together. Vite copies
+# webapp/public/versions into dist/versions; npm run build checks their hashes.
 name: Deploy configurator
 
 on:
@@ -25,6 +25,7 @@ jobs:
         working-directory: webapp
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -32,7 +33,8 @@ jobs:
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      - name: Build latest configurator and verify frozen archives
+        run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: webapp/dist

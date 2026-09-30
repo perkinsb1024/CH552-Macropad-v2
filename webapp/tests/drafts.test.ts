@@ -1,10 +1,31 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { draftKey, loadDraft, storeDraft } from '../src/io/drafts';
+import { clearDraft, draftKey, loadDraft, storeDraft } from '../src/io/drafts';
 import { defaultProfile } from '../src/model/defaults';
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('versioned drafts', () => {
+  it('isolates v3 drafts from the v2 archive while recovering the old shared key', () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
+    const legacy = defaultProfile(0);
+    storage.set('universal-macropad:draft:six-key', JSON.stringify({ profile: legacy, meta: {}, savedAt: 'legacy' }));
+    const archivedKey = 'universal-macropad:format-v2:draft:six-key';
+    storage.set(archivedKey, 'archived draft');
+    expect(loadDraft(0)?.profile).toEqual(legacy);
+    expect(draftKey(0)).toBe('universal-macropad:format-v3:draft:six-key');
+    const current = defaultProfile(0);
+    current.transparentBlack = true;
+    storeDraft(current, {});
+    expect(loadDraft(0)?.profile).toEqual(current);
+    clearDraft(0);
+    expect(loadDraft(0)).toBeNull();
+    expect(storage.get(archivedKey)).toBe('archived draft');
+  });
   it('preserves current drafts and migrates version 2 or unversioned drafts', () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {

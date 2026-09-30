@@ -1,4 +1,4 @@
-import { FORMAT_VERSION, MAX_CHORD_WINDOW_UNITS, MAX_LAYERS, isSupportedFormatVersion, keyCount } from './constants';
+import { MAX_CHORD_WINDOW_UNITS, MAX_LAYERS, keyCount } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
@@ -79,17 +79,10 @@ export function slotLabel(slot: Slot): string {
 }
 
 /** All problems that would prevent encoding a valid image. Empty means the profile is encodable. */
-export function validateProfile(profile: Profile, formatVersion = FORMAT_VERSION): Issue[] {
+export function validateProfile(profile: Profile): Issue[] {
   const issues: Issue[] = [];
   const keys = keyCount(profile.variant);
   const layerCount = profile.layers.length;
-
-  if (!isSupportedFormatVersion(formatVersion)) {
-    issues.push({ where: 'Profile', message: `Configuration format v${formatVersion} is not supported.` });
-  }
-  if (formatVersion === 2 && profile.transparentBlack) {
-    issues.push({ where: 'Profile', message: 'Transparent black requires format v3 firmware. Turn it off to save to this format v2 device.' });
-  }
 
   if (typeof profile.transparentBlack !== 'boolean') {
     issues.push({ where: 'Profile', message: 'Transparent black must be true or false.' });

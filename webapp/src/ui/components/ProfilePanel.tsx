@@ -1,8 +1,7 @@
-import { layerName, profile, targetFormatVersion, updateProfile } from '../store';
+import { layerName, profile, updateProfile } from '../store';
 
 export function ProfilePanel() {
   const p = profile.value!;
-  const legacy = targetFormatVersion.value === 2;
   return (
     <section class="card">
       <header class="card-head">
@@ -11,10 +10,10 @@ export function ProfilePanel() {
       </header>
       <div class="field-grid">
         <label class="check field-wide">
-          <input type="checkbox" checked={p.transparentBlack} disabled={legacy && !p.transparentBlack} onChange={(e) => updateProfile((d) => { d.transparentBlack = (e.target as HTMLInputElement).checked; })} />
+          <input type="checkbox" checked={p.transparentBlack} onChange={(e) => updateProfile((d) => { d.transparentBlack = (e.target as HTMLInputElement).checked; })} />
           <span>
             <strong>Transparent black key LEDs</strong>
-            <span class="hint">{legacy ? 'Requires format v3 firmware. Turn this off to save an imported profile to this format v2 device.' : 'Keys set to Off keep the idle layer color or Rainbow when pressed. When disabled, those keys turn black. Timed and blink indications always override key colors.'}</span>
+            <span class="hint">Keys set to Off keep the idle layer color or Rainbow when pressed. When disabled, those keys turn black. Timed and blink indications always override key colors.</span>
           </span>
         </label>
         <label class="field">

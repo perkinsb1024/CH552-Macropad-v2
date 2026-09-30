@@ -1,5 +1,5 @@
 import { useRef } from 'preact/hooks';
-import { isSupportedFormatVersion } from '../../model/constants';
+import { FORMAT_VERSION } from '../../model/constants';
 import { connection, deviceDecode, deviceFlash, exportJson, exportRawFlash, importJsonFile, profile, resetToDefaults } from '../store';
 import { IconDownload, IconRefresh, IconUpload } from './Icons';
 
@@ -41,11 +41,8 @@ export function ToolsPanel() {
           )}
         </dl>
       )}
-      {c.kind === 'connected' && !isSupportedFormatVersion(c.connection.info.formatVersion) && (
-        <p class="hint warn">This editor supports saving configuration formats v2 and v3.</p>
-      )}
-      {c.kind === 'connected' && c.connection.info.formatVersion === 2 && (
-        <p class="hint">This device uses Blink once and the original numbered-blink timing. Timed indications and transparent black require format v3 firmware.</p>
+      {c.kind === 'connected' && c.connection.info.formatVersion !== FORMAT_VERSION && (
+        <p class="hint warn">Saving requires firmware with configuration format v{FORMAT_VERSION}.</p>
       )}
       {deviceFlash.value && decode && !decode.ok && (
         <button class="btn btn-small" onClick={exportRawFlash} title="Download the raw 128 flash bytes (also copies hex to the clipboard)">
