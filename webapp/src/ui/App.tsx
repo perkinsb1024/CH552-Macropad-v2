@@ -130,8 +130,8 @@ export function App() {
           </div>
           <aside class="column column-side">
             <Inspector />
-            <Shortcuts />
             <IssuesPanel />
+            <Shortcuts />
             <StorageMeter />
             <ToolsPanel />
           </aside>

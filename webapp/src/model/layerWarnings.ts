@@ -1,4 +1,5 @@
 import { relativeTargetLayer } from './actions';
+import { LayerIndicatorBehavior } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { actionProblem, slotLabel } from './validate';
 
@@ -22,10 +23,12 @@ export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
       default:
         return;
     }
-    if (target === source) {
+    const indicator = profile.layers[source]!.indicatorBehavior;
+    if (target === source &&
+      (indicator === LayerIndicatorBehavior.None || indicator === LayerIndicatorBehavior.AlwaysOn)) {
       warnings.push({
         where: slotLabel(slot),
-        message: `This action leads back to Layer ${source + 1}, so it does not change layers.`,
+        message: `This action leads back to Layer ${source + 1}, so it does not change layers or offer any indication.`,
         slot,
       });
     }

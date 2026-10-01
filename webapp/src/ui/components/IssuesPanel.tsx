@@ -1,5 +1,5 @@
 import { issues, layerChangeWarnings, reachabilityWarnings, selectedLayer, selectedSlot } from '../store';
-import { IconWarning } from './Icons';
+import { IconChevron, IconWarning } from './Icons';
 
 export function IssuesPanel() {
   const list = issues.value;
@@ -8,11 +8,12 @@ export function IssuesPanel() {
   if (!list.length && !warnings.length && !layerWarnings.length) return null;
   return (
     <>
-      {list.length > 0 && <section class="card issues issues-error" aria-live="polite">
-        <header class="card-head">
+      {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
+        <summary class="card-head">
           <h2><IconWarning /> Fix before saving</h2>
           <span class="warn">{list.length}</span>
-        </header>
+          <IconChevron />
+        </summary>
         <ul>
           {list.map((issue, i) => (
             <li key={i}>
@@ -25,13 +26,14 @@ export function IssuesPanel() {
             </li>
           ))}
         </ul>
-      </section>}
-      {layerWarnings.length > 0 && <section class="card issues reachability-warning-card" aria-live="polite">
-        <header class="card-head">
+      </details>}
+      {layerWarnings.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
+        <summary class="card-head">
           <h2><IconWarning /> Self-referential layer changes</h2>
           <span class="warn">{layerWarnings.length}</span>
-        </header>
-        <p class="hint">These actions lead to the layer they are used on. These warnings do not block saving or upload.</p>
+          <IconChevron />
+        </summary>
+        <p class="hint">These actions lead to the layer they are used on. This does not block saving or upload.</p>
         <ul>
           {layerWarnings.map((warning, i) => (
             <li key={i}>
@@ -40,12 +42,13 @@ export function IssuesPanel() {
             </li>
           ))}
         </ul>
-      </section>}
-      {warnings.length > 0 && <section class="card issues reachability-warning-card" aria-live="polite">
-        <header class="card-head">
+      </details>}
+      {warnings.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
+        <summary class="card-head">
           <h2><IconWarning /> Layer reachability</h2>
           <span class="warn">{warnings.length}</span>
-        </header>
+          <IconChevron />
+        </summary>
         <p class="hint">Review how to reach these layers and return to startup. These warnings do not block upload.</p>
         <ul>
           {warnings.map((warning, i) => (
@@ -55,7 +58,7 @@ export function IssuesPanel() {
             </li>
           ))}
         </ul>
-      </section>}
+      </details>}
     </>
   );
 }

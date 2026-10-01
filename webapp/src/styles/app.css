@@ -1433,6 +1433,33 @@ output {
 .issues h2 {
   color: var(--warn);
 }
+.issues > summary {
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+}
+.issues > summary::-webkit-details-marker {
+  display: none;
+}
+.issues[open] > summary {
+  margin-bottom: 12px;
+}
+.issues > summary h2 {
+  flex: 1;
+}
+.issues > summary > svg {
+  color: var(--warn);
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+  transform: rotate(-90deg);
+}
+.issues[open] > summary > svg {
+  transform: rotate(0deg);
+}
+.issues-error > summary > svg {
+  color: var(--danger);
+}
 .issues-error {
   border-color: color-mix(in srgb, var(--danger) 45%, transparent);
   background: color-mix(in srgb, var(--danger-soft) 65%, var(--bg-elev));
