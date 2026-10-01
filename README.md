@@ -42,6 +42,13 @@ You can configure:
 - Up to five layers on six-key pads or seven on three-key pads, plus two-key chords
 - Key LED colors and layer indicators, including a rainbow effect
 
+Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. The maximum assignable actions (not including the required layer-switch actions) is:
+The current maximum for each is:
+| 3-Key Macropad | 6-Key Macropad |
+| --- | ---: |
+| 45 | 47 |
+See the full calculations in [ACTION_CAPACITY.md](ACTION_CAPACITY.md)
+
 ## How To Compile the Firmware
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.

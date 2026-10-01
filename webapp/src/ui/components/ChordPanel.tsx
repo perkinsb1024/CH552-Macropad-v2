@@ -1,10 +1,10 @@
 import { useState } from 'preact/hooks';
-import { keyCount } from '../../model/constants';
+import { CHORD_ENTRY_SIZE, keyCount } from '../../model/constants';
 import { allPairs } from '../../model/pairs';
 import { ActionLabel } from './ActionLabel';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { addChord, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, setChordGlobal, slotDrop, swapSlotActions } from '../store';
+import { addChord, capacity, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, setChordGlobal, slotDrop, swapSlotActions } from '../store';
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconGlobe, IconPlus, IconTrash } from './Icons';
 
@@ -13,8 +13,12 @@ export function ChordPanel() {
   const li = selectedLayer.value;
   const keys = keyCount(p.variant);
   const chords = p.chords.filter((c) => c.layer === li || c.global).sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB || Number(!!a.global) - Number(!!b.global));
-  const used = new Set(p.chords.filter((c) => c.layer === li).map((c) => `${c.keyA}-${c.keyB}`));
+  const used = new Set(chords.map((c) => `${c.keyA}-${c.keyB}`));
   const available = allPairs(keys).filter(([a, b]) => !used.has(`${a}-${b}`));
+  const addUnavailableReasons = [
+    available.length === 0 ? 'All key pairs on this layer already have chords.' : '',
+    (capacity.value?.remaining ?? 0) < CHORD_ENTRY_SIZE ? 'Not enough free space to add another chord (3 bytes needed).' : '',
+  ].filter(Boolean);
   const [pick, setPick] = useState('');
   const first = available[0];
   const gapTarget = (event: DragEvent): { slot: Slot; position: 'before' | 'after' } | null => {
@@ -105,7 +109,7 @@ export function ChordPanel() {
           })}
         </ul>
       )}
-      {available.length > 0 && (
+      {addUnavailableReasons.length === 0 ? (
         <div class="chord-add">
           <select value={pick || (first ? `${first[0]}-${first[1]}` : '')} onChange={(e) => setPick((e.target as HTMLSelectElement).value)} aria-label="Key pair">
             {available.map(([a, b]) => <option key={`${a}-${b}`} value={`${a}-${b}`}>Keys {a + 1} + {b + 1}</option>)}
@@ -116,7 +120,7 @@ export function ChordPanel() {
             setPick('');
           }}><IconPlus /> Add chord</button>
         </div>
-      )}
+      ) : <p class="hint">{addUnavailableReasons.join(' ')}</p>}
       {p.chordWindow === 0 && chords.length > 0 && <p class="hint warn">The chord window is set to off, so these chords will not trigger.</p>}
     </section>
   );

@@ -1,0 +1,274 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 4,
+  "variant": "three-key",
+  "startupLayer": 0,
+  "transparentBlack": false,
+  "chordWindowMs": 40,
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 0,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 4,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 5,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 8,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 10,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 12,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "none"
+      },
+      "clockwise": {
+        "type": "none"
+      },
+      "counterclockwise": {
+        "type": "none"
+      },
+      "leds": [
+        "Off",
+        "Off",
+        "Off"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 14,
+      "indicatorFullBrightness": false
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        0,
+        1
+      ],
+      "global": true,
+      "action": {
+        "type": "relativeLayer",
+        "offset": 1
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        1,
+        2
+      ],
+      "global": true,
+      "action": {
+        "type": "none"
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        0,
+        2
+      ],
+      "global": false,
+      "action": {
+        "type": "none"
+      }
+    },
+    {
+      "layer": 1,
+      "keys": [
+        0,
+        2
+      ],
+      "global": false,
+      "action": {
+        "type": "none"
+      }
+    }
+  ]
+}

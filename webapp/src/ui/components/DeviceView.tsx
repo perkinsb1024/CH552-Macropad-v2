@@ -20,6 +20,10 @@ export function DeviceView() {
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
   for (const c of p.chords) if (c.global || c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
+  const selection = selectedSlot.value;
+  const selectedChord = selection?.kind === 'chord'
+    ? p.chords.find((c) => c.layer === selection.layer && c.keyA === selection.keyA && c.keyB === selection.keyB && (c.global || c.layer === li))
+    : undefined;
 
   const select = (slot: Slot) => { selectedSlot.value = slot; };
   const dragStart = (event: DragEvent, slot: Slot) => {
@@ -159,7 +163,7 @@ export function DeviceView() {
         <span class="keycap-led" aria-hidden="true" />
         <span class="keycap-index">{index + 1}</span>
         <span class="keycap-label"><ActionLabel action={action} /></span>
-        {chordKeys.has(index) && <span class="keycap-chord" title="Part of a chord on this layer">chord</span>}
+        {chordKeys.has(index) && <span class={`keycap-chord ${selectedChord && (selectedChord.keyA === index || selectedChord.keyB === index) ? 'is-selected' : ''}`} title="Part of a chord on this layer">chord</span>}
         {intent === 'before' || intent === 'after' ? <span class={`drop-line ${slotDrop.value?.rowBoundary ? 'drop-line-row' : `drop-line-${intent}`}`} aria-hidden="true" /> : null}
       </button>
     );

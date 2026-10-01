@@ -1151,6 +1151,10 @@ output {
   background: var(--sim-soft);
   color: var(--sim);
 }
+.keycap-chord.is-selected {
+  outline: 1px solid color-mix(in srgb, var(--sim) 80%, #28104f);
+  box-shadow: 0 0 6px 2px color-mix(in srgb, var(--sim) 35%, transparent);
+}
 .keycap.has-problem::after {
   content: "!";
   position: absolute;
