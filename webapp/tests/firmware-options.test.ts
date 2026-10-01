@@ -24,7 +24,12 @@ describe('current firmware indicator options', () => {
   it('shows the timed mode, rainbow, dimming, and transparency', async () => {
     await connectSimulator(0);
     selectedLayer.value = 0;
-    updateProfile((p) => { p.layers[0]!.indicatorBehavior = 1; p.layers[0]!.indicatorColor = 15; });
+    updateProfile((p) => {
+      p.layers[0]!.indicatorBehavior = 1;
+      p.layers[0]!.indicatorColor = 15;
+      p.layers[1]!.indicatorBehavior = 3;
+      p.layers[1]!.leds[0] = 15;
+    });
     const nodes = elements(LayerOptions());
     const mode = nodes.find((node) => node.type === 'option' && node.props.value === 1)!;
     expect(text(mode)).toBe('On for 1.5 seconds');
@@ -37,5 +42,14 @@ describe('current firmware indicator options', () => {
     // Transparency remains editable for the current firmware.
     (transparency.props.onClick as () => void)();
     expect(elements(ProfilePanel()).find((node) => node.type === 'button' && text(node) === 'Transparent')!.props['aria-pressed']).toBe(true);
+  });
+
+  it('offers Rainbow for numbered blinks', async () => {
+    await connectSimulator(0);
+    selectedLayer.value = 0;
+    updateProfile((p) => { p.layers[0]!.indicatorBehavior = 2; p.layers[0]!.indicatorColor = 15; });
+    const nodes = elements(LayerOptions());
+    expect(nodes.some((node) => node.props.role === 'radio' && node.props['aria-label'] === 'Rainbow')).toBe(true);
+    expect(nodes.find((node) => node.type === ColorPreview)!.props.rainbow).toBe(true);
   });
 });

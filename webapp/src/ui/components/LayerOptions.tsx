@@ -18,7 +18,7 @@ export function LayerOptions() {
   const layer = p.layers[li]!;
   const bootloaderWarning = bootloaderWarnings.value.find((warning) => warning.slot?.layer === li);
   const rainbowAvailable = connection.value.kind !== 'connected' || connection.value.connection.info.paletteVersion >= 3;
-  const rainbow = rainbowAvailable && (layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn || (layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn));
+  const rainbow = rainbowAvailable && layer.indicatorBehavior !== LayerIndicatorBehavior.None;
   const toggle = (key: 'bootloaderFromRun') => (e: Event) =>
     updateProfile((d) => { d.layers[li]![key] = (e.target as HTMLInputElement).checked; });
   return (

@@ -85,7 +85,7 @@ void updateLeds() {
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t rainbow = palette == 15 &&
-      (previewOptions ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : (behavior & 1));
+      (previewOptions ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
@@ -103,7 +103,10 @@ void updateLeds() {
     if (phases) {
       // Both animations override key colors, including dark blink phases.
       dim = 1;
-      if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) color = 15;
+      if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) {
+        color = 15;
+        dim = 0; // Dark phases must bypass Rainbow as well as solid colors.
+      }
     } else if (stableState[i] &&
                ((color = configLedColor(layer, i)) != 15 ||
                 !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
@@ -347,9 +350,9 @@ void loop() {
   if ((uint8_t)((uint8_t)now - rainbowChanged) >= RAINBOW_FRAME_MS &&
 #if ENABLE_COLOR_PREVIEW
       ((previewOptions ? (previewOptions & 8 ? previewOptions : 0) :
-        (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xF4) == 0xF4)
+        (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) > 0xF0)
 #else
-      (configLayerOptions(actionsLayer()) & 0xF4) == 0xF4)
+      (configLayerOptions(actionsLayer()) & 0xFC) > 0xF0)
 #endif
   {
     rainbowChanged = (uint8_t)now;

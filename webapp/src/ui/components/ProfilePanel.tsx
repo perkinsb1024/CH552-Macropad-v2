@@ -1,7 +1,10 @@
+import { LayerIndicatorBehavior } from '../../model/constants';
 import { layerName, profile, updateProfile } from '../store';
 
 export function ProfilePanel() {
   const p = profile.value!;
+  const showOffBehavior = p.layers.some((layer) => layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn) &&
+    p.layers.some((layer) => layer.leds.includes(15));
   return (
     <section class="card">
       <header class="card-head">
@@ -27,7 +30,7 @@ export function ProfilePanel() {
               : `A key that belongs to a chord waits up to ${p.chordWindow * 5}ms for its partner before acting alone. Keys without chords are not delayed.`}
           </span>
         </label>
-        <div class="field field-wide">
+        {showOffBehavior && <div class="field field-wide">
           <span class="field-label">For key LEDs, "Off" means:</span>
           <div class="segmented" role="group" aria-label={'For key LEDs, "Off" means'}>
             <button
@@ -48,7 +51,7 @@ export function ProfilePanel() {
             <strong>Black:</strong> The key will override the idle color<br />
             This only applies to "Always On" - Timed and Blink layer indications will override a "Black" key
           </span>
-        </div>
+        </div>}
       </div>
     </section>
   );

@@ -78,9 +78,10 @@ colors throughout the animation; dark blink phases are fully dark. Each new
 layer change replaces the previous animation. Timing uses 2 ms ticks, so the
 first phase can be up to 1 ms shorter than its nominal duration.
 
-Indicator color index 15 means animated Rainbow in *Always on* and *On for 1.5
-seconds* modes, at the selected brightness. It remains black in numbered blinks,
-regardless of transparency. Per-key index 15 remains *Off*; the global flag only
+Indicator color index 15 means animated Rainbow in *Always on*, *On for 1.5
+seconds*, and *Blink by layer number* modes, at the selected brightness. Numbered
+blinks alternate between animated Rainbow and fully dark phases. Per-key index
+15 remains *Off*; the global flag only
 changes whether it obscures an idle background. USB color preview retains its
 separate solid-Off versus Rainbow selection.
 

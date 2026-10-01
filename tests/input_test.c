@@ -216,10 +216,28 @@ static void testTransparencyAndRainbow(void) {
         for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
         tick(7506); // Rainbow service must not relight an expired indication.
         for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
-        // Black numbered blinks stay black even with transparency enabled.
+        // Rainbow numbered blinks animate while lit and stay dark while off.
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         activeConfig[optionsOffset] = 0xF8 | full;
+        currentMs = 8000;
+        firmwareApplyConfig();
         startLayerIndicator(0, currentMs);
+        memcpy(before, ledData, NUM_BYTES);
+        assert(ledData[0] || ledData[1] || ledData[2]);
+        tick(8006);
+        assert(memcmp(before, ledData, NUM_BYTES) != 0);
+        if (!full) for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] <= 15);
+        tick(8249);
+        assert(layerIndicatorPhasesLeft == 2);
+        tick(8250);
+        assert(layerIndicatorPhasesLeft == 1);
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+        tick(8256); // Rainbow updates must not relight the dark phase.
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+        tick(8499);
+        assert(layerIndicatorPhasesLeft == 1);
+        tick(8500);
+        assert(layerIndicatorPhasesLeft == 0);
         for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
     }
     P1 = P3 = 0xFF;
