@@ -80,6 +80,7 @@ uint8_t dimIndicatorComponent(uint8_t value) {
 void updateLeds() {
   if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
+  uint8_t pendingKey = actionsPendingKey();
   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
@@ -107,7 +108,7 @@ void updateLeds() {
         color = 15;
         dim = 0; // Dark phases must bypass Rainbow as well as solid colors.
       }
-    } else if (stableState[i] &&
+    } else if (stableState[i] && pendingKey != (uint8_t)(i + 1) &&
                ((color = configLedColor(layer, i)) != 15 ||
                 !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
       // Opaque pressed-key colors stay at full brightness.
@@ -369,7 +370,10 @@ void loop() {
     return;
   }
 #endif
+  uint8_t pendingKey = actionsPendingKey();
   actionsPoll(now);
+  // A chord timeout can dispatch a held key without another physical edge.
+  if (pendingKey != actionsPendingKey()) updateLeds();
   if (actionsTakeLayerSelection() || lastLayer != actionsLayer()) {
     if (lastLayer != actionsLayer()) {
       lastLayer = actionsLayer();

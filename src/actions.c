@@ -298,6 +298,10 @@ uint8_t actionsLayer(void) {
   return effectiveLayer;
 }
 
+uint8_t actionsPendingKey(void) {
+  return pendingInput;
+}
+
 uint8_t actionsTakeLayerSelection(void) {
   uint8_t pending = layerSelectionPending;
   layerSelectionPending = 0;

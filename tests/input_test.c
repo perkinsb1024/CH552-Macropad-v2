@@ -350,7 +350,99 @@ static void testOneShotChordIndicator(void) {
     actionsRelease(second);
 }
 
+static void chordLedProfile(uint8_t window, uint8_t background, uint16_t now) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[5] |= 2; // One chord: keys zero and one.
+    activeConfig[8] = window;
+    activeConfig[9] = activeConfig[11] = CONFIG_ACTION_KEY_HOLD;
+    activeConfig[10] = 4;
+    activeConfig[12] = 5;
+    activeConfig[9 + size - 1] = background ? 0x3D : 0; // Full amber or off.
+    activeConfig[9 + size] = 0;
+    activeConfig[10 + size] = CONFIG_ACTION_KEY_HOLD;
+    activeConfig[11 + size] = 6;
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+    currentMs = now;
+    firmwareApplyConfig();
+    frameCount = 0;
+}
+
+static void testChordLedDelay(void) {
+    // A lone chord key lights only when its single action resolves. Check
+    // both idle backgrounds and the 16-bit timer wrap using real debounce.
+    for (uint8_t background = 0; background < 2; background++) {
+        for (uint8_t wrap = 0; wrap < 2; wrap++) {
+            uint16_t start = wrap ? 65520 : 100;
+            chordLedProfile(8, background, start);
+            P1 &= ~KEY_MASK[0];
+            tick(start);
+            tick((uint16_t)(start + 10));
+            assert(frameCount == 0 && actionsPendingKey() == 1);
+            assert(ledData[0] == (background ? 66 : 0));
+            assert(ledData[1] == (background ? 255 : 0));
+            tick((uint16_t)(start + 49));
+            assert(frameCount == 0 && actionsPendingKey() == 1);
+            tick((uint16_t)(start + 50));
+            assert(frameCount == 1 && frames[0][3] == 4);
+            assert(actionsPendingKey() == 0);
+            assert(ledData[0] == 0 && ledData[1] == 255);
+            P1 |= KEY_MASK[0];
+            tick((uint16_t)(start + 51));
+            tick((uint16_t)(start + 61));
+            assert(frames[frameCount - 1][3] == 0);
+            assert(ledData[0] == (background ? 66 : 0));
+        }
+    }
+    // Either key can start the wait; matching the chord lights both keys.
+    for (uint8_t first = 0; first < 2; first++) {
+        chordLedProfile(8, 0, 100);
+        P1 &= ~KEY_MASK[first];
+        tick(100);
+        tick(110);
+        assert(frameCount == 0);
+        for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+        P1 &= ~KEY_MASK[first ^ 1];
+        tick(120);
+        tick(130);
+        assert(frameCount == 1 && frames[0][3] == 6);
+        assert(ledData[1] == 255 && ledData[4] == 255);
+        P1 |= KEY_MASK[first];
+        tick(131);
+        tick(141);
+        assert(frames[frameCount - 1][3] == 0);
+        assert(ledData[3 * first + 1] == 0);
+        assert(ledData[3 * (first ^ 1) + 1] == 255);
+    }
+    // Early release still sends the single action; a released key stays dark.
+    chordLedProfile(8, 0, 100);
+    P1 &= ~KEY_MASK[0];
+    tick(100);
+    tick(110);
+    P1 |= KEY_MASK[0];
+    tick(111);
+    tick(121);
+    assert(frameCount == 2 && frames[0][3] == 4 && frames[1][3] == 0);
+    assert(actionsPendingKey() == 0 && ledData[1] == 0);
+    // Non-chord keys and a zero chord window keep immediate pressed colors.
+    chordLedProfile(8, 0, 100);
+    P1 &= ~KEY_MASK[2];
+    tick(100);
+    tick(110);
+    assert(frameCount == 1 && frames[0][3] == 0x21);
+    assert(ledData[7] == 255 && actionsPendingKey() == 0);
+    chordLedProfile(0, 0, 100);
+    P1 &= ~KEY_MASK[0];
+    tick(100);
+    tick(110);
+    assert(frameCount == 1 && frames[0][3] == 4);
+    assert(ledData[1] == 255 && actionsPendingKey() == 0);
+    P1 = P3 = 0xFF;
+}
+
 int main(void) {
+    testChordLedDelay();
     testSameLayerIndicator();
     testOneShotChordIndicator();
     testIndicatorBrightness();
