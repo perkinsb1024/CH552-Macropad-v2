@@ -599,6 +599,102 @@ output {
   border-color: transparent;
   color: var(--warn);
 }
+.unsaved-changes {
+  position: relative;
+}
+.unsaved-changes-trigger {
+  cursor: pointer;
+}
+.changes-popup {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(calc(-50% + var(--popup-shift, 0px)));
+  width: min(420px, calc(100vw - 32px));
+  z-index: 30;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.2);
+  color: var(--fg);
+  text-align: left;
+}
+.changes-popup::before {
+  content: '';
+  position: absolute;
+  inset: -11px 0 auto;
+  height: 11px;
+}
+.changes-popup::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: calc(50% - var(--popup-shift, 0px));
+  width: 10px;
+  height: 10px;
+  background: var(--bg-elev);
+  border-top: 1px solid var(--line-strong);
+  border-left: 1px solid var(--line-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+.changes-popup-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.changes-popup-heading > span, .changes-popup-note {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+.changes-popup-content {
+  max-height: min(380px, calc(100dvh - 180px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.changes-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.changes-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.changes-list li:first-child { padding-top: 0; }
+.changes-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.change-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.change-undo {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.change-location {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.change-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 13px;
+}
+.change-before, .change-arrow {
+  color: var(--fg-muted);
+}
 .pill-flag {
   display: inline-flex;
   align-items: center;

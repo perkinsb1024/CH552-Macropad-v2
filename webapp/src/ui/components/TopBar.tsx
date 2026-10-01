@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ask, canRedo, canSave, canUndo, closeDialog, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
-import { IconCheck, IconChevron, IconRefresh, IconSave, IconUsb, IconWarning } from './Icons';
+import { IconCheck, IconChevron, IconClose, IconReadDevice, IconRefresh, IconSave, IconUsb, IconWarning } from './Icons';
 import { FORMAT_VERSION, variantName } from '../../model/constants';
+import { UnsavedChanges } from './UnsavedChanges';
 
 function ConnectMenu() {
   const [open, setOpen] = useState(false);
@@ -62,12 +63,12 @@ function SaveButton() {
 
 export function TopBar() {
   const c = connection.value;
-  const confirmReload = () => ask({
-    title: 'Reload from device?',
+  const confirmRead = () => ask({
+    title: 'Read from device?',
     body: 'This replaces the profile in the editor and clears its undo history. Unsaved changes will be lost.',
     actions: [
       { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
-      { label: 'Reload from device', tone: 'danger', onSelect: () => { closeDialog(); void loadFromDevice(); } },
+      { label: 'Read from device', tone: 'danger', onSelect: () => { closeDialog(); void loadFromDevice(); } },
     ],
   });
   useEffect(() => {
@@ -115,22 +116,22 @@ export function TopBar() {
             {!c.connection.status.flashValid && <span class="pill-flag" title="Device profile is missing, old or invalid; device inputs are inactive"><IconWarning /> Device profile is missing, old or invalid</span>}
           </span>
         )}
-        {dirty.value && profile.value && <span class="pill pill-warn">Unsaved changes</span>}
+        {dirty.value && profile.value && <UnsavedChanges />}
       </div>
 
       <div class="actions">
         {profile.value && <>
-          <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo">↶ Undo</button>
-          <button class="btn" onClick={redo} disabled={!canRedo.value} title="Redo (⌘⇧Z / Ctrl+Shift+Z)" aria-label="Redo">↷ Redo</button>
+          <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo"><IconRefresh mirrored /> Undo</button>
+          <button class="btn" onClick={redo} disabled={!canRedo.value} title="Redo (⌘⇧Z / Ctrl+Shift+Z)" aria-label="Redo"><IconRefresh /> Redo</button>
         </>}
         {c.kind === 'connected' ? (
           <>
-            <button class="btn" onClick={confirmReload} disabled={saveState.value.phase === 'busy'} title="Re-read the profile stored on the device">
-              <IconRefresh /> Reload
+            <button class="btn" onClick={confirmRead} disabled={saveState.value.phase === 'busy'} title="Read the profile stored on the device">
+              <IconReadDevice /> Read from device
             </button>
             <SaveButton />
             <button class="btn" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
-              Disconnect
+              <IconClose /> Disconnect
             </button>
           </>
         ) : (

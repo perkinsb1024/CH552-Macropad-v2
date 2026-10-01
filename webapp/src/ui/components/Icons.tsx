@@ -7,8 +7,11 @@ export const IconUsb = () => (
 export const IconSave = () => (
   <svg {...base}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><path d="M17 21v-8H7v8" /><path d="M7 3v5h8" /></svg>
 );
-export const IconRefresh = () => (
-  <svg {...base}><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>
+export const IconRefresh = ({ mirrored = false }: { mirrored?: boolean }) => (
+  <svg {...base} style={mirrored ? 'transform:scaleX(-1)' : undefined}><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>
+);
+export const IconReadDevice = () => (
+  <svg {...base}><path d="M8 12H5a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-3" /><path d="M12 16V3" /><path d="M8 7l4-4 4 4" /></svg>
 );
 export const IconDownload = () => (
   <svg {...base}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>
@@ -36,6 +39,9 @@ export const IconWarning = () => (
 );
 export const IconCheck = () => (
   <svg {...base}><path d="M20 6L9 17l-5-5" /></svg>
+);
+export const IconClose = () => (
+  <svg {...base} stroke-width={3}><path d="M6 6l12 12M18 6L6 18" /></svg>
 );
 export const IconLink = () => (
   <svg {...base}><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19" /></svg>
