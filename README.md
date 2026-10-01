@@ -31,23 +31,23 @@ Profiles are saved on the macropad; the configurator does not need to stay open 
 
 ## Supported Macropads
 
-The firmware supports three-key and six-key CH552 macropads with an encoder wheel. Select the correct variant before compiling. Four-key and wireless models are not supported by this build.
-
-Look for a wired macropad like the one pictured above and check that it uses a CH552 chip. Similar-looking models can use different hardware. Some boards do not have RGB LEDs fitted.
+The firmware supports three-key and six-key CH552 macropads with an encoder wheel. Select the correct variant before compiling. Four-key and wireless models are not supported by this build. Look for a wired macropad like the one pictured above and check that it uses a CH552 chip. Similar-looking models can use different hardware. Some boards do not have RGB LEDs fitted.
 
 You can configure:
-
 - Keyboard shortcuts, text, mouse actions and media controls
 - The encoder button and both rotation directions
 - Up to five layers on six-key pads or seven on three-key pads, plus two-key chords
 - Key LED colors and layer indicators, including a rainbow effect
 
-Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. The maximum assignable actions (not including the required layer-switch actions) is:
-The current maximum for each is:
+Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. The maximum assignable actions for each model are:
+
 | 3-Key Macropad | 6-Key Macropad |
-| --- | ---: |
+| --- | --- |
 | 45 | 47 |
-See the full calculations in [ACTION_CAPACITY.md](ACTION_CAPACITY.md)
+
+*See the full calculations in [ACTION_CAPACITY.md](ACTION_CAPACITY.md)*
+
+To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click "Import from Clipboard" in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
 
 ## How To Compile the Firmware
 
@@ -126,7 +126,7 @@ After both builds and exports succeed, older generated HEX files are deleted so 
 
 ## How To Upload the Firmware
 
-A macropad with its factory firmware usually needs **hardware bootloader entry for the first upload**. Once this firmware is installed, you can use the encoder button instead.
+A macropad with its factory firmware requires a hardware bootloader entry for the first upload. Once this firmware is installed, you can enter the bootloader again by holding the encoder button while powering on the macropad.
 
 ### First Upload: Enter the Bootloader Via Hardware
 

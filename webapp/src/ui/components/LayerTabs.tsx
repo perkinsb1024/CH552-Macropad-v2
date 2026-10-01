@@ -24,7 +24,7 @@ export function LayerTabs() {
   const removeSelected = () => {
     ask({
       title: `Remove ${layerName(current)}?`,
-      body: 'All chords and bindings on this layer will be deleted. Nothing changes on the device until you save.',
+      body: `All chords and bindings on this layer will be deleted.${p.startupLayer === current ? '\nLayer 1 will become the new startup layer.' : ''}\nNothing changes on the device until you save.`,
       actions: [
         { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
         { label: 'Remove layer', tone: 'danger', onSelect: () => { removeLayer(current); closeDialog(); } },
@@ -95,7 +95,7 @@ export function LayerTabs() {
         <button class="tab tab-add" onClick={addLayer} title="Add layer"><IconPlus /> Add layer</button>
       )}
     </div>
-    {p.layers.length > 1 && <button class="btn btn-icon btn-danger layer-delete" aria-label={`Remove ${layerName(current)}`} title={p.startupLayer === current ? 'Change the startup layer before removing this layer' : `Remove ${layerName(current)}`} disabled={p.startupLayer === current} onClick={removeSelected}><IconTrash /></button>}
+    <button class="btn btn-icon btn-danger layer-delete" aria-label={`Remove ${layerName(current)}`} title={p.layers.length === 1 ? 'At least one layer is required' : `Remove ${layerName(current)}`} disabled={p.layers.length === 1} onClick={removeSelected}><IconTrash /></button>
     </div>
   );
 }

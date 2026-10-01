@@ -46,7 +46,7 @@ export function Welcome() {
           <summary>Device not showing up?</summary>
           <ul>
             <li>Plug the macropad in directly and make sure it types normally. The configurator uses the same USB connection.</li>
-            <li>The chooser lists it as <strong>Universal Macropad</strong>. Older firmware without the configuration interface will not appear.</li>
+            <li>Your macropad must be running this <a href="https://github.com/perkinsb1024/CH552-Macropad-v2#how-to-upload-the-firmware" target="_blank">custom firmware</a>. Stock firmware is not editable with this tool.</li>
             <li>On Linux, add a udev rule granting access to VID <code>1209</code> PID <code>c55d</code>, for example: <code>KERNEL=="hidraw*", ATTRS{'{'}idVendor{'}'}=="1209", ATTRS{'{'}idProduct{'}'}=="c55d", MODE="0666"</code>, then replug.</li>
           </ul>
         </details>

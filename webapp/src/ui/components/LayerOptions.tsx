@@ -51,6 +51,7 @@ export function LayerOptions() {
                   aria-hidden="true"
                 />
                 {rainbow && layer.indicatorColor === 15 ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name ?? 'Unknown'}
+                {!layer.indicatorFullBrightness && ' (dim)'}
               </span>
             </div>
             <div class="palette" role="radiogroup" aria-label="Layer indicator color">

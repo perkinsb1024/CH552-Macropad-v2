@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { ChangeList } from './ChangeList';
 import { profileChanges } from '../../model/changes';
 import { changesBaseline, freshStart, getAction, profile, selectedLayer, selectedSlot, updateProfile } from '../store';
 
@@ -63,35 +64,17 @@ export function UnsavedChanges() {
           </div>
           <div class="changes-popup-content" tabIndex={0} aria-label="Change list">
             {comparison && <p class="changes-popup-note">{startingPoint ? `Compared with the ${startingPoint.kind === 'imported' ? 'imported' : 'starter'} profile.` : 'Compared with the last device read or save.'}</p>}
-            <ul class="changes-list">
-              {startingPoint && <li>{startingPoint.kind === 'imported' ? 'Imported profile has not been saved to the device.' : 'Starter profile has not been saved to the device.'}</li>}
-              {changes.map((change) => (
-                <li key={change.where}>
-                  <div class="change-heading">
-                    <span class="change-location">{change.where}</span>
-                    {change.undo && <button
-                      type="button"
-                      class="btn btn-small btn-ghost change-undo"
-                      aria-label={`Revert ${change.where}`}
-                      onClick={() => {
-                        // Keep focus in the popup when this row disappears.
-                        trigger.current?.focus();
-                        updateProfile(change.undo!);
-                        selectedLayer.value = Math.min(selectedLayer.value, profile.value!.layers.length - 1);
-                        if (selectedSlot.value && !getAction(profile.value!, selectedSlot.value)) selectedSlot.value = null;
-                      }}
-                    >Revert</button>}
-                  </div>
-                  {(change.before !== undefined || change.after !== undefined) && (
-                    <span class="change-values">
-                      {change.before !== undefined && <span class="change-before">{change.before}</span>}
-                      {change.before !== undefined && change.after !== undefined && <span class="change-arrow" aria-label="changed to">→</span>}
-                      {change.after !== undefined && <span>{change.after}</span>}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <ChangeList
+              changes={changes}
+              note={startingPoint ? (startingPoint.kind === 'imported' ? 'Imported profile has not been saved to the device.' : 'Starter profile has not been saved to the device.') : undefined}
+              onRevert={(change) => {
+                // Keep focus in the popup when this row disappears.
+                trigger.current?.focus();
+                updateProfile(change.undo!);
+                selectedLayer.value = Math.min(selectedLayer.value, profile.value!.layers.length - 1);
+                if (selectedSlot.value && !getAction(profile.value!, selectedSlot.value)) selectedSlot.value = null;
+              }}
+            />
           </div>
         </div>
       )}

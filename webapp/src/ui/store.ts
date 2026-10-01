@@ -165,6 +165,7 @@ export function dismissToast(id: number): void {
 export interface DialogSpec {
   title: string;
   body: string;
+  comparison?: { device: Profile; editor: Profile; editorLabel?: string };
   textInput?: { label: string; placeholder: string; onInput: (text: string) => void };
   actions: Array<{ label: string; tone?: 'primary' | 'danger' | 'neutral'; onSelect: () => void }>;
 }
@@ -561,6 +562,7 @@ export function layerReferences(p: Profile, layer: number): { actions: number; c
  * references to the removed layer are left in place so validation flags them.
  */
 export function removeLayer(layer: number): void {
+  if (!profile.value || profile.value.layers.length <= 1) return;
   updateProfile((draft) => {
     if (draft.layers.length <= 1) return;
     draft.layers.splice(layer, 1);
@@ -577,7 +579,7 @@ export function removeLayer(layer: number): void {
     }
     for (const c of draft.chords) c.action = shift(c.action);
     if (draft.startupLayer > layer) draft.startupLayer--;
-    else if (draft.startupLayer === layer) draft.startupLayer = Math.min(layer, draft.layers.length - 1);
+    else if (draft.startupLayer === layer) draft.startupLayer = 0;
   });
   const names = meta.value.layerNames ? [...meta.value.layerNames] : undefined;
   if (names) {
@@ -805,18 +807,20 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
       ask({
         title: 'Keep your unsaved edits?',
         body: 'The editor has changes that are not on the device. You can keep editing them, or replace them with the profile stored on the device.',
+        comparison: { device: cloneProfile(fromDevice), editor: cloneProfile(current) },
         actions: [
-          { label: 'Keep my edits', tone: 'primary', onSelect: () => { profile.value = current; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
           { label: 'Load from device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
+          { label: 'Keep my edits', tone: 'primary', onSelect: () => { profile.value = current; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
         ],
       });
     } else if (draftDiffers) {
       ask({
         title: 'Restore your draft?',
         body: `This browser has a draft saved ${new Date(draft.savedAt).toLocaleString()} that differs from the device. Which one do you want to edit?`,
+        comparison: { device: cloneProfile(fromDevice), editor: cloneProfile(draft.profile), editorLabel: 'Draft' },
         actions: [
-          { label: 'Load from device', tone: 'primary', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Use the draft', tone: 'neutral', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
+          { label: 'Load from device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
+          { label: 'Use the draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
         ],
       });
     } else {

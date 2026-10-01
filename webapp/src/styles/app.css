@@ -1808,12 +1808,35 @@ output {
 }
 .dialog p {
   color: var(--fg-muted);
+  white-space: pre-line;
 }
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 18px;
+}
+.dialog-differences-link {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.dialog-comparison {
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+.dialog-comparison-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 14px;
 }
 .toasts {
   position: fixed;
