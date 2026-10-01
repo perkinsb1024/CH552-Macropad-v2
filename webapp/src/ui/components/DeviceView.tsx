@@ -25,7 +25,7 @@ export function DeviceView() {
     ? p.chords.find((c) => c.layer === selection.layer && c.keyA === selection.keyA && c.keyB === selection.keyB && (c.global || c.layer === li))
     : undefined;
 
-  const select = (slot: Slot) => { selectedSlot.value = slot; };
+  const select = (slot: Slot) => { selectedSlot.value = sameSlot(selectedSlot.value, slot) ? null : slot; };
   const dragStart = (event: DragEvent, slot: Slot) => {
     setRoundedDragImage(event);
     endShortcutDrag();

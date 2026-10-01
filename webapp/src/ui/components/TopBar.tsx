@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ask, canRedo, canSave, canUndo, closeDialog, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
-import { IconCheck, IconChevron, IconClose, IconReadDevice, IconRefresh, IconSave, IconUsb, IconWarning } from './Icons';
+import { IconCheck, IconChevron, IconClose, IconReadDevice, IconRefresh, IconSave, IconConnect, IconWarning } from './Icons';
 import { FORMAT_VERSION, variantName } from '../../model/constants';
 import { UnsavedChanges } from './UnsavedChanges';
 
@@ -19,7 +19,7 @@ function ConnectMenu() {
     <div class="menu" ref={ref}>
       <div class="btn-group">
         <button class="btn btn-primary" onClick={() => void connectHid()} disabled={!hidSupported} title={hidSupported ? 'Choose a macropad via WebHID' : 'WebHID is unavailable in this browser'}>
-          <IconUsb /> Connect macropad
+          <IconConnect /> Connect macropad
         </button>
         <button class="btn btn-primary btn-icon" aria-label="More connection options" aria-expanded={open} onClick={() => setOpen(!open)}>
           <IconChevron />

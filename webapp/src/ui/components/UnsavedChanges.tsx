@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { profileChanges } from '../../model/changes';
-import { baseline, getAction, profile, selectedLayer, selectedSlot, updateProfile } from '../store';
+import { changesBaseline, freshStart, getAction, profile, selectedLayer, selectedSlot, updateProfile } from '../store';
 
 export function UnsavedChanges() {
   const [open, setOpen] = useState(false);
@@ -9,7 +9,9 @@ export function UnsavedChanges() {
   const trigger = useRef<HTMLButtonElement>(null);
   const popup = useRef<HTMLDivElement>(null);
   const p = profile.value;
-  const changes = p ? profileChanges(baseline.value, p) : [];
+  const comparison = changesBaseline.value;
+  const startingPoint = freshStart.value;
+  const changes = p ? profileChanges(comparison, p) : [];
   useEffect(() => {
     if (!open) return;
     const outside = (event: PointerEvent) => {
@@ -57,11 +59,12 @@ export function UnsavedChanges() {
         <div ref={popup} id="unsaved-changes-popup" class="changes-popup" role="region" aria-label="Unsaved changes" style={`--popup-shift:${shift}px`}>
           <div class="changes-popup-heading">
             <strong>Unsaved changes</strong>
-            {baseline.value && <span>{changes.length} {changes.length === 1 ? 'change' : 'changes'}</span>}
+            {comparison && <span>{changes.length} {changes.length === 1 ? 'change' : 'changes'}</span>}
           </div>
           <div class="changes-popup-content" tabIndex={0} aria-label="Change list">
-            {baseline.value && <p class="changes-popup-note">Compared with the last device read or save.</p>}
+            {comparison && <p class="changes-popup-note">{startingPoint ? `Compared with the ${startingPoint.kind === 'imported' ? 'imported' : 'starter'} profile.` : 'Compared with the last device read or save.'}</p>}
             <ul class="changes-list">
+              {startingPoint && <li>{startingPoint.kind === 'imported' ? 'Imported profile has not been saved to the device.' : 'Starter profile has not been saved to the device.'}</li>}
               {changes.map((change) => (
                 <li key={change.where}>
                   <div class="change-heading">

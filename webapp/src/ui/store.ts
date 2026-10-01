@@ -45,6 +45,9 @@ export const deviceDecode = signal<DecodeResult | null>(null);
 
 export const profile = signal<Profile | null>(null);
 export const baseline = signal<Profile | null>(null);
+/** A reset/import starts a new edit comparison without changing the saved device baseline. */
+export const freshStart = signal<{ profile: Profile; kind: 'imported' | 'starter' } | null>(null);
+export const changesBaseline = computed(() => freshStart.value?.profile ?? baseline.value);
 export const meta = signal<LocalMetadata>({});
 export const selectedLayer = signal(0);
 export const selectedSlot = signal<Slot | null>(null);
@@ -56,7 +59,7 @@ export type DropPosition = 'before' | 'after' | 'swap';
 export const slotDrop = signal<{ slot: Slot; position: DropPosition; rowBoundary?: boolean } | null>(null);
 export const layerDrop = signal<{ index: number; position: DropPosition } | null>(null);
 
-interface EditorSnapshot { profile: Profile; meta: LocalMetadata }
+interface EditorSnapshot { profile: Profile; meta: LocalMetadata; freshStart: typeof freshStart.value }
 interface HistoryEntry extends EditorSnapshot { key?: string; at: number }
 const undoHistory = signal<HistoryEntry[]>([]);
 const redoHistory = signal<EditorSnapshot[]>([]);
@@ -67,7 +70,7 @@ function copyMeta(value: LocalMetadata): LocalMetadata {
   return { ...value, layerNames: value.layerNames ? [...value.layerNames] : undefined };
 }
 function editorSnapshot(): EditorSnapshot | null {
-  return profile.value ? { profile: cloneProfile(profile.value), meta: copyMeta(meta.value) } : null;
+  return profile.value ? { profile: cloneProfile(profile.value), meta: copyMeta(meta.value), freshStart: freshStart.value } : null;
 }
 function clearHistory(): void {
   undoHistory.value = [];
@@ -89,6 +92,7 @@ function recordHistory(key?: string): void {
 function restoreEditor(snapshot: EditorSnapshot): void {
   profile.value = cloneProfile(snapshot.profile);
   meta.value = copyMeta(snapshot.meta);
+  freshStart.value = snapshot.freshStart;
   selectedLayer.value = Math.min(selectedLayer.value, snapshot.profile.layers.length - 1);
 }
 export function undo(): void {
@@ -593,6 +597,7 @@ export function layerName(index: number): string {
 
 export function startOffline(variant: Variant): void {
   clearHistory();
+  freshStart.value = null;
   const draft = loadDraft(variant);
   profile.value = draft?.profile ?? defaultProfile(variant);
   meta.value = draft?.meta ?? {};
@@ -617,6 +622,7 @@ export function resetToDefaults(): void {
         onSelect: () => {
           recordHistory();
           profile.value = defaultProfile(p.variant);
+          freshStart.value = { profile: cloneProfile(profile.value), kind: 'starter' };
           meta.value = {};
           selectedLayer.value = 0;
           selectedSlot.value = null;
@@ -787,6 +793,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
       clearHistory();
       profile.value = fromDevice;
       baseline.value = cloneProfile(fromDevice);
+      freshStart.value = null;
       selectedLayer.value = Math.min(selectedLayer.value, fromDevice.layers.length - 1);
       selectedSlot.value = null;
       saveState.value = { phase: 'idle' };
@@ -809,7 +816,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
         body: `This browser has a draft saved ${new Date(draft.savedAt).toLocaleString()} that differs from the device. Which one do you want to edit?`,
         actions: [
           { label: 'Load from device', tone: 'primary', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Use the draft', tone: 'neutral', onSelect: () => { clearHistory(); profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
+          { label: 'Use the draft', tone: 'neutral', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
         ],
       });
     } else {
@@ -861,6 +868,7 @@ export async function save(): Promise<void> {
     deviceFlash.value = image;
     deviceDecode.value = { ok: true, profile: cloneProfile(p) };
     baseline.value = cloneProfile(p);
+    freshStart.value = null;
     updateDeviceStatus(c.connection, await c.connection.client.getStatus().catch(() => c.connection.status));
     saveState.value = { phase: 'saved', at: Date.now() };
     clearDraft(p.variant);
@@ -967,6 +975,7 @@ function importProfileText(text: string, source: string): void {
     const applyImport = () => {
       recordHistory();
       profile.value = imported;
+      freshStart.value = { profile: cloneProfile(imported), kind: 'imported' };
       meta.value = importedMeta;
       selectedLayer.value = 0;
       selectedSlot.value = null;

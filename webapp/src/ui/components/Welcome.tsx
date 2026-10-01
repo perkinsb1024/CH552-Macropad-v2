@@ -1,5 +1,5 @@
 import { connectHid, connectSimulator, hidSupported, startOffline } from '../store';
-import { IconUsb } from './Icons';
+import { IconConnect } from './Icons';
 
 export function Welcome() {
   const secure = typeof window === 'undefined' || window.isSecureContext;
@@ -30,7 +30,7 @@ export function Welcome() {
 
         <div class="welcome-actions">
           <button class="btn btn-primary btn-large" onClick={() => void connectHid()} disabled={!hidSupported}>
-            <IconUsb /> Connect macropad
+            <IconConnect /> Connect macropad
           </button>
           <div class="welcome-secondary">
             <span class="muted">or edit offline for a</span>
