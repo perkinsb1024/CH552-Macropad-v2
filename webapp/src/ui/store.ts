@@ -160,6 +160,7 @@ export function dismissToast(id: number): void {
 export interface DialogSpec {
   title: string;
   body: string;
+  textInput?: { label: string; placeholder: string; onInput: (text: string) => void };
   actions: Array<{ label: string; tone?: 'primary' | 'danger' | 'neutral'; onSelect: () => void }>;
 }
 export const dialog = signal<DialogSpec | null>(null);
@@ -894,6 +895,21 @@ export function exportJson(): void {
   downloadText(`macropad-${p.variant ? 'three' : 'six'}-key-${stamp}.json`, exportProfile(p, meta.value));
 }
 
+export async function exportToClipboard(): Promise<void> {
+  const p = profile.value;
+  if (!p) return;
+  if (!navigator.clipboard?.writeText) {
+    notify('error', 'Clipboard access is unavailable. Use Export JSON instead.');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(exportProfile(p, meta.value));
+    notify('success', 'Profile JSON copied. Paste it into your editor and save as a .json file.');
+  } catch {
+    notify('error', 'Could not copy the profile. Allow clipboard access in your browser or use Export JSON.');
+  }
+}
+
 export function exportRawFlash(): void {
   const bytes = deviceFlash.value;
   if (!bytes) return;
@@ -910,7 +926,37 @@ export function exportRawFlash(): void {
 
 export async function importJsonFile(file: File): Promise<void> {
   try {
-    const text = await file.text();
+    importProfileText(await file.text(), file.name);
+  } catch (error) {
+    notify('error', `Import failed: ${(error as Error).message}`, 12000);
+  }
+}
+
+export function importFromClipboard(): void {
+  let text = '';
+  ask({
+    title: 'Import from Clipboard',
+    body: 'Paste your profile JSON below, then select Import.',
+    textInput: {
+      label: 'Profile JSON',
+      placeholder: 'Paste profile JSON here…',
+      onInput: (value) => { text = value; },
+    },
+    actions: [
+      { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
+      { label: 'Import', tone: 'primary', onSelect: () => {
+        if (!text.trim()) {
+          notify('error', 'Paste a profile JSON before importing.');
+          return;
+        }
+        importProfileText(text, 'pasted profile');
+      } },
+    ],
+  });
+}
+
+function importProfileText(text: string, source: string): void {
+  try {
     const { profile: imported, meta: importedMeta } = importProfile(text);
     const c = connection.value;
     if (c.kind === 'connected' && imported.variant !== c.connection.info.variant) {
@@ -924,12 +970,12 @@ export async function importJsonFile(file: File): Promise<void> {
       selectedLayer.value = 0;
       selectedSlot.value = null;
       closeDialog();
-      notify('success', `Imported ${file.name}.`);
+      notify('success', `Imported ${source}.`);
     };
     if (dirty.value) {
       ask({
         title: 'Replace unsaved edits?',
-        body: `Importing ${file.name} will replace the profile in the editor. Unsaved edits will be lost.`,
+        body: `Importing ${source} will replace the profile in the editor. Unsaved edits will be lost.`,
         actions: [
           { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
           { label: 'Import', tone: 'danger', onSelect: applyImport },

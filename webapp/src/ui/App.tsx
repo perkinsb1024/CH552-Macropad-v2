@@ -22,10 +22,18 @@ import { variantName } from '../model/constants';
 
 export function App() {
   useEffect(() => {
+    let clipboardTarget: HTMLElement | null = null;
+    const onTarget = (event: Event) => {
+      clipboardTarget = event.target instanceof Element
+        ? event.target.closest<HTMLElement>('[data-clipboard-target]') : null;
+    };
     const isEditing = (target: EventTarget | null) => target instanceof HTMLElement &&
       (target.isContentEditable || !!target.closest('input, textarea, select, [role="textbox"]'));
+    const canHandleClipboard = (event: Event) => !event.defaultPrevented && !dialog.value &&
+      !!clipboardTarget?.isConnected && !isEditing(event.target) && !!selectedSlot.value;
+    const hasSelectedText = () => window.getSelection()?.isCollapsed === false;
     const onCopyOrCut = (event: ClipboardEvent) => {
-      if (event.defaultPrevented || dialog.value || isEditing(event.target) || !event.clipboardData) return;
+      if (!canHandleClipboard(event) || hasSelectedText() || !event.clipboardData) return;
       const text = copySelectedConfiguration();
       if (text === null) return;
       event.clipboardData.setData('text/plain', text);
@@ -33,19 +41,25 @@ export function App() {
       if (event.type === 'cut') cutSelectedConfiguration();
     };
     const onPaste = (event: ClipboardEvent) => {
-      if (event.defaultPrevented || dialog.value || isEditing(event.target) || !event.clipboardData) return;
+      if (!canHandleClipboard(event) || !event.clipboardData) return;
       if (pasteSelectedConfiguration(event.clipboardData.getData('text/plain'))) event.preventDefault();
     };
     const onRepeat = (event: KeyboardEvent) => {
       if (event.repeat && (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey &&
-          ['x', 'c', 'v'].includes(event.key.toLowerCase()) && !isEditing(event.target) &&
-          !dialog.value && selectedSlot.value) event.preventDefault();
+          ['x', 'c', 'v'].includes(event.key.toLowerCase()) && canHandleClipboard(event) &&
+          (event.key.toLowerCase() === 'v' || !hasSelectedText())) event.preventDefault();
     };
+    // Pointer-down also catches text-selection drags that never produce a click.
+    // Click covers keyboard activation of the action buttons.
+    window.addEventListener('pointerdown', onTarget, true);
+    window.addEventListener('click', onTarget, true);
     window.addEventListener('copy', onCopyOrCut);
     window.addEventListener('cut', onCopyOrCut);
     window.addEventListener('paste', onPaste);
     window.addEventListener('keydown', onRepeat);
     return () => {
+      window.removeEventListener('pointerdown', onTarget, true);
+      window.removeEventListener('click', onTarget, true);
       window.removeEventListener('copy', onCopyOrCut);
       window.removeEventListener('cut', onCopyOrCut);
       window.removeEventListener('paste', onPaste);

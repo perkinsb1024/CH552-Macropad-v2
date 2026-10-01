@@ -9,13 +9,6 @@ export function ProfilePanel() {
         <span class="muted">Applies to every layer</span>
       </header>
       <div class="field-grid">
-        <label class="check field-wide">
-          <input type="checkbox" checked={p.transparentBlack} onChange={(e) => updateProfile((d) => { d.transparentBlack = (e.target as HTMLInputElement).checked; })} />
-          <span>
-            <strong>Transparent black key LEDs</strong>
-            <span class="hint">Keys set to Off keep the idle layer color or Rainbow when pressed. When disabled, those keys turn black. Timed and blink indications always override key colors.</span>
-          </span>
-        </label>
         <label class="field">
           <span class="field-label">Startup layer</span>
           <select value={p.startupLayer} onChange={(e) => updateProfile((d) => { d.startupLayer = Number((e.target as HTMLSelectElement).value); })}>
@@ -34,6 +27,28 @@ export function ProfilePanel() {
               : `A key that belongs to a chord waits up to ${p.chordWindow * 5}ms for its partner before acting alone. Keys without chords are not delayed.`}
           </span>
         </label>
+        <div class="field field-wide">
+          <span class="field-label">For key LEDs, "Off" means:</span>
+          <div class="segmented" role="group" aria-label={'For key LEDs, "Off" means'}>
+            <button
+              type="button"
+              class={p.transparentBlack ? 'is-selected' : ''}
+              aria-pressed={p.transparentBlack}
+              onClick={() => updateProfile((d) => { d.transparentBlack = true; })}
+            >Transparent</button>
+            <button
+              type="button"
+              class={!p.transparentBlack ? 'is-selected' : ''}
+              aria-pressed={!p.transparentBlack}
+              onClick={() => updateProfile((d) => { d.transparentBlack = false; })}
+            >Black</button>
+          </div>
+          <span class="hint">
+            <strong>Transparent:</strong> The idle color (including rainbow) is not affected<br />
+            <strong>Black:</strong> The key will override the idle color<br />
+            This only applies to "Always On" - Timed and Blink layer indications will override a "Black" key
+          </span>
+        </div>
       </div>
     </section>
   );

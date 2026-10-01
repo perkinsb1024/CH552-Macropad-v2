@@ -1623,6 +1623,17 @@ output {
   font-size: 16px;
   margin-bottom: 8px;
 }
+.dialog-paste {
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+.dialog-json {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font-family: var(--mono);
+}
 .dialog p {
   color: var(--fg-muted);
 }

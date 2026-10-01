@@ -112,7 +112,7 @@ export function TopBar() {
         {c.kind === 'connected' && (
           <span class={`pill ${c.connection.transport.kind === 'simulator' ? 'pill-sim' : 'pill-ok'}`} title={`${variantName(c.connection.info.variant)} · ${c.connection.info.keyCount} keys · format v${c.connection.info.formatVersion}`}>
             <span class="dot" /> {c.connection.transport.name}
-            {!c.connection.status.flashValid && <span class="pill-flag" title="No valid profile is saved; device inputs are inactive"><IconWarning /> no profile</span>}
+            {!c.connection.status.flashValid && <span class="pill-flag" title="Device profile is missing, old or invalid; device inputs are inactive"><IconWarning /> Device profile is missing, old or invalid</span>}
           </span>
         )}
         {dirty.value && profile.value && <span class="pill pill-warn">Unsaved changes</span>}

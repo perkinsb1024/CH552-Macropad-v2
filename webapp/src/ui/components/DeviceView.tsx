@@ -145,6 +145,7 @@ export function DeviceView() {
     const intent = slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
       <button
+        data-clipboard-target
         class={`keycap ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-glow:${off ? 'transparent' : color}`}
         onClick={() => select(slot)}
@@ -171,7 +172,7 @@ export function DeviceView() {
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
     const intent = slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
-      <button class={`enc-part ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={() => select(slot)} draggable onDragStart={(event) => dragStart(event, slot)} onDragEnd={dragEnd} onDragOver={(event) => dragOver(event, slot, 'vertical')} onDrop={(event) => drop(event, slot, 'vertical')}>
+      <button data-clipboard-target class={`enc-part ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={() => select(slot)} draggable onDragStart={(event) => dragStart(event, slot)} onDragEnd={dragEnd} onDragOver={(event) => dragOver(event, slot, 'vertical')} onDrop={(event) => drop(event, slot, 'vertical')}>
         <span class="enc-part-label">{icon}{label}</span>
         <span class="enc-part-value"><ActionLabel action={action} /></span>
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
