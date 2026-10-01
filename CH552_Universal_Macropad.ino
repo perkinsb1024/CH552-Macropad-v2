@@ -25,7 +25,7 @@
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
-#define LAYER_INDICATOR_PHASE_TICKS 125 // 500 ms in 4 ms ticks; signed deadline < 128 ticks.
+#define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
 #define RAINBOW_FRAME_MS 6
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
@@ -169,15 +169,15 @@ void startLayerIndicator(uint8_t layer, uint16_t now) {
   layerIndicatorPhasesLeft = 0;
   if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
       behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
-    layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 3 : 2 * (layer + 1);
-    layerIndicatorDeadline = (uint8_t)((now >> 2) + LAYER_INDICATOR_PHASE_TICKS);
+    layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 : 2 * (layer + 1);
+    layerIndicatorDeadline = (uint8_t)((now >> 1) + LAYER_INDICATOR_PHASE_TICKS);
   }
   updateLeds();
 }
 
 void serviceLayerIndicator(uint16_t now) {
   if (!layerIndicatorPhasesLeft ||
-      (int8_t)((uint8_t)(now >> 2) - layerIndicatorDeadline) < 0) {
+      (int8_t)((uint8_t)(now >> 1) - layerIndicatorDeadline) < 0) {
     return;
   }
   layerIndicatorPhasesLeft--;

@@ -38,7 +38,7 @@ export function LayerOptions() {
           </select>
           {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys show the selected color or Rainbow; pressed keys show their per-key color. {rainbowAvailable ? '' : 'Rainbow requires palette version 3 firmware; older firmware displays Off.'}</span>}
           {layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn && <span class="hint">Shows the layer color or Rainbow for 1.5 seconds after switching. Overrides pressed-key colors.</span>}
-          {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number: 0.5 seconds on, 0.5 seconds off. Overrides key colors throughout the indication.</span>}
+          {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number: 0.25 seconds on, 0.25 seconds off. Overrides key colors throughout the indication.</span>}
         </label>
         {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
           <div class="field">

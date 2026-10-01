@@ -139,18 +139,18 @@ static void testIndicatorBrightness(void) {
                     continue;
                 }
                 uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
-                uint8_t phases = timed ? 3 : 2 * (layer + 1);
+                uint8_t phases = timed ? 6 : 2 * (layer + 1);
                 assert(layerIndicatorPhasesLeft == phases);
                 assertIndicatorLeds(full, 1, 0);
                 for (uint8_t phase = 1; phase <= phases; phase++) {
-                    uint16_t deadline = (uint16_t)(65500u + 500u * phase);
+                    uint16_t deadline = (uint16_t)(65500u + 250u * phase);
                     serviceLayerIndicator((uint16_t)(deadline - 1));
                     assert(layerIndicatorPhasesLeft == phases - phase + 1);
                     serviceLayerIndicator(deadline);
                     assert(layerIndicatorPhasesLeft == phases - phase);
                     assertIndicatorLeds(full, (timed || !(phase & 1)) && phase < phases, phase == phases);
                 }
-                serviceLayerIndicator((uint16_t)(65500u + 500u * (phases + 1)));
+                serviceLayerIndicator((uint16_t)(65500u + 250u * (phases + 1)));
                 assertIndicatorLeds(full, 0, 1);
             }
         }
@@ -204,8 +204,11 @@ static void testTransparencyAndRainbow(void) {
         tick(6006);
         assert(memcmp(before, ledData, NUM_BYTES) != 0);
         if (!full) for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] <= 15);
+        tick(6250);
         tick(6500);
+        tick(6750);
         tick(7000);
+        tick(7250);
         tick(7499);
         assert(layerIndicatorPhasesLeft == 1);
         tick(7500);
@@ -240,7 +243,7 @@ static void testMomentaryIndicatorCancellation(void) {
     rawState[0] = stableState[0] = 1;
     actionsPress(0, currentMs);
     tick(8000);
-    assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 3);
+    assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 6);
     P1 |= 0x02;
     rawState[0] = stableState[0] = 0;
     actionsRelease(0);
@@ -267,17 +270,20 @@ static void testSameLayerIndicator(void) {
         firmwareApplyConfig();
         actionsPress(0, currentMs);
         tick(10000);
-        assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 3);
+        assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
         assertIndicatorLeds(1, 1, 0);
         actionsRelease(0);
+        tick(10250);
         tick(10500);
+        tick(10750);
         tick(11000);
+        tick(11250);
         tick(11500);
         assert(layerIndicatorPhasesLeft == 0);
         assertIndicatorLeds(1, 0, 0);
         actionsPress(0, 11600);
         tick(11600);
-        assert(layerIndicatorPhasesLeft == 3);
+        assert(layerIndicatorPhasesLeft == 6);
         assertIndicatorLeds(1, 1, 0);
         actionsRelease(0);
     }
@@ -306,10 +312,13 @@ static void testOneShotChordIndicator(void) {
     actionsPress(0, 20000);
     actionsRelease(0);
     tick(20000);
-    assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 3);
+    assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 6);
     assert(ledData[1] == 255 && ledData[2] == 72); // Pink.
+    tick(20250);
     tick(20500);
+    tick(20750);
     tick(21000);
+    tick(21250);
     tick(21500);
     assert(layerIndicatorPhasesLeft == 0);
     actionsPress(first, 21600);
@@ -317,7 +326,7 @@ static void testOneShotChordIndicator(void) {
     assert(layerIndicatorPhasesLeft == 0);
     actionsPress(second, 21649);
     tick(21649);
-    assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 3);
+    assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
     assert(ledData[0] == 255 && ledData[1] == 0 && ledData[2] == 200); // Cyan.
     actionsRelease(first);
     actionsRelease(second);

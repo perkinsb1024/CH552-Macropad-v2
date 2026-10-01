@@ -73,10 +73,10 @@ including dimming and animated Rainbow. Without an always-on background it is da
 
 *On for 1.5 seconds* displays the indicator continuously after a layer change.
 *Blink by layer number* displays one blink per one-based layer number, with
-500 ms lit and 500 ms dark phases. Both indications override all pressed-key
+250 ms lit and 250 ms dark phases. Both indications override all pressed-key
 colors throughout the animation; dark blink phases are fully dark. Each new
-layer change replaces the previous animation. Timing uses 4 ms ticks, so the
-first phase can be up to 3 ms shorter than its nominal duration.
+layer change replaces the previous animation. Timing uses 2 ms ticks, so the
+first phase can be up to 1 ms shorter than its nominal duration.
 
 Indicator color index 15 means animated Rainbow in *Always on* and *On for 1.5
 seconds* modes, at the selected brightness. It remains black in numbered blinks,
