@@ -41,7 +41,7 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
     clockwise: { type: 'scroll', delta: -2 },
     counterclockwise: { type: 'scroll', delta: 2 },
     leds: Array.from({ length: keys }, () => windows ? 4 : 14),
-    bootloaderFromRun: true,
+    bootloaderFromRun: false,
     indicatorBehavior: LayerIndicatorBehavior.AlwaysOn,
     indicatorColor: windows ? 4 : 14,
     indicatorFullBrightness: false,

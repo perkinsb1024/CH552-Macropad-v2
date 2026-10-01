@@ -1,6 +1,6 @@
 import { LayerIndicatorBehavior } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
-import { connection, profile, selectedLayer, updateProfile } from '../store';
+import { bootloaderWarnings, connection, profile, selectedLayer, updateProfile } from '../store';
 
 import { ColorPreview } from './ColorPreview';
 
@@ -16,6 +16,7 @@ export function LayerOptions() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
+  const bootloaderWarning = bootloaderWarnings.value.find((warning) => warning.slot?.layer === li);
   const rainbowAvailable = connection.value.kind !== 'connected' || connection.value.connection.info.paletteVersion >= 3;
   const rainbow = rainbowAvailable && (layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn || (layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn));
   const toggle = (key: 'bootloaderFromRun') => (e: Event) =>
@@ -90,6 +91,7 @@ export function LayerOptions() {
             <span class="hint">Hold for three seconds. Uses the layer active when the hold begins.</span>
           </span>
         </label>
+        {bootloaderWarning && <p class="hint warn" role="status">{bootloaderWarning.message}</p>}
       </details>
     </section>
   );

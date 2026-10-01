@@ -752,12 +752,7 @@ output {
   min-width: 0;
 }
 .column-side {
-  position: sticky;
-  top: 72px;
   align-self: start;
-  max-height: calc(100vh - 90px);
-  overflow: auto;
-  padding-right: 2px;
 }
 .two-up {
   display: grid;
@@ -767,10 +762,6 @@ output {
 @media (max-width: 1080px) {
   .workspace {
     grid-template-columns: 1fr;
-  }
-  .column-side {
-    position: static;
-    max-height: none;
   }
 }
 @media (max-width: 720px) {

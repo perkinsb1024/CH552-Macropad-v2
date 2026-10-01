@@ -1,11 +1,12 @@
-import { issues, layerChangeWarnings, reachabilityWarnings, selectedLayer, selectedSlot } from '../store';
+import { bootloaderWarnings, issues, layerChangeWarnings, reachabilityWarnings, selectedLayer, selectedSlot } from '../store';
 import { IconChevron, IconWarning } from './Icons';
 
 export function IssuesPanel() {
   const list = issues.value;
   const warnings = reachabilityWarnings.value;
   const layerWarnings = layerChangeWarnings.value;
-  if (!list.length && !warnings.length && !layerWarnings.length) return null;
+  const encoderWarnings = bootloaderWarnings.value;
+  if (!list.length && !warnings.length && !layerWarnings.length && !encoderWarnings.length) return null;
   return (
     <>
       {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
@@ -23,6 +24,22 @@ export function IssuesPanel() {
                 <strong>{issue.where}</strong>
               )}
               <span>{issue.message}</span>
+            </li>
+          ))}
+        </ul>
+      </details>}
+      {encoderWarnings.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
+        <summary class="card-head">
+          <h2><IconWarning /> Encoder hold and bootloader entry</h2>
+          <span class="warn">{encoderWarnings.length}</span>
+          <IconChevron />
+        </summary>
+        <p class="hint">These warnings do not block saving or upload.</p>
+        <ul>
+          {encoderWarnings.map((warning, i) => (
+            <li key={i}>
+              <button class="link" onClick={() => { selectedLayer.value = warning.slot!.layer; selectedSlot.value = warning.slot!; }}>{warning.where}</button>
+              <span>{warning.message}</span>
             </li>
           ))}
         </ul>

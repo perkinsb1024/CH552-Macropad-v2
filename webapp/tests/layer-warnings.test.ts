@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
 import { LayerIndicatorBehavior, VARIANT_SIX_KEYS } from '../src/model/constants';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
-import { selfReferentialLayerWarnings } from '../src/model/layerWarnings';
+import { encoderBootloaderWarnings, selfReferentialLayerWarnings } from '../src/model/layerWarnings';
 import type { Action } from '../src/model/types';
 import { validateProfile } from '../src/model/validate';
+import { IssuesPanel } from '../src/ui/components/IssuesPanel';
+import { LayerOptions } from '../src/ui/components/LayerOptions';
+import { bootloaderWarnings, profile as editorProfile, selectedLayer, selectedSlot, updateProfile } from '../src/ui/store';
 
 function profileWithLayers(count = 4) {
   const profile = defaultProfile(VARIANT_SIX_KEYS);
@@ -100,5 +103,74 @@ describe('self-referential layer warnings', () => {
     profile.layers[0]!.clockwise = { type: 'momentaryLayer', layer: 0 };
     expect(validateProfile(profile)).toHaveLength(3);
     expect(selfReferentialLayerWarnings(profile)).toEqual([]);
+  });
+});
+
+describe('encoder bootloader warnings', () => {
+  it.each([
+    { type: 'keyHold', usage: 4, modifiers: 0 },
+    { type: 'keyHold', usage: 0, modifiers: 1 },
+    { type: 'mouseHold', buttons: 1 },
+    { type: 'mouseX', delta: 10, hold: true },
+    { type: 'mouseY', delta: -10, hold: true },
+  ] satisfies Action[])('warns for $type only when enabled on the same layer', (action) => {
+    const profile = profileWithLayers(2);
+    profile.layers[1]!.encoderButton = action;
+    profile.layers[0]!.bootloaderFromRun = true;
+    expect(encoderBootloaderWarnings(profile)).toEqual([]);
+    profile.layers[1]!.bootloaderFromRun = true;
+    expect(encoderBootloaderWarnings(profile)).toEqual([{
+      where: 'Layer 2 · Encoder button',
+      message: expect.stringContaining('three seconds'),
+      slot: { kind: 'encoderButton', layer: 1 },
+    }]);
+    expect(validateProfile(profile)).toEqual([]);
+    expect(() => encodeProfile(profile)).not.toThrow();
+    profile.layers[1]!.bootloaderFromRun = false;
+    expect(encoderBootloaderWarnings(profile)).toEqual([]);
+  });
+
+  it('updates both warning displays after edits and links to the affected encoder', () => {
+    type Element = { type: unknown; props: Record<string, unknown> };
+    const elements = (node: unknown): Element[] => {
+      if (Array.isArray(node)) return node.flatMap(elements);
+      if (!node || typeof node !== 'object' || !('props' in node)) return [];
+      const element = node as Element;
+      return [element, ...elements(element.props.children)];
+    };
+    const profile = profileWithLayers(2);
+    profile.layers[1]!.encoderButton = { type: 'keyHold', usage: 4, modifiers: 0 };
+    editorProfile.value = profile;
+    selectedLayer.value = 1;
+    expect(bootloaderWarnings.value).toEqual([]);
+    updateProfile((draft) => { draft.layers[1]!.bootloaderFromRun = true; });
+    const warning = bootloaderWarnings.value[0]!;
+    expect(elements(LayerOptions()).some((node) => node.props.children === warning.message)).toBe(true);
+    const link = elements(IssuesPanel()).find((node) => node.type === 'button' && node.props.children === warning.where)!;
+    selectedLayer.value = 0;
+    (link.props.onClick as () => void)();
+    expect(selectedLayer.value).toBe(1);
+    expect(selectedSlot.value).toEqual(warning.slot);
+    updateProfile((draft) => { draft.layers[1]!.encoderButton = { type: 'none' }; });
+    expect(bootloaderWarnings.value).toEqual([]);
+    expect(elements(LayerOptions()).some((node) => node.props.children === warning.message)).toBe(false);
+    expect(elements(IssuesPanel()).some((node) => node.props.children === warning.message)).toBe(false);
+    editorProfile.value = null;
+    selectedLayer.value = 0;
+    selectedSlot.value = null;
+  });
+
+  it.each([
+    { type: 'none' }, { type: 'keyTap', usage: 4, modifiers: 0 },
+    { type: 'mouseClick', buttons: 1 }, { type: 'mouseToggle', buttons: 1 },
+    { type: 'mouseX', delta: 10 }, { type: 'mouseY', delta: 10, hold: false },
+    { type: 'momentaryLayer', layer: 1 },
+  ] satisfies Action[])('does not warn for $type or holds on physical keys and chords', (action) => {
+    const profile = profileWithLayers(2);
+    profile.layers[0]!.bootloaderFromRun = true;
+    profile.layers[0]!.encoderButton = action;
+    profile.layers[0]!.keys[0] = { type: 'keyHold', usage: 4, modifiers: 0 };
+    profile.chords = [{ layer: 0, keyA: 0, keyB: 1, action: { type: 'mouseHold', buttons: 1 } }];
+    expect(encoderBootloaderWarnings(profile)).toEqual([]);
   });
 });

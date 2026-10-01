@@ -3,6 +3,22 @@ import { LayerIndicatorBehavior } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { actionProblem, slotLabel } from './validate';
 
+/** Advisory only: holding the encoder can also trigger bootloader entry. */
+export function encoderBootloaderWarnings(profile: Profile): Issue[] {
+  return profile.layers.flatMap((layer, index) => {
+    const action = layer.encoderButton;
+    const holdsInput = action.type === 'keyHold' || action.type === 'mouseHold' ||
+      ((action.type === 'mouseX' || action.type === 'mouseY') && action.hold);
+    if (!layer.bootloaderFromRun || !holdsInput) return [];
+    const slot: Slot = { kind: 'encoderButton', layer: index };
+    return [{
+      where: slotLabel(slot),
+      message: 'Long-press bootloader entry is enabled on this layer. Holding the encoder button for three seconds will enter the bootloader while using this hold action. To prevent undesired behavior, disable bootloader entry or choose an action that does not require holding the button.',
+      slot,
+    }];
+  });
+}
+
 /** Advisory only: self-referential bindings remain valid and encodable. */
 export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
   const warnings: Issue[] = [];
