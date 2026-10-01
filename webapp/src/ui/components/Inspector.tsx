@@ -250,13 +250,26 @@ export function Inspector() {
       {problem && <p class="problem" role="alert">{problem}</p>}
 
       {keyIndex !== null && (
-        <div class="field">
+        <div class="field led-color-field">
           <span class="field-label">LED color on this layer</span>
+          <div class="color-toolbar">
+            <span class="color-selection">
+              <span class={`color-selection-dot ${layer.leds[keyIndex] === 15 ? 'swatch-off' : ''}`} style={`--c:${PALETTE[layer.leds[keyIndex]!]?.hex ?? '#000000'}`} aria-hidden="true" />
+              {PALETTE[layer.leds[keyIndex]!]?.name ?? 'Unknown'}
+            </span>
+            {keyCount(p.variant) > 1 && (
+              <button type="button" class="btn btn-small color-apply" title="Apply this color to every key on the current layer" onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds = d.layers[slot.layer]!.leds.map(() => layer.leds[keyIndex]!); })}>
+                Apply to layer
+              </button>
+            )}
+          </div>
           <div class="palette" role="radiogroup" aria-label="LED color">
             {PALETTE.map((c) => (
               <button
                 key={c.index}
+                type="button"
                 role="radio"
+                aria-label={c.name}
                 aria-checked={layer.leds[keyIndex] === c.index}
                 class={`swatch-btn ${layer.leds[keyIndex] === c.index ? 'is-selected' : ''} ${c.index === 15 ? 'swatch-off' : ''}`}
                 style={`--c:${c.hex}`}
@@ -264,14 +277,6 @@ export function Inspector() {
                 onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds[keyIndex] = c.index; }, `led:${slot.layer}:${keyIndex}`)}
               />
             ))}
-          </div>
-          <div class="row">
-            <span class="hint">{PALETTE[layer.leds[keyIndex]!]?.name ?? 'Unknown'}</span>
-            {keyCount(p.variant) > 1 && (
-              <button class="btn btn-small" onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds = d.layers[slot.layer]!.leds.map(() => layer.leds[keyIndex]!); })}>
-                Apply to all keys
-              </button>
-            )}
           </div>
           <ColorPreview color={layer.leds[keyIndex]!} />
         </div>

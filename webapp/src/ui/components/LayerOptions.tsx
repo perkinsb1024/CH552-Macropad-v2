@@ -41,8 +41,18 @@ export function LayerOptions() {
           {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number: 0.25 seconds on, 0.25 seconds off. Overrides key colors throughout the indication.</span>}
         </label>
         {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
-          <div class="field">
+          <div class="field led-color-field">
             <span class="field-label">Layer indicator color</span>
+            <div class="color-toolbar">
+              <span class="color-selection">
+                <span
+                  class={`color-selection-dot ${layer.indicatorColor === 15 ? (rainbow ? 'swatch-rainbow' : 'swatch-off') : ''}`}
+                  style={`--c:${PALETTE[layer.indicatorColor]?.hex ?? '#000000'};filter:brightness(${layer.indicatorFullBrightness ? 1 : 0.5})`}
+                  aria-hidden="true"
+                />
+                {rainbow && layer.indicatorColor === 15 ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name ?? 'Unknown'}
+              </span>
+            </div>
             <div class="palette" role="radiogroup" aria-label="Layer indicator color">
               {PALETTE.map((color) => {
                 const name = rainbow && color.index === 15 ? 'Rainbow' : color.name;
@@ -61,23 +71,21 @@ export function LayerOptions() {
                 );
               })}
             </div>
+            <div class="segmented" role="group" aria-label="Layer indicator brightness">
+              <button
+                type="button"
+                class={layer.indicatorFullBrightness ? 'is-selected' : ''}
+                aria-pressed={layer.indicatorFullBrightness}
+                onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = true; })}
+              >Full Brightness</button>
+              <button
+                type="button"
+                class={!layer.indicatorFullBrightness ? 'is-selected' : ''}
+                aria-pressed={!layer.indicatorFullBrightness}
+                onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = false; })}
+              >Dim</button>
+            </div>
             <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={rainbow} />
-          </div>
-        )}
-        {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
-          <div class="segmented" role="group" aria-label="Layer indicator brightness">
-            <button
-              type="button"
-              class={layer.indicatorFullBrightness ? 'is-selected' : ''}
-              aria-pressed={layer.indicatorFullBrightness}
-              onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = true; })}
-            >Full Brightness</button>
-            <button
-              type="button"
-              class={!layer.indicatorFullBrightness ? 'is-selected' : ''}
-              aria-pressed={!layer.indicatorFullBrightness}
-              onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = false; })}
-            >Dim</button>
           </div>
         )}
       </div>

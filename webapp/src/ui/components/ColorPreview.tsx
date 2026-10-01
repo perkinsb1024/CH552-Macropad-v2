@@ -10,9 +10,9 @@ export function ColorPreview({ color, fullBrightness = true, rainbow = false }: 
     return <span class="hint">Color preview is unavailable in this firmware.</span>;
   }
   return (
-    <div class="row">
-      <button type="button" class="btn btn-small" disabled={!available} onClick={() => void previewColor(color, fullBrightness, rainbow)}>Preview Color</button>
-      <button type="button" class="btn btn-small" disabled={!available} onClick={() => void cancelPreview()}>Cancel Preview</button>
+    <div class="color-preview-actions">
+      <button type="button" class="btn btn-small color-preview-button" disabled={!available} onClick={() => void previewColor(color, fullBrightness, rainbow)}>Preview color</button>
+      <button type="button" class="btn btn-small btn-ghost" disabled={!available} onClick={() => void cancelPreview()}>Cancel preview</button>
     </div>
   );
 }
