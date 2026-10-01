@@ -236,10 +236,15 @@ export function Inspector() {
         <label class="field">
           <span class="field-label">Relative offset</span>
           <select value={action.offset} onChange={(e) => update({ ...action, offset: Number((e.target as HTMLSelectElement).value) })}>
-            {[-3, -2, -1, 0, 1, 2, 3].filter((offset) => offset !== 0 || action.offset === 0).map((offset) => <option key={offset} value={offset}>{offset > 0 ? `+${offset}` : offset}{offset === 0 ? ' (no effect)' : ''}</option>)}
+            {[-3, -2, -1, 0, 1, 2, 3].map((offset) => <option key={offset} value={offset}>{offset > 0 ? `+${offset}` : offset}</option>)}
           </select>
-          <span class="hint">Layer {slot.layer + 1} → Layer {relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}{action.offset === 0 ? ' (no effect)' : ''}</span>
+          <span class="hint">Layer {slot.layer + 1} → Layer {relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}</span>
         </label>
+      )}
+
+      {(((action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer === slot.layer) ||
+        ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && relativeTargetLayer(slot.layer, action.offset, layerCount) === slot.layer)) && (
+        <div class="notice notice-info">Changing to the same layer is useful to display the current Layer's indicator</div>
       )}
 
       {problem && <p class="problem" role="alert">{problem}</p>}

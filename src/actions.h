@@ -10,6 +10,8 @@ void actionsRotate(uint8_t clockwise);
 void actionsPoll(uint16_t now);
 void actionsClear(void);
 uint8_t actionsLayer(void);
+// Consume explicit layer selections, including selections of the current layer.
+uint8_t actionsTakeLayerSelection(void);
 uint8_t actionsDropped(uint8_t rotation);
 
 #endif

@@ -251,6 +251,46 @@ static void testOneShot(void) {
     }
 }
 
+static void testOneShotGlobalLayerChord(void) {
+    uint8_t start;
+    uint8_t first;
+    for (start = 0; start < 2; start++) {
+        for (first = 3; first <= 4; first++) {
+            reset();
+            memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+            activeConfig[3] = 1 | (start << 2);
+            activeConfig[5] = 2;
+            activeConfig[8] = 10; // 50 ms.
+            activeConfig[9] = activeConfig[31] = 0x10 | CONFIG_ACTION_SET_LAYER;
+            activeConfig[10] = 1;
+            activeConfig[53] = 0x8C; // Global keys 3+4.
+            activeConfig[54] = CONFIG_ACTION_RELATIVE_LAYER;
+            activeConfig[55] = 1;
+            actionsInit();
+            actionsPress(3, 0);
+            actionsPress(4, 1);
+            assert(actionsLayer() == (start ^ 1));
+            actionsRelease(3);
+            actionsRelease(4);
+            actionsPress(0, 10);
+            actionsRelease(0);
+            assert(actionsLayer() == start);
+            actionsPress(first, 2000);
+            assert(actionsLayer() == start); // Await the complete chord.
+            actionsPress(first == 3 ? 4 : 3, 2049);
+            assert(actionsLayer() == (start ^ 1));
+            actionsRelease(3);
+            actionsRelease(4);
+            actionsPress(1, 2050); // The chord consumed the one-shot.
+            assert(actionsLayer() == (start ^ 1));
+            actionsRelease(1);
+            actionsPress(3, 2060);
+            actionsPress(4, 2061);
+            assert(actionsLayer() == start);
+        }
+    }
+}
+
 static void testRolloverAndSequence(void) {
     uint8_t i;
     reset();
@@ -795,6 +835,7 @@ int main(void) {
     testPointerHold();
     testPointerSteps();
     testOneShot();
+    testOneShotGlobalLayerChord();
     testRelativeLayer();
     testRolloverBackpressure();
     testClearAndOverflow();

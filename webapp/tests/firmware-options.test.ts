@@ -32,10 +32,10 @@ describe('current firmware indicator options', () => {
     expect(off).toBeDefined();
     expect(nodes.find((node) => node.type === ColorPreview)!.props.rainbow).toBe(true);
     expect(nodes.some((node) => node.props['aria-label'] === 'Layer indicator brightness')).toBe(true);
-    const transparency = elements(ProfilePanel()).find((node) => node.type === 'input' && node.props.type === 'checkbox')!;
+    const transparency = elements(ProfilePanel()).find((node) => node.type === 'button' && text(node) === 'Transparent')!;
     expect(transparency.props.disabled).toBe(undefined);
     // Transparency remains editable for the current firmware.
-    updateProfile((p) => { p.transparentBlack = true; });
-    expect(elements(ProfilePanel()).find((node) => node.type === 'input' && node.props.type === 'checkbox')!.props.disabled).toBeUndefined();
+    (transparency.props.onClick as () => void)();
+    expect(elements(ProfilePanel()).find((node) => node.type === 'button' && text(node) === 'Transparent')!.props['aria-pressed']).toBe(true);
   });
 });

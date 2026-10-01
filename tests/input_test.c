@@ -251,7 +251,81 @@ static void testMomentaryIndicatorCancellation(void) {
     assertIndicatorLeds(0, 1, 0);
 }
 
+static void testSameLayerIndicator(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    const uint8_t types[] = {CONFIG_ACTION_SET_LAYER, CONFIG_ACTION_RELATIVE_LAYER,
+        CONFIG_ACTION_MOMENTARY_LAYER, 0x10 | CONFIG_ACTION_SET_LAYER,
+        0x10 | CONFIG_ACTION_RELATIVE_LAYER};
+    for (uint8_t i = 0; i < sizeof(types); i++) {
+        testLoadStarterProfile(PHYSICAL_VARIANT);
+        memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+        activeConfig[9] = types[i];
+        activeConfig[9 + size - 1] = 0x35; // Timed full-brightness amber.
+        activeConfigValid = 1;
+        P1 = P3 = 0xFF;
+        currentMs = 10000;
+        firmwareApplyConfig();
+        actionsPress(0, currentMs);
+        tick(10000);
+        assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 3);
+        assertIndicatorLeds(1, 1, 0);
+        actionsRelease(0);
+        tick(10500);
+        tick(11000);
+        tick(11500);
+        assert(layerIndicatorPhasesLeft == 0);
+        assertIndicatorLeds(1, 0, 0);
+        actionsPress(0, 11600);
+        tick(11600);
+        assert(layerIndicatorPhasesLeft == 3);
+        assertIndicatorLeds(1, 1, 0);
+        actionsRelease(0);
+    }
+}
+
+static void testOneShotChordIndicator(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    uint8_t first = PHYSICAL_VARIANT ? 1 : 3;
+    uint8_t second = first + 1;
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+    activeConfig[3] = 1;
+    activeConfig[5] |= 2;
+    activeConfig[8] = 10;
+    activeConfig[9] = activeConfig[9 + size] = 0x10 | CONFIG_ACTION_SET_LAYER;
+    activeConfig[10] = 1;
+    activeConfig[9 + size - 1] = 0x87; // Timed cyan.
+    activeConfig[9 + 2 * size - 1] = 0xD7; // Timed pink.
+    activeConfig[9 + 2 * size] = PHYSICAL_VARIANT ? 0x82 : 0x8C;
+    activeConfig[10 + 2 * size] = CONFIG_ACTION_RELATIVE_LAYER;
+    activeConfig[11 + 2 * size] = 1;
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+    currentMs = 20000;
+    firmwareApplyConfig();
+    actionsPress(0, 20000);
+    actionsRelease(0);
+    tick(20000);
+    assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 3);
+    assert(ledData[1] == 255 && ledData[2] == 72); // Pink.
+    tick(20500);
+    tick(21000);
+    tick(21500);
+    assert(layerIndicatorPhasesLeft == 0);
+    actionsPress(first, 21600);
+    tick(21600);
+    assert(layerIndicatorPhasesLeft == 0);
+    actionsPress(second, 21649);
+    tick(21649);
+    assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 3);
+    assert(ledData[0] == 255 && ledData[1] == 0 && ledData[2] == 200); // Cyan.
+    actionsRelease(first);
+    actionsRelease(second);
+}
+
 int main(void) {
+    testSameLayerIndicator();
+    testOneShotChordIndicator();
     testIndicatorBrightness();
     testTransparencyAndRainbow();
     testMomentaryIndicatorCancellation();

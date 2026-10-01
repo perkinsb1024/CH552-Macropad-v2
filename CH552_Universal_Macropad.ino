@@ -367,10 +367,12 @@ void loop() {
   }
 #endif
   actionsPoll(now);
-  if (lastLayer != actionsLayer()) {
-    lastLayer = actionsLayer();
-    encoderState = readEncoder();
-    encoderMovement = 0;
+  if (actionsTakeLayerSelection() || lastLayer != actionsLayer()) {
+    if (lastLayer != actionsLayer()) {
+      lastLayer = actionsLayer();
+      encoderState = readEncoder();
+      encoderMovement = 0;
+    }
     startLayerIndicator(lastLayer, now);
   }
   serviceLayerIndicator(now);

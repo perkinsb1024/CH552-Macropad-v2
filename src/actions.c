@@ -29,6 +29,7 @@ __xdata uint8_t droppedButtons;
 __xdata uint8_t droppedRotation;
 __data uint8_t baseLayer;
 __data uint8_t effectiveLayer;
+__data uint8_t layerSelectionPending;
 // 0xFF means no one-shot layer is waiting to be consumed.
 __data uint8_t oneShotReturnLayer;
 __data uint8_t currentFirst;
@@ -153,6 +154,7 @@ static void updateLayer(void);
 
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
+  uint8_t selectedLayer = baseLayer;
   if (oneShotReturnLayer != 0xFF) {
     baseLayer = oneShotReturnLayer;
     oneShotReturnLayer = 0xFF;
@@ -163,21 +165,24 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
     case CONFIG_ACTION_NONE:
     case CONFIG_ACTION_KEY_HOLD:
     case CONFIG_ACTION_MOUSE_HOLD:
+      break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
+      layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
       latchedMouse[input] ^= second;
       break;
     case CONFIG_ACTION_RELATIVE_LAYER:
-      if (!second) break;
       {
         uint8_t layers = configLayerCount();
         // Twelve is divisible by every supported layer count (1-4).
-        second = baseLayer + second + 12;
+        // Resolve relative to the selected layer, before consuming a one-shot.
+        second = selectedLayer + second + 12;
         while (second >= layers) second -= layers;
       }
       // Fall through: both layer actions share the one-shot flag and assignment.
     case CONFIG_ACTION_SET_LAYER:
+      layerSelectionPending = 1;
       if (first & 0x10) {
         oneShotReturnLayer = baseLayer;
       }
@@ -242,6 +247,7 @@ void actionsInit(void) {
   uint8_t i;
   baseLayer = configStartupLayer();
   effectiveLayer = baseLayer;
+  layerSelectionPending = 0;
   oneShotReturnLayer = 0xFF;
   pendingInput = 0;
   inputDown = 0;
@@ -290,6 +296,12 @@ uint8_t actionsDropped(uint8_t rotation) {
 
 uint8_t actionsLayer(void) {
   return effectiveLayer;
+}
+
+uint8_t actionsTakeLayerSelection(void) {
+  uint8_t pending = layerSelectionPending;
+  layerSelectionPending = 0;
+  return pending;
 }
 
 static void orderPress(uint8_t input) {
