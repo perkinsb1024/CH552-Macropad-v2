@@ -1,6 +1,6 @@
 import { addLayer, ask, canInsertLayer, closeDialog, draggedLayer, insertLayer, layerDrop, layerName, profile, removeLayer, selectedLayer, selectedSlot, swapLayers } from '../store';
 import { dropPosition } from '../drag';
-import { MAX_LAYERS } from '../../model/constants';
+import { maxLayers } from '../../model/constants';
 import { IconPlus, IconTrash } from './Icons';
 
 export function LayerTabs() {
@@ -91,7 +91,7 @@ export function LayerTabs() {
           </button>
         );
       })}
-      {p.layers.length < MAX_LAYERS && (
+      {p.layers.length < maxLayers(p.variant) && (
         <button class="tab tab-add" onClick={addLayer} title="Add layer"><IconPlus /> Add layer</button>
       )}
     </div>

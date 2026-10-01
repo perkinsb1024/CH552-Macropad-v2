@@ -1,5 +1,5 @@
 import {
-  ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, MAX_LAYERS,
+  ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
@@ -44,7 +44,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
     case ActionCode.RelativeLayer: {
       const offset = toSigned(b1);
-      return aux > 1 || offset < -3 || offset > 3 ? 'Invalid relative-layer offset' : aux ? { type: 'oneShotRelativeLayer', offset } : { type: 'relativeLayer', offset };
+      return aux > 1 || offset < -6 || offset > 6 ? 'Invalid relative-layer offset' : aux ? { type: 'oneShotRelativeLayer', offset } : { type: 'relativeLayer', offset };
     }
     case ActionCode.KeyTap:
     case ActionCode.KeyHold:
@@ -101,19 +101,20 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (image[2] !== 2 && image[2] !== FORMAT_VERSION) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2 or ${FORMAT_VERSION}).`);
+  if (image[2] !== 2 && image[2] !== 3 && image[2] !== FORMAT_VERSION) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2, 3 or ${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
-  if (image[3]! & 0xf0) return fail('malformed', 'Reserved bits set in byte 3.');
+  const extended = image[2] === FORMAT_VERSION;
+  if (image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
   if (image[8]! & 0xf0) return fail('malformed', 'Reserved bits set in chord-window byte.');
 
   const variant = (image[5]! & 1) as Variant;
   if (expectedVariant !== undefined && variant !== expectedVariant) {
     return fail('malformed', `Image is for the ${variant ? 'three' : 'six'}-key variant but the device has ${expectedVariant ? 'three' : 'six'} keys.`);
   }
-  const layerCount = (image[3]! & 3) + 1;
-  const startupLayer = (image[3]! >> 2) & 3;
+  const layerCount = (image[3]! & (extended ? 7 : 3)) + 1;
+  const startupLayer = (image[3]! >> (extended ? 3 : 2)) & (extended ? 7 : 3);
   if (startupLayer >= layerCount) return fail('malformed', `Startup layer ${startupLayer + 1} exceeds layer count ${layerCount}.`);
-  if (layerCount > MAX_LAYERS) return fail('malformed', 'Too many layers.');
+  if (layerCount > (extended ? maxLayers(variant) : 4)) return fail('malformed', 'Too many layers.');
 
   const keys = keyCount(variant);
   const size = layerSize(variant);
@@ -169,10 +170,10 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   let previous = -1;
   for (let i = 0; i < chordCount; i++, offset += CHORD_ENTRY_SIZE) {
     const id = image[offset]!;
-    const layer = (id >> 4) & 3;
+    const layer = (id >> 4) & (extended ? 7 : 3);
     const global = !!(id & 0x80);
     const pair = id & 15;
-    if (id & 0x40) return fail('malformed', `Chord ${i + 1}: reserved identifier bit set.`);
+    if (!extended && (id & 0x40)) return fail('malformed', `Chord ${i + 1}: reserved identifier bit set.`);
     if (layer >= layerCount) return fail('malformed', `Chord ${i + 1}: layer ${layer + 1} does not exist.`);
     if (pair >= pairCount(variant)) return fail('malformed', `Chord ${i + 1}: pair index ${pair} is invalid.`);
     if (id <= previous) return fail('malformed', `Chord ${i + 1}: identifiers are not strictly ascending.`);

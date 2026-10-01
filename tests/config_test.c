@@ -22,7 +22,7 @@ static void testStarterFixture(uint8_t variant) {
     uint8_t i;
     testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0xDFCD : 0x0572));
+    assert(configCrc(activeConfig) == (variant ? 0x7381 : 0xA93E));
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
@@ -76,7 +76,7 @@ static void testHeaderAndIgnoredFields(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         testLoadStarterProfile(variant);
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
-        activeConfig[3] |= 0xF0;
+        activeConfig[3] |= 0xC0;
         activeConfig[8] |= 0xF0;
         activeConfig[127] = 0xFF;
         seal();
@@ -98,7 +98,7 @@ static void testCapacityAndStrings(uint8_t variant) {
     uint8_t layers;
     uint8_t pool;
     uint8_t remaining;
-    for (layers = 1; layers <= 4; layers++) {
+    for (layers = 1; layers <= (variant ? 7 : 5); layers++) {
         testLoadStarterProfile(variant);
         activeConfig[3] = layers - 1;
         pool = 9 + size * layers;
@@ -213,16 +213,16 @@ static void testActions(void) {
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
     testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
-    activeConfig[10] = 3;
+    activeConfig[10] = 6;
     seal();
     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
-    activeConfig[10] = 0xFD;
+    activeConfig[10] = 0xFA;
     seal();
     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
-    activeConfig[10] = 4;
+    activeConfig[10] = 7;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    activeConfig[10] = 0xFC;
+    activeConfig[10] = 0xF9;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
     activeConfig[9] = 0x1D;
@@ -248,7 +248,46 @@ static void testActions(void) {
     assert(configValid(activeConfig, CONFIG_THREE_KEYS));
 }
 
+static void testExpandedLayers(uint8_t variant) {
+    uint8_t count = variant ? 7 : 5;
+    uint8_t size = variant ? 15 : 22;
+    uint8_t first, second;
+    uint8_t chord = 9 + size * count;
+    for (uint8_t startup = 0; startup < count; startup++) {
+        testLoadStarterProfile(variant);
+        activeConfig[3] = (count - 1) | (startup << 3);
+        activeConfig[5] |= 4; // Two chords: local then global, on the highest layer.
+        activeConfig[chord] = (count - 1) << 4;
+        activeConfig[chord + 1] = CONFIG_ACTION_SET_LAYER;
+        activeConfig[chord + 2] = count - 1;
+        activeConfig[chord + 3] = 0x80 | ((count - 1) << 4);
+        activeConfig[chord + 4] = CONFIG_ACTION_SET_LAYER;
+        activeConfig[chord + 5] = 0;
+        uint8_t base = 9 + size * (count - 1);
+        activeConfig[base] = CONFIG_ACTION_MOMENTARY_LAYER;
+        activeConfig[base + 1] = count - 1;
+        activeConfig[base + size - 1] = 0xA9;
+        seal();
+        assert(configValid(activeConfig, variant));
+        assert(configLayerCount() == count && configStartupLayer() == startup);
+        assert(configLayerOptions(count - 1) == 0xA9);
+        configBinding(count - 1, 0, &first, &second);
+        assert(first == CONFIG_ACTION_MOMENTARY_LAYER && second == count - 1);
+        assert(configChord(count - 1, 0, 1, &first, &second));
+        assert(second == count - 1); // Local wins over global.
+        assert(configChord(0, 0, 1, &first, &second) && second == 0);
+        activeConfig[3] = (count - 1) | (count << 3);
+        seal();
+        assert(!configValid(activeConfig, variant));
+        activeConfig[3] = count; // One more complete layer exceeds the image capacity.
+        seal();
+        assert(!configValid(activeConfig, variant));
+    }
+}
+
 int main(void) {
+    testExpandedLayers(0);
+    testExpandedLayers(1);
     testStarterFixture(CONFIG_SIX_KEYS);
     testStarterFixture(CONFIG_THREE_KEYS);
     testInvalid();

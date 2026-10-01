@@ -2,7 +2,7 @@ import { computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease } from '../model/actions';
-import { FORMAT_VERSION, MAX_LAYERS, keyCount, type Variant } from '../model/constants';
+import { FORMAT_VERSION, maxLayers, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { actionProblem, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
@@ -145,7 +145,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -512,7 +512,7 @@ export function setChordGlobal(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB'>, gl
 
 export function addLayer(): void {
   const p = profile.value;
-  if (!p || p.layers.length >= MAX_LAYERS) return;
+  if (!p || p.layers.length >= maxLayers(p.variant)) return;
   updateProfile((draft) => {
     const sourceIndex = selectedLayer.value;
     const source = draft.layers[sourceIndex];
@@ -766,8 +766,8 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     let fromDevice: Profile;
     if (decoded.ok) {
       fromDevice = decoded.profile;
-      if (peekHeader(flash).version === 2 && info.formatVersion === FORMAT_VERSION) {
-        notify('info', 'Version 2 profile upgraded in the editor: Blink once becomes On for 1.5 seconds, and transparency is off. Save to apply it to this format 3 device.', 12000);
+      if (peekHeader(flash).version < FORMAT_VERSION && info.formatVersion === FORMAT_VERSION) {
+        notify('info', `Version ${peekHeader(flash).version} profile upgraded in the editor. Save to apply it to this format ${FORMAT_VERSION} device.`, 12000);
       }
     } else {
       fromDevice = defaultProfile(info.variant);

@@ -1,6 +1,6 @@
 /**
  * HID keyboard usages supported by the firmware's US-layout mapper:
- * 0x04–0x65 and 0x68–0x73 (config-v3.md). Modifiers are a separate mask.
+ * 0x04–0x65 and 0x68–0x73 (config-v4.md). Modifiers are a separate mask.
  */
 export interface KeyInfo {
   usage: number;

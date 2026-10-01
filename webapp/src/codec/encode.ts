@@ -71,7 +71,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   image[0] = 0x4d; // M
   image[1] = 0x50; // P
   image[2] = FORMAT_VERSION;
-  image[3] = (profile.layers.length - 1) | (profile.startupLayer << 2);
+  image[3] = (profile.layers.length - 1) | (profile.startupLayer << 3);
   image[4] = poolLength;
   image[5] = profile.variant | (chords.length << 1) | (profile.transparentBlack ? 0x80 : 0);
   image[8] = profile.chordWindow & 15;

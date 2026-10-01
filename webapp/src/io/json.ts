@@ -1,5 +1,5 @@
 import type { Action, Chord, Layer, Profile } from '../model/types';
-import { type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount } from '../model/constants';
+import { type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
 import { PALETTE } from '../model/palette';
@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 3;
+export const JSON_VERSION = 4;
 
 /** Optional editor annotations that never reach the device. */
 export interface LocalMetadata {
@@ -138,10 +138,10 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (raw.version !== 1 && raw.version !== 2 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
-  if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > 4) throw new ImportError('Profile must have 1–4 layers.');
+  if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
   const layers: Layer[] = raw.layers.map((l, li): Layer => {
     if (!isRecord(l)) throw new ImportError(`Layer ${li + 1} is malformed.`);
     if (!Array.isArray(l.keys) || l.keys.length !== keys) throw new ImportError(`Layer ${li + 1} must have ${keys} key bindings.`);

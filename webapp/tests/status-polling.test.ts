@@ -34,11 +34,11 @@ describe('device status polling', () => {
     try {
       // The simulator reports the layer encoded in its active RAM header.
       const device = conn.transport as SimulatedDevice;
-      device.active[3] = (device.active[3]! & ~12) | (3 << 2);
+      device.active[3] = (device.active[3]! & ~56) | (3 << 3);
       await vi.advanceTimersByTimeAsync(500);
       expect(conn.status.currentLayer).toBe(3);
       expect(layers).toEqual([0, 3]);
-      device.active[3] = device.active[3]! & ~12;
+      device.active[3] = device.active[3]! & ~56;
       await vi.advanceTimersByTimeAsync(510);
       expect(layers).toEqual([0, 3, 0]);
       expect(profile.peek()).toBe(editorProfile);

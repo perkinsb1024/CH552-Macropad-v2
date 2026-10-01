@@ -18,8 +18,10 @@ function legacyImage() {
 }
 
 describe('device profile migration', () => {
-  it('loads old flash on new firmware and saves the upgraded profile only on request', async () => {
+  it.each([2, 3])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
     const legacy = legacyImage();
+    legacy[2] = version;
+    sealImage(legacy);
     const originalSend = SimulatedDevice.prototype.send;
     let seeded = false;
     vi.spyOn(SimulatedDevice.prototype, 'send').mockImplementation(function (this: SimulatedDevice, payload) {
@@ -38,7 +40,7 @@ describe('device profile migration', () => {
     expect(device.flash).toEqual(legacy);
     expect(canSave.value).toBe(true);
     await save();
-    expect(device.flash[2]).toBe(3);
+    expect(device.flash[2]).toBe(4);
     expect(device.flashValid).toBe(true);
   });
 

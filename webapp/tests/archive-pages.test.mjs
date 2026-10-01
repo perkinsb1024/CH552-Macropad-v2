@@ -16,15 +16,15 @@ describe('archived pages in development', () => {
   });
   afterAll(async () => { await server?.close(); });
 
-  it('serves the frozen v2 HTML, including direct index URLs and query strings', async () => {
-    const frozen = await readFile(new URL('../public/versions/format-v2/index.html', import.meta.url), 'utf8');
-    for (const path of ['/versions/format-v2/', '/versions/format-v2/?sim=six', '/versions/format-v2/index.html']) {
+  it.each([2, 3])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
+    const frozen = await readFile(new URL(`../public/versions/format-v${version}/index.html`, import.meta.url), 'utf8');
+    for (const path of [`/versions/format-v${version}/`, `/versions/format-v${version}/?sim=six`, `/versions/format-v${version}/index.html`]) {
       const response = await fetch(origin + path);
       expect(response.status).toBe(200);
       expect(await response.text()).toBe(frozen);
     }
     const asset = frozen.match(/src="(.+?)"/)[1];
-    expect((await fetch(new URL(asset, origin + '/versions/format-v2/'))).status).toBe(200);
+    expect((await fetch(new URL(asset, origin + `/versions/format-v${version}/`))).status).toBe(200);
   });
 
   it('serves the archive catalog and redirects directory URLs to a trailing slash', async () => {

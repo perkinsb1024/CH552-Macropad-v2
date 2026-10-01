@@ -5,7 +5,7 @@ import { defaultProfile } from '../src/model/defaults';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('versioned drafts', () => {
-  it('isolates v3 drafts from the v2 archive while recovering the old shared key', () => {
+  it('isolates v4 drafts from the v2 archive while recovering the old shared key', () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,
@@ -17,7 +17,7 @@ describe('versioned drafts', () => {
     const archivedKey = 'universal-macropad:format-v2:draft:six-key';
     storage.set(archivedKey, 'archived draft');
     expect(loadDraft(0)?.profile).toEqual(legacy);
-    expect(draftKey(0)).toBe('universal-macropad:format-v3:draft:six-key');
+    expect(draftKey(0)).toBe('universal-macropad:format-v4:draft:six-key');
     const current = defaultProfile(0);
     current.transparentBlack = true;
     storeDraft(current, {});
@@ -44,7 +44,7 @@ describe('versioned drafts', () => {
     draft.profile.layers[0].keys[0] = { type: 'nextLayer' };
     storage.set(draftKey(0), JSON.stringify(draft));
     const migrated = loadDraft(0)!;
-    expect(migrated.formatVersion).toBe(3);
+    expect(migrated.formatVersion).toBe(4);
     expect(migrated.profile.transparentBlack).toBe(false);
     expect(migrated.profile.layers[0]!.indicatorBehavior).toBe(1);
     expect(migrated.profile.layers[0]!.clockwise).toEqual({ type: 'scroll', delta: 2 });
@@ -53,8 +53,29 @@ describe('versioned drafts', () => {
     delete draft.formatVersion;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toEqual(migrated);
-    draft.formatVersion = 4;
+    draft.formatVersion = 5;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toBeNull();
   });
+});
+
+it('recovers v3 drafts without clearing them or resurrecting them after clearing v4', () => {
+  const storage = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+    removeItem: (key: string) => storage.delete(key),
+  });
+  const archivedKey = 'universal-macropad:format-v3:draft:three-key';
+  const old = defaultProfile(1);
+  old.startupLayer = 1;
+  const archived = JSON.stringify({ formatVersion: 3, profile: old, meta: {}, savedAt: 'v3' });
+  storage.set(archivedKey, archived);
+  expect(loadDraft(1)?.profile).toEqual(old);
+  expect(loadDraft(1)?.formatVersion).toBe(4);
+  clearDraft(1);
+  expect(storage.get(archivedKey)).toBe(archived);
+  expect(loadDraft(1)).toBeNull();
+  storeDraft(old, {});
+  expect(loadDraft(1)?.profile).toEqual(old);
 });

@@ -67,7 +67,7 @@ static void reset(void) {
     memcpy(original, activeConfig, CONFIG_SIZE);
     memcpy(flash, original, CONFIG_SIZE);
     memcpy(upload, original, CONFIG_SIZE);
-    upload[3] = 5; // Two layers, starting on layer 1.
+    upload[3] = 9; // Two layers, starting on layer 1.
     seal(upload);
     assert(configValid(upload, PHYSICAL_VARIANT));
     failAfter = -1;
@@ -135,6 +135,7 @@ static void testReads(void) {
     assert(sent[8] == 0 && sent[7] == 14);
     assert(memcmp(sent + 9, "UMAC", 4) == 0);
     assert(sent[16] == (PHYSICAL_VARIANT ? 3 : 6) && sent[19] == 128);
+    assert(sent[14] == CONFIG_VERSION && sent[18] == CONFIG_MAX_LAYERS);
     request(2, 0, 0, 0);
     assert(sent[9] == 1 && sent[10] == 0 && sent[12] == 0);
     request(4, 120, 8, 0);
@@ -243,7 +244,7 @@ static void testValidation(void) {
     request(7, 0, 0, 0);
     assert(sent[8] == 7 && !writes);
     reset();
-    upload[3] = 0x0D; // Two layers with an out-of-range startup layer (3).
+    upload[3] = 0x19; // Two layers with an out-of-range startup layer (3).
     seal(upload);
     begin();
     chunks();

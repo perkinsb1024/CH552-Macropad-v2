@@ -147,18 +147,23 @@ static void testRelativeLayer(void) {
     actionsPress(0, 1);
     assert(actionsLayer() == 0); // Existing zero-byte records are no-ops.
 
-    for (layers = 1; layers <= 4; layers++) {
-        for (offset = -3; offset <= 3; offset++) {
-            reset();
-            activeConfig[3] = layers - 1;
-            activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
-            activeConfig[10] = (uint8_t)offset;
-            actionsInit();
-            actionsPress(0, 0);
-            target = offset;
-            while (target < 0) target += layers;
-            while (target >= layers) target -= layers;
-            assert(actionsLayer() == target);
+    for (layers = 1; layers <= 7; layers++) {
+        for (uint8_t start = 0; start < layers; start++) {
+            for (offset = -6; offset <= 6; offset++) {
+                reset();
+                memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+                activeConfig[5] = CONFIG_THREE_KEYS;
+                activeConfig[3] = (layers - 1) | (start << 3);
+                activeConfig[9 + 15 * start] = CONFIG_ACTION_RELATIVE_LAYER;
+                activeConfig[10 + 15 * start] = (uint8_t)offset;
+                actionsInit();
+                assert(actionsLayer() == start);
+                actionsPress(0, 0);
+                target = start + offset;
+                while (target < 0) target += layers;
+                while (target >= layers) target -= layers;
+                assert(actionsLayer() == target);
+            }
         }
     }
 }
@@ -258,7 +263,7 @@ static void testOneShotGlobalLayerChord(void) {
         for (first = 3; first <= 4; first++) {
             reset();
             memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-            activeConfig[3] = 1 | (start << 2);
+            activeConfig[3] = 1 | (start << 3);
             activeConfig[5] = 2;
             activeConfig[8] = 10; // 50 ms.
             activeConfig[9] = activeConfig[31] = 0x10 | CONFIG_ACTION_SET_LAYER;
@@ -831,7 +836,36 @@ static void testClearAndOverflow(void) {
     assert(actionsDropped(0) == 0 && actionsDropped(1) == 0);
 }
 
+static void testHighLayerActions(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        uint8_t count = variant ? 7 : 5;
+        uint8_t size = variant ? 15 : 22;
+        for (uint8_t mode = 0; mode < 3; mode++) {
+            reset();
+            memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+            activeConfig[5] = variant;
+            activeConfig[3] = count - 1;
+            activeConfig[9] = mode == 2 ? CONFIG_ACTION_MOMENTARY_LAYER :
+                CONFIG_ACTION_SET_LAYER | (mode ? 0x10 : 0);
+            activeConfig[10] = count - 1;
+            activeConfig[9 + size * (count - 1) + 2] = CONFIG_ACTION_KEY_TAP;
+            activeConfig[9 + size * (count - 1) + 3] = 4;
+            actionsInit();
+            actionsPress(0, 0);
+            assert(actionsLayer() == count - 1);
+            actionsPress(1, 1);
+            assert(actionsLayer() == (mode == 1 ? 0 : count - 1));
+            actionsPoll(1);
+            assert(reports[0][3] == 4); // Selected high-layer binding executed.
+            actionsRelease(1);
+            actionsRelease(0);
+            assert(actionsLayer() == (mode ? 0 : count - 1));
+        }
+    }
+}
+
 int main(void) {
+    testHighLayerActions();
     testPointerHold();
     testPointerSteps();
     testOneShot();

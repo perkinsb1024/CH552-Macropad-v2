@@ -1,4 +1,4 @@
-import { MAX_CHORD_WINDOW_UNITS, MAX_LAYERS, keyCount } from './constants';
+import { MAX_CHORD_WINDOW_UNITS, maxLayers, keyCount } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
@@ -24,7 +24,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       return null;
     case 'relativeLayer':
     case 'oneShotRelativeLayer':
-      return Number.isInteger(action.offset) && action.offset >= -3 && action.offset <= 3 ? null : 'Relative layer offset must be a whole number from -3 to 3.';
+      return Number.isInteger(action.offset) && action.offset >= -6 && action.offset <= 6 ? null : 'Relative layer offset must be a whole number from -6 to 6.';
     case 'keyTap':
     case 'keyHold':
       if (!Number.isInteger(action.usage) || !isSupportedUsage(action.usage)) return `Key usage 0x${action.usage.toString(16)} is not supported.`;
@@ -88,7 +88,7 @@ export function validateProfile(profile: Profile): Issue[] {
     issues.push({ where: 'Profile', message: 'Transparent black must be true or false.' });
   }
 
-  if (layerCount < 1 || layerCount > MAX_LAYERS) issues.push({ where: 'Profile', message: `Layer count must be 1–${MAX_LAYERS}.` });
+  if (layerCount < 1 || layerCount > maxLayers(profile.variant)) issues.push({ where: 'Profile', message: `Layer count must be 1–${maxLayers(profile.variant)}.` });
   if (!Number.isInteger(profile.startupLayer) || profile.startupLayer < 0 || profile.startupLayer >= layerCount) {
     issues.push({ where: 'Profile', message: `Startup layer ${profile.startupLayer + 1} does not exist.` });
   }

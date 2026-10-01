@@ -72,7 +72,7 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
         case CONFIG_ACTION_NONE:
             return aux == 0 && param == 0;
         case CONFIG_ACTION_RELATIVE_LAYER:
-            return aux <= 1 && (param <= 3 || param >= 0xFD);
+            return aux <= 1 && (param <= 6 || param >= 0xFA);
         case CONFIG_ACTION_KEY_TAP:
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
@@ -131,8 +131,8 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
         image[2] != CONFIG_VERSION || ((image[5] & 1) != variant)) {
         return 0;
     }
-    layers = (image[3] & 3) + 1;
-    if (((image[3] >> 2) & 3) >= layers) {
+    layers = (image[3] & 7) + 1;
+    if (((image[3] >> 3) & 7) >= layers) {
         return 0;
     }
     keys = keyCount(variant);
@@ -156,7 +156,7 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     offset = 9 + size * layers;
     for (i = 0; i < chords; i++) {
         id = image[offset];
-        if (((id >> 4) & 3) >= layers ||
+        if (((id >> 4) & 7) >= layers ||
             (id & 15) >= (keys == 3 ? 3 : 15) ||
             (i && id <= previous) ||
             !actionValid(image, offset + 1, layers, 0, pool, used)) {
@@ -179,8 +179,8 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     return image[6] == (uint8_t)crc && image[7] == (uint8_t)(crc >> 8);
 }
 
-uint8_t configLayerCount(void) { return (activeConfig[3] & 3) + 1; }
-uint8_t configStartupLayer(void) { return (activeConfig[3] >> 2) & 3; }
+uint8_t configLayerCount(void) { return (activeConfig[3] & 7) + 1; }
+uint8_t configStartupLayer(void) { return (activeConfig[3] >> 3) & 7; }
 uint8_t configKeyCount(void) { return keyCount(activeConfig[5] & 1); }
 uint8_t configChordWindowMs(void) { return (activeConfig[8] & 15) * 5; }
 

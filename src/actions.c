@@ -175,9 +175,9 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
     case CONFIG_ACTION_RELATIVE_LAYER:
       {
         uint8_t layers = configLayerCount();
-        // Twelve is divisible by every supported layer count (1-4).
+        // Bias by a multiple of the layer count to wrap signed offsets (-6..6).
         // Resolve relative to the selected layer, before consuming a one-shot.
-        second = selectedLayer + second + 12;
+        second = selectedLayer + second + (layers << 3);
         while (second >= layers) second -= layers;
       }
       // Fall through: both layer actions share the one-shot flag and assignment.

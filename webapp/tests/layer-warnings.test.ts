@@ -96,7 +96,7 @@ describe('self-referential layer warnings', () => {
   it('does not duplicate validation errors or warn about other actions', () => {
     const profile = profileWithLayers();
     const actions: Action[] = [
-      { type: 'setLayer', layer: 9 }, { type: 'relativeLayer', offset: 4 },
+      { type: 'setLayer', layer: 9 }, { type: 'relativeLayer', offset: 7 },
       { type: 'keyTap', usage: 4, modifiers: 0 }, { type: 'relativeLayer', offset: 1 },
     ];
     actions.forEach((action, index) => { profile.layers[0]!.keys[index] = action; });

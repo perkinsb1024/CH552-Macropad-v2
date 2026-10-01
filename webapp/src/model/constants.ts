@@ -1,9 +1,11 @@
-/** Shared constants from protocol/config-v3.md and protocol/hid-v1.md. */
+/** Shared constants from protocol/config-v4.md and protocol/hid-v1.md. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 3;
+export const FORMAT_VERSION = 4;
 export const HEADER_SIZE = 9;
-export const MAX_LAYERS = 4;
+export function maxLayers(variant: Variant): number {
+  return variant === VARIANT_THREE_KEYS ? 7 : 5;
+}
 export const CHORD_ENTRY_SIZE = 3;
 export const MAX_CHORD_WINDOW_UNITS = 15; // 5 ms units, 0–75 ms
 export const CHORD_WINDOW_STEP_MS = 5;

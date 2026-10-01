@@ -1,7 +1,7 @@
 import { useMemo } from 'preact/hooks';
 import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
-import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, keyCount } from '../../model/constants';
+import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, keyCount, maxLayers } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
 import { normalizeText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
@@ -234,17 +234,15 @@ export function Inspector() {
 
       {(action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && (
         <label class="field">
-          <span class="field-label">Relative offset</span>
-          <select value={action.offset} onChange={(e) => update({ ...action, offset: Number((e.target as HTMLSelectElement).value) })}>
-            {[-3, -2, -1, 0, 1, 2, 3].map((offset) => <option key={offset} value={offset}>{offset > 0 ? `+${offset}` : offset}</option>)}
-          </select>
+          <span class="field-label">Relative offset <output>{action.offset > 0 ? `+${action.offset}` : action.offset}</output></span>
+          <input type="range" min={1 - maxLayers(p.variant)} max={maxLayers(p.variant) - 1} step={1} value={action.offset} aria-label="Relative offset" onInput={(e) => update({ ...action, offset: Number((e.target as HTMLInputElement).value) })} />
           <span class="hint">Layer {slot.layer + 1} → Layer {relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}</span>
         </label>
       )}
 
       {(((action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer === slot.layer) ||
         ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && relativeTargetLayer(slot.layer, action.offset, layerCount) === slot.layer)) && (
-        <div class="notice notice-info">Changing to the same layer is useful to display the current Layer's indicator</div>
+        <div class="notice notice-info">Changing to the same layer is useful to display the current layer's indicator</div>
       )}
 
       {problem && <p class="problem" role="alert">{problem}</p>}

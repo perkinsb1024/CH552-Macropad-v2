@@ -33,7 +33,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
       } else if (action.type === 'momentaryLayer' && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
         edges[source]!.add(action.layer);
         edges[action.layer]!.add(source); // Releasing the momentary input returns to the prior layer.
-      } else if ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && Number.isInteger(action.offset) && action.offset >= -3 && action.offset <= 3) {
+      } else if ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && Number.isInteger(action.offset) && action.offset >= -6 && action.offset <= 6) {
         edges[source]!.add(relativeTargetLayer(source, action.offset, count));
       }
     }

@@ -1,0 +1,14 @@
+{
+  "formatVersion": 3,
+  "sourceCommit": "0e20b30b8671c6bcbeaaa2c4a286fb4519b7c700",
+  "changes": [
+    "Archive banner and link to latest editor; existing format-v3 draft namespace preserved"
+  ],
+  "sha256": {
+    "assets/index-BV9jk-1A.css": "6282dfd824fc18aa8200d33134193449ef44567e0f30b4229e24fb31f209bdf3",
+    "assets/index-C9nYcEw9.js": "eeec3d8a3dd2b1c21d49d8d01b254e3b4172a77fd6f3b9b5fc56148fdb3ef8b2",
+    "assets/index-C9nYcEw9.js.map": "9b68e13851295c0d678726fdd9721154a56b07621836f6c892110080d550fc1d",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "f9c9d19836e067fd07b902455e8cdd27c06fb325a1a5fefdff991ec8a97bbe40"
+  }
+}

@@ -14,7 +14,7 @@ export function Welcome() {
         </div>
         <h2>Configure your macropad</h2>
         <p>
-          Bind keys, chords and the encoder across up to four layers, pick LED colors, and save
+          Bind keys, chords and the encoder across five layers on six-key pads or seven on three-key pads, pick LED colors, and save
           everything to the device. Settings live on the macropad, so nothing here needs to run afterwards.
         </p>
 

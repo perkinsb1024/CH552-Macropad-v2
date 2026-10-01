@@ -10,7 +10,7 @@ const BEHAVIORS = [
   { value: LayerIndicatorBehavior.BlinkByLayer, label: 'Blink by layer number' },
   { value: LayerIndicatorBehavior.AlwaysOn, label: 'Always on' },
 ];
-const BLINK_COUNTS = ['once', 'twice', 'three times', 'four times'];
+const BLINK_COUNTS = ['once', 'twice', 'three times', 'four times', 'five times', 'six times', 'seven times'];
 
 export function LayerOptions() {
   const p = profile.value!;

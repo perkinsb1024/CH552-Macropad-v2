@@ -116,7 +116,7 @@ static void testIndicatorBrightness(void) {
     P1 = P3 = 0xFF;
     P1 &= ~0x02; // Hold key zero throughout the animation.
     for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
-        activeConfig[3] = 3 | (layer << 2); // Four layers; select startup layer.
+        activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3); // Select each startup layer.
         for (uint8_t behavior = CONFIG_LAYER_INDICATOR_NONE;
              behavior <= CONFIG_LAYER_INDICATOR_ALWAYS_ON; behavior++) {
             for (uint8_t full = 0; full < 2; full++) {

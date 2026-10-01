@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 Universal Macropad. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v3.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v4.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -76,7 +76,7 @@ when webapp changes are pushed to `main`, or when run manually. In the repositor
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
 
-The active format 3 editor is served at the project site's root. Frozen
+The active format 4 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -85,9 +85,9 @@ is rebuilt from dependencies in CI.
 - `versions/` lists available editors.
 - `versions/format-v2/` serves the v2 editor built from commit
   `417f276fda788f71dfcd38d781ddc67306988739`.
-- There is no frozen v3 editor yet; v3 remains active at the root.
+- `versions/format-v3/` serves the frozen v3 editor from the revision recorded in its manifest.
 
-The footer links to the archive list. Detecting format 2 firmware presents a
+The footer links to the archive list. Detecting format 2 or 3 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -95,10 +95,10 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-but never reads, overwrites, or clears the archived editor's namespace.
+and can recover v3 drafts without overwriting or clearing the archived namespace.
 
-Version 2 binary profiles, version 1/2 JSON files, and older drafts can still be
-migrated into the active format 3 editor after a firmware upgrade. Bindings and
+Version 2/3 binary profiles, version 1–3 JSON files, and older drafts can still be
+migrated into the active format 4 editor after a firmware upgrade. Bindings and
 colors are preserved; Blink once becomes the timed indication and transparency
 defaults to off. Firmware does not migrate flash itself: save the migrated profile
 through the active editor to activate inputs after upgrading.
