@@ -38,4 +38,11 @@ void main(void) {
   }
 }
 
-unsigned char __sdcc_external_startup(void) __nonbanked { return 0; }
+unsigned char __sdcc_external_startup(void) __nonbanked {
+  // --no-xinit-opt omits both XINIT copying and implicit external-RAM clearing.
+  // Retain the latter: it zeros static storage and selects P2=0 for __pdata.
+  __asm
+    .globl __mcs51_genXRAMCLEAR
+  __endasm;
+  return 0;
+}

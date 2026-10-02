@@ -66,7 +66,7 @@ __data uint8_t rainbowHue;
 __idata uint8_t rainbowDrift[NUM_LEDS];
 // Current global rainbow presets; saved defaults remain in activeConfig.
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
-__xdata uint8_t ledSettings[4];
+__pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with actions.c.
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 #if ENABLE_COLOR_PREVIEW
 __xdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.

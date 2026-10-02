@@ -36,6 +36,33 @@ def locations():
     return hardware, sdcc, tools
 
 
+def check_memory_layout(map_text, usb_ram):
+    """Paged pointers wrap at 256; SDCC's size check alone misses this hazard."""
+    symbols = {
+        name: int(value, 16)
+        for value, name in re.findall(
+            r"(?m)^\s*(?:[CD]:\s+)?([0-9A-F]{8})\s+([A-Za-z_]\w*)\b", map_text
+        )
+    }
+    def area(name):
+        return symbols["s_" + name], symbols["l_" + name]
+
+    paged_start, paged_size = area("PSEG")
+    if paged_size and not (usb_ram <= paged_start < paged_start + paged_size <= 256):
+        raise RuntimeError("Paged RAM must fit in page zero above the USB DMA buffers")
+    external_start, external_size = area("XSEG")
+    if external_size and not (
+        max(usb_ram, paged_start + paged_size) <= external_start
+        and external_start + external_size <= 1024
+    ):
+        raise RuntimeError("External RAM overlaps paged/USB RAM or exceeds CH552 RAM")
+    # Our startup omits the XINIT copier, but must retain clearing/P2 setup.
+    if symbols["l_XINIT"] or symbols["l_XISEG"]:
+        raise RuntimeError("XINIT storage requires the omitted startup copy routine")
+    if "__mcs51_genXRAMCLEAR" not in symbols:
+        raise RuntimeError("Startup must clear external RAM and select the pdata page")
+
+
 def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=None):
     if physical_variant is None:
         settings = ConfigParser()
@@ -58,9 +85,10 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     )
     # Keep temporary values in internal RAM; persistent buffers are explicitly xdata.
     # Compile the core and sketch with the same model so parameter storage agrees.
+    # src/main.c explicitly retains external-RAM zeroing with --no-xinit-opt.
     flags = [
         "-c", "-Ddouble=float", "-DUSE_STDINT", "-D__PROG_TYPES_COMPAT__",
-        "--model-small", "--opt-code-size", "--int-long-reent", "-mmcs51", "-DCH552",
+        "--model-small", "--opt-code-size", "--no-xinit-opt", "--int-long-reent", "-mmcs51", "-DCH552",
         f"-DF_CPU={clock}L", "-DF_EXT_OSC=0L", "-DARDUINO=10819",
         f"-DPHYSICAL_VARIANT={physical_variant}",
         "-DARDUINO_ch55x", "-DARDUINO_ARCH_mcs51", f"-DUSER_USB_RAM={usb_ram}",
@@ -127,6 +155,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
         "-lmcs51", "-llibsdcc", "-lliblong", "-lliblonglong",
         "-llibint", "-llibfloat", "--out-fmt-ihx", "-o", firmware,
     )
+    check_memory_layout((build / "firmware.map").read_text(), int(usb_ram))
     shutil.copyfile(firmware, build / "firmware.hex")
     print(f"Firmware: {build / 'firmware.hex'}")
 

@@ -135,6 +135,28 @@ static void testCapacityAndStrings(uint8_t variant) {
     assert(configValid(activeConfig, variant));
 }
 
+// Exhaust all boundaries in a small pool, including adjacent empty strings.
+static void testStringBoundaries(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        testLoadStarterProfile(variant);
+        uint8_t pool = 9 + (variant ? 15 : 22);
+        activeConfig[4] = 8;
+        activeConfig[9] = CONFIG_ACTION_STRING;
+        for (uint8_t mask = 0; mask < 128; mask++) {
+            for (uint8_t i = 0; i < 7; i++)
+                activeConfig[pool + i] = mask & (1 << i) ? 'A' : 0;
+            activeConfig[pool + 7] = 0;
+            for (uint8_t position = 0; position <= 8; position++) {
+                activeConfig[10] = position;
+                seal();
+                uint8_t expected = position < 8 &&
+                    (!position || activeConfig[pool + position - 1] == 0);
+                assert(!!configValid(activeConfig, variant) == expected);
+            }
+        }
+    }
+}
+
 static void testChords(void) {
     uint8_t first;
     uint8_t second;
@@ -366,6 +388,7 @@ int main(void) {
     testHeaderAndIgnoredFields();
     testCapacityAndStrings(CONFIG_SIX_KEYS);
     testCapacityAndStrings(CONFIG_THREE_KEYS);
+    testStringBoundaries();
     testChords();
     testActions();
     return 0;

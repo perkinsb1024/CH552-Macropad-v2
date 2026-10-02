@@ -14,10 +14,9 @@ extern __xdata __at (EP0_ADDR) uint8_t Ep0Buffer[];
 extern __xdata __at (EP1_ADDR) uint8_t Ep1Buffer[];
 // clang-format on
 
-__xdata uint8_t keyboardLedStatus = 0;
+__xdata uint8_t keyboardLedStatus;
 
-volatile __xdata uint8_t UpPoint1_Busy =
-    0; // Flag of whether upload pointer is busy
+volatile __xdata uint8_t UpPoint1_Busy; // Flag of whether upload pointer is busy
 
 #define SHIFT 0x80
 __code uint8_t _asciimap[128] = {

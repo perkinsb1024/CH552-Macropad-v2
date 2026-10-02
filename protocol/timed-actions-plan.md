@@ -105,3 +105,13 @@ hold-release lifecycles remain deferred under step 7 because the lower-bound
 prototype is substantially over the available space. See
 [timed-actions-findings.md](timed-actions-findings.md) for measured variants,
 limitations, optimizations and reproduction instructions.
+
+## Second optimization pass
+
+The user authorized a deeper optimization investigation after checkpoint
+`0961153`, accepting the existing tap/encoder-compatible timed-action subset.
+The retained design now fits both geometries without removing existing features
+or narrowing timer options: six-key 14,255 bytes, three-key 14,251 bytes.
+See [timed-actions-optimization.md](timed-actions-optimization.md) for the saved
+second-pass plan, primary references, individual savings and validation. Editor
+support and timed hold/release lifecycles remain outside this optimization pass.

@@ -1,5 +1,10 @@
 # Timed actions investigation findings
 
+> Historical first-pass measurements at checkpoint `0961153`. The subsequent
+> [optimization investigation](timed-actions-optimization.md) fits the full
+> retained timer design with 81 bytes free on six-key and 85 on three-key.
+> The tables below describe the earlier prototype, not the current sources.
+
 ## Outcome
 
 The scheduler, optional reset-on-input, and explicit resume actions work in host

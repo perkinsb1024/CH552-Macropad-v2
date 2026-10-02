@@ -70,8 +70,6 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
     uint8_t type = image[offset] & 15;
     uint8_t aux = image[offset] >> 4;
     uint8_t param = image[offset + 1];
-    uint8_t i;
-    uint8_t start;
     switch (type) {
         case CONFIG_ACTION_LED_CONTROL:
             if (param > CONFIG_LED_PRESET_TOGGLE) return 0;
@@ -114,14 +112,8 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
             if (aux || param >= poolUsed) {
                 return 0;
             }
-            start = 0;
-            for (i = 0; i < poolUsed; i++) {
-                if (i == param && start) {
-                    return 1;
-                }
-                start = image[pool + i] == 0;
-            }
-            return param == 0;
+            // A valid string starts at the pool beginning or immediately after NUL.
+            return param == 0 || image[pool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
             return aux <= 1 && param < layers;
         case CONFIG_ACTION_MOMENTARY_LAYER:

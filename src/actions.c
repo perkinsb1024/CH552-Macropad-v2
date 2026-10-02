@@ -7,47 +7,50 @@
 #define TOGGLE_INPUTS (9 + CONFIG_TIMED_MAX)
 #define EVENT_COUNT 8
 
-__xdata uint8_t buttonFirst[MAX_INPUTS];
-__xdata uint8_t buttonSecond[MAX_INPUTS];
-__xdata uint8_t buttonPressed[MAX_INPUTS];
-__xdata uint8_t buttonOrder[MAX_INPUTS];
-__xdata uint8_t latchedMouse[TOGGLE_INPUTS];
-__xdata uint8_t lastKeyboard[8];
+// Page-zero xRAM uses one-byte addresses without consuming internal stack RAM.
+// Together with ledSettings these must fit above USB DMA and below 0x100;
+// build_firmware.py checks the linked layout. Startup selects P2=0.
+__pdata uint8_t buttonFirst[MAX_INPUTS];
+__pdata uint8_t buttonSecond[MAX_INPUTS];
+__pdata uint8_t buttonPressed[MAX_INPUTS];
+__pdata uint8_t buttonOrder[MAX_INPUTS];
+__pdata uint8_t latchedMouse[TOGGLE_INPUTS];
+__pdata uint8_t lastKeyboard[8];
 __xdata uint8_t nextKeyboard[8];
-__xdata uint8_t inputDown;
-__xdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
-__xdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
-__xdata uint8_t pendingLayer;
-__xdata uint16_t pendingSince;
+__pdata uint8_t inputDown;
+__pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
+__pdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
+__pdata uint8_t pendingLayer;
+__pdata uint16_t pendingSince;
 __data uint8_t lastMouse;
-__xdata uint8_t lastReportGeneration;
+__pdata uint8_t lastReportGeneration;
 // Bindings are resolved before queuing; playback only needs the action bytes.
-__xdata uint8_t eventData[EVENT_COUNT][2];
-__xdata uint8_t eventHead;
-__xdata uint8_t eventTail;
+__pdata uint8_t eventData[EVENT_COUNT][2];
+__pdata uint8_t eventHead;
+__pdata uint8_t eventTail;
 __data uint8_t eventUsed;
-__xdata uint8_t droppedButtons;
-__xdata uint8_t droppedRotation;
+__pdata uint8_t droppedButtons;
+__pdata uint8_t droppedRotation;
 __data uint8_t baseLayer;
 __data uint8_t effectiveLayer;
-__xdata uint8_t layerSelectionPending;
+__pdata uint8_t layerSelectionPending;
 // 0xFF means no one-shot layer is waiting to be consumed.
 __data uint8_t oneShotReturnLayer;
 __data uint8_t currentFirst;
-__xdata uint8_t currentSecond;
+__pdata uint8_t currentSecond;
 __data uint8_t phase;
-__xdata uint8_t tempFirst;
-__xdata uint8_t tempSecond;
-__xdata uint8_t tempMouse;
+__pdata uint8_t tempFirst;
+__pdata uint8_t tempSecond;
+__pdata uint8_t tempMouse;
 __data uint8_t tempOn;
-__xdata uint8_t tempReady;
-__xdata uint8_t clicksLeft;
-__xdata uint8_t stringIndex;
-__xdata uint8_t timedAge[CONFIG_TIMED_MAX];
-__xdata uint8_t timedClock;
-__xdata uint8_t consumerReleasePending;
-__xdata uint16_t deadline;
-__xdata uint8_t pointerRepeated;
+__pdata uint8_t tempReady;
+__pdata uint8_t clicksLeft;
+__pdata uint8_t stringIndex;
+__pdata uint8_t timedAge[CONFIG_TIMED_MAX];
+__pdata uint8_t timedClock;
+__pdata uint8_t consumerReleasePending;
+__pdata uint16_t deadline;
+__pdata uint8_t pointerRepeated;
 
 #define actionType(first) ((first) & 15)
 
@@ -425,31 +428,41 @@ void actionsTimedReset(uint8_t tick) {
   for (uint8_t i = 0; i < CONFIG_TIMED_MAX; i++) timedAge[i] = 0;
 }
 
-void actionsTimedPoll(uint8_t tick) {
-  if (tick == timedClock) return;
-  timedClock = tick;
-  __xdata uint8_t offset = configTimedOffset();
+// Tick and physical-input events share record traversal and action dispatch.
+static void timedEvent(uint8_t tick) {
+  __pdata uint8_t offset = configTimedOffset();
   for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
-    if ((timedAge[i] & 127) == (activeConfig[offset] & CONFIG_TIMED_INTERVAL_MASK)) {
-      timedAge[i] = CONFIG_TIMED_RESUME ? 128 : 0;
-      runAction(activeConfig[offset + 1], activeConfig[offset + 2], 0, 9 + i);
+    uint8_t age = timedAge[i];
+    uint8_t action = 0;
+    if (tick) {
+      if ((age & 127) == (activeConfig[offset] & CONFIG_TIMED_INTERVAL_MASK)) {
+        age = CONFIG_TIMED_RESUME ? 128 : 0;
+        action = 1;
+      } else age++;
+    } else {
+#if CONFIG_TIMED_RESUME
+      if (age & 128) action = 3;
+#endif
+      age &= 127;
+      if (CONFIG_TIMED_ALL_RESET || (activeConfig[offset] & 128)) age = 0;
+    }
+    timedAge[i] = age;
+    if (action) {
+      action += offset;
+      runAction(activeConfig[action], activeConfig[action + 1], 0, 9 + i);
       updateLayer();
-    } else timedAge[i]++;
+    }
   }
 }
 
+void actionsTimedPoll(uint8_t tick) {
+  if (tick == timedClock) return;
+  timedClock = tick;
+  timedEvent(1);
+}
+
 void actionsTimedInput(void) {
-  __xdata uint8_t offset = configTimedOffset();
-  for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
-#if CONFIG_TIMED_RESUME
-    if (timedAge[i] & 128) {
-      runAction(activeConfig[offset + 3], activeConfig[offset + 4], 0, 9 + i);
-      updateLayer();
-    }
-#endif
-    timedAge[i] &= 127;
-    if (CONFIG_TIMED_ALL_RESET || (activeConfig[offset] & 128)) timedAge[i] = 0;
-  }
+  timedEvent(0);
 }
 
 void actionsPoll(uint16_t now) {
