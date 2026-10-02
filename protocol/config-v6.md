@@ -48,8 +48,9 @@ Rainbow phase settings use hue increments `0`, `21`, `42`, and `109` in a
 times the selected increment, modulo 256. A 0° setting makes all LEDs identical.
 The 150° “Scattered colors” preset starts at approximately 153° (109 hue steps)
 and adds independent forward drift: LEDs 1–6 gain one extra hue step every
-4, 8, 16, 32, 64, and 128 rainbow frames respectively (three-key boards use
-the first three rates). Drift applies only to this preset; other spacing options
+4, 32, 8, 64, 16, and 128 rainbow frames respectively. This alternates
+fast/slow/fast on the top row and slow/fast/slow on the bottom row. Three-key
+boards use intervals of 4, 16, and 8 frames (fast/slow/fast). Drift applies only to this preset; other spacing options
 keep fixed relative phases. Drift follows the selected animation speed, advances
 with rainbow frames, and resets with the base hue on configuration application or
 USB reset. Color previews use the saved spacing preset, including its drift.

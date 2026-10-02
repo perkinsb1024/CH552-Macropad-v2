@@ -63,7 +63,9 @@ starting increment of 109 hue steps. JSON continues to encode this preset as 150
 (once every 4–128 rainbow frames), changing relative phases without abrupt color
 jumps. `RAINBOW_DRIFT_MASK` controls the first interval: 3 means four frames;
 7 means eight frames (the original rate); 1 means two frames. Each subsequent
-LED doubles the interval. Use masks of the form 2^n−1, with n at least 1 and the
+drift slot doubles the interval; a small lookup table assigns slots to keys.
+Six-key intervals in key order are 4, 32, 8, 64, 16, and 128 frames, producing
+fast/slow/fast over slow/fast/slow. Three-key intervals are 4, 16, and 8 frames. Use masks of the form 2^n−1, with n at least 1 and the
 last interval no greater than 256 frames. The other spacing presets stay fixed. Drift state resets with the base hue;
 previews use the saved preset and current drift.
 
@@ -71,8 +73,12 @@ Fresh builds with the same toolchain and preview enabled:
 
 | Variant | Before drift | With drift | Flash free | xRAM used | Stack region |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,328 | 14,324 | 12 | 619 | 126 |
-| Six-key | 14,327 | 14,323 | 13 | 628 | 123 |
+| Three-key | 14,328 | 14,331 | 5 | 619 | 126 |
+| Six-key | 14,327 | 14,333 | 3 | 628 | 123 |
+
+The alternating layout adds 7 bytes on three-key and 10 bytes on six-key boards
+compared with assigning drift rates in key-number order (14,324/14,323 bytes).
+Stack and xRAM usage are unchanged by that reassignment.
 
 The drift state uses three/six bytes of indirect internal RAM. Moving the hue and
 frame timer from xRAM into direct internal RAM and deriving each falling color

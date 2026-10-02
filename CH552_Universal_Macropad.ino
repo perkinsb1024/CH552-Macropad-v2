@@ -24,7 +24,7 @@
 
 #define NUM_LEDS        (PHYSICAL_VARIANT ? 3 : 6)
 #define NUM_BYTES       (NUM_LEDS * 3)
-#define RAINBOW_DRIFT_MASK 3 // First LED drifts every mask+1 frames; each next LED is half as fast.
+#define RAINBOW_DRIFT_MASK 3 // Fastest drift: mask+1 frames; each drift slot is half as fast.
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
@@ -33,8 +33,11 @@ __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 #if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
 // Phase order around the six-key perimeter: 1 -> 2 -> 3 -> 6 -> 5 -> 4.
 __code uint8_t rainbowPositions[6] = {0, 1, 2, 5, 4, 3};
+// Alternate fast/slow drift across rows: fast slow fast / slow fast slow.
+__code uint8_t rainbowDriftPositions[6] = {0, 3, 1, 4, 2, 5};
 #else
 __code uint8_t rainbowPositions[3] = {0, 1, 2};
+__code uint8_t rainbowDriftPositions[3] = {0, 2, 1};
 #endif
 // Header bits 4–5 select 0, ~30, ~60, or ~150 degrees between LEDs.
 __code uint8_t rainbowSteps[4] = {0, 21, 42, 109};
@@ -145,7 +148,7 @@ void updateLeds() {
       red = green = blue = 0;
     } else if (rainbow) {
       uint8_t wheel = rainbowHue + rainbowPositions[i] * rainbowSteps[spacing];
-      if (spacing == 3) wheel += rainbowDrift[i];
+      if (spacing == 3) wheel += rainbowDrift[rainbowDriftPositions[i]];
       // Three linear ramps cycle red -> blue -> green -> red.
       if (wheel < 85) {
         green = 0;

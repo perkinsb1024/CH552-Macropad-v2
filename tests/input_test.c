@@ -275,6 +275,23 @@ static void testRainbowDrift(void) {
             assert(memcmp(initial, ledData, 3) == 0);
             for (uint8_t i = 1; i < NUM_LEDS; i++)
                 assert(memcmp(initial + 3*i, ledData + 3*i, 3) != 0);
+            // Verify the visible fast/slow layout, independently of the drift-slot map.
+            const uint8_t positions[6] = {0, 1, 2, 5, 4, 3};
+#if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
+            const uint8_t intervals[6] = {4, 32, 8, 64, 16, 128};
+#else
+            const uint8_t intervals[3] = {4, 16, 8};
+#endif
+            memcpy(previous, ledData, NUM_BYTES);
+            ledSettings[0] = 0; // Use the renderer's unshifted wheel as the color reference.
+            for (uint8_t i = 0; i < NUM_LEDS; i++) {
+                rainbowHue = positions[i] * 109 + 1024 / intervals[i];
+                updateLeds();
+                assert(memcmp(previous + 3*i, ledData, 3) == 0);
+            }
+            rainbowHue = 0;
+            ledSettings[0] = 3;
+            updateLeds();
 #if ENABLE_COLOR_PREVIEW
             memcpy(previous, ledData, NUM_BYTES);
             firmwareLedAction(CONFIG_LED_PHASE_SET, 0);
