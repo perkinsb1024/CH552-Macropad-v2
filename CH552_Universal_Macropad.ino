@@ -24,6 +24,7 @@
 
 #define NUM_LEDS        (PHYSICAL_VARIANT ? 3 : 6)
 #define NUM_BYTES       (NUM_LEDS * 3)
+#define RAINBOW_DRIFT_MASK 3 // First LED drifts every mask+1 frames; each next LED is half as fast.
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
@@ -458,8 +459,8 @@ void loop() {
   {
     rainbowChanged = (uint8_t)now;
     rainbowHue++;
-    // One extra step every 8, 16, 32, 64, 128, or 256 rainbow frames.
-    uint8_t mask = 7;
+    // One extra step every 4, 8, 16, 32, 64, or 128 rainbow frames.
+    uint8_t mask = RAINBOW_DRIFT_MASK;
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
       if (!(rainbowHue & mask)) rainbowDrift[i]++;
       mask = (mask << 1) | 1;

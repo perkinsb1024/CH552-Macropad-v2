@@ -60,8 +60,11 @@ These replace the prior checked-in release pair in the reviewable diff.
 
 The fourth spacing preset shows “Variable — Scattered colors” and uses the tuned
 starting increment of 109 hue steps. JSON continues to encode this preset as 150°. Each LED gains an extra hue step at a different rate
-(once every 8–256 rainbow frames), changing relative phases without abrupt color
-jumps. The other spacing presets stay fixed. Drift state resets with the base hue;
+(once every 4–128 rainbow frames), changing relative phases without abrupt color
+jumps. `RAINBOW_DRIFT_MASK` controls the first interval: 3 means four frames;
+7 means eight frames (the original rate); 1 means two frames. Each subsequent
+LED doubles the interval. Use masks of the form 2^n−1, with n at least 1 and the
+last interval no greater than 256 frames. The other spacing presets stay fixed. Drift state resets with the base hue;
 previews use the saved preset and current drift.
 
 Fresh builds with the same toolchain and preview enabled:

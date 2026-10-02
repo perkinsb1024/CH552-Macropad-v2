@@ -261,7 +261,7 @@ static void testRainbowDrift(void) {
         firmwareApplyConfig();
         uint8_t initial[NUM_BYTES], previous[NUM_BYTES];
         memcpy(initial, ledData, NUM_BYTES);
-        for (uint16_t frame = 1; frame <= 2048; frame++) {
+        for (uint16_t frame = 1; frame <= 1024; frame++) {
             memcpy(previous, ledData, NUM_BYTES);
             tick((uint16_t)(65520U + frame * 6));
             for (uint8_t j = 0; j < NUM_BYTES; j++) {

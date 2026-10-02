@@ -112,6 +112,22 @@ describe('configuration clipboard event scope', () => {
     },
   );
 
+  it('pastes a relative-layer action copied from a chord onto the encoder button', () => {
+    profile.value!.chords = [{ layer: 0, keyA: 0, keyB: 1, action: { type: 'relativeLayer', offset: 1 } }];
+    selectedSlot.value = { kind: 'chord', layer: 0, keyA: 0, keyB: 1 };
+    const chord = new Target(true);
+    fire('click', chord);
+    const copy = fire('copy', chord);
+    const text = copy.clipboardData.setData.mock.calls[0]![1] as string;
+    expect(text).toBe('{"format":"universal-macropad-action","version":1,"action":{"type":"relativeLayer","offset":1}}');
+    selectedSlot.value = { kind: 'encoderButton', layer: 0 };
+    const encoder = new Target(true);
+    fire('click', encoder);
+    const paste = fire('paste', encoder, { clipboardData: { setData: vi.fn(), getData: vi.fn(() => text) } });
+    expect(paste.preventDefault).toHaveBeenCalledOnce();
+    expect(profile.value!.layers[0]!.encoderButton).toEqual({ type: 'relativeLayer', offset: 1 });
+  });
+
   it('preserves native clipboard behavior for editors and removed targets', () => {
     const target = new Target(true);
     fire('click', target);

@@ -138,7 +138,10 @@ export function DeviceView() {
     dragEnd();
   };
 
-  const KeyCap = ({ index }: { index: number }) => {
+  // Render helpers keep button identity stable across selection updates. Defining
+  // component types inside DeviceView remounts them on every render, losing focus
+  // and disconnecting the clipboard handler's clicked target.
+  const renderKeyCap = (index: number) => {
     const slot: Slot = { kind: 'key', layer: li, index };
     const action = layer.keys[index]!;
     const problem = actionProblem(action, { layerCount, rotation: false });
@@ -149,6 +152,7 @@ export function DeviceView() {
     const intent = slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
       <button
+        key={index}
         data-clipboard-target
         class={`keycap ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-glow:${off ? 'transparent' : color}`}
@@ -169,7 +173,7 @@ export function DeviceView() {
     );
   };
 
-  const EncoderPart = ({ slot, label, icon }: { slot: Slot; label: string; icon?: preact.ComponentChildren }) => {
+  const renderEncoderPart = ({ slot, label, icon }: { slot: Slot; label: string; icon?: preact.ComponentChildren }) => {
     const action = slot.kind === 'encoderButton' ? layer.encoderButton : slot.kind === 'clockwise' ? layer.clockwise : layer.counterclockwise;
     const problem = actionProblem(action, { layerCount, rotation: slot.kind !== 'encoderButton' });
     const dragged = draggedSlot.value;
@@ -188,14 +192,14 @@ export function DeviceView() {
     <div class={`device device-${keys}`}>
       <div class="device-body">
         <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={gridDragOver} onDrop={gridDrop}>
-          {Array.from({ length: keys }, (_, i) => <KeyCap key={i} index={i} />)}
+          {Array.from({ length: keys }, (_, i) => renderKeyCap(i))}
         </div>
         <div class="encoder">
           <div class="knob" aria-hidden="true"><div class="knob-mark" /></div>
           <div class="enc-parts" onDragOver={encoderGapDragOver} onDrop={encoderGapDrop}>
-            <EncoderPart slot={{ kind: 'clockwise', layer: li }} label="Turn left" icon={<IconRotate />} />
-            <EncoderPart slot={{ kind: 'encoderButton', layer: li }} label="Press" />
-            <EncoderPart slot={{ kind: 'counterclockwise', layer: li }} label="Turn right" icon={<IconRotate ccw />} />
+            {renderEncoderPart({ slot: { kind: 'clockwise', layer: li }, label: 'Turn left', icon: <IconRotate /> })}
+            {renderEncoderPart({ slot: { kind: 'encoderButton', layer: li }, label: 'Press' })}
+            {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn right', icon: <IconRotate ccw /> })}
           </div>
         </div>
       </div>
