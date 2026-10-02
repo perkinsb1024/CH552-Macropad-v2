@@ -19,7 +19,8 @@ static void testLoadStarterProfile(uint8_t variant) {
     activeConfig[1] = 'P';
     activeConfig[2] = CONFIG_VERSION;
     activeConfig[5] = variant;
-    activeConfig[8] = 8 | (2 << CONFIG_HEADER_RAINBOW_PHASE_SHIFT);
+    activeConfig[8] = 8 | (2 << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
+        (1 << CONFIG_HEADER_RAINBOW_SPEED_SHIFT);
     for (i = 0; i < keys; i++) {
         activeConfig[offset + 2 * i] = (modifiers[i] << 4) | CONFIG_ACTION_KEY_TAP;
         activeConfig[offset + 2 * i + 1] = usages[i];

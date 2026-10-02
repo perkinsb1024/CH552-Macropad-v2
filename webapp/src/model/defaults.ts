@@ -1,4 +1,4 @@
-import { DEFAULT_RAINBOW_PHASE, keyCount, type Variant, MOD_CTRL, MOD_GUI, MOD_SHIFT, LayerIndicatorBehavior } from './constants';
+import { DEFAULT_RAINBOW_SPEED, DEFAULT_RAINBOW_PHASE, keyCount, type Variant, MOD_CTRL, MOD_GUI, MOD_SHIFT, LayerIndicatorBehavior } from './constants';
 import type { Action, Layer, Profile } from './types';
 
 const SHORTCUT_USAGES = [0x1d, 0x06, 0x19, 0x1d, 0x1b, 0x04]; // Z, C, V, Z, X, A
@@ -55,6 +55,7 @@ export function defaultProfile(variant: Variant): Profile {
     startupLayer: 0,
     chordWindow: 8,
     rainbowPhase: DEFAULT_RAINBOW_PHASE,
+    rainbowSpeed: DEFAULT_RAINBOW_SPEED,
     layers: [defaultLayer(variant, false), defaultLayer(variant, true)],
     chords: [],
   };
@@ -70,6 +71,7 @@ export function cloneProfile(profile: Profile): Profile {
 export function migrateLegacyProfile(profile: Profile): Profile {
   profile.transparentBlack ??= false;
   profile.rainbowPhase ??= DEFAULT_RAINBOW_PHASE;
+  profile.rainbowSpeed ??= DEFAULT_RAINBOW_SPEED;
   const migrateAction = (action: Action): Action =>
     (action as { type: string }).type === 'nextLayer' ? { type: 'relativeLayer', offset: 0 } : action;
   for (const layer of profile.layers) {

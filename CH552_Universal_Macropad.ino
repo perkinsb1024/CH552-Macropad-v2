@@ -26,7 +26,6 @@
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
-#define RAINBOW_FRAME_MS 6
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 #if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
@@ -37,6 +36,8 @@ __code uint8_t rainbowPositions[3] = {0, 1, 2};
 #endif
 // Header bits 4–5 select 0, ~30, ~60, or ~120 degrees between LEDs.
 __code uint8_t rainbowSteps[4] = {0, 21, 42, 85};
+// Header bits 6–7 select extra fast, fast, slow, or extra slow rainbow speed.
+__code uint8_t rainbowFrameMs[4] = {4, 6, 10, 18};
 __code int8_t encoderTransitions[16] = {
   0, -1, 1, 0,
   1, 0, 0, -1,
@@ -350,7 +351,8 @@ void loop() {
     scanButton(i, now);
   }
   scanEncoder();
-  if ((uint8_t)((uint8_t)now - rainbowChanged) >= RAINBOW_FRAME_MS &&
+  if ((uint8_t)((uint8_t)now - rainbowChanged) >=
+      rainbowFrameMs[activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT] &&
 #if ENABLE_COLOR_PREVIEW
       ((previewOptions ? (previewOptions & 8 ? previewOptions : 0) :
         (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) > 0xF0)

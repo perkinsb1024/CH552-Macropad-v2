@@ -12,6 +12,10 @@ export const CHORD_WINDOW_STEP_MS = 5;
 export const RAINBOW_PHASE_DEGREES = [0, 30, 60, 120] as const;
 export const DEFAULT_RAINBOW_PHASE = 2;
 export const HEADER_RAINBOW_PHASE_SHIFT = 4;
+export const RAINBOW_SPEED_LABELS = ['Extra fast', 'Fast', 'Slow', 'Extra slow'] as const;
+export const RAINBOW_SPEED_FRAME_MS = [4, 6, 10, 18] as const;
+export const DEFAULT_RAINBOW_SPEED = 1;
+export const HEADER_RAINBOW_SPEED_SHIFT = 6;
 
 export const USB_VENDOR_ID = 0x1209;
 export const USB_PRODUCT_ID = 0xc55d;

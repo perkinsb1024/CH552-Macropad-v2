@@ -54,6 +54,8 @@ export interface Profile {
   chordWindow: number;
   /** Index of the rainbow phase spacing: 0°, ~30°, ~60°, ~120°. */
   rainbowPhase: number;
+  /** Index of rainbow speed: Extra fast, Fast, Slow, Extra slow. */
+  rainbowSpeed: number;
   layers: Layer[];
   chords: Chord[];
 }

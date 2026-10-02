@@ -18,7 +18,7 @@ describe('rainbow phase spacing', () => {
         p.rainbowPhase = phase;
         p.chordWindow = chordWindow;
         const image = encodeProfile(p);
-        expect(image[8]).toBe(chordWindow | (phase << 4));
+        expect(image[8]).toBe(chordWindow | (phase << 4) | 0x40);
         expect(decodeImage(image)).toEqual({ ok: true, profile: p });
         const json = exportProfile(p);
         expect(JSON.parse(json).rainbowPhaseDegrees).toBe(RAINBOW_PHASE_DEGREES[phase]);
@@ -99,7 +99,7 @@ describe('rainbow phase spacing', () => {
     const info = () => elements(ProfilePanel()).find((e) => e.props.class === 'notice notice-info');
     expect(info()).toBeUndefined();
     const toastCount = toasts.value.length;
-    const selector = elements(ProfilePanel()).find((e) => e.type === 'select' && elements(e.props.children).filter((c) => c.type === 'option').length === 4)!;
+    const selector = elements(ProfilePanel()).find((e) => e.type === 'select' && e.props.id === 'rainbow-phase')!;
     expect(selector.props.value).toBe(2);
     expect(elements(selector.props.children).filter((e) => e.type === 'option').map((e) => e.props.value)).toEqual([0, 1, 2, 3]);
     expect(elements(selector.props.children).map((e) => e.props.children)).toEqual([

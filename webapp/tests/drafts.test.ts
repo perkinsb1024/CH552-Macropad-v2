@@ -39,6 +39,7 @@ describe('versioned drafts', () => {
     const draft = JSON.parse(storage.get(draftKey(0))!);
     draft.formatVersion = 2;
     delete draft.profile.transparentBlack;
+    delete draft.profile.rainbowSpeed;
     draft.profile.layers[0].indicatorBehavior = 1;
     draft.profile.layers[0].invertScroll = true;
     draft.profile.layers[0].keys[0] = { type: 'nextLayer' };
@@ -71,6 +72,7 @@ it.each([3, 4])('recovers v%s drafts without clearing them or resurrecting them 
   old.startupLayer = 1;
   const legacy = { ...old } as Partial<typeof old>;
   delete legacy.rainbowPhase;
+  delete legacy.rainbowSpeed;
   const archived = JSON.stringify({ formatVersion: version, profile: legacy, meta: {}, savedAt: 'v3' });
   storage.set(archivedKey, archived);
   expect(loadDraft(1)?.profile).toEqual(old);

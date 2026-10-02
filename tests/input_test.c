@@ -158,6 +158,41 @@ static void testIndicatorBrightness(void) {
     P1 = P3 = 0xFF;
 }
 
+static void testRainbowSpeed(void) {
+    const uint8_t intervals[4] = {4, 6, 10, 18};
+    for (uint8_t speed = 0; speed < 4; speed++) {
+        for (uint8_t phase = 0; phase < 4; phase++) {
+            for (uint8_t preview = 0; preview <= ENABLE_COLOR_PREVIEW; preview++) {
+                testLoadStarterProfile(PHYSICAL_VARIANT);
+                activeConfig[8] = 15 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
+                    (speed << CONFIG_HEADER_RAINBOW_SPEED_SHIFT);
+                assert(configChordWindowMs() == 75);
+                activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+                activeConfigValid = 1;
+                P1 = P3 = 0xFF;
+#if ENABLE_COLOR_PREVIEW
+                previewOptions = 0;
+#endif
+                currentMs = 65520; // Exercise both the 8-bit and 16-bit timer wraps.
+                firmwareApplyConfig();
+#if ENABLE_COLOR_PREVIEW
+                if (preview) firmwarePreviewColor(0xFD);
+#endif
+                for (uint16_t step = 1; step <= 256; step++) {
+                    uint16_t deadline = 65520U + step * intervals[speed];
+                    tick(deadline - 1);
+                    assert(rainbowHue == (uint8_t)(step - 1));
+                    tick(deadline);
+                    assert(rainbowHue == (uint8_t)step);
+                }
+#if ENABLE_COLOR_PREVIEW
+                firmwarePreviewColor(0);
+#endif
+            }
+        }
+    }
+}
+
 static void testRainbowPhaseSpacing(void) {
     // Expected order follows the physical perimeter, rather than buffer order.
     const uint8_t positions[6] = {0, 1, 2, 5, 4, 3};
@@ -402,6 +437,7 @@ int main(void) {
     testSameLayerIndicator();
     testOneShotChordIndicator();
     testIndicatorBrightness();
+    testRainbowSpeed();
     testRainbowPhaseSpacing();
     testTransparencyAndRainbow();
     testMomentaryIndicatorCancellation();

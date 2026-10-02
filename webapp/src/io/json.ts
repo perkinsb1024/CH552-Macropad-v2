@@ -1,5 +1,5 @@
 import type { Action, Chord, Layer, Profile } from '../model/types';
-import { RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
+import { RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_SPEED, RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
 import { PALETTE } from '../model/palette';
@@ -8,6 +8,7 @@ import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
 export const JSON_VERSION = 5;
+const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
 export interface LocalMetadata {
@@ -23,6 +24,7 @@ export interface ExportedProfile {
   transparentBlack: boolean;
   chordWindowMs: number;
   rainbowPhaseDegrees: number;
+  rainbowSpeed: string;
   layers: Array<{
     keys: Action[];
     encoderButton: Action;
@@ -47,6 +49,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
     transparentBlack: profile.transparentBlack,
     chordWindowMs: profile.chordWindow * 5,
     rainbowPhaseDegrees: RAINBOW_PHASE_DEGREES[profile.rainbowPhase]!,
+    rainbowSpeed: RAINBOW_SPEED_LABELS[profile.rainbowSpeed]!.toLowerCase(),
     layers: profile.layers.map((layer) => ({
       keys: layer.keys,
       encoderButton: layer.encoderButton,
@@ -174,7 +177,11 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     ? RAINBOW_PHASE_DEGREES.indexOf(int(raw.rainbowPhaseDegrees, 'rainbowPhaseDegrees') as typeof RAINBOW_PHASE_DEGREES[number])
     : DEFAULT_RAINBOW_PHASE;
   if (rainbowPhase < 0) throw new ImportError('rainbowPhaseDegrees must be 0, 30, 60 or 120.');
-  const profile: Profile = { rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  const rainbowSpeed = raw.rainbowSpeed === undefined ? DEFAULT_RAINBOW_SPEED
+    : typeof raw.rainbowSpeed === 'string' ? RAINBOW_SPEED_LABELS.findIndex((label, i) =>
+      label.toLowerCase() === raw.rainbowSpeed || LEGACY_RAINBOW_SPEED_NAMES[i] === raw.rainbowSpeed) : -1;
+  if (rainbowSpeed < 0) throw new ImportError('rainbowSpeed must be extra fast, fast, slow or extra slow.');
+  const profile: Profile = { rainbowSpeed, rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
   migrateLegacyProfile(profile);
   const issues = validateProfile(profile);
   if (issues.length) throw new ImportError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));

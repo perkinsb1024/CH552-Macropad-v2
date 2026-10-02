@@ -27,7 +27,7 @@ describe('default profile image headers', () => {
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
     expect(upgraded[2]).toBe(5);
-    expect(upgraded[8]).toBe(legacy[8]! | 0x20);
+    expect(upgraded[8]).toBe(legacy[8]! | 0x60);
     expect([...upgraded.subarray(9)]).toEqual([...legacy.subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
     expect(decodeImage(legacy)).toMatchObject({ ok: false, reason: 'bad-crc' });
@@ -312,8 +312,9 @@ describe('decoder rejections', () => {
   it('no magic', () => {
     expect(decodeImage(new Uint8Array(128))).toMatchObject({ ok: false, reason: 'no-magic' });
   });
-  it('reserved header bits', () => {
+  it('reserved header bits in older formats', () => {
     const image = base();
+    image[2] = 4;
     image[8] = 0x48;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);

@@ -6,6 +6,7 @@
   "transparentBlack": false,
   "chordWindowMs": 40,
   "rainbowPhaseDegrees": 60,
+  "rainbowSpeed": "fast",
   "layers": [
     {
       "keys": [

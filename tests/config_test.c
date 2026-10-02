@@ -22,7 +22,7 @@ static void testStarterFixture(uint8_t variant) {
     uint8_t i;
     testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0x941B : 0x4EA4));
+    assert(configCrc(activeConfig) == (variant ? 0xEE90 : 0x342F));
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);

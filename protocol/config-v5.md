@@ -12,14 +12,14 @@ and CRC before using an image. Ignored reserved bits and trailing unused bytes
 are not checked for zero in firmware; the configurator still requires canonical
 zero values for those fields. CRC covers them regardless.
 
-Version 5 adds a global rainbow phase-spacing setting in header byte 8 bits
-4–5. Layer capacity, action encodings, palette, and the 128-byte image size are
+Version 5 uses header byte 8 bits 4–5 for global rainbow phase spacing and
+bits 6–7 for global rainbow speed. Layer capacity, action encodings, palette, and the 128-byte image size are
 unchanged from version 4. Rainbow colors cycle red → blue → green → red.
 
 The active editor reads version 2, 3, and 4 images, imports version 1–4 JSON
 profiles, and recovers older drafts. Bindings, startup layers, chords, colors,
 and indicator options are preserved. Rainbow spacing migrates to ~60° on both
-variants. The editor writes only version 5 binary images and version 5 JSON.
+variants, and speed to Fast when absent from older formats, JSON files, or drafts. The editor writes only version 5 binary images and version 5 JSON.
 Firmware accepts only version 5 and does not migrate flash itself. After upgrading,
 load and save the existing profile to activate physical inputs. Frozen editors
 for formats 2, 3, and 4 remain under `versions/format-vN/`.
@@ -34,18 +34,33 @@ The nine-byte header is:
 | 4 | String-pool length | Number of used bytes in the string pool. |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | Chord window and rainbow phase | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = ~30°, `10` = ~60°, `11` = ~120°)<br>Bits 6–7: `0` |
+| 8 | Chord window and rainbow phase | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = ~30°, `10` = ~60°, `11` = ~120°)<br>Bits 6–7: rainbow speed (`00` = Extra fast, `01` = Fast, `10` = Slow, `11` = Extra slow) |
 
 Rainbow phase settings use hue increments `0`, `21`, `42`, and `85` in a
 256-step cycle. Three-key positions are `0, 1, 2`; six-key positions are
 `0, 1, 2, 5, 4, 3`, preserving the physical perimeter order
 `1 → 2 → 3 → 6 → 5 → 4`. Each LED's hue is the shared hue plus its position
 times the selected increment, modulo 256. A 0° setting makes all LEDs identical.
-The cycle advances one step every 6 ms, independently of phase spacing.
+The frame interval is independent of phase spacing:
+
+| Speed bits | Setting | Hue step interval | Full 256-step cycle |
+| --- | --- | --- | --- |
+| `00` | Extra fast | 4 ms | 1.024 s |
+| `01` | Fast (default) | 6 ms | 1.536 s |
+| `10` | Slow | 10 ms | 2.560 s |
+| `11` | Extra slow | 18 ms | 4.608 s |
+
+The starter profile and bundled JSON profiles encode Fast as `01`. JSON exports
+use `rainbowSpeed` with values `extra fast`, `fast`, `slow`, or `extra slow`; older files
+and drafts missing this field migrate to Fast. Previous experimental JSON speed
+names (`double`, `normal`, `half`, `quarter`) are accepted at the same indices. Binary formats 2–4 also migrate
+to Fast. The configuration version remains 5: a pre-speed format 5 binary image
+with `00` in bits 6–7 now selects Extra fast, indistinguishably from a newly saved
+Extra fast profile. No automatic format 5 binary migration is possible.
 
 Spacing applies to every layer's rainbow indication, including timed and blinking
 indications. Solid colors and pressed-key overrides retain their existing behavior.
-Hardware color previews use the saved profile's phase spacing; save an edited
+Hardware color previews use the saved profile's phase spacing and speed; save an edited
 setting before previewing it. Bits 0–3 still control chords independently.
 
 Version 5 JSON exports use `rainbowPhaseDegrees` with values `0`, `30`, `60`, or
@@ -211,4 +226,4 @@ The editor's starter profile has two layers: *Mac shortcuts* followed by
 *Windows shortcuts*. Six-key pads use *Undo*, *Copy*, *Paste*, *Redo*, *Cut*,
 and *Select all*; three-key pads use the first three shortcuts on each layer.
 The layers use persistent *White* and *Yellow* lighting respectively, and the
-profile has a 40 ms chord window, ~60° rainbow spacing, and no chords or strings.
+profile has a 40 ms chord window, ~60° rainbow spacing, Fast rainbow speed, and no chords or strings.

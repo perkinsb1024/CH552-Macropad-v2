@@ -1,5 +1,5 @@
 import {
-  DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
+  DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
@@ -106,7 +106,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2] === FORMAT_VERSION;
   if (image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
-  if (image[8]! & (configurableRainbow ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in chord-window byte.');
+  if (!configurableRainbow && (image[8]! & 0xf0)) return fail('malformed', 'Reserved bits set in chord-window byte.');
 
   const variant = (image[5]! & 1) as Variant;
   if (expectedVariant !== undefined && variant !== expectedVariant) {
@@ -189,6 +189,6 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
 
   return {
     ok: true,
-    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, layers, chords },
+    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, rainbowSpeed: configurableRainbow ? image[8]! >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED, layers, chords },
   };
 }
