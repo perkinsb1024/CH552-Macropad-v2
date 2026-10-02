@@ -1,4 +1,4 @@
-import { DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_DEGREES, LayerIndicatorBehavior } from '../../model/constants';
+import { DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior } from '../../model/constants';
 import { baseline, layerName, profile, updateProfile } from '../store';
 
 const PHASE_LABELS = ['All LEDs together', 'Gentle color wave', 'Rainbow sweep', 'Scattered colors'];
@@ -39,7 +39,7 @@ export function ProfilePanel() {
         {showRainbowSettings && <div class="field">
           <label class="field-label" htmlFor="rainbow-phase">Rainbow phase spacing</label>
           <select id="rainbow-phase" value={p.rainbowPhase} onChange={(e) => updateProfile((d) => { d.rainbowPhase = Number((e.target as HTMLSelectElement).value); })}>
-            {RAINBOW_PHASE_DEGREES.map((degrees, i) => <option key={i} value={i}>{`${degrees}° — ${PHASE_LABELS[i]}`}</option>)}
+            {RAINBOW_PHASE_LABELS.map((label, i) => <option key={i} value={i}>{`${label} — ${PHASE_LABELS[i]}`}</option>)}
           </select>
           <span class="hint">Color spacing between LEDs along the rainbow path. Smaller angles make neighboring colors more similar.</span>
           {phaseUnsaved && <span class="notice notice-info" role="status">Color previews will not use this setting until it is saved to the device</span>}

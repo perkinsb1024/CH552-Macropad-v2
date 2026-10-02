@@ -13,7 +13,8 @@ byte for the command. All 13 commands and all 112 valid payloads are implemented
 absolute/relative rainbow phase and speed, indicator/key/both brightness, restore
 all, and absolute/relative common presets. Every relative command accepts -7..-1
 and +1..+7. Absolute brightness uses Off=0, Dim=1, Bright=2, Configured=F.
-Phase options show 0°, 30°, 60°, 150° without approximation marks.
+Phase options show 0°, 30°, 60°, and Variable; the profile selector labels the
+fourth option “Variable — Scattered colors.”
 
 The five common presets include Both as configured. Their relative position follows
 the actual policy pair, including matching results from other brightness commands.
@@ -54,6 +55,62 @@ Successful `pio run -t releases` exports:
 
 The dirty suffix identifies uncommitted firmware sources; it is not a new commit ID.
 These replace the prior checked-in release pair in the reviewable diff.
+
+## Scattered-colors drift experiment
+
+The fourth spacing preset shows “Variable — Scattered colors” and uses the tuned
+starting increment of 109 hue steps. JSON continues to encode this preset as 150°. Each LED gains an extra hue step at a different rate
+(once every 8–256 rainbow frames), changing relative phases without abrupt color
+jumps. The other spacing presets stay fixed. Drift state resets with the base hue;
+previews use the saved preset and current drift.
+
+Fresh builds with the same toolchain and preview enabled:
+
+| Variant | Before drift | With drift | Flash free | xRAM used | Stack region |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Three-key | 14,328 | 14,324 | 12 | 619 | 126 |
+| Six-key | 14,327 | 14,323 | 13 | 628 | 123 |
+
+The drift state uses three/six bytes of indirect internal RAM. Moving the hue and
+frame timer from xRAM into direct internal RAM and deriving each falling color
+ramp by complementing the rising ramp offsets the added flash cost. The stack
+region is smaller than the previous 138 bytes; host checks do not measure hardware
+stack usage. Host renderer checks cover both variants, smooth transitions across
+drift and timer wraps, unchanged fixed presets, saved-preset previews, and reset.
+Build outputs are temporary; checked-in release artifacts were preserved.
+
+### Stack usage still needs hardware validation
+
+Behavior appears stable during user testing, but explicit stack usage has not
+been validated on hardware. The 123-byte six-key and 126-byte three-key stack
+regions describe available capacity, not measured headroom. Passing host tests
+and firmware builds does not establish that the stack cannot overflow.
+
+Possible validation steps:
+
+1. Build a temporary diagnostic firmware for each variant. Use its own linker
+   map to identify the stack region, since instrumentation can change the layout.
+2. Add a stack watermark: fill unused stack memory with a recognizable pattern
+   in early startup, before interrupts are enabled. Preserve live stack entries
+   and all allocated RAM; do not fill the entire region from an ordinary function
+   while its own call frames occupy it.
+3. Exercise simultaneous USB/HID traffic, configuration reads and saves, color
+   previews, rainbow drift, layer changes, chords/macros, and key/encoder input.
+   Include startup, USB reset/reconnect, and invalid-configuration recovery.
+4. Inspect the watermark using a debugger or a temporary diagnostic readout.
+   Record the deepest observed stack usage and remaining untouched bytes for
+   both variants. Include interrupt stack usage; sampling the stack pointer in
+   the main loop alone can miss brief peaks.
+5. Optionally place a canary near the upper stack boundary and check it during
+   testing. Treat it as an additional tripwire, not proof of safety: overflow
+   may corrupt execution before the check runs.
+6. Review generated assembly and interrupt handlers for worst-case call depth
+   and saved registers. Compare that estimate with the measurements, retain a
+   margin, and record the firmware revision, toolchain, and exercised scenarios.
+
+Watermark results establish the peak observed under the tested workload, not a
+guarantee for every execution path. Account for any layout or stack-use changes
+introduced by diagnostic code when assessing the normal firmware.
 
 ## Optimizations retained
 

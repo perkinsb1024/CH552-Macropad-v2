@@ -1,4 +1,4 @@
-import { RAINBOW_PHASE_DEGREES, RAINBOW_SPEED_LABELS } from './constants';
+import { RAINBOW_PHASE_LABELS, RAINBOW_SPEED_LABELS } from './constants';
 
 export const LED_COMMANDS = [
   { command: 'rainbowPhaseSet', label: 'Set rainbow phase spacing', relative: false },
@@ -24,7 +24,7 @@ export function ledCommandCode(command: LedCommand): number {
 }
 export function ledValueOptions(command: LedCommand): Array<{ value: LedValue; label: string }> {
   const code = ledCommandCode(command);
-  const labels = code === 0 ? RAINBOW_PHASE_DEGREES.map((d) => `${d}°`)
+  const labels = code === 0 ? RAINBOW_PHASE_LABELS
     : code === 2 ? RAINBOW_SPEED_LABELS : code === 11 ? COMMON_PRESET_LABELS : BRIGHTNESS_LABELS;
   const options: Array<{ value: LedValue; label: string }> = labels.map((label, value) => ({ value, label }));
   if (code !== 11) options.push({ value: 'asConfigured', label: 'As configured' });

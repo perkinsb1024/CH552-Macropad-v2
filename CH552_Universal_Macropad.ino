@@ -56,8 +56,10 @@ __xdata uint8_t lastLayer;
 __xdata uint8_t allowRunBootloader;
 __xdata uint8_t layerIndicatorPhasesLeft;
 __xdata uint8_t layerIndicatorDeadline;
-__xdata uint8_t rainbowChanged;
-__xdata uint8_t rainbowHue;
+__data uint8_t rainbowChanged;
+__data uint8_t rainbowHue;
+// Per-LED extra hue steps; staggered rates gently change relative phases.
+__idata uint8_t rainbowDrift[NUM_LEDS];
 // Current global rainbow presets; saved defaults remain in activeConfig.
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
 __xdata uint8_t ledSettings[4];
@@ -142,20 +144,21 @@ void updateLeds() {
       red = green = blue = 0;
     } else if (rainbow) {
       uint8_t wheel = rainbowHue + rainbowPositions[i] * rainbowSteps[spacing];
+      if (spacing == 3) wheel += rainbowDrift[i];
       // Three linear ramps cycle red -> blue -> green -> red.
       if (wheel < 85) {
-        red = (85 - wheel) * 3;
         green = 0;
         blue = wheel * 3;
+        red = (uint8_t)~blue;
       } else if (wheel < 170) {
         wheel -= 85;
         red = 0;
         green = wheel * 3;
-        blue = (85 - wheel) * 3;
+        blue = (uint8_t)~green;
       } else {
         wheel -= 170;
         red = wheel * 3;
-        green = (85 - wheel) * 3;
+        green = (uint8_t)~red;
         blue = 0;
       }
     } else {
@@ -406,6 +409,7 @@ void firmwareApplyConfig(void) {
   layerIndicatorPhasesLeft = 0;
   rainbowChanged = (uint8_t)now;
   rainbowHue = 0;
+  for (uint8_t i = 0; i < NUM_LEDS; i++) rainbowDrift[i] = 0;
   updateLeds();
 }
 
@@ -454,6 +458,12 @@ void loop() {
   {
     rainbowChanged = (uint8_t)now;
     rainbowHue++;
+    // One extra step every 8, 16, 32, 64, 128, or 256 rainbow frames.
+    uint8_t mask = 7;
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+      if (!(rainbowHue & mask)) rainbowDrift[i]++;
+      mask = (mask << 1) | 1;
+    }
     updateLeds();
   }
 #if ENABLE_COLOR_PREVIEW

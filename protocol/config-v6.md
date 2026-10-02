@@ -41,11 +41,20 @@ The nine-byte header is:
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
 | 8 | Chord window and rainbow phase | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = 30°, `10` = 60°, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = Extra fast, `01` = Fast, `10` = Slow, `11` = Extra slow) |
 
-Rainbow phase settings use hue increments `0`, `21`, `42`, and `107` in a
+Rainbow phase settings use hue increments `0`, `21`, `42`, and `109` in a
 256-step cycle. Three-key positions are `0, 1, 2`; six-key positions are
 `0, 1, 2, 5, 4, 3`, preserving the physical perimeter order
 `1 → 2 → 3 → 6 → 5 → 4`. Each LED's hue is the shared hue plus its position
 times the selected increment, modulo 256. A 0° setting makes all LEDs identical.
+The 150° “Scattered colors” preset starts at approximately 153° (109 hue steps)
+and adds independent forward drift: LEDs 1–6 gain one extra hue step every
+8, 16, 32, 64, 128, and 256 rainbow frames respectively (three-key boards use
+the first three rates). Drift applies only to this preset; other spacing options
+keep fixed relative phases. Drift follows the selected animation speed, advances
+with rainbow frames, and resets with the base hue on configuration application or
+USB reset. Color previews use the saved spacing preset, including its drift.
+This is deterministic motion rather than random sampling.
+
 The frame interval is independent of phase spacing:
 
 | Speed bits | Setting | Hue step interval | Full 256-step cycle |

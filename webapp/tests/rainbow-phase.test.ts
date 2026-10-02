@@ -118,7 +118,7 @@ describe('rainbow phase spacing', () => {
     expect(selector.props.value).toBe(2);
     expect(elements(selector.props.children).filter((e) => e.type === 'option').map((e) => e.props.value)).toEqual([0, 1, 2, 3]);
     expect(elements(selector.props.children).map((e) => e.props.children)).toEqual([
-      '0° — All LEDs together', '30° — Gentle color wave', '60° — Rainbow sweep', '150° — Scattered colors',
+      '0° — All LEDs together', '30° — Gentle color wave', '60° — Rainbow sweep', 'Variable — Scattered colors',
     ]);
     // Start a fresh history before invoking the actual selector callback.
     updateProfile((p) => { p.rainbowPhase = 2; });

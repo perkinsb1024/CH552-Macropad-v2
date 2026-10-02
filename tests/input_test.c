@@ -201,7 +201,7 @@ static void testRainbowSpeed(void) {
 static void testRainbowPhaseSpacing(void) {
     // Expected order follows the physical perimeter, rather than buffer order.
     const uint8_t positions[6] = {0, 1, 2, 5, 4, 3};
-    const uint8_t steps[4] = {0, 21, 42, 107};
+    const uint8_t steps[4] = {0, 21, 42, 109};
     uint8_t samples[256][NUM_BYTES];
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfigValid = 1;
@@ -244,6 +244,49 @@ static void testRainbowPhaseSpacing(void) {
             firmwarePreviewColor(0);
 #endif
         }
+    }
+}
+
+static void testRainbowDrift(void) {
+    for (uint8_t phase = 0; phase < 4; phase++) {
+        testLoadStarterProfile(PHYSICAL_VARIANT);
+        activeConfig[8] = (phase << 4) | 0x40; // Fast.
+        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+        activeConfigValid = 1;
+        P1 = P3 = 0xFF;
+#if ENABLE_COLOR_PREVIEW
+        previewOptions = 0;
+#endif
+        currentMs = 65520;
+        firmwareApplyConfig();
+        uint8_t initial[NUM_BYTES], previous[NUM_BYTES];
+        memcpy(initial, ledData, NUM_BYTES);
+        for (uint16_t frame = 1; frame <= 2048; frame++) {
+            memcpy(previous, ledData, NUM_BYTES);
+            tick((uint16_t)(65520U + frame * 6));
+            for (uint8_t j = 0; j < NUM_BYTES; j++) {
+                int delta = ledData[j] - previous[j];
+                assert(delta >= -6 && delta <= 6); // At most two hue steps.
+            }
+        }
+        assert(rainbowHue == 0); // Compare matching points in the base cycle.
+        if (phase == 3) {
+            // The fastest drift completes a full turn; the others have not.
+            assert(memcmp(initial, ledData, 3) == 0);
+            for (uint8_t i = 1; i < NUM_LEDS; i++)
+                assert(memcmp(initial + 3*i, ledData + 3*i, 3) != 0);
+#if ENABLE_COLOR_PREVIEW
+            memcpy(previous, ledData, NUM_BYTES);
+            firmwareLedAction(CONFIG_LED_PHASE_SET, 0);
+            firmwarePreviewColor(0xFD); // Saved scattered preset includes drift.
+            assert(memcmp(previous, ledData, NUM_BYTES) == 0);
+            firmwarePreviewColor(0);
+#endif
+        } else {
+            assert(memcmp(initial, ledData, NUM_BYTES) == 0);
+        }
+        firmwareApplyConfig();
+        assert(memcmp(initial, ledData, NUM_BYTES) == 0); // Reset restores start.
     }
 }
 
@@ -449,6 +492,7 @@ int main(void) {
     testIndicatorBrightness();
     testRainbowSpeed();
     testRainbowPhaseSpacing();
+    testRainbowDrift();
     testTransparencyAndRainbow();
     testMomentaryIndicatorCancellation();
     currentMs = 0;

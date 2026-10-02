@@ -40,7 +40,7 @@ it('offers all 13 LED commands and switches each to a valid default', () => {
 });
 it('shows phase degrees without approximation marks and permits configured restores', () => {
   setup(); change(selects()[1]!, 'rainbowPhaseSet');
-  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['0°', '30°', '60°', '150°', 'As configured']);
+  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['0°', '30°', '60°', 'Variable', 'As configured']);
   change(selects()[2]!, 'asConfigured');
   expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'rainbowPhaseSet', value: 'asConfigured' });
 });
