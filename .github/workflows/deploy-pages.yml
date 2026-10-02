@@ -5,7 +5,7 @@ name: Deploy configurator
 on:
   push:
     branches: [main]
-    paths: ['webapp/**', '.github/workflows/deploy-pages.yml']
+    paths: ['webapp/**', 'webUploader/**', 'releases/**', '.gitmodules', '.github/workflows/deploy-pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,8 @@ jobs:
         working-directory: webapp
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: actions/configure-pages@v5
       - uses: actions/setup-node@v4
         with:
@@ -33,6 +35,10 @@ jobs:
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci
       - run: npm test
+      - name: Build beta uploader and test bootloader protocol
+        run: |
+          node ../webUploader/build.mjs
+          node --test ../webUploader/tests/*.test.mjs
       - name: Build latest configurator and verify frozen archives
         run: npm run build
       - uses: actions/upload-pages-artifact@v3

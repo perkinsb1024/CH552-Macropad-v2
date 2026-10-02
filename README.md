@@ -55,6 +55,8 @@ The current build and upload scripts target **macOS**. They use PlatformIO toget
 
 Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware)
 
+A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
+
 ### 1. Install the Tools
 
 1. Install [PlatformIO IDE for VS Code](https://platformio.org/install/ide?install=vscode), or [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) if you prefer the command line

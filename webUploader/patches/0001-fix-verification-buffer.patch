@@ -1,0 +1,11 @@
+--- a/bootloaderWebtool/ch55xbl.js
++++ b/bootloaderWebtool/ch55xbl.js
+@@ -189,7 +189,7 @@
+         bootloaderVerifyCmd[3] = u16Tmp & 0xFF;
+         bootloaderVerifyCmd[4] = (u16Tmp >> 8) & 0xFF;
+ 
+-        await device.transferOut(endpointOut, (new Uint8Array(bootloaderWriteCmd.slice(0, bootloaderVerifyCmd[1] + 3))).buffer)
++        await device.transferOut(endpointOut, (new Uint8Array(bootloaderVerifyCmd.slice(0, bootloaderVerifyCmd[1] + 3))).buffer)
+         result = await device.transferIn(endpointIn, 64);
+         resultUint8 = new Uint8Array(result.data.buffer)
+ 

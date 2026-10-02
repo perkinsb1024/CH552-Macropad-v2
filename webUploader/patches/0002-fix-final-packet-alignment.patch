@@ -1,0 +1,11 @@
+--- a/bootloaderWebtool/ch55xbl.js
++++ b/bootloaderWebtool/ch55xbl.js
+@@ -145,7 +145,7 @@
+     totalPackets = parseInt((writeDataSize + 55) / 56);
+     lastPacketSize = writeDataSize % 56;
+     //make it multiple of 8
+-    lastPacketSize = parseInt((lastPacketSize + 7) / 8 * 8);
++    lastPacketSize = Math.ceil(lastPacketSize / 8) * 8;
+     if (lastPacketSize == 0) lastPacketSize = 56;
+ 
+     //write

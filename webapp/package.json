@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/verify-archives.mjs dist/versions",
+    "build": "tsc --noEmit && vite build && node scripts/verify-archives.mjs dist/versions && node ../webUploader/build.mjs dist/webUploader",
     "verify:archives": "node scripts/verify-archives.mjs",
     "preview": "vite preview",
     "test": "vitest run",

@@ -1,0 +1,4 @@
+[submodule "webUploader/upstream"]
+	path = webUploader/upstream
+	url = https://github.com/DeqingSun/ch55xduino.git
+	branch = ch55xduino
