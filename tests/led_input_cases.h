@@ -1,4 +1,105 @@
 // Included after the real sketch to inspect runtime state and rendered GRB bytes.
+static void testLedSleep(void) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[3] |= CONFIG_HEADER_LED_SLEEP;
+    // No-op bindings isolate physical activity from HID and layer changes.
+    memset(activeConfig + 9, 0, 2 * (NUM_LEDS + 3));
+    uint8_t optionsOffset = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+    activeConfig[optionsOffset] = 0xED; // White, always on, bright.
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+    previewOptions = 0;
+    currentMs = 0;
+    firmwareApplyConfig();
+    uint8_t image[CONFIG_SIZE];
+    memcpy(image, activeConfig, CONFIG_SIZE);
+    for (uint16_t half = 1; half < 128; half++) {
+        currentMs = (uint32_t)half << 15;
+        loop();
+        assert(ledIdle == half);
+        assert(ledData[0] == 255 && ledData[1] == 255 && ledData[2] == 255);
+        loop(); // Repeated polling within one phase must not increment.
+        assert(ledIdle == half);
+    }
+    currentMs = 128UL << 15;
+    loop();
+    assert(ledIdle == 128);
+    for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+    for (uint16_t half = 129; half < 260; half++) {
+        currentMs = (uint32_t)half << 15;
+        loop();
+        assert(ledIdle == 128); // Latched sleep never wraps back to awake.
+    }
+    // The feature is opt-in; saved brightness and runtime policies are preserved.
+    activeConfig[3] &= ~CONFIG_HEADER_LED_SLEEP;
+    updateLeds();
+    assert(ledData[0] == 255);
+    activeConfig[3] |= CONFIG_HEADER_LED_SLEEP;
+    assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+    for (uint8_t mode = 0; mode < 3; mode++) {
+        activeConfig[optionsOffset] = 0xE1 | (mode << 2);
+        layerIndicatorPhasesLeft = mode ? 2 : 0;
+        updateLeds();
+        assert(ledData[0] == (mode ? 255 : 0));
+        if (mode == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
+            layerIndicatorPhasesLeft = 1;
+            updateLeds();
+            assert(ledData[0] == 0);
+        }
+    }
+    activeConfig[optionsOffset] = 0xED;
+    layerIndicatorPhasesLeft = 0;
+    stableState[0] = 1;
+    updateLeds();
+    assert(ledData[0] == 0 && ledData[1] == 255); // Key overlay remains bright.
+    stableState[0] = 0;
+    firmwarePreviewColor(0xED);
+    assert(ledData[0] == 255); // Preview bypasses sleep.
+    firmwarePreviewColor(0);
+    assert(ledData[0] == 0);
+    // A debounced no-op key press wakes the background without changing policies.
+    P1 &= ~0x02;
+    scanButton(0, 1000);
+    scanButton(0, 1010);
+    assert(ledIdle < 2 && ledData[3] == 255);
+    P1 |= 0x02;
+    scanButton(0, 1020);
+    scanButton(0, 1030);
+    // Encoder pushbutton wakes too, even though it has no per-key LED.
+    ledIdle = 128;
+    updateLeds();
+    P3 &= ~0x08;
+    scanButton(NUM_LEDS, 1040);
+    scanButton(NUM_LEDS, 1050);
+    assert(ledIdle < 2 && ledData[0] == 255);
+    P3 |= 0x08;
+    scanButton(NUM_LEDS, 1060);
+    scanButton(NUM_LEDS, 1070);
+    // Only completed detents wake; exercise both directions.
+    const uint8_t turns[2][4] = {{2, 0, 1, 3}, {1, 0, 2, 3}};
+    for (uint8_t direction = 0; direction < 2; direction++) {
+        ledIdle = 128;
+        encoderState = 3;
+        encoderMovement = 0;
+        updateLeds();
+        for (uint8_t step = 0; step < 4; step++) {
+            P3 = (P3 & ~3) | turns[direction][step];
+            scanEncoder();
+            assert(ledIdle == (step == 3 ? 0 : 128));
+        }
+        assert(ledData[0] == 255);
+    }
+    assert(memcmp(image, activeConfig, CONFIG_SIZE) == 0);
+    // Configuration application (also used on USB reset) clears sleep.
+    ledIdle = 128;
+    currentMs = 32768;
+    firmwareApplyConfig();
+    assert(ledIdle == 1 && ledData[0] == 255);
+    currentMs = 65536;
+    loop();
+    assert(ledIdle == 2);
+}
+
 static uint8_t expectedDim(uint8_t v) { return (v >> 4) | (v != 0); }
 static uint8_t stepModel(uint8_t n, int8_t d, uint8_t count) {
     int value = n + d;

@@ -67,6 +67,9 @@ __idata uint8_t rainbowDrift[NUM_LEDS];
 // Current global rainbow presets; saved defaults remain in activeConfig.
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
 __xdata uint8_t ledSettings[4];
+// Low bit follows millis bit 15; count half-wraps until bit 7 latches sleep.
+// 128 * 32.768 s is approximately 70 minutes. No separate previous-time byte.
+__data uint8_t ledIdle;
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 #if ENABLE_COLOR_PREVIEW
 __xdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
@@ -113,7 +116,8 @@ void updateLeds() {
     spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
   } else
 #endif
-  if (!indicator) {
+  if (!indicator || ((activeConfig[3] & CONFIG_HEADER_LED_SLEEP) &&
+      (ledIdle & 0x80) && behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON)) {
     // Suppressed indications must not obscure key feedback.
     phases = 0;
     behavior = CONFIG_LAYER_INDICATOR_NONE;
@@ -347,13 +351,12 @@ void scanButton(uint8_t input, uint16_t now) {
         allowRunBootloader = configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN;
         encoderPressedMs = now;
       }
+      ledIdle &= 1;
       actionsPress(input, now);
     } else {
       actionsRelease(input);
     }
-    if (input < NUM_LEDS) {
-      updateLeds();
-    }
+    updateLeds();
   }
 }
 
@@ -376,17 +379,19 @@ void scanEncoder() {
   } else {
     encoderMovement += movement;
     if (encoderMovement >= 4) {
-      encoderMovement = 0;
       actionsRotate(1);
     } else if (encoderMovement <= -4) {
-      encoderMovement = 0;
       actionsRotate(0);
-    }
+    } else return;
+    encoderMovement = 0;
+    ledIdle &= 1;
+    updateLeds();
   }
 }
 
 void firmwareApplyConfig(void) {
   uint16_t now = millis();
+  ledIdle = now >> 15;
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
@@ -440,6 +445,10 @@ void loop() {
   uint16_t now = millis();
   USB_reportPoll(now);
   protocolPoll(now);
+  if (!(ledIdle & 0x80) && ((ledIdle ^ (uint8_t)(now >> 15)) & 1)) {
+    ++ledIdle;
+    if (ledIdle & 0x80) updateLeds();
+  }
 #if !ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) {
     if ((uint16_t)(now - encoderPressedMs) >= 500) {

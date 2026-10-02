@@ -35,11 +35,18 @@ The nine-byte header is:
 | --- | --- | --- |
 | 0–1 | Marker | ASCII `MP` |
 | 2 | Format version | `6` |
-| 3 | Layers and startup layer | Bits 0–2: layer count minus one<br>Bits 3–5: startup layer<br>Bits 6–7: `0` |
+| 3 | Layers, startup layer, and LED sleep | Bits 0–2: layer count minus one<br>Bits 3–5: startup layer<br>Bit 6: experimental always-on indicator inactivity sleep (`0` = disabled, `1` = enabled)<br>Bit 7: `0` |
 | 4 | String-pool length | Number of used bytes in the string pool. |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | Chord window and rainbow phase | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = 30°, `10` = 60°, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = Extra fast, `01` = Fast, `10` = Slow, `11` = Extra slow) |
+| 8 | Chord window and rainbow settings | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = 30°, `10` = 60°, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = Extra fast, `01` = Fast, `10` = Slow, `11` = Extra slow) |
+
+Header byte 3 bit 6 is implemented only in the current over-limit firmware
+experiment, not published releases or browser codecs. It suppresses always-on
+layer background after approximately 69–70 minutes of input inactivity, without
+suppressing blink/timed indications or key feedback. See the
+[LED sleep experiment](led-sleep-experiment.md) for behavior, cost, and pending
+editor support. Earlier v6 firmware ignores this bit rather than rejecting it.
 
 Rainbow phase settings use hue increments `0`, `21`, `42`, and `109` in a
 256-step cycle. Three-key positions are `0, 1, 2`; six-key positions are
