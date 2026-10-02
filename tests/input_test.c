@@ -503,7 +503,7 @@ static void testOneShotChordIndicator(void) {
 #include "led_input_cases.h"
 
 int main(void) {
-    testLedSleep();
+    testTimedLighting();
     testLedControls();
     testSameLayerIndicator();
     testOneShotChordIndicator();

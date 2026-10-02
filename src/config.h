@@ -4,11 +4,23 @@
 #include <stdint.h>
 
 #define CONFIG_SIZE 128
-#define CONFIG_VERSION 6
+#define CONFIG_VERSION 7
+#ifndef CONFIG_TIMED_MAX
+#define CONFIG_TIMED_MAX 4
+#endif
+#ifndef CONFIG_TIMED_ALL_RESET
+#define CONFIG_TIMED_ALL_RESET 0
+#endif
+#ifndef CONFIG_TIMED_INTERVAL_MASK
+#define CONFIG_TIMED_INTERVAL_MASK 127
+#endif
+#ifndef CONFIG_TIMED_RESUME
+#define CONFIG_TIMED_RESUME 1
+#endif
+#define CONFIG_TIMED_SIZE (CONFIG_TIMED_RESUME ? 5 : 3)
 #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
 #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
 #define CONFIG_HEADER_TRANSPARENT_BLACK 0x80
-#define CONFIG_HEADER_LED_SLEEP 0x40 // Header byte 3, bit 6.
 #define CONFIG_PALETTE_VERSION 3
 #define CONFIG_MAX_LAYERS (PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 7 : 5)
 #define CONFIG_SIX_KEYS 0
@@ -77,6 +89,8 @@
 extern __xdata uint8_t activeConfig[CONFIG_SIZE];
 extern __code uint8_t configPalette[16][3];
 
+uint8_t configTimedCount(void);
+uint8_t configTimedOffset(void);
 uint16_t configCrc(const __xdata uint8_t *image);
 uint8_t configValid(const __xdata uint8_t *image, uint8_t variant);
 uint8_t configLayerCount(void);
@@ -87,6 +101,6 @@ uint8_t configLayerOptions(uint8_t layer);
 uint8_t configLedColor(uint8_t layer, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
 uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
-uint8_t configStringChar(uint8_t offset, uint8_t index);
+uint8_t configStringChar(uint8_t offset, __xdata uint8_t index);
 
 #endif

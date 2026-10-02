@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+void actionsTimedReset(uint8_t tick);
+void actionsTimedPoll(uint8_t tick);
+void actionsTimedInput(void);
 void actionsInit(void);
 void actionsPress(uint8_t input, uint16_t now);
 void actionsRelease(uint8_t input);

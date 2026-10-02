@@ -318,6 +318,45 @@ static void testLedPayloads(void) {
 }
 
 int main(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        for (uint8_t timers = 0; timers < 8; timers++) {
+            testLoadStarterProfile(variant);
+            activeConfig[3] = (timers & 3) << 6;
+            activeConfig[4] = (timers >> 2) << 7;
+            seal();
+            assert(configValid(activeConfig, variant) == (timers <= CONFIG_TIMED_MAX));
+            if (timers <= CONFIG_TIMED_MAX) assert(configTimedCount() == timers);
+        }
+        testLoadStarterProfile(variant);
+        uint8_t offset = configTimedOffset();
+        activeConfig[3] = 1 << 6;
+        activeConfig[offset] = 255; // Longest interval, reset on input.
+        activeConfig[offset + 1] = CONFIG_ACTION_STRING;
+        activeConfig[offset + 2] = 0;
+        activeConfig[4] = 2;
+        activeConfig[offset + CONFIG_TIMED_SIZE] = 'A';
+        activeConfig[offset + CONFIG_TIMED_SIZE + 1] = 0;
+        seal();
+        assert(configValid(activeConfig, variant) == (CONFIG_TIMED_INTERVAL_MASK == 127));
+        activeConfig[offset] = 128;
+        seal();
+        assert(configValid(activeConfig, variant));
+        assert(configStringChar(0, 0) == 'A' && configStringChar(0, 1) == 0);
+        for (uint8_t type = 0; type < 16; type++) {
+            activeConfig[offset + 1] = type;
+            activeConfig[offset + 2] = 0;
+            if (type == CONFIG_ACTION_KEY_HOLD || type == CONFIG_ACTION_MOUSE_HOLD ||
+                type == CONFIG_ACTION_MOMENTARY_LAYER) {
+                seal();
+                assert(!configValid(activeConfig, variant));
+            }
+        }
+        testLoadStarterProfile(variant);
+        activeConfig[2] = 6;
+        activeConfig[3] |= 0xC0; // Old reserved bits are not timer counts.
+        seal();
+        assert(configValid(activeConfig, variant) && configTimedCount() == 0);
+    }
     testLedPayloads();
     testExpandedLayers(0);
     testExpandedLayers(1);

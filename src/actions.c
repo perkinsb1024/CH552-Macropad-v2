@@ -4,7 +4,7 @@
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 #define MAX_INPUTS 7
-#define TOGGLE_INPUTS 9
+#define TOGGLE_INPUTS (9 + CONFIG_TIMED_MAX)
 #define EVENT_COUNT 8
 
 __xdata uint8_t buttonFirst[MAX_INPUTS];
@@ -30,7 +30,7 @@ __xdata uint8_t droppedButtons;
 __xdata uint8_t droppedRotation;
 __data uint8_t baseLayer;
 __data uint8_t effectiveLayer;
-__data uint8_t layerSelectionPending;
+__xdata uint8_t layerSelectionPending;
 // 0xFF means no one-shot layer is waiting to be consumed.
 __data uint8_t oneShotReturnLayer;
 __data uint8_t currentFirst;
@@ -43,7 +43,9 @@ __data uint8_t tempOn;
 __xdata uint8_t tempReady;
 __xdata uint8_t clicksLeft;
 __xdata uint8_t stringIndex;
-__data uint8_t consumerReleasePending;
+__xdata uint8_t timedAge[CONFIG_TIMED_MAX];
+__xdata uint8_t timedClock;
+__xdata uint8_t consumerReleasePending;
 __xdata uint16_t deadline;
 __xdata uint8_t pointerRepeated;
 
@@ -156,7 +158,8 @@ static void updateLayer(void);
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
   uint8_t selectedLayer = baseLayer;
-  if (oneShotReturnLayer != 0xFF) {
+  if (input >= 9) selectedLayer = effectiveLayer;
+  else if (oneShotReturnLayer != 0xFF) {
     baseLayer = oneShotReturnLayer;
     oneShotReturnLayer = 0xFF;
     // Clear the old layer's playback before queuing the selected action.
@@ -414,6 +417,39 @@ void actionsRotate(uint8_t clockwise) {
   configBinding(effectiveLayer, input, &first, &second);
   runAction(first, second, 1, clockwise ? 7 : 8);
   updateLayer();
+}
+
+// Prototype: validated rotation-compatible actions, independent virtual toggles.
+void actionsTimedReset(uint8_t tick) {
+  timedClock = tick;
+  for (uint8_t i = 0; i < CONFIG_TIMED_MAX; i++) timedAge[i] = 0;
+}
+
+void actionsTimedPoll(uint8_t tick) {
+  if (tick == timedClock) return;
+  timedClock = tick;
+  __xdata uint8_t offset = configTimedOffset();
+  for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
+    if ((timedAge[i] & 127) == (activeConfig[offset] & CONFIG_TIMED_INTERVAL_MASK)) {
+      timedAge[i] = CONFIG_TIMED_RESUME ? 128 : 0;
+      runAction(activeConfig[offset + 1], activeConfig[offset + 2], 0, 9 + i);
+      updateLayer();
+    } else timedAge[i]++;
+  }
+}
+
+void actionsTimedInput(void) {
+  __xdata uint8_t offset = configTimedOffset();
+  for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
+#if CONFIG_TIMED_RESUME
+    if (timedAge[i] & 128) {
+      runAction(activeConfig[offset + 3], activeConfig[offset + 4], 0, 9 + i);
+      updateLayer();
+    }
+#endif
+    timedAge[i] &= 127;
+    if (CONFIG_TIMED_ALL_RESET || (activeConfig[offset] & 128)) timedAge[i] = 0;
+  }
 }
 
 void actionsPoll(uint16_t now) {

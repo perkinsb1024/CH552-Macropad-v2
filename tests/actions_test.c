@@ -908,6 +908,102 @@ static void testLedDispatch(void) {
 }
 
 int main(void) {
+    reset();
+    uint8_t timer = configTimedOffset();
+    activeConfig[3] = 2 << 6;
+    activeConfig[timer] = 0; // Every tick, no reset on physical input.
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
+#if CONFIG_TIMED_RESUME
+    activeConfig[timer + 3] = 0xFF;
+    activeConfig[timer + 4] = CONFIG_LED_INDICATOR_SET;
+#endif
+    activeConfig[timer + CONFIG_TIMED_SIZE] = 129; // Every two ticks, reset on input.
+    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = 0x1F;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
+    actionsTimedReset(254);
+    actionsTimedPoll(254);
+    assert(ledCalls == 0);
+    actionsTimedPoll(255);
+    assert(ledCalls == 1 && ledCommand == CONFIG_LED_INDICATOR_SET);
+    actionsTimedPoll(255);
+    assert(ledCalls == 1);
+    actionsTimedInput(); // Resume exactly once; reset timer 1 before its deadline.
+    assert(ledCalls == (CONFIG_TIMED_RESUME ? 2 : 1));
+    actionsTimedInput();
+    assert(ledCalls == (CONFIG_TIMED_RESUME ? 2 : 1));
+    actionsTimedPoll(0); // Wrap of the shared 8-bit coarse clock.
+    assert(ledCommand == CONFIG_LED_INDICATOR_SET);
+    actionsTimedPoll(1);
+    assert(ledCommand == CONFIG_LED_KEY_SET && ledValue == 1);
+    // Endpoint 128, and resume does not disturb a non-reset periodic phase.
+    reset();
+    timer = configTimedOffset();
+    activeConfig[3] = 1 << 6;
+    activeConfig[timer] = CONFIG_TIMED_INTERVAL_MASK;
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_RESTORE;
+    actionsTimedReset(0);
+    for (uint8_t tick = 1; tick <= CONFIG_TIMED_INTERVAL_MASK; tick++) {
+        actionsTimedPoll(tick);
+        assert(ledCalls == 0);
+    }
+    actionsTimedPoll(CONFIG_TIMED_INTERVAL_MASK + 1);
+    assert(ledCalls == 1);
+    actionsTimedReset(7);
+    actionsTimedPoll(7);
+    assert(ledCalls == 1);
+    // Timer execution must not consume an armed one-shot layer.
+    reset();
+    activeConfig[3] = 1 | (1 << 6); // Two layers, one timer.
+    memset(activeConfig + 31, 0, 22);
+    activeConfig[9] = 0x1A;
+    activeConfig[10] = 1;
+    activeConfig[33] = CONFIG_ACTION_KEY_TAP;
+    activeConfig[34] = 4;
+    timer = configTimedOffset();
+    activeConfig[timer] = 0;
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_RESTORE;
+    actionsInit();
+    actionsTimedReset(0);
+    actionsPress(0, 0);
+    assert(actionsLayer() == 1);
+    actionsTimedPoll(1);
+    assert(ledCalls == 1 && actionsLayer() == 1);
+    actionsTimedInput();
+    actionsPress(1, 1);
+    assert(actionsLayer() == 0);
+    // Repeated timer HID actions use the existing bounded queue/drop accounting.
+    reset();
+    timer = configTimedOffset();
+    activeConfig[3] = 1 << 6;
+    activeConfig[timer] = 0;
+    activeConfig[timer + 1] = CONFIG_ACTION_KEY_TAP;
+    activeConfig[timer + 2] = 4;
+    blocked = 1;
+    actionsTimedReset(0);
+    for (uint8_t tick = 1; tick < 32; tick++) actionsTimedPoll(tick);
+    assert(count == 0 && actionsDropped(0) > 0);
+    // Independent reset flags retain periodic phase while restarting inactivity.
+    reset();
+    timer = configTimedOffset();
+    activeConfig[3] = 2 << 6;
+    activeConfig[timer] = 2;
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
+    activeConfig[timer + CONFIG_TIMED_SIZE] = 130;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = 0x1F;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
+    actionsTimedReset(0);
+    actionsTimedPoll(1);
+    actionsTimedInput();
+    actionsTimedPoll(2);
+    assert(ledCalls == 0);
+    actionsTimedPoll(3);
+    assert(ledCalls == (CONFIG_TIMED_ALL_RESET ? 0 : 1));
+    actionsTimedPoll(4);
+    assert(ledCalls == 2 && ledCommand == CONFIG_LED_KEY_SET);
     testLedDispatch();
     testHighLayerActions();
     testPointerHold();
