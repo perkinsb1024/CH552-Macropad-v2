@@ -20,7 +20,14 @@ function selects() { return nodes(Inspector()).filter(n => n.type === 'select');
 function change(node: Node, value: string) { (node.props.onChange as (e: unknown) => void)({ target: { value } }); }
 it('offers all 13 LED commands and switches each to a valid default', () => {
   setup();
-  expect(nodes(selects()[1]!.props.children).map(n => n.props.value)).toEqual(LED_COMMANDS.map(c => c.command));
+  const commands = nodes(selects()[1]!.props.children);
+  expect(commands.filter(n => !n.props.disabled).map(n => n.props.value)).toEqual([
+    ...LED_COMMANDS.filter(c => c.command !== 'restoreAll').map(c => c.command), 'restoreAll',
+  ]);
+  expect(commands.at(-2)!.props).toMatchObject({ value: '', disabled: true });
+  const before = profile.value!.layers[0]!.keys[0];
+  change(selects()[1]!, '');
+  expect(profile.value!.layers[0]!.keys[0]).toEqual(before);
   for (const spec of LED_COMMANDS) {
     change(selects()[1]!, spec.command);
     const action = profile.value!.layers[0]!.keys[0]!;
@@ -29,7 +36,7 @@ it('offers all 13 LED commands and switches each to a valid default', () => {
     if (spec.command === 'restoreAll') { expect(selects()).toHaveLength(2); continue; }
     const field = selects()[2]!;
     const options = nodes(field.props.children).filter(n => n.type === 'option');
-    expect(options.map(n => n.props.value)).toEqual(spec.relative ? [-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7] : ledValueOptions(spec.command).map(o => o.value));
+    expect(options.map(n => n.props.value)).toEqual(spec.relative ? [-1,1] : ledValueOptions(spec.command).map(o => o.value));
     for (const option of options) {
       change(field, String(option.props.value));
       const next = profile.value!.layers[0]!.keys[0]!;
@@ -37,6 +44,19 @@ it('offers all 13 LED commands and switches each to a valid default', () => {
       expect(ledProblem(next.command, next.value)).toBeNull();
     }
   }
+});
+it('preserves existing larger relative steps but only permits editing to minus or plus one', () => {
+  setup();
+  profile.value!.layers[0]!.keys[0] = { type: 'ledControl', command: 'commonPresetRelative', value: 3 };
+  const field = selects()[2]!;
+  const options = nodes(field.props.children).filter(n => n.type === 'option');
+  expect(options.map(n => n.props.value)).toEqual([3, -1, 1]);
+  expect(options[0]!.props.disabled).toBe(true);
+  expect(profile.value!.layers[0]!.keys[0]).toMatchObject({ value: 3 });
+  change(field, '2');
+  expect(profile.value!.layers[0]!.keys[0]).toMatchObject({ value: 3 });
+  change(field, '-1');
+  expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'commonPresetRelative', value: -1 });
 });
 it('shows phase degrees without approximation marks and permits configured restores', () => {
   setup(); change(selects()[1]!, 'rainbowPhaseSet');

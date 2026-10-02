@@ -1,5 +1,6 @@
 import { keyName } from '../../keys/keyboard';
 import { modifierNames, summarize } from '../../model/actions';
+import { ledSummary } from '../../model/ledControl';
 import type { Action } from '../../model/types';
 
 function NonePill() {
@@ -20,6 +21,9 @@ export function ShortcutPills({ usage, modifiers, hold = false }: { usage: numbe
 
 export function ActionLabel({ action }: { action: Action }) {
   if (action.type === 'none') return <NonePill />;
+  if (action.type === 'ledControl') return (
+    <span title={ledSummary(action.command, action.value)}>{ledSummary(action.command, action.value, true)}</span>
+  );
   return action.type === 'keyTap' || action.type === 'keyHold'
     ? <ShortcutPills usage={action.usage} modifiers={action.modifiers} hold={action.type === 'keyHold'} />
     : <>{summarize(action)}</>;

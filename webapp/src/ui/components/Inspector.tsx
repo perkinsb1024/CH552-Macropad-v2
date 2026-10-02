@@ -151,14 +151,24 @@ export function Inspector() {
         <label class="field"><span class="field-label">LED command</span>
           <select value={action.command} onChange={(e) => {
             const command = (e.target as HTMLSelectElement).value as LedCommand;
-            const spec = LED_COMMANDS[ledCommandCode(command)]!;
+            const spec = LED_COMMANDS[ledCommandCode(command)];
+            if (!spec) return;
             update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' ? 0 : command === 'commonPresetSet' ? 0 : 'asConfigured' });
-          }}>{LED_COMMANDS.map((c) => <option value={c.command}>{c.label}</option>)}</select>
+          }}>
+            {LED_COMMANDS.filter((c) => c.command !== 'restoreAll').map((c) => <option value={c.command}>{c.label}</option>)}
+            <option value="" disabled>────────────────────</option>
+            {LED_COMMANDS.filter((c) => c.command === 'restoreAll').map((c) => <option value={c.command}>{c.label}</option>)}
+          </select>
         </label>
         {LED_COMMANDS[ledCommandCode(action.command)]?.relative ?
           <label class="field"><span class="field-label">Relative step</span>
-            <select value={action.value} onChange={(e) => update({ ...action, value: Number((e.target as HTMLSelectElement).value) })}>
-              {[-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7].map((v) => <option value={v}>{v > 0 ? '+' : ''}{v}</option>)}
+            <select value={action.value} onChange={(e) => {
+              const value = Number((e.target as HTMLSelectElement).value);
+              if (value === -1 || value === 1) update({ ...action, value });
+            }}>
+              {action.value !== -1 && action.value !== 1 &&
+                <option value={action.value} disabled>Current: {typeof action.value === 'number' && action.value > 0 ? '+' : ''}{action.value}</option>}
+              {[-1,1].map((v) => <option value={v}>{v > 0 ? '+' : ''}{v}</option>)}
             </select>
             <span class="hint">Cycles with wraparound. Positive speed steps are faster; positive common-preset steps select the next darker preset, then return to configured.</span>
           </label>

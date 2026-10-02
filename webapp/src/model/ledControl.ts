@@ -38,10 +38,13 @@ export function ledProblem(command: LedCommand, value: LedValue): string | null 
   if (value === 'asConfigured' && code !== 11) return null;
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= (code < 4 ? 3 : code === 11 ? 4 : 2) ? null : 'Invalid LED setting.';
 }
-export function ledSummary(command: LedCommand, value: LedValue): string {
+export function ledSummary(command: LedCommand, value: LedValue, compact = false): string {
   const code = ledCommandCode(command);
   if (code < 0) return 'Unknown LED command';
-  if (code === 10) return 'Restore LED settings';
-  if (LED_COMMANDS[code]!.relative) return `${LED_COMMANDS[code]!.label.replace('Relative ', '')}: ${typeof value === 'number' && value > 0 ? '+' : ''}${value}`;
-  return `${LED_COMMANDS[code]!.label.replace('Set ', '')}: ${ledValueOptions(command).find((o) => o.value === value)?.label ?? '?'}`;
+  if (code === 10) return compact ? 'LED Restore' : LED_COMMANDS[code]!.label;
+  const label = compact
+    ? code >= 11 ? 'LED Preset' : ['LED Phase', 'LED Speed', 'Layer LEDs', 'Key LEDs', 'All LEDs'][code >> 1]
+    : LED_COMMANDS[code]!.label;
+  if (LED_COMMANDS[code]!.relative) return `${label}: ${typeof value === 'number' && value > 0 ? '+' : ''}${value}`;
+  return `${label}: ${ledValueOptions(command).find((o) => o.value === value)?.label ?? '?'}`;
 }
