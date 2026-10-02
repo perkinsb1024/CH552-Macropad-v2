@@ -1,3 +1,4 @@
+import { legacyActionCodes } from './legacy-image';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
 import { decodeImage } from '../src/codec/decode';
@@ -23,7 +24,7 @@ describe('rainbow speed', () => {
           p.rainbowPhase = phase;
           p.chordWindow = chordWindow;
           const image = encodeProfile(p);
-          expect(image[2]).toBe(5);
+          expect(image[2]).toBe(6);
           expect(image[8]).toBe(chordWindow | (phase << 4) | (speed << 6));
           expect(decodeImage(image)).toEqual({ ok: true, profile: p });
           const text = exportProfile(p);
@@ -53,6 +54,7 @@ describe('rainbow speed', () => {
   it.each([2, 3, 4])('migrates binary format %s to Fast', (version) => {
     const p = defaultProfile(0);
     const image = encodeProfile(p);
+    legacyActionCodes(image);
     image[2] = version;
     image[8] = image[8]! & 15;
     sealImage(image);

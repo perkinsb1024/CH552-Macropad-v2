@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define CONFIG_SIZE 128
-#define CONFIG_VERSION 5
+#define CONFIG_VERSION 6
 #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
 #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
 #define CONFIG_HEADER_TRANSPARENT_BLACK 0x80
@@ -33,9 +33,30 @@
 #define CONFIG_ACTION_STRING           0x9
 #define CONFIG_ACTION_SET_LAYER        0xA
 #define CONFIG_ACTION_MOMENTARY_LAYER  0xB
-#define CONFIG_ACTION_RELATIVE_LAYER   0xD
-#define CONFIG_ACTION_MOUSE_X          0xE
-#define CONFIG_ACTION_MOUSE_Y          0xF
+#define CONFIG_ACTION_RELATIVE_LAYER   0xC
+#define CONFIG_ACTION_MOUSE_X          0xD
+#define CONFIG_ACTION_MOUSE_Y          0xE
+#define CONFIG_ACTION_LED_CONTROL      0xF
+
+// LED command byte; the auxiliary nibble carries its value.
+#define CONFIG_LED_PHASE_SET       0x00
+#define CONFIG_LED_PHASE_RELATIVE  0x01
+#define CONFIG_LED_SPEED_SET       0x02
+#define CONFIG_LED_SPEED_RELATIVE  0x03
+#define CONFIG_LED_INDICATOR_SET   0x04
+#define CONFIG_LED_INDICATOR_RELATIVE 0x05
+#define CONFIG_LED_KEY_SET         0x06
+#define CONFIG_LED_KEY_RELATIVE    0x07
+#define CONFIG_LED_BOTH_SET        0x08
+#define CONFIG_LED_BOTH_RELATIVE   0x09
+#define CONFIG_LED_RESTORE         0x0A
+#define CONFIG_LED_PRESET_SET      0x0B
+#define CONFIG_LED_PRESET_RELATIVE 0x0C
+#define CONFIG_LED_OFF 0
+#define CONFIG_LED_DIM 1
+#define CONFIG_LED_BRIGHT 2
+#define CONFIG_LED_CONFIGURED 15
+
 #define CONFIG_MOUSE_MOVE_HOLD         0x10
 
 // Per-layer option byte: full brightness bit 0, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.

@@ -24,14 +24,28 @@ __data uint8_t ep0ReportExpected;
 __data uint8_t ep0ReportReceived;
 volatile __xdata uint8_t UsbConfig;
 
-const uint8_t *__data pDescr;
+const __code uint8_t *__data pDescr;
+__data _Bool descriptorInRam;
 
 volatile uint8_t usbMsgFlags = 0; // uint8_t usbMsgFlags copied from VUSB
+
+// Both SETUP and subsequent IN tokens advance the same descriptor transfer.
+static uint8_t sendDescriptor(void) {
+  __data uint8_t len = SetupLen >= DEFAULT_ENDP0_SIZE ? DEFAULT_ENDP0_SIZE : SetupLen;
+  __data uint8_t i;
+  for (i = 0; i < len; i++) {
+    Ep0Buffer[i] = descriptorInRam ? *((const __xdata uint8_t *)pDescr) : *pDescr;
+    pDescr++;
+  }
+  SetupLen -= len;
+  return len;
+}
 
 void USB_EP0_SETUP() {
   __data uint8_t len = USB_RX_LEN;
   __data uint16_t descriptorLen = 0;
   ep0ReportExpected = 0;
+  descriptorInRam = 0;
   if (len == (sizeof(USB_SETUP_REQ))) {
     SetupLen = ((uint16_t)UsbSetupBuf->wLengthH << 8) | (UsbSetupBuf->wLengthL);
     len = 0; // Default is success and upload 0 length
@@ -79,7 +93,8 @@ void USB_EP0_SETUP() {
           descriptorLen = USB_getReport(UsbSetupBuf->wValueL,
                                         UsbSetupBuf->wValueH == 2, Ep0Report);
           if (descriptorLen) {
-            pDescr = Ep0Report;
+            pDescr = (const __code uint8_t *)Ep0Report;
+            descriptorInRam = 1;
             SetupReq = USB_GET_DESCRIPTOR; // Use the same multi-packet IN transfer.
           } else {
             len = 0xFF;
@@ -238,14 +253,7 @@ void USB_EP0_SETUP() {
     if (SetupLen > descriptorLen) {
       SetupLen = descriptorLen; // Limit length
     }
-    len = SetupLen >= DEFAULT_ENDP0_SIZE
-              ? DEFAULT_ENDP0_SIZE
-              : SetupLen; // transmit length for this packet
-    for (__data uint8_t i = 0; i < len; i++) {
-      Ep0Buffer[i] = pDescr[i];
-    }
-    SetupLen -= len;
-    pDescr += len;
+    len = sendDescriptor();
   }
   if (len == 0xff) {
     SetupReq = 0xFF;
@@ -267,16 +275,7 @@ void USB_EP0_SETUP() {
 void USB_EP0_IN() {
   switch (SetupReq) {
   case USB_GET_DESCRIPTOR: {
-    __data uint8_t len = SetupLen >= DEFAULT_ENDP0_SIZE
-                             ? DEFAULT_ENDP0_SIZE
-                             : SetupLen; // send length
-    for (__data uint8_t i = 0; i < len; i++) {
-      Ep0Buffer[i] = pDescr[i];
-    }
-    // memcpy( Ep0Buffer, pDescr, len );
-    SetupLen -= len;
-    pDescr += len;
-    UEP0_T_LEN = len;
+    UEP0_T_LEN = sendDescriptor();
     UEP0_CTRL ^= bUEP_T_TOG; // Switch between DATA0 and DATA1
   } break;
   case USB_SET_ADDRESS:

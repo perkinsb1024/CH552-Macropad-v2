@@ -21,13 +21,15 @@ __code uint8_t configPalette[16][3] = {
   { 0, 0, 0 }, // Off
 };
 
-static uint8_t layerSize(uint8_t variant) {
-    return variant == CONFIG_THREE_KEYS ? 15 : 22;
-}
-
-static uint8_t keyCount(uint8_t variant) {
-    return variant == CONFIG_THREE_KEYS ? 3 : 6;
-}
+// Each firmware binary has fixed geometry; do not emit runtime variant branches
+// or a 16-bit multiply for layer addressing. Host validation exercises both.
+#ifdef __SDCC
+#define layerSize(variant) ((uint8_t)(PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 15 : 22))
+#define keyCount(variant) ((uint8_t)(PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 3 : 6))
+#else
+static uint8_t layerSize(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 15 : 22; }
+static uint8_t keyCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 3 : 6; }
+#endif
 
 static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
     uint8_t index = 0;
@@ -48,7 +50,9 @@ uint16_t configCrc(const __xdata uint8_t *image) {
         }
         crc ^= (uint16_t)image[i] << 8;
         for (bit = 0; bit < 8; bit++) {
-            crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+            _Bool high = (crc & 0x8000) != 0;
+            crc <<= 1;
+            if (high) crc ^= 0x1021;
         }
     }
     return crc;
@@ -56,8 +60,8 @@ uint16_t configCrc(const __xdata uint8_t *image) {
 
 static uint8_t keyboardUsageValid(uint8_t usage) {
     // HID keyboard non-modifier usages supported by the US layout mapper.
-    return usage == 0 || (usage >= 0x04 && usage <= 0x65) ||
-           (usage >= 0x68 && usage <= 0x73);
+    return usage == 0 || ((uint8_t)(usage - 0x04) <= 0x61) ||
+           ((uint8_t)(usage - 0x68) <= 0x0B);
 }
 
 static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
@@ -69,6 +73,15 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
     uint8_t i;
     uint8_t start;
     switch (type) {
+        case CONFIG_ACTION_LED_CONTROL:
+            if (param > CONFIG_LED_PRESET_RELATIVE) return 0;
+            if (param == CONFIG_LED_RESTORE) return aux == 0;
+            if (param == CONFIG_LED_PRESET_SET) return aux <= 4;
+            if ((param & 1) || param == CONFIG_LED_PRESET_RELATIVE)
+                return aux != 0 && aux != 8;
+            if (aux == 15) return 1;
+            if (param < CONFIG_LED_INDICATOR_SET) return aux <= 3;
+            return aux <= 2;
         case CONFIG_ACTION_NONE:
             return aux == 0 && param == 0;
         case CONFIG_ACTION_RELATIVE_LAYER:
@@ -127,6 +140,9 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     uint8_t id;
     uint16_t end;
     uint16_t crc;
+#ifdef __SDCC
+    if (variant != PHYSICAL_VARIANT) return 0;
+#endif
     if (variant > CONFIG_THREE_KEYS || image[0] != 'M' || image[1] != 'P' ||
         image[2] != CONFIG_VERSION || ((image[5] & 1) != variant)) {
         return 0;
@@ -137,13 +153,16 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     }
     keys = keyCount(variant);
     size = layerSize(variant);
+    if (layers > (keys == 3 ? 7 : 5)) return 0;
     chords = (image[5] >> 1) & 63;
-    end = 9 + (uint16_t)size * layers + (uint16_t)3 * chords + image[4];
+    // Each product fits a byte after the layer/chord count checks; the sum
+    // remains 16-bit so malformed images cannot wrap past the capacity check.
+    end = 9 + (uint8_t)(size * layers) + (uint8_t)(3 * chords) + (uint16_t)image[4];
     if (end > CONFIG_SIZE) {
         return 0;
     }
-    pool = 9 + size * layers + 3 * chords;
     used = image[4];
+    pool = (uint8_t)end - used;
     for (layer = 0; layer < layers; layer++) {
         offset = 9 + size * layer;
         for (i = 0; i < keys + 3; i++) {

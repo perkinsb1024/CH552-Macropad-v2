@@ -1,7 +1,7 @@
-/** Shared constants from protocol/config-v5.md and protocol/hid-v1.md. */
+/** Shared constants from protocol/config-v6.md and protocol/hid-v1.md. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 5;
+export const FORMAT_VERSION = 6;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
   return variant === VARIANT_THREE_KEYS ? 7 : 5;
@@ -60,9 +60,10 @@ export const enum ActionCode {
   String = 0x9,
   SetLayer = 0xa,
   MomentaryLayer = 0xb,
-  RelativeLayer = 0xd,
-  MouseX = 0xe,
-  MouseY = 0xf,
+  RelativeLayer = 0xc,
+  MouseX = 0xd,
+  MouseY = 0xe,
+  LedControl = 0xf,
 }
 
 export const MOD_CTRL = 1;

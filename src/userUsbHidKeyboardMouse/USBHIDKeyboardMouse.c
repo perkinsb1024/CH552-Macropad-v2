@@ -257,10 +257,8 @@ void USB_discardReports(void) USB_CRITICAL {
   reportTail = 0;
 }
 
+// Callers have checked capacity/configuration while holding USB_CRITICAL.
 static uint8_t queueReport(uint8_t length) {
-  if (reportCount == 8 || UsbConfig == 0) {
-    return 0;
-  }
   reportLength[reportHead] = length;
   reportHead = (reportHead + 1) & 7;
   reportCount++;
@@ -272,9 +270,10 @@ static uint8_t queueKeyboard(const __xdata uint8_t *keys) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
-  reportQueue[reportHead][0] = 1;
+  __xdata uint8_t *report = reportQueue[reportHead];
+  *report++ = 1;
   for (i = 0; i < 8; i++) {
-    reportQueue[reportHead][i + 1] = keys[i];
+    *report++ = keys[i];
     keyboardState[i] = keys[i];
   }
   return queueReport(9);
@@ -289,11 +288,12 @@ static uint8_t queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
     return 0;
   }
   mouseState = buttons;
-  reportQueue[reportHead][0] = 2;
-  reportQueue[reportHead][1] = buttons;
-  reportQueue[reportHead][2] = x;
-  reportQueue[reportHead][3] = y;
-  reportQueue[reportHead][4] = wheel;
+  __xdata uint8_t *report = reportQueue[reportHead];
+  *report++ = 2;
+  *report++ = buttons;
+  *report++ = x;
+  *report++ = y;
+  *report++ = wheel;
   return queueReport(5);
 }
 
@@ -306,9 +306,10 @@ static uint8_t queueConsumer(uint16_t usage) {
     return 0;
   }
   consumerState = usage;
-  reportQueue[reportHead][0] = 5;
-  reportQueue[reportHead][1] = usage;
-  reportQueue[reportHead][2] = usage >> 8;
+  __xdata uint8_t *report = reportQueue[reportHead];
+  *report++ = 5;
+  *report++ = usage;
+  *report++ = usage >> 8;
   return queueReport(3);
 }
 
@@ -350,18 +351,15 @@ void USB_reportPoll(uint16_t now) USB_CRITICAL {
       (UEP1_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) {
     return;
   }
-  for (i = 0; i < reportLength[reportTail]; i++) {
-    Ep1Buffer[64 + i] = reportQueue[reportTail][i];
-  }
-  if (reportQueue[reportTail][0] == 1) {
-    keyboardTime = now;
-  } else if (reportQueue[reportTail][0] == 2) {
-    mouseTime = now;
-  } else if (reportQueue[reportTail][0] == 5) {
-    consumerTime = now;
-  }
+  __xdata const uint8_t *report = reportQueue[reportTail];
+  uint8_t identity = *report;
+  uint8_t length = reportLength[reportTail];
+  for (i = 0; i < length; i++) Ep1Buffer[64 + i] = *report++;
+  if (identity == 1) keyboardTime = now;
+  else if (identity == 2) mouseTime = now;
+  else if (identity == 5) consumerTime = now;
   configTurn = 1;
-  UEP1_T_LEN = reportLength[reportTail];
+  UEP1_T_LEN = length;
   reportTail = (reportTail + 1) & 7;
   reportCount--;
   UpPoint1_Busy = 1;

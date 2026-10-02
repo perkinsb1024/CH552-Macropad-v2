@@ -1,3 +1,4 @@
+import { LED_COMMANDS, ledCommandCode, ledValueOptions, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useMemo } from 'preact/hooks';
 import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
@@ -11,7 +12,7 @@ import { ColorPreview } from './ColorPreview';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 
-const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers'] as const;
+const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control'] as const;
 
 function MouseButtons({ value, onChange }: { value: number; onChange(v: number): void }) {
   const buttons = [
@@ -145,6 +146,29 @@ export function Inspector() {
         </select>
         <span class="hint">{actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
       </label>
+
+      {action.type === 'ledControl' && <>
+        <label class="field"><span class="field-label">LED command</span>
+          <select value={action.command} onChange={(e) => {
+            const command = (e.target as HTMLSelectElement).value as LedCommand;
+            const spec = LED_COMMANDS[ledCommandCode(command)]!;
+            update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' ? 0 : command === 'commonPresetSet' ? 0 : 'asConfigured' });
+          }}>{LED_COMMANDS.map((c) => <option value={c.command}>{c.label}</option>)}</select>
+        </label>
+        {LED_COMMANDS[ledCommandCode(action.command)]?.relative ?
+          <label class="field"><span class="field-label">Relative step</span>
+            <select value={action.value} onChange={(e) => update({ ...action, value: Number((e.target as HTMLSelectElement).value) })}>
+              {[-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7].map((v) => <option value={v}>{v > 0 ? '+' : ''}{v}</option>)}
+            </select>
+            <span class="hint">Cycles with wraparound. Positive speed steps are faster; positive common-preset steps select the next darker preset, then return to configured.</span>
+          </label>
+          : action.command !== 'restoreAll' && <label class="field"><span class="field-label">LED setting</span>
+            <select value={action.value} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; update({ ...action, value: v === 'asConfigured' ? v : Number(v) as LedValue }); }}>
+              {ledValueOptions(action.command).map((o) => <option value={o.value}>{o.label}</option>)}
+            </select>
+          </label>}
+        <p class="hint">Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative advances each brightness separately; common presets change both together and include configured behavior. Indicator brightness preserves its configured visibility mode.</p>
+      </>}
 
       {(action.type === 'keyTap' || action.type === 'keyHold') && (
         <KeyPicker usage={action.usage} modifiers={action.modifiers} onChange={(usage, modifiers) => update({ ...action, usage, modifiers })} />

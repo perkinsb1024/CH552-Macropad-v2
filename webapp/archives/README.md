@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v5 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v6 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -33,3 +33,8 @@ archive URLs behave like the deployed static site. Unknown archive paths return 
 `../public/versions/format-v4/` preserves the tested format 4 production build
 from the revision in its manifest (178 tests passed), with an HTML archive banner
 and link to the latest editor. Its existing v4 draft namespace is preserved.
+
+`../public/versions/format-v5/` preserves the production build made before v6
+source edits from commit `3fda45b8482b0004aa9084e7ee03010b6e72d5cf`. An HTML banner
+and latest-editor link were added; its existing v5 draft namespace is preserved.
+The production build and v6 archive checksum/serving tests passed.

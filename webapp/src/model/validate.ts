@@ -1,3 +1,4 @@
+import { ledProblem } from './ledControl';
 import { MAX_CHORD_WINDOW_UNITS, maxLayers, keyCount } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
@@ -20,6 +21,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     return `${label} needs a release and cannot be bound to rotation.`;
   }
   switch (action.type) {
+    case 'ledControl': return ledProblem(action.command, action.value);
     case 'none':
       return null;
     case 'relativeLayer':

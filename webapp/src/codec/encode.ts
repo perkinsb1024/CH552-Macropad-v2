@@ -1,3 +1,4 @@
+import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
   HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
@@ -16,6 +17,11 @@ export class EncodeError extends Error {}
 export function encodeAction(action: Action, stringOffsets: Map<string, number>): [number, number] {
   const code = descriptor(action.type).code;
   switch (action.type) {
+    case 'ledControl': {
+      const problem = ledProblem(action.command, action.value);
+      if (problem) throw new EncodeError(problem);
+      return [code | ((action.value === 'asConfigured' ? 15 : action.value & 15) << 4), ledCommandCode(action.command)];
+    }
     case 'none':
       return [code, 0];
     case 'relativeLayer':

@@ -176,7 +176,12 @@ static void testRainbowSpeed(void) {
                 currentMs = 65520; // Exercise both the 8-bit and 16-bit timer wraps.
                 firmwareApplyConfig();
 #if ENABLE_COLOR_PREVIEW
-                if (preview) firmwarePreviewColor(0xFD);
+                if (preview) {
+                    firmwareLedAction(CONFIG_LED_SPEED_SET, 3 - speed);
+                    firmwareLedAction(CONFIG_LED_PHASE_SET, (phase + 1) & 3);
+                    firmwareLedAction(CONFIG_LED_BOTH_SET, 0);
+                    firmwarePreviewColor(0xFD);
+                }
 #endif
                 for (uint16_t step = 1; step <= 256; step++) {
                     uint16_t deadline = 65520U + step * intervals[speed];
@@ -210,6 +215,7 @@ static void testRainbowPhaseSpacing(void) {
         for (uint8_t phase = 0; phase < 4; phase++) {
             // All chord-window bits set: they must not affect phase extraction.
             activeConfig[8] = 15 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT);
+            ledSettings[0] = phase;
             assert(configChordWindowMs() == 75);
             for (uint16_t hue = 0; hue < 256; hue++) {
                 rainbowHue = hue;
@@ -433,7 +439,11 @@ static void testOneShotChordIndicator(void) {
     actionsRelease(second);
 }
 
+
+#include "led_input_cases.h"
+
 int main(void) {
+    testLedControls();
     testSameLayerIndicator();
     testOneShotChordIndicator();
     testIndicatorBrightness();

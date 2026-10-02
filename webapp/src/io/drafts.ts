@@ -25,21 +25,28 @@ function legacyDraftKey(variant: 0 | 1): string {
 export function loadDraft(variant: 0 | 1): Draft | null {
   try {
     const key = draftKey(variant);
-    const archived = localStorage.getItem(`${key}:cleared`) ? null
-      : localStorage.getItem(`universal-macropad:format-v4:draft:${variant ? 'three-key' : 'six-key'}`)
-        ?? localStorage.getItem(`universal-macropad:format-v3:draft:${variant ? 'three-key' : 'six-key'}`);
-    const raw = localStorage.getItem(key) ?? archived ?? localStorage.getItem(legacyDraftKey(variant));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Draft;
-    if (parsed.formatVersion !== undefined && parsed.formatVersion !== 2 && parsed.formatVersion !== 3 && parsed.formatVersion !== 4 && parsed.formatVersion !== FORMAT_VERSION) return null;
-    if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) return null;
-    parsed.profile = migrateLegacyProfile(parsed.profile);
-    if (validateProfile(parsed.profile).length) return null;
-    parsed.formatVersion = FORMAT_VERSION;
-    return parsed;
-  } catch {
+    const keys = [key];
+    if (!localStorage.getItem(`${key}:cleared`)) {
+      for (const version of [5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
+      keys.push(legacyDraftKey(variant));
+    }
+    for (const source of keys) {
+      try {
+        const raw = localStorage.getItem(source);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw) as Draft;
+        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
+        if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) continue;
+        parsed.profile = migrateLegacyProfile(parsed.profile);
+        const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action)];
+        if ((parsed.formatVersion ?? 2) < 6 && actions.some((a) => a.type === 'ledControl')) continue;
+        if (validateProfile(parsed.profile).length) continue;
+        parsed.formatVersion = FORMAT_VERSION;
+        return parsed;
+      } catch { /* Try the next recoverable draft; keep every original intact. */ }
+    }
     return null;
-  }
+  } catch { return null; }
 }
 
 export function storeDraft(profile: Profile, meta: LocalMetadata): void {

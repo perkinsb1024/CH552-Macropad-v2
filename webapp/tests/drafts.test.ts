@@ -5,7 +5,7 @@ import { defaultProfile } from '../src/model/defaults';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('versioned drafts', () => {
-  it('isolates v5 drafts from the v2 archive while recovering the old shared key', () => {
+  it('isolates v6 drafts from the v2 archive while recovering the old shared key', () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,
@@ -17,7 +17,7 @@ describe('versioned drafts', () => {
     const archivedKey = 'universal-macropad:format-v2:draft:six-key';
     storage.set(archivedKey, 'archived draft');
     expect(loadDraft(0)?.profile).toEqual(legacy);
-    expect(draftKey(0)).toBe('universal-macropad:format-v5:draft:six-key');
+    expect(draftKey(0)).toBe('universal-macropad:format-v6:draft:six-key');
     const current = defaultProfile(0);
     current.transparentBlack = true;
     storeDraft(current, {});
@@ -45,7 +45,7 @@ describe('versioned drafts', () => {
     draft.profile.layers[0].keys[0] = { type: 'nextLayer' };
     storage.set(draftKey(0), JSON.stringify(draft));
     const migrated = loadDraft(0)!;
-    expect(migrated.formatVersion).toBe(5);
+    expect(migrated.formatVersion).toBe(6);
     expect(migrated.profile.transparentBlack).toBe(false);
     expect(migrated.profile.layers[0]!.indicatorBehavior).toBe(1);
     expect(migrated.profile.layers[0]!.clockwise).toEqual({ type: 'scroll', delta: 2 });
@@ -54,13 +54,13 @@ describe('versioned drafts', () => {
     delete draft.formatVersion;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toEqual(migrated);
-    draft.formatVersion = 6;
+    draft.formatVersion = 7;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toBeNull();
   });
 });
 
-it.each([3, 4])('recovers v%s drafts without clearing them or resurrecting them after clearing v5', (version) => {
+it.each([3, 4, 5])('recovers v%s drafts without clearing them or resurrecting them after clearing v6', (version) => {
   const storage = new Map<string, string>();
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => storage.get(key) ?? null,
@@ -76,7 +76,7 @@ it.each([3, 4])('recovers v%s drafts without clearing them or resurrecting them 
   const archived = JSON.stringify({ formatVersion: version, profile: legacy, meta: {}, savedAt: 'v3' });
   storage.set(archivedKey, archived);
   expect(loadDraft(1)?.profile).toEqual(old);
-  expect(loadDraft(1)?.formatVersion).toBe(5);
+  expect(loadDraft(1)?.formatVersion).toBe(6);
   clearDraft(1);
   expect(storage.get(archivedKey)).toBe(archived);
   expect(loadDraft(1)).toBeNull();

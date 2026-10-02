@@ -1,3 +1,4 @@
+import { LED_COMMANDS, ledProblem } from '../model/ledControl';
 import {
   DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
@@ -35,11 +36,22 @@ function stringAt(pool: PoolView, offset: number): string | null {
   return text;
 }
 
-function decodeAction(b0: number, b1: number, layers: number, rotation: boolean, pool: PoolView): Action | string {
-  const type = b0 & 15;
+function decodeAction(b0: number, b1: number, layers: number, rotation: boolean, pool: PoolView, version: number): Action | string {
+  let type = b0 & 15;
+  if (version < 6) {
+    if (type === 12) return 'Reserved action type in older format';
+    if (type >= 13) type--;
+  }
   const aux = b0 >> 4;
   const nonZeroAux = aux !== 0;
   switch (type) {
+    case ActionCode.LedControl: {
+      const spec = LED_COMMANDS[b1];
+      if (!spec) return 'Unknown LED command';
+      const value = spec.relative ? (aux < 8 ? aux : aux - 16) : aux === 15 ? 'asConfigured' : aux;
+      const problem = ledProblem(spec.command, value);
+      return problem ?? { type: 'ledControl', command: spec.command, value };
+    }
     case ActionCode.None:
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
     case ActionCode.RelativeLayer: {
@@ -101,10 +113,10 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2, 3, 4 or ${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2, 3, 4, 5 or ${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
-  const configurableRainbow = image[2] === FORMAT_VERSION;
+  const configurableRainbow = image[2]! >= 5;
   if (image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
   if (!configurableRainbow && (image[8]! & 0xf0)) return fail('malformed', 'Reserved bits set in chord-window byte.');
 
@@ -140,7 +152,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const base = HEADER_SIZE + size * li;
     const actions: Action[] = [];
     for (let i = 0; i < keys + 3; i++) {
-      const decoded = decodeAction(image[base + 2 * i]!, image[base + 2 * i + 1]!, layerCount, i >= keys + 1, pool);
+      const decoded = decodeAction(image[base + 2 * i]!, image[base + 2 * i + 1]!, layerCount, i >= keys + 1, pool, image[2]!);
       if (typeof decoded === 'string') return fail('malformed', `Layer ${li + 1}, input ${i + 1}: ${decoded}.`);
       actions.push(decoded);
     }
@@ -179,7 +191,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     if (pair >= pairCount(variant)) return fail('malformed', `Chord ${i + 1}: pair index ${pair} is invalid.`);
     if (id <= previous) return fail('malformed', `Chord ${i + 1}: identifiers are not strictly ascending.`);
     previous = id;
-    const decoded = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, false, pool);
+    const decoded = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, false, pool, image[2]!);
     if (typeof decoded === 'string') return fail('malformed', `Chord ${i + 1}: ${decoded}.`);
     const [keyA, keyB] = pairFromIndex(pair, keys);
     chords.push({ layer, keyA, keyB, global, action: decoded });

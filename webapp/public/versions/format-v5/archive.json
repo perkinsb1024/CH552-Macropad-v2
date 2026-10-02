@@ -1,0 +1,15 @@
+{
+  "formatVersion": 5,
+  "sourceCommit": "3fda45b8482b0004aa9084e7ee03010b6e72d5cf",
+  "changes": [
+    "Archive banner and link to latest editor; existing format-v5 draft namespace preserved"
+  ],
+  "validation": "Production build passed before v6 source edits; archive checksum and serving tests passed in the v6 suite",
+  "sha256": {
+    "assets/index-DKa2NAwW.js": "30226820e8b9b92072ffd7ebee6c67c31aafde4ed042bcade3f0446271b97704",
+    "assets/index-DKa2NAwW.js.map": "7ec2b4f6e7c064b83e86c8f433cc7b0c89fc161ef1dccd78dd3cc582728fde72",
+    "assets/index-Nsi6P2RH.css": "b0d0b2b680a7b8802a636b3cc0f1178987fd9fec822a8ac7c9223352cbf53515",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "e6747729c83d6fd754af75974f4592366e4268e2afb1fce39277ef930b8d5e0a"
+  }
+}

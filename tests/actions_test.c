@@ -52,12 +52,19 @@ void USB_discardReports(void) {}
 uint8_t USB_reportGeneration(void) { return 0; }
 uint8_t USB_asciiUsage(uint8_t c) { return c == 'A' ? 0x84 : 0x04; }
 
+static uint16_t ledCalls;
+static uint8_t ledCommand, ledValue, ledLayer;
+void firmwareLedAction(uint8_t command, uint8_t value) {
+    ledCalls++; ledCommand = command; ledValue = value; ledLayer = actionsLayer();
+}
+
 static void reset(void) {
     testLoadStarterProfile(CONFIG_SIX_KEYS);
     actionsInit();
     count = 0;
     blocked = 0;
     reportLimit = 64;
+    ledCalls = 0;
 }
 
 static void testDefaults(void) {
@@ -685,6 +692,7 @@ static void testBriefHolds(void) {
     actionsPoll(102);
     assert(count == 1 && reports[0][0] == 2 && reports[0][1] == 1);
     reportLimit = 64;
+    ledCalls = 0;
     actionsPoll(103);
     assert(count == 2 && reports[1][1] == 0);
 }
@@ -864,7 +872,43 @@ static void testHighLayerActions(void) {
     }
 }
 
+static void testLedDispatch(void) {
+    reset();
+    activeConfig[9] = 0x1F; activeConfig[10] = CONFIG_LED_PRESET_RELATIVE;
+    activeConfig[23] = 0x9F; activeConfig[24] = CONFIG_LED_PHASE_RELATIVE;
+    activeConfig[25] = 0x7F; activeConfig[26] = CONFIG_LED_SPEED_RELATIVE;
+    blocked = 1;
+    actionsPress(0, 0);
+    assert(ledCalls == 1 && ledCommand == CONFIG_LED_PRESET_RELATIVE && ledValue == 1 && count == 0);
+    actionsPress(0, 1); // A held key does not retrigger.
+    actionsPoll(100);
+    assert(ledCalls == 1 && count == 0);
+    actionsRelease(0);
+    for (uint8_t i = 0; i < 100; i++) actionsRotate(i & 1);
+    assert(ledCalls == 101 && count == 0 && actionsDropped(1) == 0);
+    assert(ledCommand == CONFIG_LED_PHASE_RELATIVE && ledValue == 9);
+
+    // A chord on the selected one-shot layer consumes it before applying policy.
+    reset();
+    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+    activeConfig[3] = 1; activeConfig[5] = 2; activeConfig[8] = 8;
+    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
+    activeConfig[53] = 0x15; // Keys 1+2, layer 1.
+    activeConfig[54] = 0xFF; activeConfig[55] = CONFIG_LED_BOTH_SET;
+    actionsInit();
+    blocked = 1;
+    actionsPress(0, 0); actionsRelease(0);
+    assert(actionsLayer() == 1);
+    actionsPress(1, 1);
+    assert(ledCalls == 0 && actionsLayer() == 1);
+    actionsPress(2, 2);
+    assert(ledCalls == 1 && ledValue == 15 && ledCommand == CONFIG_LED_BOTH_SET && ledLayer == 0);
+    actionsRelease(1); actionsRelease(2); actionsPoll(100);
+    assert(ledCalls == 1 && count == 0 && actionsLayer() == 0);
+}
+
 int main(void) {
+    testLedDispatch();
     testHighLayerActions();
     testPointerHold();
     testPointerSteps();

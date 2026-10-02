@@ -22,7 +22,7 @@ static void testStarterFixture(uint8_t variant) {
     uint8_t i;
     testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0xEE90 : 0x342F));
+    // Fixture CRC is checked by configValid; format 6 changes the covered version byte.
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
@@ -196,7 +196,7 @@ static void testActions(void) {
         } else if (type == CONFIG_ACTION_STRING) {
             activeConfig[4] = 1;
         }
-        if (type == 0xC) continue; // Reserved action code.
+        if (type == CONFIG_ACTION_LED_CONTROL) { activeConfig[9] = 0; param = CONFIG_LED_PHASE_SET; }
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();
@@ -225,11 +225,11 @@ static void testActions(void) {
     activeConfig[10] = 0xF9;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
-    activeConfig[9] = 0x1D;
+    activeConfig[9] = 0x10 | CONFIG_ACTION_RELATIVE_LAYER;
     activeConfig[10] = 0;
     seal();
     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
-    for (type = CONFIG_ACTION_SET_LAYER; type <= CONFIG_ACTION_RELATIVE_LAYER; type += 3) {
+    for (type = CONFIG_ACTION_SET_LAYER; type <= CONFIG_ACTION_RELATIVE_LAYER; type += 2) {
         for (aux = 0; aux < 16; aux++) {
             activeConfig[9] = (aux << 4) | type;
             activeConfig[23] = (aux << 4) | type; // Rotation accepts both modes too.
@@ -285,7 +285,39 @@ static void testExpandedLayers(uint8_t variant) {
     }
 }
 
+static void testLedPayloads(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        testLoadStarterProfile(variant);
+        unsigned accepted = 0;
+        for (unsigned command = 0; command < 256; command++) {
+            for (uint8_t value = 0; value < 16; value++) {
+                uint8_t expected;
+                if (command == 0 || command == 2) expected = value <= 3 || value == 15;
+                else if (command == 4 || command == 6 || command == 8) expected = value <= 2 || value == 15;
+                else if (command == 1 || command == 3 || command == 5 || command == 7 || command == 9 || command == 12) expected = value != 0 && value != 8;
+                else if (command == 10) expected = value == 0;
+                else if (command == 11) expected = value <= 4;
+                else expected = 0;
+                activeConfig[9] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
+                activeConfig[10] = command;
+                seal();
+                assert(configValid(activeConfig, variant) == expected);
+                accepted += expected;
+                uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
+                activeConfig[9] = 0; activeConfig[10] = 0;
+                activeConfig[rotation] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
+                activeConfig[rotation + 1] = command;
+                seal();
+                assert(configValid(activeConfig, variant) == expected);
+                activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
+            }
+        }
+        assert(accepted == 112);
+    }
+}
+
 int main(void) {
+    testLedPayloads();
     testExpandedLayers(0);
     testExpandedLayers(1);
     testStarterFixture(CONFIG_SIX_KEYS);

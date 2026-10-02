@@ -30,6 +30,13 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_BAD_SEQUENCE 10
 #define UPLOAD_TIMEOUT_MS 5000
 
+// Constant capability payload; config version identifies the action encoding.
+static const __code uint8_t protocolInfo[14] = {
+  'U', 'M', 'A', 'C', PROTOCOL_VERSION, CONFIG_VERSION, PHYSICAL_VARIANT,
+  PHYSICAL_VARIANT ? 3 : 6, PHYSICAL_VARIANT ? 3 : 6,
+  CONFIG_MAX_LAYERS, CONFIG_SIZE, CONFIG_PALETTE_VERSION, 0xFF, 0xFF
+};
+
 __xdata uint8_t protocolInbox[32];
 __xdata uint8_t protocolReply[32];
 __xdata uint8_t stagedConfig[CONFIG_SIZE];
@@ -104,20 +111,8 @@ static uint8_t processRequest(void) {
   switch (opcode) {
     case PROTOCOL_GET_INFO:
       protocolReply[7] = 14;
-      protocolReply[9] = 'U';
-      protocolReply[10] = 'M';
-      protocolReply[11] = 'A';
-      protocolReply[12] = 'C';
-      protocolReply[13] = PROTOCOL_VERSION;
-      protocolReply[14] = CONFIG_VERSION;
-      protocolReply[15] = PHYSICAL_VARIANT;
-      protocolReply[16] = PHYSICAL_VARIANT ? 3 : 6;
-      protocolReply[17] = protocolReply[16]; // LEDs per physical key
-      protocolReply[18] = CONFIG_MAX_LAYERS;
-      protocolReply[19] = CONFIG_SIZE;
-      protocolReply[20] = CONFIG_PALETTE_VERSION;
-      protocolReply[21] = 0xFF;
-      protocolReply[22] = 0xFF;
+      for (i = 0; i < sizeof(protocolInfo); i++)
+        protocolReply[9 + i] = protocolInfo[i];
       break;
     case PROTOCOL_GET_STATUS:
       protocolReply[7] = 6;
@@ -232,9 +227,7 @@ void protocolPoll(uint16_t now) {
     protocolReply[1] = 'U';
     protocolReply[2] = 'M';
     protocolReply[3] = PROTOCOL_VERSION;
-    protocolReply[4] = protocolInbox[4];
-    protocolReply[5] = protocolInbox[5];
-    protocolReply[6] = protocolInbox[6];
+    for (i = 4; i < 7; i++) protocolReply[i] = protocolInbox[i];
     status = processRequest();
     protocolReply[8] = status;
     if (!status && protocolInbox[4] >= PROTOCOL_BEGIN_WRITE &&

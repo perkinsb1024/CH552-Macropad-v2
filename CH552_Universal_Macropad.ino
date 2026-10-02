@@ -12,6 +12,7 @@
 
 #include <WS2812.h>
 #include "src/actions.h"
+#include "src/led_control.h"
 #include "src/config.h"
 #include "src/protocol_firmware.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
@@ -57,6 +58,10 @@ __xdata uint8_t layerIndicatorPhasesLeft;
 __xdata uint8_t layerIndicatorDeadline;
 __xdata uint8_t rainbowChanged;
 __xdata uint8_t rainbowHue;
+// Current global rainbow presets; saved defaults remain in activeConfig.
+// Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
+__xdata uint8_t ledSettings[4];
+__code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 #if ENABLE_COLOR_PREVIEW
 __xdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
 #else
@@ -77,7 +82,13 @@ void clearLeds() {
 }
 
 uint8_t dimIndicatorComponent(uint8_t value) {
-  return (value >> 4) | (value != 0);
+  if (!value) return 0;
+  return (value >> 4) | 1;
+}
+
+uint8_t indicatorBrightness(uint8_t options) {
+  uint8_t level = ledSettings[2];
+  return level == 3 ? 1 + (options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS) : level;
 }
 
 void updateLeds() {
@@ -87,40 +98,50 @@ void updateLeds() {
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
   uint8_t phases = layerIndicatorPhasesLeft;
-  uint8_t rainbow = palette == 15 &&
-      (previewOptions ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
+  uint8_t indicator = indicatorBrightness(options);
+  uint8_t keyLevel = ledSettings[3];
+  uint8_t spacing = ledSettings[0];
+#if ENABLE_COLOR_PREVIEW
+  if (previewOptions) {
+    indicator = 1 + (options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS);
+    spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
+  } else
+#endif
+  if (!indicator) {
+    // Suppressed indications must not obscure key feedback.
+    phases = 0;
+    behavior = CONFIG_LAYER_INDICATOR_NONE;
+  }
+  if (keyLevel == 3) keyLevel = 2;
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
-    uint8_t dim = 0;
+    uint8_t level = indicator;
+    uint8_t rainbow = palette == 15 &&
+        (previewOptions ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-    uint8_t wheel;
-    wheel = rainbowHue + rainbowPositions[i] *
-        rainbowSteps[(activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3];
 #if ENABLE_COLOR_PREVIEW
     if (previewOptions) {
-      dim = 1;
+      // Preview bypasses runtime brightness policies.
     } else
 #endif
     if (phases) {
-      // Both animations override key colors, including dark blink phases.
-      dim = 1;
-      if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) {
-        color = 15;
-        dim = 0; // Dark phases must bypass Rainbow as well as solid colors.
-      }
-    } else if (stableState[i] &&
+      if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
+    } else if (keyLevel && stableState[i] &&
                ((color = configLedColor(layer, i)) != 15 ||
                 !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
-      // Opaque pressed-key colors stay at full brightness.
+      level = keyLevel;
+      rainbow = 0; // Key palette 15 is Off, never Rainbow.
     } else {
       color = palette;
-      if (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) dim = 1;
-      else color = 15;
+      if (behavior != CONFIG_LAYER_INDICATOR_ALWAYS_ON) level = 0;
     }
-    if (dim && rainbow) {
+    if (!level) {
+      red = green = blue = 0;
+    } else if (rainbow) {
+      uint8_t wheel = rainbowHue + rainbowPositions[i] * rainbowSteps[spacing];
       // Three linear ramps cycle red -> blue -> green -> red.
       if (wheel < 85) {
         red = (85 - wheel) * 3;
@@ -143,7 +164,7 @@ void updateLeds() {
       green = *rgb++;
       blue = *rgb;
     }
-    if (dim && !(options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS)) {
+    if (level == 1) {
       red = dimIndicatorComponent(red);
       green = dimIndicatorComponent(green);
       blue = dimIndicatorComponent(blue);
@@ -154,6 +175,74 @@ void updateLeds() {
     ledPtr += 3;
   }
   displayLeds();
+}
+
+// Three whole cycles keep all supported deltas positive, without division.
+uint8_t ledStep(uint8_t current, int8_t delta, uint8_t count) {
+  uint8_t next = current + delta + count + count + count;
+  while (next >= count) next -= count;
+  return next;
+}
+
+void firmwareLedAction(uint8_t command, uint8_t value) {
+  int8_t delta = value;
+  if (value & 8) delta -= 16;
+  _Bool relative = (command & 1) != 0;
+  uint8_t current;
+  uint8_t end;
+  if (command >= CONFIG_LED_PRESET_SET) {
+    if (command == CONFIG_LED_PRESET_RELATIVE) {
+      end = ledSettings[2] | (ledSettings[3] << 2);
+      // Match the actual policies, including As configured, not rendered RGB.
+      for (current = 0; current < 5; current++)
+        if (ledPresets[current] == end) break;
+      if (current == 5) {
+        current = 0;
+        if (delta > 0) current = 4;
+      }
+      value = ledStep(current, delta, 5);
+    }
+    value = ledPresets[value];
+    ledSettings[2] = value & 3;
+    ledSettings[3] = value >> 2;
+  } else {
+    if (command == CONFIG_LED_RESTORE) {
+      current = 0;
+      end = 4;
+      value = 15;
+    } else {
+      current = 2;
+      end = 4;
+      if (command < CONFIG_LED_BOTH_SET) {
+        current = command >> 1;
+        end = current + 1;
+      }
+    }
+    if (command == CONFIG_LED_SPEED_RELATIVE) delta = -delta;
+    for (; current < end; current++) {
+      uint8_t next = value;
+      if (relative) {
+        next = ledSettings[current];
+        uint8_t count = 4;
+        if (current >= 2) {
+          count = 3;
+          if (next == 3) {
+            next = 2;
+            if (current == 2) next = indicatorBrightness(configLayerOptions(actionsLayer()));
+          }
+        }
+        next = ledStep(next, delta, count);
+      } else if (value == 15) {
+        next = 3;
+        if (current == 0) next = (activeConfig[8] >> 4) & 3;
+        if (current == 1) next = activeConfig[8] >> 6;
+      }
+      ledSettings[current] = next;
+    }
+  }
+  if (command == CONFIG_LED_SPEED_SET || command == CONFIG_LED_SPEED_RELATIVE || command == CONFIG_LED_RESTORE)
+    rainbowChanged = (uint8_t)millis();
+  updateLeds();
 }
 
 #if ENABLE_COLOR_PREVIEW
@@ -288,6 +377,9 @@ void scanEncoder() {
 
 void firmwareApplyConfig(void) {
   uint16_t now = millis();
+  ledSettings[0] = (activeConfig[8] >> 4) & 3;
+  ledSettings[1] = activeConfig[8] >> 6;
+  ledSettings[2] = ledSettings[3] = 3;
 #if !ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) {
     encoderPressedMs = now;
@@ -352,7 +444,7 @@ void loop() {
   }
   scanEncoder();
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
-      rainbowFrameMs[activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT] &&
+      rainbowFrameMs[previewOptions ? activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]] &&
 #if ENABLE_COLOR_PREVIEW
       ((previewOptions ? (previewOptions & 8 ? previewOptions : 0) :
         (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) > 0xF0)

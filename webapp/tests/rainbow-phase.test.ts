@@ -1,3 +1,4 @@
+import { legacyActionCodes } from './legacy-image';
 import { describe, expect, it } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
 import { decodeImage } from '../src/codec/decode';
@@ -31,6 +32,7 @@ describe('rainbow phase spacing', () => {
     for (const variant of [0, 1] as Variant[]) {
       const p = defaultProfile(variant);
       const image = encodeProfile(p);
+      legacyActionCodes(image);
       image[2] = version;
       image[8] = image[8]! & 15;
       sealImage(image);
@@ -47,6 +49,7 @@ describe('rainbow phase spacing', () => {
     p.startupLayer = 6;
     p.chords = [{ layer: 6, keyA: 0, keyB: 2, global: true, action: { type: 'relativeLayer', offset: -6 } }];
     const image = encodeProfile(p);
+    legacyActionCodes(image);
     image[2] = 4;
     image[8] = image[8]! & 15;
     sealImage(image);
@@ -126,7 +129,7 @@ describe('rainbow phase spacing', () => {
     const bundled = import.meta.glob<string>('../../profiles/*.json', { query: '?raw', import: 'default', eager: true });
     expect(Object.keys(bundled)).toHaveLength(2);
     for (const text of Object.values(bundled)) {
-      expect(JSON.parse(text).version).toBe(5);
+      expect(JSON.parse(text).version).toBe(6);
       expect(importProfile(text).profile.rainbowPhase).toBe(2);
     }
   });

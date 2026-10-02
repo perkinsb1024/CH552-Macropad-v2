@@ -1,6 +1,6 @@
 # LED control action `0xF`: investigation and implementation plan
 
-Status: proposed design, based on the repository inspected on 2026-10-02. This document does not implement or reserve the commands in firmware yet.
+Status: implemented using config version 6. See [implementation results and measured flash](led-control-implementation.md). The design investigation and baseline measurements below are retained for context.
 
 ## Finding
 

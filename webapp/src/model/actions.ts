@@ -1,3 +1,4 @@
+import { ledSummary } from './ledControl';
 import { ActionCode, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT } from './constants';
 import type { Action, ActionType } from './types';
 import { keyName } from '../keys/keyboard';
@@ -7,13 +8,14 @@ export interface ActionDescriptor {
   type: ActionType;
   code: ActionCode;
   label: string;
-  group: 'Keyboard' | 'Mouse' | 'Media' | 'Text' | 'Layers' | 'None';
+  group: 'Keyboard' | 'Mouse' | 'Media' | 'Text' | 'Layers' | 'LED control' | 'None';
   /** Whether the action needs a physical release, and so cannot be bound to rotation. */
   needsRelease: boolean;
   hint: string;
 }
 
 export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
+  { type: 'ledControl', code: ActionCode.LedControl, label: 'LED control', group: 'LED control', needsRelease: false, hint: 'Adjust global lighting at runtime; resets on configuration save or USB reset.' },
   { type: 'none', code: ActionCode.None, label: 'Nothing', group: 'None', needsRelease: false, hint: 'Leave this input unassigned.' },
   { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
   { type: 'keyHold', code: ActionCode.KeyHold, label: 'Key hold', group: 'Keyboard', needsRelease: true, hint: 'Hold a key combination while the button is held.' },
@@ -57,6 +59,7 @@ export function relativeTargetLayer(source: number, offset: number, layerCount: 
 /** A fresh, valid instance of the given action type. */
 export function blankAction(type: ActionType): Action {
   switch (type) {
+    case 'ledControl': return { type, command: 'commonPresetRelative', value: 1 };
     case 'none':
       return { type };
     case 'relativeLayer':
@@ -105,6 +108,7 @@ export function mouseButtonNames(mask: number): string[] {
 /** Short label used on key caps and lists. */
 export function summarize(action: Action): string {
   switch (action.type) {
+    case 'ledControl': return ledSummary(action.command, action.value);
     case 'none':
       return '—';
     case 'keyTap':

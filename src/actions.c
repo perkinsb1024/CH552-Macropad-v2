@@ -1,5 +1,6 @@
 #include "actions.h"
 #include "config.h"
+#include "led_control.h"
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 #define MAX_INPUTS 7
@@ -162,6 +163,9 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
     updateLayer();
   }
   switch (actionType(first)) {
+    case CONFIG_ACTION_LED_CONTROL:
+      firmwareLedAction(second, first >> 4);
+      break;
     case CONFIG_ACTION_NONE:
     case CONFIG_ACTION_KEY_HOLD:
     case CONFIG_ACTION_MOUSE_HOLD:
@@ -456,7 +460,8 @@ void actionsPoll(uint16_t now) {
       }
       buttonPressed[i] = 0;
     } else if (c && buttonPressed[i] &&
-               (buttonFirst[i] & 0xFE) == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X)) {
+               (buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X) ||
+                buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y))) {
       movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
     }
   }
