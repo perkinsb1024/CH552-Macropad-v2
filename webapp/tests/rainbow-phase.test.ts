@@ -95,6 +95,7 @@ describe('rainbow phase spacing', () => {
       return [e, ...elements(e.props.children)];
     };
     profile.value = defaultProfile(1);
+    profile.value.layers[0]!.indicatorColor = 15;
     baseline.value = cloneProfile(profile.value);
     const info = () => elements(ProfilePanel()).find((e) => e.props.class === 'notice notice-info');
     expect(info()).toBeUndefined();

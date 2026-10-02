@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { LayerOptions } from '../src/ui/components/LayerOptions';
 import { ProfilePanel } from '../src/ui/components/ProfilePanel';
 import { ColorPreview } from '../src/ui/components/ColorPreview';
-import { connectSimulator, disconnect, selectedLayer, updateProfile } from '../src/ui/store';
+import { encodeProfile } from '../src/codec/encode';
+import { decodeImage } from '../src/codec/decode';
+import { connectSimulator, disconnect, profile, selectedLayer, updateProfile } from '../src/ui/store';
 
 type Element = { type: unknown; props: Record<string, unknown> };
 function elements(node: unknown): Element[] {
@@ -21,6 +23,29 @@ function text(node: unknown): string {
 afterEach(() => disconnect());
 
 describe('current firmware indicator options', () => {
+  it('shows rainbow settings for any active rainbow layer and preserves hidden values', async () => {
+    await connectSimulator(0);
+    selectedLayer.value = 0;
+    updateProfile((p) => { p.rainbowPhase = 3; p.rainbowSpeed = 0; });
+    const settings = () => elements(ProfilePanel()).filter((node) =>
+      node.props.id === 'rainbow-phase' || node.props.id === 'rainbow-speed');
+    const hiddenImage = encodeProfile(profile.value!);
+    expect(settings()).toHaveLength(0);
+    expect(encodeProfile(profile.value!)).toEqual(hiddenImage);
+    expect(decodeImage(hiddenImage)).toMatchObject({ ok: true, profile: { rainbowPhase: 3, rainbowSpeed: 0 } });
+
+    // A rainbow on an unselected layer also enables the profile-wide controls.
+    for (const behavior of [1, 2, 3]) {
+      updateProfile((p) => { p.layers[1]!.indicatorBehavior = behavior; p.layers[1]!.indicatorColor = 15; });
+      expect(settings().map((node) => node.props.value)).toEqual([3, 0]);
+    }
+    updateProfile((p) => { p.layers[1]!.indicatorBehavior = 0; });
+    expect(settings()).toHaveLength(0);
+    updateProfile((p) => { p.layers[1]!.indicatorBehavior = 3; p.layers[1]!.indicatorColor = 4; });
+    expect(settings()).toHaveLength(0);
+    expect(decodeImage(encodeProfile(profile.value!))).toMatchObject({ ok: true, profile: { rainbowPhase: 3, rainbowSpeed: 0 } });
+  });
+
   it('shows the timed mode, rainbow, dimming, and transparency', async () => {
     await connectSimulator(0);
     selectedLayer.value = 0;
