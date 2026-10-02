@@ -297,6 +297,7 @@ static void testLedPayloads(void) {
                 else if (command == 1 || command == 3 || command == 5 || command == 7 || command == 9 || command == 12) expected = value != 0 && value != 8;
                 else if (command == 10) expected = value == 0;
                 else if (command == 11) expected = value <= 4;
+                else if (command == 13) expected = value >= 1 && value <= 4;
                 else expected = 0;
                 activeConfig[9] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
                 activeConfig[10] = command;
@@ -312,7 +313,7 @@ static void testLedPayloads(void) {
                 activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
             }
         }
-        assert(accepted == 112);
+        assert(accepted == 116);
     }
 }
 

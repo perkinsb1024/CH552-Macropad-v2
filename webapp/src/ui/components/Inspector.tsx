@@ -156,7 +156,7 @@ export function Inspector() {
             const command = (e.target as HTMLSelectElement).value as LedCommand;
             const spec = LED_COMMANDS[ledCommandCode(command)];
             if (!spec) return;
-            update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' ? 0 : command === 'commonPresetSet' ? 0 : 'asConfigured' });
+            update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' ? 0 : command === 'commonPresetSet' ? 0 : command === 'commonPresetToggle' ? 3 : 'asConfigured' });
           }}>
             {LED_COMMANDS.filter((c) => c.command !== 'restoreAll').map((c) => <option value={c.command}>{c.label}</option>)}
             <option value="" disabled>────────────────────</option>
@@ -175,12 +175,15 @@ export function Inspector() {
             </select>
             <span class="hint">Cycles with wraparound. Positive speed steps are faster; positive common-preset steps select the next darker preset, then return to configured.</span>
           </label>
-          : action.command !== 'restoreAll' && <label class="field"><span class="field-label">LED setting</span>
+          : action.command !== 'restoreAll' && <label class="field"><span class="field-label">{action.command === 'commonPresetToggle' ? 'Preset' : 'LED setting'}</span>
             <select value={action.value} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; update({ ...action, value: v === 'asConfigured' ? v : Number(v) as LedValue }); }}>
               {ledValueOptions(action.command).map((o) => <option value={o.value}>{o.label}</option>)}
             </select>
+            {action.command === 'commonPresetToggle' && <span class="hint">Press to apply this preset. When it is active, press again to restore configured layer and key brightness. Rainbow speed and phase stay unchanged.</span>}
           </label>}
-        <p class="hint">Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative advances each brightness separately; common presets change both together and include configured behavior. Indicator brightness preserves its configured visibility mode.</p>
+        <p class="hint">{action.command === 'commonPresetToggle'
+          ? 'Lighting overrides apply across layers. Indicator brightness preserves its configured visibility mode.'
+          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative advances each brightness separately; common presets change both together and include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>
       </>}
 
       {(action.type === 'keyTap' || action.type === 'keyHold') && (

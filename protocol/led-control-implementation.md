@@ -181,3 +181,66 @@ configuration bindings. Malformed wire payloads are rejected at configuration
 validation; the helper does not duplicate that validation. This differs from the
 plan's additional defensive behavior for hypothetical callers outside validated paths.
 There are no such production callers. Future callers must preserve this precondition.
+
+## Preset / configured toggle extension
+
+Added command `0D` (`commonPresetToggle`), accepting preset indices 1..4. The
+editor adds “Toggle preset on/off” and reuses the setting dropdown under
+“Preset,” defaulting to Layers off, keys dim. Configured itself is excluded.
+Matching the current brightness policy pair restores both configured policies;
+any other pair applies the selected preset. Phase and speed are preserved, with
+no remembered toggle state or additional persistent RAM.
+
+Fresh temporary builds with the same toolchain, preview enabled, and the normal
+14,336-byte linker limit:
+
+| Variant | Before toggle | With toggle | Flash free | xRAM used / available | Stack region |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Three-key | 14,331 | 14,321 | 15 | 619 / 876 | 128 |
+| Six-key | 14,333 | 14,325 | 11 | 628 / 876 | 125 |
+
+The net reduction comes from returning the relative nibble's low three bits as
+the internal validation truth value, checking only the sign of validated nonzero
+relative steps, and storing the relative flag as a byte to avoid SDCC boolean
+conversion overhead. Toggle shares the packed policy-pair comparison already
+used for relative preset matching. No existing lighting features were removed.
+Stack regions are linker capacity, not measured hardware usage.
+
+Host suites pass, including both variants and all 4,096 payloads (116 valid).
+Toggle tests cover all four selectable presets from every policy pair, repeated
+toggles, preservation of phase/speed, and unchanged active configuration bytes.
+All 234 browser tests and the production build pass, including valid editor
+defaults, configured-endpoint exclusion, and binary/JSON toggle round trips.
+`git diff --check` passes. Browser visual inspection was unavailable because no
+supported browser surface was connected; editor rendering and interaction were
+checked through the existing Inspector tests.
+
+Command `0D` requires updated firmware: earlier v6 firmware rejects it, while
+existing v6 profiles remain compatible with this extension. No hardware was
+flashed or release artifacts generated. Checked-in releases were preserved;
+the uploader packaging check still uses those existing releases.
+
+## Conditional indicator preset feasibility (not retained)
+
+See the [reimplementation guide](conditional-indicator-preset.md) for exact firmware
+steps, the saved prototype patch, editor changes, and required tests.
+
+Prototyped an additional preset with indicator policy 4: dim blink/timed
+indications, suppress always-on background, and leave key brightness configured.
+It used the existing runtime policy byte (no additional persistent RAM), widened
+internal preset packing to three indicator bits, appended wire preset index 5,
+and extended set/toggle validation and relative preset cycling. Existing wire
+preset indices retained their meanings. No browser changes were made.
+
+Temporary builds with the normal 14,336-byte limit measured:
+
+| Variant | Working toggle baseline | Conditional preset prototype | Over limit |
+| --- | ---: | ---: | ---: |
+| Three-key | 14,321 | 14,352 | 16 |
+| Six-key | 14,325 | 14,356 | 20 |
+
+Both linker checks failed. The prototype added 31 bytes per variant; the six-key
+result exceeded the user's approximately 16-byte over-limit cutoff. The firmware
+and validation edits were restored exactly to the working toggle implementation.
+The new preset was not retained or behavior-tested. No release artifacts were
+changed and no hardware was flashed for this experiment.

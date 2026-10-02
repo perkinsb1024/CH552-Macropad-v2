@@ -18,7 +18,7 @@ function setup() {
 }
 function selects() { return nodes(Inspector()).filter(n => n.type === 'select'); }
 function change(node: Node, value: string) { (node.props.onChange as (e: unknown) => void)({ target: { value } }); }
-it('offers all 13 LED commands and switches each to a valid default', () => {
+it('offers all 14 LED commands and switches each to a valid default', () => {
   setup();
   const commands = nodes(selects()[1]!.props.children);
   expect(commands.filter(n => !n.props.disabled).map(n => n.props.value)).toEqual([
@@ -66,4 +66,10 @@ it('shows phase degrees without approximation marks and permits configured resto
   expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['0°', '30°', '60°', 'Variable', 'As configured']);
   change(selects()[2]!, 'asConfigured');
   expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'rainbowPhaseSet', value: 'asConfigured' });
+});
+
+it('defaults the toggle to dark mode and excludes the configured endpoint', () => {
+  setup(); change(selects()[1]!, 'commonPresetToggle');
+  expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'commonPresetToggle', value: 3 });
+  expect(nodes(selects()[2]!.props.children).filter(n => n.type === 'option').map(n => n.props.value)).toEqual([1, 2, 3, 4]);
 });

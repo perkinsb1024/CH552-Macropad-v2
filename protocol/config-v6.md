@@ -236,9 +236,10 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 | `0A` | Restore all configured LED settings | Only 0 |
 | `0B` | Set common brightness preset | Preset index 0..4 |
 | `0C` | Relative common brightness preset | Signed nonzero step |
+| `0D` | Toggle common brightness preset / configured | Preset index 1..4 |
 
 All other command IDs and payload values are rejected during image validation.
-There are 112 valid payloads. LED commands are legal for every binding, including
+There are 116 valid payloads. LED commands are legal for every binding, including
 rotation and chords. They execute immediately after chord/one-shot resolution,
 redraw once, and queue no HID report. Holding a binding does not repeat it.
 A resolved LED action consumes a one-shot layer before applying its policy.
@@ -264,6 +265,17 @@ or both-brightness commands can establish a preset. For an unmatched pair, +1 en
 preset 0 and -1 enters preset 4. Larger steps use `(delta - 1) mod 5` for positive
 steps and `delta mod 5` for negative steps, with nonnegative modulo.
 
+Toggle compares the current indicator/key policy pair with the selected preset.
+If it matches, both policies become As configured; otherwise the preset is applied.
+It compares policies, not rendered brightness, and preserves phase and speed.
+There is no remembered toggle state. Other LED commands can establish or replace
+the matching pair. Preset 0 is invalid for toggle because both endpoints would be
+configured. The editor defaults this command to preset 3 (Layers off, keys dim).
+
+Command `0D` extends v6 without changing existing encodings. Earlier v6 firmware
+rejects images containing it during validation; using toggle requires updated
+firmware. Existing v6 profiles remain valid on the updated firmware.
+
 Indicator overrides retain the saved color and visibility mode. Off removes
 indicator animation priority, allowing key feedback. Key Off removes the key overlay,
 allowing an always-on idle background. Both Off blacks out normal lighting.
@@ -277,7 +289,7 @@ Command names are the ordered entries in `webapp/src/model/ledControl.ts`:
 `rainbowPhaseSet`, `rainbowPhaseRelative`, `rainbowSpeedSet`, `rainbowSpeedRelative`,
 `brightnessIndicatorSet`, `brightnessIndicatorRelative`, `brightnessKeySet`,
 `brightnessKeyRelative`, `brightnessBothSet`, `brightnessBothRelative`, `restoreAll`,
-`commonPresetSet`, `commonPresetRelative`. Absolute values are numeric indices or
+`commonPresetSet`, `commonPresetRelative`, `commonPresetToggle`. Absolute values are numeric indices or
 `"asConfigured"`; relative values are signed numbers. Restore all uses numeric zero.
 LED actions in older-version JSON/drafts are rejected.
 

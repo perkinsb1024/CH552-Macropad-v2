@@ -51,6 +51,22 @@ static void testLedControls(void) {
         firmwareLedAction(CONFIG_LED_PRESET_SET, preset);
         assert((ledSettings[2] | ledSettings[3] << 2) == ledPresets[preset]);
     }
+    // Toggle matches policies, across every starting pair; phase/speed are preserved.
+    for (uint8_t preset = 1; preset < 5; preset++) {
+        for (uint8_t indicator = 0; indicator < 4; indicator++) {
+            for (uint8_t key = 0; key < 4; key++) {
+                ledSettings[0] = 0; ledSettings[1] = 3;
+                ledSettings[2] = indicator; ledSettings[3] = key;
+                uint8_t pair = indicator | (key << 2);
+                uint8_t expected = pair == ledPresets[preset] ? 15 : ledPresets[preset];
+                firmwareLedAction(CONFIG_LED_PRESET_TOGGLE, preset);
+                assert((ledSettings[2] | (ledSettings[3] << 2)) == expected);
+                assert(ledSettings[0] == 0 && ledSettings[1] == 3);
+                firmwareLedAction(CONFIG_LED_PRESET_TOGGLE, preset);
+                assert((ledSettings[2] | (ledSettings[3] << 2)) == (expected == 15 ? ledPresets[preset] : 15));
+            }
+        }
+    }
     assert(memcmp(image, activeConfig, CONFIG_SIZE) == 0);
     // Matrix: every visibility mode, brightness policy, held-key state and blink phase.
     for (uint8_t mode = 0; mode < 4; mode++) for (uint8_t full = 0; full < 2; full++) {

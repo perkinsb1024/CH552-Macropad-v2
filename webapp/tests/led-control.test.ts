@@ -9,7 +9,7 @@ import { importProfile, exportProfile } from '../src/io/json';
 import { legacyActionCodes } from './legacy-image';
 
 describe('LED control format 6', () => {
-  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 112 accepted', (variant) => {
+  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 116 accepted', (variant) => {
     const image = encodeProfile(defaultProfile(variant));
     let accepted = 0;
     for (let command = 0; command < 256; command++) for (let nibble = 0; nibble < 16; nibble++) {
@@ -26,7 +26,7 @@ describe('LED control format 6', () => {
         expect(actionProblem(action, { rotation: true, layerCount: 2 })).toBeNull();
       }
     }
-    expect(accepted).toBe(112);
+    expect(accepted).toBe(116);
   });
   it('rejects malformed LED inputs before standalone encoding can truncate them', () => {
     for (const value of [0, -8, 8, 127, 16, NaN]) {
@@ -38,6 +38,8 @@ describe('LED control format 6', () => {
   it('uses the value nibble, full command byte, and semantic JSON restore values', () => {
     const p = defaultProfile(1);
     p.layers[0]!.keys[0] = { type: 'ledControl', command: 'brightnessBothSet', value: 'asConfigured' };
+    p.layers[0]!.encoderButton = { type: 'ledControl', command: 'commonPresetToggle', value: 3 };
+    expect(encodeAction(p.layers[0]!.encoderButton, new Map())).toEqual([0x3f, 0x0d]);
     p.layers[0]!.clockwise = { type: 'ledControl', command: 'commonPresetRelative', value: 1 };
     p.layers[0]!.counterclockwise = { type: 'ledControl', command: 'commonPresetRelative', value: -1 };
     p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: { type: 'ledControl', command: 'commonPresetSet', value: 3 } }];

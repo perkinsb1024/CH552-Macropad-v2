@@ -194,22 +194,25 @@ uint8_t ledStep(uint8_t current, int8_t delta, uint8_t count) {
 void firmwareLedAction(uint8_t command, uint8_t value) {
   int8_t delta = value;
   if (value & 8) delta -= 16;
-  _Bool relative = (command & 1) != 0;
+  uint8_t relative = command & 1;
   uint8_t current;
   uint8_t end;
   if (command >= CONFIG_LED_PRESET_SET) {
+    end = ledSettings[2] | (ledSettings[3] << 2);
     if (command == CONFIG_LED_PRESET_RELATIVE) {
-      end = ledSettings[2] | (ledSettings[3] << 2);
       // Match the actual policies, including As configured, not rendered RGB.
       for (current = 0; current < 5; current++)
         if (ledPresets[current] == end) break;
       if (current == 5) {
         current = 0;
-        if (delta > 0) current = 4;
+        // Relative payloads are validated nonzero; sign alone selects the entry.
+        if (delta >= 0) current = 4;
       }
       value = ledStep(current, delta, 5);
     }
     value = ledPresets[value];
+    // Compare policies rather than rendered brightness; no toggle latch is needed.
+    if (command == CONFIG_LED_PRESET_TOGGLE && value == end) value = 15;
     ledSettings[2] = value & 3;
     ledSettings[3] = value >> 2;
   } else {

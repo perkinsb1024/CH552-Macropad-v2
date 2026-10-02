@@ -1,0 +1,79 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -65,9 +65,9 @@
+ // Per-LED extra hue steps; staggered rates gently change relative phases.
+ __idata uint8_t rainbowDrift[NUM_LEDS];
+ // Current global rainbow presets; saved defaults remain in activeConfig.
+-// Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
++// Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3, Dim transient/Off always-on=4.
+ __xdata uint8_t ledSettings[4];
+-__code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
++__code uint8_t ledPresets[6] = {27, 25, 9, 8, 0, 28};
+ #if ENABLE_COLOR_PREVIEW
+ __xdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
+ #else
+@@ -94,6 +94,8 @@
+ 
+ uint8_t indicatorBrightness(uint8_t options) {
+   uint8_t level = ledSettings[2];
++  if (level == 4) return (options & CONFIG_LAYER_OPT_INDICATOR_MASK) !=
++      (CONFIG_LAYER_INDICATOR_ALWAYS_ON << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+   return level == 3 ? 1 + (options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS) : level;
+ }
+ 
+@@ -198,23 +200,23 @@
+   uint8_t current;
+   uint8_t end;
+   if (command >= CONFIG_LED_PRESET_SET) {
+-    end = ledSettings[2] | (ledSettings[3] << 2);
++    end = ledSettings[2] | (ledSettings[3] << 3);
+     if (command == CONFIG_LED_PRESET_RELATIVE) {
+       // Match the actual policies, including As configured, not rendered RGB.
+-      for (current = 0; current < 5; current++)
++      for (current = 0; current < 6; current++)
+         if (ledPresets[current] == end) break;
+-      if (current == 5) {
++      if (current == 6) {
+         current = 0;
+         // Relative payloads are validated nonzero; sign alone selects the entry.
+-        if (delta >= 0) current = 4;
++        if (delta >= 0) current = 5;
+       }
+-      value = ledStep(current, delta, 5);
++      value = ledStep(current, delta, 6);
+     }
+     value = ledPresets[value];
+     // Compare policies rather than rendered brightness; no toggle latch is needed.
+-    if (command == CONFIG_LED_PRESET_TOGGLE && value == end) value = 15;
+-    ledSettings[2] = value & 3;
+-    ledSettings[3] = value >> 2;
++    if (command == CONFIG_LED_PRESET_TOGGLE && value == end) value = 27;
++    ledSettings[2] = value & 7;
++    ledSettings[3] = value >> 3;
+   } else {
+     if (command == CONFIG_LED_RESTORE) {
+       current = 0;
+@@ -236,7 +238,7 @@
+         uint8_t count = 4;
+         if (current >= 2) {
+           count = 3;
+-          if (next == 3) {
++          if (next >= 3) {
+             next = 2;
+             if (current == 2) next = indicatorBrightness(configLayerOptions(actionsLayer()));
+           }
+--- a/src/config.c
++++ b/src/config.c
+@@ -78,9 +78,9 @@
+             if (param == CONFIG_LED_RESTORE) return aux == 0;
+             if (param == CONFIG_LED_PRESET_TOGGLE) {
+                 --aux; // uint8_t wrap rejects preset zero.
+-                return aux < 4;
+-            }
+-            if (param == CONFIG_LED_PRESET_SET) return aux <= 4;
++                return aux < 5;
++            }
++            if (param == CONFIG_LED_PRESET_SET) return aux <= 5;
+             // The nibble is nonzero and not -8 exactly when its low bits are nonzero.
+             if ((param & 1) || param == CONFIG_LED_PRESET_RELATIVE)
+                 return aux & 7;

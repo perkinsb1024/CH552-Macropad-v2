@@ -74,11 +74,16 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
     uint8_t start;
     switch (type) {
         case CONFIG_ACTION_LED_CONTROL:
-            if (param > CONFIG_LED_PRESET_RELATIVE) return 0;
+            if (param > CONFIG_LED_PRESET_TOGGLE) return 0;
             if (param == CONFIG_LED_RESTORE) return aux == 0;
+            if (param == CONFIG_LED_PRESET_TOGGLE) {
+                --aux; // uint8_t wrap rejects preset zero.
+                return aux < 4;
+            }
             if (param == CONFIG_LED_PRESET_SET) return aux <= 4;
+            // The nibble is nonzero and not -8 exactly when its low bits are nonzero.
             if ((param & 1) || param == CONFIG_LED_PRESET_RELATIVE)
-                return aux != 0 && aux != 8;
+                return aux & 7;
             if (aux == 15) return 1;
             if (param < CONFIG_LED_INDICATOR_SET) return aux <= 3;
             return aux <= 2;
