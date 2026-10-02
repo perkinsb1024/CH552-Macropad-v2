@@ -176,10 +176,14 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
   if (chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75) throw new ImportError('chordWindowMs must be 0–75 in steps of 5.');
-  const rainbowPhase = Number(raw.version) >= 5
-    ? RAINBOW_PHASE_DEGREES.indexOf(int(raw.rainbowPhaseDegrees, 'rainbowPhaseDegrees') as typeof RAINBOW_PHASE_DEGREES[number])
-    : DEFAULT_RAINBOW_PHASE;
-  if (rainbowPhase < 0) throw new ImportError('rainbowPhaseDegrees must be 0, 30, 60 or 120.');
+  let rainbowPhase = DEFAULT_RAINBOW_PHASE;
+  if (Number(raw.version) >= 5) {
+    const degrees = int(raw.rainbowPhaseDegrees, 'rainbowPhaseDegrees');
+    // Preserve the fourth preset in profiles exported before it became 150°.
+    rainbowPhase = degrees === 120 ? 3
+      : RAINBOW_PHASE_DEGREES.indexOf(degrees as typeof RAINBOW_PHASE_DEGREES[number]);
+  }
+  if (rainbowPhase < 0) throw new ImportError('rainbowPhaseDegrees must be 0, 30, 60 or 150 (legacy 120 is also accepted).');
   const rainbowSpeed = raw.rainbowSpeed === undefined ? DEFAULT_RAINBOW_SPEED
     : typeof raw.rainbowSpeed === 'string' ? RAINBOW_SPEED_LABELS.findIndex((label, i) =>
       label.toLowerCase() === raw.rainbowSpeed || LEGACY_RAINBOW_SPEED_NAMES[i] === raw.rainbowSpeed) : -1;

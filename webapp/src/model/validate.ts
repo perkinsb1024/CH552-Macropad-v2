@@ -99,7 +99,7 @@ export function validateProfile(profile: Profile): Issue[] {
   }
 
   if (!Number.isInteger(profile.rainbowPhase) || profile.rainbowPhase < 0 || profile.rainbowPhase > 3) {
-    issues.push({ where: 'Profile', message: 'Rainbow phase must be 0–3 (0°, ~30°, ~60°, ~120°).' });
+    issues.push({ where: 'Profile', message: 'Rainbow phase must be 0–3 (0°, ~30°, ~60°, ~150°).' });
   }
 
   if (!Number.isInteger(profile.rainbowSpeed) || profile.rainbowSpeed < 0 || profile.rainbowSpeed > 3) {

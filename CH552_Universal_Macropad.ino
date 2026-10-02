@@ -35,8 +35,8 @@ __code uint8_t rainbowPositions[6] = {0, 1, 2, 5, 4, 3};
 #else
 __code uint8_t rainbowPositions[3] = {0, 1, 2};
 #endif
-// Header bits 4–5 select 0, ~30, ~60, or ~120 degrees between LEDs.
-__code uint8_t rainbowSteps[4] = {0, 21, 42, 85};
+// Header bits 4–5 select 0, ~30, ~60, or ~150 degrees between LEDs.
+__code uint8_t rainbowSteps[4] = {0, 21, 42, 109};
 // Header bits 6–7 select extra fast, fast, slow, or extra slow rainbow speed.
 __code uint8_t rainbowFrameMs[4] = {4, 6, 10, 18};
 __code int8_t encoderTransitions[16] = {

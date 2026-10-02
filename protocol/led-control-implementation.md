@@ -13,7 +13,7 @@ byte for the command. All 13 commands and all 112 valid payloads are implemented
 absolute/relative rainbow phase and speed, indicator/key/both brightness, restore
 all, and absolute/relative common presets. Every relative command accepts -7..-1
 and +1..+7. Absolute brightness uses Off=0, Dim=1, Bright=2, Configured=F.
-Phase options show 0°, 30°, 60°, 120° without approximation marks.
+Phase options show 0°, 30°, 60°, 150° without approximation marks.
 
 The five common presets include Both as configured. Their relative position follows
 the actual policy pair, including matching results from other brightness commands.

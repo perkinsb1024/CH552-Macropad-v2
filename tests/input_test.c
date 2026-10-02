@@ -201,7 +201,7 @@ static void testRainbowSpeed(void) {
 static void testRainbowPhaseSpacing(void) {
     // Expected order follows the physical perimeter, rather than buffer order.
     const uint8_t positions[6] = {0, 1, 2, 5, 4, 3};
-    const uint8_t steps[4] = {0, 21, 42, 85};
+    const uint8_t steps[4] = {0, 21, 42, 107};
     uint8_t samples[256][NUM_BYTES];
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfigValid = 1;

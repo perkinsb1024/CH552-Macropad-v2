@@ -64,6 +64,17 @@ describe('rainbow phase spacing', () => {
     expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
   });
 
+  it.each([5, 6])('imports legacy 120-degree JSON version %s as the 150-degree preset', (version) => {
+    const p = defaultProfile(0);
+    p.rainbowPhase = 3;
+    const raw = JSON.parse(exportProfile(p));
+    raw.version = version;
+    raw.rainbowPhaseDegrees = 120;
+    const imported = importProfile(JSON.stringify(raw)).profile;
+    expect(imported).toEqual(p);
+    expect(JSON.parse(exportProfile(imported)).rainbowPhaseDegrees).toBe(150);
+  });
+
   it('rejects invalid new JSON choices and invalid editor values', () => {
     const p = defaultProfile(0);
     for (const invalid of [-1, 4, 1.5, NaN]) {
@@ -107,7 +118,7 @@ describe('rainbow phase spacing', () => {
     expect(selector.props.value).toBe(2);
     expect(elements(selector.props.children).filter((e) => e.type === 'option').map((e) => e.props.value)).toEqual([0, 1, 2, 3]);
     expect(elements(selector.props.children).map((e) => e.props.children)).toEqual([
-      '0° — All LEDs together', '30° — Gentle color wave', '60° — Rainbow sweep', '120° — Scattered colors',
+      '0° — All LEDs together', '30° — Gentle color wave', '60° — Rainbow sweep', '150° — Scattered colors',
     ]);
     // Start a fresh history before invoking the actual selector callback.
     updateProfile((p) => { p.rainbowPhase = 2; });

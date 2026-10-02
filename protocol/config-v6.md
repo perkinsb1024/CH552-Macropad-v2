@@ -39,9 +39,9 @@ The nine-byte header is:
 | 4 | String-pool length | Number of used bytes in the string pool. |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | Chord window and rainbow phase | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = 30°, `10` = 60°, `11` = 120°)<br>Bits 6–7: rainbow speed (`00` = Extra fast, `01` = Fast, `10` = Slow, `11` = Extra slow) |
+| 8 | Chord window and rainbow phase | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = 0°, `01` = 30°, `10` = 60°, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = Extra fast, `01` = Fast, `10` = Slow, `11` = Extra slow) |
 
-Rainbow phase settings use hue increments `0`, `21`, `42`, and `85` in a
+Rainbow phase settings use hue increments `0`, `21`, `42`, and `107` in a
 256-step cycle. Three-key positions are `0, 1, 2`; six-key positions are
 `0, 1, 2, 5, 4, 3`, preserving the physical perimeter order
 `1 → 2 → 3 → 6 → 5 → 4`. Each LED's hue is the shared hue plus its position
@@ -68,8 +68,10 @@ Hardware color previews use the saved profile's phase spacing and speed; save an
 setting before previewing it. Bits 0–3 still control chords independently.
 
 Version 6 JSON exports use `rainbowPhaseDegrees` with values `0`, `30`, `60`, or
-`120`; this field is required in version 6 files. The starter profile and bundled
-JSON profiles default to `60`. Older JSON files and drafts missing the setting
+`150`; this field is required in version 6 files. The starter profile and bundled
+JSON profiles default to `60`. Imports accept the previous `120` value as an alias
+for `150`, preserving the fourth spacing preset. Existing binary profiles retain
+index 3, which now selects 150°. Older JSON files and drafts missing the setting
 migrate to the same default.
 
 | CRC16-CCITT-FALSE setting | Value |
@@ -211,7 +213,7 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 
 | Command byte | Command | Valid auxiliary values |
 | --- | --- | --- |
-| `00` | Set rainbow phase spacing | 0=0°, 1=30°, 2=60°, 3=120°, F=configured |
+| `00` | Set rainbow phase spacing | 0=0°, 1=30°, 2=60°, 3=150°, F=configured |
 | `01` | Relative rainbow phase spacing | Signed nonzero step -7..+7 |
 | `02` | Set rainbow speed | 0=Extra fast, 1=Fast, 2=Slow, 3=Extra slow, F=configured |
 | `03` | Relative rainbow speed | Signed nonzero step; positive is faster |
