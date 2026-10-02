@@ -114,6 +114,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
       Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
     }
     await import('../dist/app.mjs');
+    assert.equal(element('compatibility-notice').attributes.role, undefined);
     assert.equal(element('platform-macos').open, true);
     assert.equal(element('platform-windows').open, false);
     assert.equal(element('platform-linux').open, false);
@@ -165,6 +166,50 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     for (const [key, descriptor] of Object.entries(originals)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
       else delete globalThis[key];
+    }
+  }
+});
+
+test('unsupported browsers replace the top beta notice before firmware loading', async () => {
+  for (const scenario of ['unsupported', 'insecure', 'manifest-failure']) {
+    const elements = new Map();
+    const element = id => {
+      if (!elements.has(id)) elements.set(id, {
+        disabled: true, attributes: {},
+        setAttribute(name, value) { this.attributes[name] = value; },
+        addEventListener() {},
+      });
+      return elements.get(id);
+    };
+    const replacements = {
+      document: { getElementById: element, querySelectorAll: () => [] },
+      window: { isSecureContext: scenario !== 'insecure' },
+      navigator: { platform: 'MacIntel', ...(scenario === 'insecure' ? { usb: {} } : {}) },
+      fetch: async path => {
+        // The notice must be visible even before the first request completes.
+        assert.equal(element('compatibility-notice').attributes.role, 'alert');
+        assert.equal(element('compatibility-notice').className, 'beta incompatible');
+        assert.match(element('notice-message').textContent, /desktop Chrome or Edge/);
+        if (scenario === 'manifest-failure') throw new Error('Firmware list unavailable');
+        return new Response(await readFile(new URL(`../dist/${path.slice(2)}`, import.meta.url)));
+      },
+    };
+    const originals = Object.fromEntries(Object.keys(replacements).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+    try {
+      for (const [key, value] of Object.entries(replacements)) {
+        Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+      }
+      await import(`../dist/app.mjs?compatibility=${scenario}`);
+      assert.equal(element('notice-title').textContent, scenario === 'insecure'
+        ? 'A secure connection is required to install firmware'
+        : 'Unable to install firmware');
+      assert.equal(element('connect').disabled, true);
+      assert.equal(element('install').disabled, true);
+    } finally {
+      for (const [key, descriptor] of Object.entries(originals)) {
+        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+        else delete globalThis[key];
+      }
     }
   }
 });

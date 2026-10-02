@@ -12,6 +12,17 @@ const repository = 'https://github.com/perkinsb1024/CH552-Macropad-v2';
 $('boot-guide').href = `${repository}#how-to-upload-the-firmware`;
 let manifest, firmware = null, busy = false;
 const supported = window.isSecureContext && 'usb' in navigator;
+if (!supported) {
+  const notice = $('compatibility-notice');
+  notice.className = 'beta incompatible';
+  notice.setAttribute('role', 'alert');
+  $('notice-title').textContent = window.isSecureContext
+    ? 'Unable to install firmware'
+    : 'A secure connection is required to install firmware';
+  $('notice-message').textContent = window.isSecureContext
+    ? 'USB access (WebUSB) is unavailable in this browser, please open this page in desktop Chrome or Edge'
+    : 'Open this page over HTTPS or localhost in desktop Chrome or Edge to enable USB access';
+}
 const platform = navigator.userAgentData?.platform || navigator.platform || '';
 const currentOS = /mac/i.test(platform) ? 'macos' : /linux/i.test(platform) ? 'linux' : 'windows';
 for (const os of ['windows', 'macos', 'linux']) {

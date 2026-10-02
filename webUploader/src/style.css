@@ -10,6 +10,7 @@ a { color: var(--accent); }
 .badge { font-size: 13px; vertical-align: middle; padding: 4px 9px; border-radius: 999px; background: #fce7ad; color: #674400; }
 .beta { margin: 22px 0; padding: 16px; background: #fff5d9; color: #674400; border-radius: 10px; line-height: 1.6; }
 .beta strong { display: block; }
+.beta.incompatible { background: #fff0f0; color: #8a2020; border-left: 4px solid #cf3434; }
 section { margin: 18px 0; padding: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
 details { padding: 12px 0; border-top: 1px solid var(--line); }
 summary { font-weight: 600; cursor: pointer; }
@@ -38,6 +39,7 @@ footer { padding: 8px 0 24px; line-height: 1.7; }
   button { background: #2e65df; }
   .segmented { background: #111620; }
   .beta { background: #382e18; color: #ffe3a0; }
+  .beta.incompatible { background: #391e23; color: #ffc4c4; border-left-color: #ff7777; }
   pre { background: #111620; }
 }
 @media (max-width: 480px) { main { margin-top: 20px; padding: 0 12px; } section { padding: 16px; } h1 { font-size: 24px; } }
