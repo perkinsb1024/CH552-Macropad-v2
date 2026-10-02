@@ -107,8 +107,10 @@ through the active editor to activate inputs after upgrading.
 
 LED control bindings expose all thirteen commands, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
+Relative rainbow phase and speed also offer -2 and +2 to toggle between settings
+two positions apart in their four-setting cycles.
 Existing profiles with larger relative LED steps remain compatible; the editor
-shows their current value but only offers -1 and +1 when changing it.
+shows their current value but only offers the steps above when changing it.
 Saved layer colors/visibility and global rainbow defaults remain independent.
 Runtime overrides reset on configuration save or USB reset and bypass preview.
 Formats before v5 receive Fast speed and 60° spacing; v5 rainbow settings survive

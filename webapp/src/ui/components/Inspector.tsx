@@ -99,6 +99,9 @@ export function Inspector() {
   }
 
   const update = (next: Action) => setAction(slot, next);
+  const ledRelativeSteps = action.type === 'ledControl' &&
+    (action.command === 'rainbowPhaseRelative' || action.command === 'rainbowSpeedRelative')
+    ? [-2, -1, 1, 2] : [-1, 1];
   const setType = (type: ActionType) => {
     if (type === action.type) return;
     setAction(slot, action);
@@ -164,11 +167,11 @@ export function Inspector() {
           <label class="field"><span class="field-label">Relative step</span>
             <select value={action.value} onChange={(e) => {
               const value = Number((e.target as HTMLSelectElement).value);
-              if (value === -1 || value === 1) update({ ...action, value });
+              if (ledRelativeSteps.includes(value)) update({ ...action, value });
             }}>
-              {action.value !== -1 && action.value !== 1 &&
+              {(typeof action.value !== 'number' || !ledRelativeSteps.includes(action.value)) &&
                 <option value={action.value} disabled>Current: {typeof action.value === 'number' && action.value > 0 ? '+' : ''}{action.value}</option>}
-              {[-1,1].map((v) => <option value={v}>{v > 0 ? '+' : ''}{v}</option>)}
+              {ledRelativeSteps.map((v) => <option value={v}>{v > 0 ? '+' : ''}{v}</option>)}
             </select>
             <span class="hint">Cycles with wraparound. Positive speed steps are faster; positive common-preset steps select the next darker preset, then return to configured.</span>
           </label>
