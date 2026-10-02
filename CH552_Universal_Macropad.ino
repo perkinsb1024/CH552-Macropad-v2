@@ -31,10 +31,12 @@
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 #if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
 // Phase order around the six-key perimeter: 1 -> 2 -> 3 -> 6 -> 5 -> 4.
-__code uint8_t rainbowOffsets[6] = {0, 42, 84, 210, 168, 126};
+__code uint8_t rainbowPositions[6] = {0, 1, 2, 5, 4, 3};
 #else
-__code uint8_t rainbowOffsets[3] = {0, 85, 170};
+__code uint8_t rainbowPositions[3] = {0, 1, 2};
 #endif
+// Header bits 4–5 select 0, ~30, ~60, or ~120 degrees between LEDs.
+__code uint8_t rainbowSteps[4] = {0, 21, 42, 85};
 __code int8_t encoderTransitions[16] = {
   0, -1, 1, 0,
   1, 0, 0, -1,
@@ -94,7 +96,8 @@ void updateLeds() {
     uint8_t green;
     uint8_t blue;
     uint8_t wheel;
-    wheel = rainbowHue + rainbowOffsets[i];
+    wheel = rainbowHue + rainbowPositions[i] *
+        rainbowSteps[(activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3];
 #if ENABLE_COLOR_PREVIEW
     if (previewOptions) {
       dim = 1;
@@ -117,21 +120,21 @@ void updateLeds() {
       else color = 15;
     }
     if (dim && rainbow) {
-      // Three linear color ramps form a full-brightness cycling rainbow.
+      // Three linear ramps cycle red -> blue -> green -> red.
       if (wheel < 85) {
         red = (85 - wheel) * 3;
-        green = wheel * 3;
-        blue = 0;
+        green = 0;
+        blue = wheel * 3;
       } else if (wheel < 170) {
         wheel -= 85;
         red = 0;
-        green = (85 - wheel) * 3;
-        blue = wheel * 3;
+        green = wheel * 3;
+        blue = (85 - wheel) * 3;
       } else {
         wheel -= 170;
         red = wheel * 3;
-        green = 0;
-        blue = (85 - wheel) * 3;
+        green = (85 - wheel) * 3;
+        blue = 0;
       }
     } else {
       const __code uint8_t *rgb = configPalette[color];

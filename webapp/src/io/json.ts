@@ -1,5 +1,5 @@
 import type { Action, Chord, Layer, Profile } from '../model/types';
-import { type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
+import { RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
 import { PALETTE } from '../model/palette';
@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 4;
+export const JSON_VERSION = 5;
 
 /** Optional editor annotations that never reach the device. */
 export interface LocalMetadata {
@@ -22,6 +22,7 @@ export interface ExportedProfile {
   startupLayer: number;
   transparentBlack: boolean;
   chordWindowMs: number;
+  rainbowPhaseDegrees: number;
   layers: Array<{
     keys: Action[];
     encoderButton: Action;
@@ -45,6 +46,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
     startupLayer: profile.startupLayer,
     transparentBlack: profile.transparentBlack,
     chordWindowMs: profile.chordWindow * 5,
+    rainbowPhaseDegrees: RAINBOW_PHASE_DEGREES[profile.rainbowPhase]!,
     layers: profile.layers.map((layer) => ({
       keys: layer.keys,
       encoderButton: layer.encoderButton,
@@ -138,7 +140,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -168,7 +170,11 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
   if (chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75) throw new ImportError('chordWindowMs must be 0–75 in steps of 5.');
-  const profile: Profile = { variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  const rainbowPhase = raw.version === JSON_VERSION
+    ? RAINBOW_PHASE_DEGREES.indexOf(int(raw.rainbowPhaseDegrees, 'rainbowPhaseDegrees') as typeof RAINBOW_PHASE_DEGREES[number])
+    : DEFAULT_RAINBOW_PHASE;
+  if (rainbowPhase < 0) throw new ImportError('rainbowPhaseDegrees must be 0, 30, 60 or 120.');
+  const profile: Profile = { rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
   migrateLegacyProfile(profile);
   const issues = validateProfile(profile);
   if (issues.length) throw new ImportError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));

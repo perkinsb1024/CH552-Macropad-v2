@@ -1,5 +1,5 @@
 import {
-  ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
+  HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
   LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, keyCount, layerSize,
 } from '../model/constants';
@@ -74,7 +74,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   image[3] = (profile.layers.length - 1) | (profile.startupLayer << 3);
   image[4] = poolLength;
   image[5] = profile.variant | (chords.length << 1) | (profile.transparentBlack ? 0x80 : 0);
-  image[8] = profile.chordWindow & 15;
+  image[8] = (profile.chordWindow & 15) | (profile.rainbowPhase << HEADER_RAINBOW_PHASE_SHIFT);
 
   profile.layers.forEach((layer, li) => {
     const base = HEADER_SIZE + size * li;

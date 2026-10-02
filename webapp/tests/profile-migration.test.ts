@@ -13,12 +13,13 @@ afterEach(async () => { await disconnect(); vi.restoreAllMocks(); });
 function legacyImage() {
   const image = encodeProfile(defaultProfile(0));
   image[2] = 2;
+  image[8] = image[8]! & 15;
   sealImage(image);
   return image;
 }
 
 describe('device profile migration', () => {
-  it.each([2, 3])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
+  it.each([2, 3, 4])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
     const legacy = legacyImage();
     legacy[2] = version;
     sealImage(legacy);
@@ -40,21 +41,21 @@ describe('device profile migration', () => {
     expect(device.flash).toEqual(legacy);
     expect(canSave.value).toBe(true);
     await save();
-    expect(device.flash[2]).toBe(4);
+    expect(device.flash[2]).toBe(5);
     expect(device.flashValid).toBe(true);
   });
 
-  it('offers the archived editor instead of connecting to version 2 firmware', async () => {
+  it.each([2, 3, 4])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
     const originalGetInfo = ConfigClient.prototype.getInfo;
     vi.spyOn(ConfigClient.prototype, 'getInfo').mockImplementation(async function (this: ConfigClient) {
-      return { ...await originalGetInfo.call(this), formatVersion: 2 };
+      return { ...await originalGetInfo.call(this), formatVersion: version };
     });
     const writes = vi.spyOn(ConfigClient.prototype, 'saveImage');
     const flashReads = vi.spyOn(ConfigClient.prototype, 'readFlash');
     await connectSimulator(0);
     expect(connection.value.kind).toBe('disconnected');
     expect(canSave.value).toBe(false);
-    expect(archivedFirmware.value).toEqual({ version: 2, url: siteUrl('versions/format-v2/') });
+    expect(archivedFirmware.value).toEqual({ version, url: siteUrl(`versions/format-v${version}/`) });
     expect(flashReads).not.toHaveBeenCalled();
     expect(writes).not.toHaveBeenCalled();
     vi.restoreAllMocks();

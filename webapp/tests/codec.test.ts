@@ -12,7 +12,7 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
-  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 4', (variant) => {
+  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 5', (variant) => {
     const profile = defaultProfile(variant);
     profile.layers[0]!.indicatorBehavior = 1;
     profile.layers[0]!.indicatorColor = 8;
@@ -20,13 +20,15 @@ describe('default profile image headers', () => {
     profile.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: { type: 'setLayer', layer: 1 } }];
     const legacy = encodeProfile(profile);
     legacy[2] = 2;
+    legacy[8] = legacy[8]! & 15;
     sealImage(legacy);
     const decoded = decodeImage(legacy);
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[2]).toBe(4);
-    expect([...upgraded.subarray(8)]).toEqual([...legacy.subarray(8)]);
+    expect(upgraded[2]).toBe(5);
+    expect(upgraded[8]).toBe(legacy[8]! | 0x20);
+    expect([...upgraded.subarray(9)]).toEqual([...legacy.subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
     expect(decodeImage(legacy)).toMatchObject({ ok: false, reason: 'bad-crc' });
   });
@@ -41,12 +43,12 @@ describe('default profile image headers', () => {
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 04 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 05 01 00 00');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 04 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 05 01 00 01');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -132,7 +134,7 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x1e, 0xff]);
-    expect(image[2]).toBe(4);
+    expect(image[2]).toBe(5);
     image[9] = 0x2e;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -303,16 +305,16 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 5;
+    image[2] = 6;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });
   it('no magic', () => {
     expect(decodeImage(new Uint8Array(128))).toMatchObject({ ok: false, reason: 'no-magic' });
   });
-  it('reserved chord-window nibble', () => {
+  it('reserved header bits', () => {
     const image = base();
-    image[8] = 0x18;
+    image[8] = 0x48;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
   });
@@ -410,6 +412,7 @@ describe('expanded layers', () => {
     profile.chords = [{ layer: 3, keyA: 0, keyB: 1, global: true, action: { type: 'setLayer', layer: 3 } }];
     const image = encodeProfile(profile);
     image[2] = version;
+    image[8] = image[8]! & 15;
     image[3] = 3 | (3 << 2);
     sealImage(image);
     const decoded = decodeImage(image);

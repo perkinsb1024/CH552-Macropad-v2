@@ -158,6 +158,54 @@ static void testIndicatorBrightness(void) {
     P1 = P3 = 0xFF;
 }
 
+static void testRainbowPhaseSpacing(void) {
+    // Expected order follows the physical perimeter, rather than buffer order.
+    const uint8_t positions[6] = {0, 1, 2, 5, 4, 3};
+    const uint8_t steps[4] = {0, 21, 42, 85};
+    uint8_t samples[256][NUM_BYTES];
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+#if ENABLE_COLOR_PREVIEW
+    previewOptions = 0;
+#endif
+    firmwareApplyConfig();
+    for (uint8_t full = 0; full < 2; full++) {
+        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | full;
+        for (uint8_t phase = 0; phase < 4; phase++) {
+            // All chord-window bits set: they must not affect phase extraction.
+            activeConfig[8] = 15 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT);
+            assert(configChordWindowMs() == 75);
+            for (uint16_t hue = 0; hue < 256; hue++) {
+                rainbowHue = hue;
+                updateLeds();
+                memcpy(samples[hue], ledData, NUM_BYTES);
+            }
+            for (uint16_t hue = 0; hue < 256; hue++) {
+                for (uint8_t i = 0; i < NUM_LEDS; i++) {
+                    uint8_t shifted = hue + positions[i] * steps[phase];
+                    assert(memcmp(samples[hue] + 3*i, samples[shifted], 3) == 0);
+                    for (uint8_t channel = 0; channel < 3; channel++) {
+                        int delta = samples[(hue+1)&255][3*i+channel] - samples[hue][3*i+channel];
+                        assert(delta >= -(full ? 3 : 2) && delta <= (full ? 3 : 2));
+                    }
+                }
+            }
+            if (full) {
+                assert(samples[0][1] == 255 && samples[0][0] == 0 && samples[0][2] == 0);
+                assert(samples[85][2] == 255 && samples[85][0] == 0 && samples[85][1] == 0);
+                assert(samples[170][0] == 255 && samples[170][1] == 0 && samples[170][2] == 0);
+            }
+#if ENABLE_COLOR_PREVIEW
+            rainbowHue = 42;
+            firmwarePreviewColor(0xFC | full);
+            assert(memcmp(ledData, samples[42], NUM_BYTES) == 0);
+            firmwarePreviewColor(0);
+#endif
+        }
+    }
+}
+
 static void testTransparencyAndRainbow(void) {
     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
     uint8_t colorOffset = 9 + 2 * (NUM_LEDS + 3);
@@ -354,6 +402,7 @@ int main(void) {
     testSameLayerIndicator();
     testOneShotChordIndicator();
     testIndicatorBrightness();
+    testRainbowPhaseSpacing();
     testTransparencyAndRainbow();
     testMomentaryIndicatorCancellation();
     currentMs = 0;

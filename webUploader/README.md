@@ -89,7 +89,7 @@ python3 -m http.server 8080 --directory webUploader/dist
 
 Open `http://localhost:8080/`. The configurator backlink is intended for the combined Pages deployment. To build the complete site, run `npm run build` in `webapp/`; it adds the uploader to `webapp/dist/webUploader/`.
 
-The build requires exactly one clean published HEX per variant in `releases/`, validates record checksums and the 14 KiB application boundary, copies those files into `firmware/`, and writes a SHA-256 manifest. The page checks each download against that manifest before enabling install. The Pages workflow watches `releases/`, `webUploader/`, and `.gitmodules` as well as the configurator.
+The build requires exactly one generated HEX per variant in `releases/` (including the release tool’s `dirty-` filename marker for uncommitted firmware), validates record checksums and the 14 KiB application boundary, copies those files into `firmware/`, and writes a SHA-256 manifest. The page checks each download against that manifest before enabling install. The Pages workflow watches `releases/`, `webUploader/`, and `.gitmodules` as well as the configurator.
 
 ## Beta validation still required
 

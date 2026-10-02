@@ -96,6 +96,10 @@ export function validateProfile(profile: Profile): Issue[] {
     issues.push({ where: 'Profile', message: 'Chord window must be 0–75 ms in 5 ms steps.' });
   }
 
+  if (!Number.isInteger(profile.rainbowPhase) || profile.rainbowPhase < 0 || profile.rainbowPhase > 3) {
+    issues.push({ where: 'Profile', message: 'Rainbow phase must be 0–3 (0°, ~30°, ~60°, ~120°).' });
+  }
+
   profile.layers.forEach((layer, li) => {
     if (!Number.isInteger(layer.indicatorBehavior) || layer.indicatorBehavior < 0 || layer.indicatorBehavior > 3) {
       issues.push({ where: `Layer ${li + 1}`, message: 'Layer indicator behavior must be 0–3.' });

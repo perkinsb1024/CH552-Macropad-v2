@@ -26,11 +26,12 @@ export function loadDraft(variant: 0 | 1): Draft | null {
   try {
     const key = draftKey(variant);
     const archived = localStorage.getItem(`${key}:cleared`) ? null
-      : localStorage.getItem(`universal-macropad:format-v3:draft:${variant ? 'three-key' : 'six-key'}`);
+      : localStorage.getItem(`universal-macropad:format-v4:draft:${variant ? 'three-key' : 'six-key'}`)
+        ?? localStorage.getItem(`universal-macropad:format-v3:draft:${variant ? 'three-key' : 'six-key'}`);
     const raw = localStorage.getItem(key) ?? archived ?? localStorage.getItem(legacyDraftKey(variant));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Draft;
-    if (parsed.formatVersion !== undefined && parsed.formatVersion !== 2 && parsed.formatVersion !== 3 && parsed.formatVersion !== FORMAT_VERSION) return null;
+    if (parsed.formatVersion !== undefined && parsed.formatVersion !== 2 && parsed.formatVersion !== 3 && parsed.formatVersion !== 4 && parsed.formatVersion !== FORMAT_VERSION) return null;
     if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) return null;
     parsed.profile = migrateLegacyProfile(parsed.profile);
     if (validateProfile(parsed.profile).length) return null;

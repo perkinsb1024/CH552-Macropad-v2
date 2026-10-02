@@ -1,8 +1,11 @@
-import { LayerIndicatorBehavior } from '../../model/constants';
-import { layerName, profile, updateProfile } from '../store';
+import { DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_DEGREES, LayerIndicatorBehavior } from '../../model/constants';
+import { baseline, layerName, profile, updateProfile } from '../store';
+
+const PHASE_LABELS = ['All LEDs together', 'Gentle color wave', 'Rainbow sweep', 'Scattered colors'];
 
 export function ProfilePanel() {
   const p = profile.value!;
+  const phaseUnsaved = p.rainbowPhase !== (baseline.value?.rainbowPhase ?? DEFAULT_RAINBOW_PHASE);
   const showOffBehavior = p.layers.some((layer) => layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn) &&
     p.layers.some((layer) => layer.leds.includes(15));
   return (
@@ -30,6 +33,14 @@ export function ProfilePanel() {
               : `A key that belongs to a chord waits up to ${p.chordWindow * 5}ms for its partner before acting alone. Keys without chords are not delayed.`}
           </span>
         </label>
+        <div class="field field-wide">
+          <label class="field-label" htmlFor="rainbow-phase">Rainbow phase spacing</label>
+          <select id="rainbow-phase" value={p.rainbowPhase} onChange={(e) => updateProfile((d) => { d.rainbowPhase = Number((e.target as HTMLSelectElement).value); })}>
+            {RAINBOW_PHASE_DEGREES.map((degrees, i) => <option key={i} value={i}>{`${degrees}° — ${PHASE_LABELS[i]}`}</option>)}
+          </select>
+          <span class="hint">Color spacing between LEDs along the rainbow path. Smaller angles make neighboring colors more similar.</span>
+          {phaseUnsaved && <span class="notice notice-info" role="status">Color previews will not use this setting until it is saved to the device</span>}
+        </div>
         {showOffBehavior && <div class="field field-wide">
           <span class="field-label">For key LEDs, "Off" means:</span>
           <div class="segmented" role="group" aria-label={'For key LEDs, "Off" means'}>

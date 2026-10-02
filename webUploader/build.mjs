@@ -50,8 +50,8 @@ ${core}
   const files = await readdir(releases);
   const firmware = [];
   for (const keys of [3, 6]) {
-    const matches = files.filter(name => new RegExp(`^ch552-macropad-${keys}-key-[a-f0-9]+\\.hex$`).test(name));
-    if (matches.length !== 1) throw new Error(`Expected one published ${keys}-key HEX in releases/, found ${matches.length}.`);
+    const matches = files.filter(name => new RegExp(`^ch552-macropad-${keys}-key-(?:dirty-)?[a-f0-9]+\\.hex$`).test(name));
+    if (matches.length !== 1) throw new Error(`Expected one generated ${keys}-key HEX in releases/, found ${matches.length}.`);
     const name = matches[0];
     const content = await readFile(join(releases, name));
     const image = parseHex(content.toString('utf8'));

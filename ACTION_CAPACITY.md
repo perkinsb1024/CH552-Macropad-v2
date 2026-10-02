@@ -1,5 +1,5 @@
 # Intro
-Counts below use [configuration format v4](protocol/config-v4.md), which supports 7 layers on a 3-key macropad and 5 layers on a 6-key macropad.
+Counts below use [configuration format v5](protocol/config-v5.md), which supports 7 layers on a 3-key macropad and 5 layers on a 6-key macropad.
 
 Each count is the total number of assignable action slots across all configured layers. Encoder wheel actions count clockwise and counterclockwise separately. Chords are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
 

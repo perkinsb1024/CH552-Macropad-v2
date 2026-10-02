@@ -1,0 +1,15 @@
+{
+  "formatVersion": 4,
+  "sourceCommit": "1a7fbdc9f86d0a7061a6ccb6b910a4ac1beb117b",
+  "changes": [
+    "Archive banner and link to latest editor; existing format-v4 draft namespace preserved"
+  ],
+  "validation": "178 tests passed; production build passed",
+  "sha256": {
+    "assets/index-DSfakTt4.js": "c3211dbdd15a980d8060e16dd44994096d9870c16a36030d581f103cfa09e2c9",
+    "assets/index-DSfakTt4.js.map": "fe51781259759392b61b7445180000c98113f523a1a49af1b1b488802d92c7ee",
+    "assets/index-Nsi6P2RH.css": "b0d0b2b680a7b8802a636b3cc0f1178987fd9fec822a8ac7c9223352cbf53515",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "21d5b1bb3517b4af25832330a51dcb3053e6e3922ac0daed727c4f6550e9fe77"
+  }
+}

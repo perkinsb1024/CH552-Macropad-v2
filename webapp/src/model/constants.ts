@@ -1,7 +1,7 @@
-/** Shared constants from protocol/config-v4.md and protocol/hid-v1.md. */
+/** Shared constants from protocol/config-v5.md and protocol/hid-v1.md. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 4;
+export const FORMAT_VERSION = 5;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
   return variant === VARIANT_THREE_KEYS ? 7 : 5;
@@ -9,6 +9,9 @@ export function maxLayers(variant: Variant): number {
 export const CHORD_ENTRY_SIZE = 3;
 export const MAX_CHORD_WINDOW_UNITS = 15; // 5 ms units, 0–75 ms
 export const CHORD_WINDOW_STEP_MS = 5;
+export const RAINBOW_PHASE_DEGREES = [0, 30, 60, 120] as const;
+export const DEFAULT_RAINBOW_PHASE = 2;
+export const HEADER_RAINBOW_PHASE_SHIFT = 4;
 
 export const USB_VENDOR_ID = 0x1209;
 export const USB_PRODUCT_ID = 0xc55d;

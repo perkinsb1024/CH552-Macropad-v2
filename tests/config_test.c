@@ -22,7 +22,7 @@ static void testStarterFixture(uint8_t variant) {
     uint8_t i;
     testLoadStarterProfile(variant);
     assert(configValid(activeConfig, variant));
-    assert(configCrc(activeConfig) == (variant ? 0x7381 : 0xA93E));
+    assert(configCrc(activeConfig) == (variant ? 0x941B : 0x4EA4));
     assert(!configValid(activeConfig, variant ^ 1));
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
@@ -77,7 +77,7 @@ static void testHeaderAndIgnoredFields(void) {
         testLoadStarterProfile(variant);
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         activeConfig[3] |= 0xC0;
-        activeConfig[8] |= 0xF0;
+        activeConfig[8] |= 0xC0;
         activeConfig[127] = 0xFF;
         seal();
         assert(configValid(activeConfig, variant));

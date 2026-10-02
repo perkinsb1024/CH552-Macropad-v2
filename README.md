@@ -182,7 +182,7 @@ No local web app installation is needed. Open the **[Macropad Configurator](http
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-Configuration format 4 supports five six-key layers or seven three-key layers and relative offsets from -6 to +6. The profile remains 128 bytes. The configurator upgrades version 2/3 device profiles, version 1–3 JSON exports, and older drafts while preserving bindings, startup layers, chords, and colors. After updating firmware, load and save the existing profile to apply format 4; physical inputs remain inactive until it is saved. Older firmware uses the frozen format 2 or 3 editor under `versions/format-vN/`, which the active editor offers automatically. See [layer expansion and measured flash cost](protocol/layer-expansion.md).
+Configuration format 5 supports five six-key layers or seven three-key layers and relative offsets from -6 to +6. The profile remains 128 bytes. The global **Rainbow phase spacing** setting offers 0°, ~30°, ~60°, and ~120° between LEDs, with ~60° as the default on both variants. The configurator upgrades version 2/3/4 device profiles, version 1–4 JSON exports, and older drafts while preserving bindings, startup layers, chords, and colors. After updating firmware, load and save the existing profile to apply format 5; physical inputs remain inactive until it is saved. Older firmware uses the frozen format 2, 3, or 4 editor under `versions/format-vN/`, which the active editor offers automatically. See [configuration format 5](protocol/config-v5.md) and [layer expansion and measured flash cost](protocol/layer-expansion.md).
 
 Use **Export JSON** and **Import JSON** in the Tools panel to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -230,5 +230,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v4.md)
+- [Configuration format](protocol/config-v5.md)
 - [USB configuration protocol](protocol/hid-v1.md)
