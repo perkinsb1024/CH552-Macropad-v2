@@ -41,9 +41,9 @@ __xdata uint8_t protocolInbox[32];
 __xdata uint8_t protocolReply[32];
 __xdata uint8_t stagedConfig[CONFIG_SIZE];
 volatile __xdata uint8_t protocolState;
-volatile __xdata uint8_t resetPending;
-__xdata uint8_t flashValid;
-__xdata uint8_t activeConfigValid;
+volatile PROTOCOL_BIT resetPending;
+PROTOCOL_BIT flashValid;
+PROTOCOL_BIT activeConfigValid;
 __xdata uint8_t uploadState; // 0 idle, 1 receiving, 2 committed (retry acknowledgement).
 __xdata uint8_t uploadNext;
 __xdata uint16_t uploadCrc;
@@ -65,7 +65,7 @@ void protocolReset(void) {
   resetPending = 1; // Interrupt context; abandon the upload in the main loop.
 }
 
-uint8_t protocolReceive(const __xdata uint8_t *packet) {
+FW_BIT protocolReceive(const __xdata uint8_t *packet) {
   uint8_t i;
   if (protocolState || resetPending) {
     return 0;

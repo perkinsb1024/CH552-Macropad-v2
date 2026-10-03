@@ -58,13 +58,13 @@ uint16_t configCrc(const __xdata uint8_t *image) {
     return crc;
 }
 
-static uint8_t keyboardUsageValid(uint8_t usage) {
+static FW_BIT keyboardUsageValid(uint8_t usage) {
     // HID keyboard non-modifier usages supported by the US layout mapper.
     return usage == 0 || ((uint8_t)(usage - 0x04) <= 0x61) ||
            ((uint8_t)(usage - 0x68) <= 0x0B);
 }
 
-static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
+static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
                            uint8_t layers, uint8_t rotation, uint8_t pool,
                            uint8_t poolUsed) {
     uint8_t type = image[offset] & 15;
@@ -127,7 +127,7 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
     }
 }
 
-uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
+FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     uint8_t layers;
     uint8_t keys;
     uint8_t size;
@@ -256,7 +256,7 @@ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data u
     *second = activeConfig[offset + 1];
 }
 
-uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
+FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
                     __data uint8_t *first, __data uint8_t *second) {
     uint8_t keys = configKeyCount();
     uint8_t id;

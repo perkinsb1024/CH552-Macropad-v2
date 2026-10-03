@@ -70,6 +70,7 @@ __idata uint8_t rainbowDrift[NUM_LEDS];
 __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with actions.c.
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
+static ACTION_BIT colorPreviewActive;
 // With invalid config, actions are inactive: reuse this timer for the error LED.
 __xdata uint16_t encoderPressedMs;
 
@@ -106,7 +107,7 @@ void updateLeds() {
   uint8_t spacing = ledSettings[0];
   if (previewOptions) {
     indicator = 1 + (options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS);
-    if (!(previewOptions & LED_EFFECT_FLAG)) spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
+    if (colorPreviewActive) spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
   } else
   if (!indicator) {
     // Suppressed indications must not obscure key feedback.
@@ -119,11 +120,11 @@ void updateLeds() {
     uint8_t color = palette;
     uint8_t level = indicator;
     uint8_t rainbow = palette == 15 &&
-        (previewOptions && !(previewOptions & LED_EFFECT_FLAG) ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
+        (colorPreviewActive ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-    if (previewOptions && !(previewOptions & LED_EFFECT_FLAG)) {
+    if (colorPreviewActive) {
       // Preview bypasses runtime brightness policies.
     } else
     if (phases) {
@@ -188,6 +189,7 @@ void startLayerIndicator(uint8_t layer, uint16_t now);
 
 void firmwareLedAction(uint8_t command, uint8_t value) {
   if (command >= CONFIG_LED_EFFECT_RESTORE) {
+    colorPreviewActive = 0;
     previewOptions = (value << 4) | LED_EFFECT_FLAG | 1 | 8;
     layerIndicatorPhasesLeft = (command - CONFIG_LED_EFFECT_ON) << 1;
     if (command == CONFIG_LED_EFFECT_ON) previewOptions |= 4;
@@ -262,6 +264,7 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
 void firmwarePreviewColor(uint8_t options) {
   if (previewOptions & LED_EFFECT_FLAG) layerIndicatorPhasesLeft = 0;
   previewOptions = options;
+  colorPreviewActive = options != 0;
   if (!options && !activeConfigValid) {
     clearLeds();
     ledData[1] = 255;
@@ -350,7 +353,7 @@ void scanButton(uint8_t input, uint16_t now) {
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
 #if ENABLE_COLOR_PREVIEW
-    if (previewOptions && !(previewOptions & LED_EFFECT_FLAG)) firmwarePreviewColor(0);
+    if (colorPreviewActive) firmwarePreviewColor(0);
     if (!activeConfigValid) return;
 #endif
     if (pressed) {
@@ -373,7 +376,7 @@ void scanEncoder() {
     return;
   }
 #if ENABLE_COLOR_PREVIEW
-  if (previewOptions && !(previewOptions & LED_EFFECT_FLAG)) firmwarePreviewColor(0);
+  if (colorPreviewActive) firmwarePreviewColor(0);
 #endif
   movement = encoderTransitions[(encoderState << 2) | state];
   encoderState = state;

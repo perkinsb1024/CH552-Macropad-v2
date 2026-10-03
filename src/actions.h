@@ -2,10 +2,13 @@
 #define MACROPAD_ACTIONS_H
 
 #include <stdint.h>
+#include "firmware_types.h"
+
+#define ACTION_BIT FW_BIT
 
 void actionsTimedReset(uint8_t tick);
 void actionsTimedPoll(uint8_t tick);
-uint8_t actionsTimedInput(void); // Nonzero consumes this physical event.
+ACTION_BIT actionsTimedInput(void); // True consumes this physical event.
 void actionsInit(void);
 void actionsPress(uint8_t input, uint16_t now);
 void actionsRelease(uint8_t input);

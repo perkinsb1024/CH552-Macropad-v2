@@ -2,6 +2,7 @@
 #define MACROPAD_CONFIG_H
 
 #include <stdint.h>
+#include "firmware_types.h"
 
 #define CONFIG_SIZE 128
 #ifndef CONFIG_TIMED_CONSUME_INLINE
@@ -103,7 +104,7 @@ extern __code uint8_t configPalette[16][3];
 uint8_t configTimedCount(void);
 uint8_t configTimedOffset(void);
 uint16_t configCrc(const __xdata uint8_t *image);
-uint8_t configValid(const __xdata uint8_t *image, uint8_t variant);
+FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant);
 uint8_t configLayerCount(void);
 uint8_t configStartupLayer(void);
 uint8_t configKeyCount(void);
@@ -111,7 +112,7 @@ uint8_t configChordWindowMs(void);
 uint8_t configLayerOptions(uint8_t layer);
 uint8_t configLedColor(uint8_t layer, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
-uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
+FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index);
 
 #endif

@@ -48,14 +48,14 @@ __pdata uint8_t clicksLeft;
 __pdata uint8_t stringIndex;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
-__pdata uint8_t timedWork; // Interval scratch on ticks; aggregated consume flag on input.
+__pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerReleasePending;
 __pdata uint16_t deadline;
 __pdata uint8_t pointerRepeated;
 
 #define actionType(first) ((first) & 15)
 
-static uint8_t queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
+static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
       (rotation && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
     if (rotation) {
@@ -91,13 +91,13 @@ static uint8_t mouseButtons(void) {
   return buttons;
 }
 
-static uint8_t movePointer(uint8_t type, int8_t delta) {
+static FW_BIT movePointer(uint8_t type, int8_t delta) {
   return USB_queueMouse(mouseButtons(),
                         type == CONFIG_ACTION_MOUSE_X ? delta : 0,
                         type == CONFIG_ACTION_MOUSE_Y ? delta : 0, 0);
 }
 
-static uint8_t addUsage(uint8_t usage) {
+static FW_BIT addUsage(uint8_t usage) {
   uint8_t i;
   if (!usage) {
     return 1;
@@ -114,7 +114,7 @@ static uint8_t addUsage(uint8_t usage) {
   return 0; // Wait until one of the six report slots is free.
 }
 
-static uint8_t flushOutputs(void) {
+static FW_BIT flushOutputs(void) {
   uint8_t i;
   uint8_t changed = 0;
   uint8_t buttons;
@@ -432,9 +432,9 @@ void actionsTimedReset(uint8_t tick) {
 }
 
 // Tick and physical-input events share record traversal and action dispatch.
-static void timedEvent(uint8_t tick) {
+static ACTION_BIT timedEvent(ACTION_BIT tick) {
   __pdata uint8_t offset = configTimedOffset();
-  timedWork = 0;
+  ACTION_BIT consume = 0;
   for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t age = timedAge[i];
     uint8_t action = 0;
@@ -451,9 +451,9 @@ static void timedEvent(uint8_t tick) {
         action = 3;
         if (activeConfig[2] == CONFIG_VERSION) {
 #if CONFIG_TIMED_CONSUME_INLINE
-          if (activeConfig[offset] & CONFIG_TIMED_CONSUME) timedWork = 1;
+          if (activeConfig[offset] & CONFIG_TIMED_CONSUME) consume = 1;
 #else
-          if (activeConfig[127] & (1 << i)) timedWork = 1;
+          if (activeConfig[127] & (1 << i)) consume = 1;
 #endif
         }
       }
@@ -468,6 +468,7 @@ static void timedEvent(uint8_t tick) {
       updateLayer();
     }
   }
+  return consume;
 }
 
 void actionsTimedPoll(uint8_t tick) {
@@ -476,9 +477,8 @@ void actionsTimedPoll(uint8_t tick) {
   timedEvent(1);
 }
 
-uint8_t actionsTimedInput(void) {
-  timedEvent(0);
-  return timedWork;
+ACTION_BIT actionsTimedInput(void) {
+  return timedEvent(0);
 }
 
 void actionsPoll(uint16_t now) {

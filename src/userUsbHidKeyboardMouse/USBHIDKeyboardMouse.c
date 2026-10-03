@@ -16,7 +16,8 @@ extern __xdata __at (EP1_ADDR) uint8_t Ep1Buffer[];
 
 __xdata uint8_t keyboardLedStatus;
 
-volatile __xdata uint8_t UpPoint1_Busy; // Flag of whether upload pointer is busy
+#define USB_BIT FW_BIT
+volatile USB_BIT UpPoint1_Busy; // ISR/main-loop flag uses bit-addressable RAM on SDCC.
 
 #define SHIFT 0x80
 __code uint8_t _asciimap[128] = {
@@ -158,8 +159,8 @@ __xdata uint8_t reportHead;
 __xdata uint8_t reportTail;
 __xdata uint8_t reportCount;
 __xdata uint8_t reportGeneration;
-__xdata uint8_t configWaiting;
-__xdata uint8_t configTurn;
+USB_BIT configWaiting;
+USB_BIT configTurn;
 volatile __xdata uint8_t USB_idleRate;
 __xdata uint8_t USB_globalIdleRate;
 __xdata uint8_t mouseIdleRate;
@@ -198,7 +199,7 @@ void USB_EP1_OUT() {
   }
 }
 
-uint8_t USB_EP1_sendConfig(const __xdata uint8_t *reply) USB_CRITICAL {
+FW_BIT USB_EP1_sendConfig(const __xdata uint8_t *reply) USB_CRITICAL {
   __data uint8_t i;
   configWaiting = 1;
   if (UsbConfig == 0 || UpPoint1_Busy || (reportCount && !configTurn) ||
@@ -257,14 +258,14 @@ void USB_discardReports(void) USB_CRITICAL {
 }
 
 // Callers have checked capacity/configuration while holding USB_CRITICAL.
-static uint8_t queueReport(uint8_t length) {
+static FW_BIT queueReport(uint8_t length) {
   reportLength[reportHead] = length;
   reportHead = (reportHead + 1) & 7;
   reportCount++;
   return 1;
 }
 
-static uint8_t queueKeyboard(const __xdata uint8_t *keys) {
+static FW_BIT queueKeyboard(const __xdata uint8_t *keys) {
   uint8_t i;
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
@@ -278,11 +279,11 @@ static uint8_t queueKeyboard(const __xdata uint8_t *keys) {
   return queueReport(9);
 }
 
-uint8_t USB_queueKeyboard(const __xdata uint8_t *keys) USB_CRITICAL {
+FW_BIT USB_queueKeyboard(const __xdata uint8_t *keys) USB_CRITICAL {
   return queueKeyboard(keys);
 }
 
-static uint8_t queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+static FW_BIT queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
@@ -296,11 +297,11 @@ static uint8_t queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
   return queueReport(5);
 }
 
-uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) USB_CRITICAL {
+FW_BIT USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) USB_CRITICAL {
   return queueMouse(buttons, x, y, wheel);
 }
 
-static uint8_t queueConsumer(uint16_t usage) {
+static FW_BIT queueConsumer(uint16_t usage) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
@@ -312,11 +313,11 @@ static uint8_t queueConsumer(uint16_t usage) {
   return queueReport(3);
 }
 
-uint8_t USB_queueConsumer(uint16_t usage) USB_CRITICAL {
+FW_BIT USB_queueConsumer(uint16_t usage) USB_CRITICAL {
   return queueConsumer(usage);
 }
 
-uint8_t USB_reportsPending(void) {
+FW_BIT USB_reportsPending(void) {
   return reportCount || UpPoint1_Busy;
 }
 

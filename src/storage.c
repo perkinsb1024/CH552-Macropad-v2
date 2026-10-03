@@ -11,7 +11,7 @@ uint8_t storageRead(uint8_t offset) {
   return eeprom_read_byte(offset);
 }
 
-static uint8_t writeByte(uint8_t offset, uint8_t value) {
+static FW_BIT writeByte(uint8_t offset, uint8_t value) {
   if (storageRead(offset) != value) {
 #ifdef __SDCC
     __bit enabled = EA;
@@ -25,7 +25,7 @@ static uint8_t writeByte(uint8_t offset, uint8_t value) {
   return storageRead(offset) == value;
 }
 
-static uint8_t matches(const __xdata uint8_t *image) {
+static FW_BIT matches(const __xdata uint8_t *image) {
   uint8_t i;
   for (i = 0; i < CONFIG_SIZE; i++) {
     if (storageRead(i) != image[i]) return 0;
@@ -33,7 +33,7 @@ static uint8_t matches(const __xdata uint8_t *image) {
   return 1;
 }
 
-uint8_t storageSave(const __xdata uint8_t *image) {
+FW_BIT storageSave(const __xdata uint8_t *image) {
   uint8_t i;
   if (matches(image)) {
     return 1; // A retry of an unchanged save does not consume flash writes.
