@@ -3,19 +3,19 @@ import { encodeAction, encodeProfile } from '../src/codec/encode';
 import { decodeImage } from '../src/codec/decode';
 import { sealImage } from '../src/codec/crc16';
 import { defaultProfile } from '../src/model/defaults';
-import { LED_COMMANDS, ledProblem } from '../src/model/ledControl';
+import { ledCommandFromCode, ledProblem } from '../src/model/ledControl';
 import { actionProblem } from '../src/model/validate';
 import { importProfile, exportProfile } from '../src/io/json';
 import { legacyActionCodes } from './legacy-image';
 
-describe('LED control format 6', () => {
-  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 116 accepted', (variant) => {
+describe('LED control format 7', () => {
+  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 261 accepted', (variant) => {
     const image = encodeProfile(defaultProfile(variant));
     let accepted = 0;
     for (let command = 0; command < 256; command++) for (let nibble = 0; nibble < 16; nibble++) {
       image[9] = nibble << 4 | 15; image[10] = command; sealImage(image);
-      const spec = LED_COMMANDS[command];
-      const value = spec?.relative ? nibble < 8 ? nibble : nibble - 16 : nibble === 15 ? 'asConfigured' : nibble;
+      const spec = ledCommandFromCode(command);
+      const value = command >= 0x80 ? nibble : spec?.relative ? nibble < 8 ? nibble : nibble - 16 : nibble === 15 ? 'asConfigured' : nibble;
       const valid = !!spec && !ledProblem(spec.command, value);
       const result = decodeImage(image);
       expect(result.ok).toBe(valid);
@@ -26,7 +26,7 @@ describe('LED control format 6', () => {
         expect(actionProblem(action, { rotation: true, layerCount: 2 })).toBeNull();
       }
     }
-    expect(accepted).toBe(116);
+    expect(accepted).toBe(261);
   });
   it('rejects malformed LED inputs before standalone encoding can truncate them', () => {
     for (const value of [0, -8, 8, 127, 16, NaN]) {

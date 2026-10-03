@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { TimedActionsPanel, approximateDuration } from '../src/ui/components/TimedActionsPanel';
+import { TimedActionsPanel, approximateDuration, firingRange, clampTicks } from '../src/ui/components/TimedActionsPanel';
 import { Inspector } from '../src/ui/components/Inspector';
 import { defaultProfile } from '../src/model/defaults';
 import { computeCapacity } from '../src/model/capacity';
@@ -45,8 +45,8 @@ it('edits interval and reset flag, and removes a timer without leaving a stale s
   click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove timer 1')!);
   expect(profile.value!.timedActions).toBeUndefined();
   expect(selectedSlot.value).toBeNull();
-  expect(approximateDuration(55)).toBe('≈ 60.1 minutes');
-  expect(approximateDuration(1)).toBe('≈ 65.5 seconds');
+  expect(approximateDuration(55)).toBe('≈ 120 minutes 9 seconds');
+  expect(approximateDuration(1)).toBe('≈ 2 minutes 11 seconds');
 });
 it('limits additions by firmware timer count and shared profile capacity', () => {
   start(); for (let i = 0; i < 4; i++) add();
@@ -75,4 +75,28 @@ it('round-trips timer drafts and clipboard actions while rejecting pasted holds'
   expect(profile.value!.timedActions![0]!.resumeAction.type).toBe('keyTap');
   storeDraft(profile.value!, {});
   expect(loadDraft(0)?.profile).toEqual(profile.value);
+});
+
+it('clamps edits and provides whole-number durations and first-firing ranges', () => {
+  start(); add();
+  for (const [value, ticks] of [['444',64], ['0',1], ['-5',1], ['1.5',2], ['',1]] as const) {
+    const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
+    const target = { value };
+    (input.props.onInput as (e: unknown) => void)({ target });
+    expect(profile.value!.timedActions![0]!.ticks).toBe(ticks);
+    expect(String(target.value)).toBe(String(ticks));
+  }
+  expect(clampTicks('Infinity')).toBe(64);
+  expect(approximateDuration(64)).toBe('≈ 139 minutes 49 seconds');
+  expect(firingRange(1)).toBe('0 seconds – 2 minutes 11 seconds');
+  expect(firingRange(3)).toBe('4 minutes 22 seconds – 6 minutes 33 seconds');
+  expect(nodes(TimedActionsPanel()).find(n => n.type === 'output')?.props.title).toBe(firingRange(1));
+});
+it('edits consume independently from restart, and undo restores it', () => {
+  start(); add();
+  const boxes = nodes(TimedActionsPanel()).filter(n => n.props.type === 'checkbox');
+  (boxes[1]!.props.onChange as (e: unknown) => void)({ target: { checked: true } });
+  expect(profile.value!.timedActions![0]).toMatchObject({ consumeInput: true, resetOnInput: true });
+  undo(); expect(profile.value!.timedActions![0]!.consumeInput).toBe(false);
+  redo(); expect(profile.value!.timedActions![0]!.consumeInput).toBe(true);
 });

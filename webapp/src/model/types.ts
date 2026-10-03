@@ -51,6 +51,7 @@ export interface Chord {
 export interface TimedAction {
   ticks: number;
   resetOnInput: boolean;
+  consumeInput: boolean;
   action: Action;
   resumeAction: Action;
 }

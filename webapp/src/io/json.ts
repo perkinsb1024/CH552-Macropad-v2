@@ -196,10 +196,12 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     profile.timedActions = raw.timedActions.map((timer, i) => {
       if (!isRecord(timer)) throw new ImportError(`Timed action ${i + 1} is malformed.`);
       if (typeof timer.resetOnInput !== 'boolean') throw new ImportError('Reset on input must be true or false.');
-      return { ticks: int(timer.ticks, 'Timer interval'), resetOnInput: timer.resetOnInput,
+      if (typeof timer.consumeInput !== 'boolean') throw new ImportError('Consume input must be true or false.');
+      return { ticks: int(timer.ticks, 'Timer interval'), consumeInput: timer.consumeInput, resetOnInput: timer.resetOnInput,
         action: action(timer.action, `Timed action ${i + 1}`), resumeAction: action(timer.resumeAction, `Timed action ${i + 1} resume`) };
     });
   }
+  if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(a => a.type === 'ledControl' && a.command.startsWith('effect'))) throw new ImportError('Temporary LED effects require profile version 7.');
   migrateLegacyProfile(profile);
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
   const issues = validateProfile(profile);

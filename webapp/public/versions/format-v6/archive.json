@@ -1,0 +1,15 @@
+{
+  "formatVersion": 6,
+  "sourceCommit": "38d47862294321f5401df8fcc61937c4528beedb",
+  "changes": [
+    "HTML archive banner and latest-editor link; existing format-v6 draft namespace preserved"
+  ],
+  "validation": "TypeScript check, Vite production editor build, and all 234 source-revision tests passed. Uploader generation is not part of this editor archive.",
+  "sha256": {
+    "assets/index-DavgzzbE.js": "2d19189736910900b5db4bf363f18623175286d4c9d33c1424b82d3abeddeca7",
+    "assets/index-DavgzzbE.js.map": "ff5a7dc989c46b5d4fbd599757f9c29daa7de1d318033618bf858190c4aac292",
+    "assets/index-Qpv4P7FK.css": "9fbe9129b3643f5d46ca9cd17d1b897d8a9d2d1af866a5a51acc52341730b980",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "6355f18892fdad622c4270e49bb61c215547ce34fd7ceb5cf8745755a6202dcd"
+  }
+}

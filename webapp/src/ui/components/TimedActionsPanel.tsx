@@ -1,13 +1,24 @@
-import { MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
+import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
 import { capacity, profile, selectedSlot, updateProfile } from '../store';
 import { ActionLabel } from './ActionLabel';
 import { IconPlus, IconTrash } from './Icons';
 
+export function duration(seconds: number): string {
+  const rounded = Math.round(seconds);
+  const minutes = Math.floor(rounded / 60);
+  const remainder = rounded % 60;
+  return `${minutes ? `${minutes} minute${minutes === 1 ? '' : 's'} ` : ''}${remainder} second${remainder === 1 ? '' : 's'}`;
+}
 export function approximateDuration(ticks: number): string {
-  if (!Number.isInteger(ticks) || ticks < 1 || ticks > 128) return 'Choose 1–128 ticks';
-  const seconds = ticks * TIMED_TICK_SECONDS;
-  return seconds < 120 ? `≈ ${seconds.toFixed(1)} seconds` : `≈ ${(seconds / 60).toFixed(1)} minutes`;
+  return `≈ ${duration(ticks * TIMED_TICK_SECONDS)}`;
+}
+export function firingRange(ticks: number): string {
+  return `${duration((ticks - 1) * TIMED_TICK_SECONDS)} – ${duration(ticks * TIMED_TICK_SECONDS)}`;
+}
+export function clampTicks(value: string): number {
+  const number = Number(value);
+  return Math.max(1, Math.min(MAX_TIMED_TICKS, Number.isNaN(number) ? 1 : Math.round(number)));
 }
 
 export function TimedActionsPanel() {
@@ -18,7 +29,7 @@ export function TimedActionsPanel() {
   const add = () => {
     if (unavailable) return;
     updateProfile((draft) => {
-      (draft.timedActions ??= []).push({ ticks: 1, resetOnInput: true, action: { type: 'none' }, resumeAction: { type: 'none' } });
+      (draft.timedActions ??= []).push({ ticks: 1, resetOnInput: true, consumeInput: false, action: { type: 'none' }, resumeAction: { type: 'none' } });
     });
     selectedSlot.value = { kind: 'timed', layer: 0, index: timers.length, resume: false };
   };
@@ -37,11 +48,13 @@ export function TimedActionsPanel() {
               if (slot?.kind === 'timed') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
             }}><IconTrash /></button>
           </header>
-          <label class="field"><span class="field-label">Interval <output>{approximateDuration(timer.ticks)}</output></span>
-            <div class="row"><input type="number" min={1} max={128} step={1} value={timer.ticks} aria-label={`Timer ${index + 1} interval ticks`} onInput={(event) => {
-              const ticks = Number((event.target as HTMLInputElement).value);
+          <label class="field"><span class="field-label">Interval <output title={firingRange(timer.ticks)}>{approximateDuration(timer.ticks)}</output></span>
+            <div class="row"><input type="number" min={1} max={MAX_TIMED_TICKS} step={1} value={timer.ticks} aria-label={`Timer ${index + 1} interval ticks`} onInput={(event) => {
+              const input = event.target as HTMLInputElement;
+              const ticks = clampTicks(input.value);
+              input.value = String(ticks);
               updateProfile((draft) => { draft.timedActions![index]!.ticks = ticks; }, `timer:${index}:ticks`);
-            }} /><span class="muted">× 65.536 seconds</span></div>
+            }} /><span class="muted">× 131 seconds</span></div>
           </label>
           <label class="timer-reset"><input type="checkbox" checked={timer.resetOnInput} onChange={(event) => {
             const reset = (event.target as HTMLInputElement).checked;
@@ -50,18 +63,23 @@ export function TimedActionsPanel() {
           <button data-clipboard-target class={`timer-action ${active(false) ? 'is-selected' : ''}`} aria-label={`Edit timer ${index + 1} action`} aria-pressed={active(false)} onClick={() => { selectedSlot.value = select(false); }}>
             <span class="field-label">When timer fires</span><ActionLabel action={timer.action} />
           </button>
-          <details class="timer-resume" open={timer.resumeAction.type !== 'none' || active(true)}>
+          <details class="timer-resume" open={timer.consumeInput || timer.resumeAction.type !== 'none' || active(true)}>
             <summary>On next input <span class="muted">{timer.resumeAction.type === 'none' ? '(optional)' : '· assigned'}</span></summary>
-            <p class="hint">Runs once after this timer fires, before the key or encoder action. Use this to restore configured LED brightness.</p>
+            <p class="hint">Runs once on the next key press, encoder button press, or completed encoder turn after this timer fires.</p>
             <button data-clipboard-target class={`timer-action ${active(true) ? 'is-selected' : ''}`} aria-label={`Edit timer ${index + 1} resume action`} aria-pressed={active(true)} onClick={() => { selectedSlot.value = select(true); }}>
               <ActionLabel action={timer.resumeAction} />
             </button>
+            <label class="timer-reset"><input type="checkbox" checked={timer.consumeInput} onChange={(event) => {
+              const consume = (event.target as HTMLInputElement).checked;
+              updateProfile((draft) => { draft.timedActions![index]!.consumeInput = consume; });
+            }} /> Consume this input</label>
+            <p class="hint">When enabled, this input dismisses the timer without running its normal binding. Otherwise, the binding runs after the next-input action. This also works with no next-input action assigned.</p>
           </details>
         </article>;
       })}
     </div>
     <button class="btn" disabled={!!unavailable} title={unavailable || 'Add a timed action'} onClick={add}><IconPlus /> Add timed action</button>
     {unavailable && <p class="hint">{unavailable}</p>}
-    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Intervals use a shared clock; the first firing can be up to 65.5 seconds early. Held actions are unavailable.</p>
+    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Intervals use a shared clock; the first firing can be up to 131 seconds early. Held actions are unavailable.</p>
   </section>;
 }

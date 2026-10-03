@@ -140,7 +140,7 @@ describe('rainbow phase spacing', () => {
     const bundled = import.meta.glob<string>('../../profiles/*.json', { query: '?raw', import: 'default', eager: true });
     expect(Object.keys(bundled)).toHaveLength(2);
     for (const text of Object.values(bundled)) {
-      expect(JSON.parse(text).version).toBe(6);
+      expect(JSON.parse(text).version).toBe(7);
       expect(importProfile(text).profile.rainbowPhase).toBe(2);
     }
   });

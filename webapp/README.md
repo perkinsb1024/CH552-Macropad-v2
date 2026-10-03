@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 Universal Macropad. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v6.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v7.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -76,7 +76,7 @@ when webapp changes are pushed to `main`, or when run manually. In the repositor
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
 
-The active format 6 editor is served at the project site's root. Frozen
+The active format 7 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -87,6 +87,7 @@ is rebuilt from dependencies in CI.
   `417f276fda788f71dfcd38d781ddc67306988739`.
 - `versions/format-v3/` serves the frozen v3 editor from the revision recorded in its manifest.
 - `versions/format-v4/` serves the frozen v4 editor from the revision recorded in its manifest.
+- `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
 - `versions/format-v5/` serves the frozen v5 editor from the revision recorded in its manifest.
 
 The footer links to the archive list. Detecting format 2, 3, 4 or 5 firmware presents a
@@ -97,15 +98,15 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6 drafts without overwriting or clearing the archived namespace.
 
-Version 2/3/4/5 binary profiles, version 1–5 JSON files, and older drafts can still be
-migrated into the active format 6 editor after a firmware upgrade. Bindings and
+Version 2/3/4/5/6 binary profiles, version 1–6 JSON files, and older drafts can still be
+migrated into the active format 7 editor after a firmware upgrade. Bindings and
 colors are preserved; Blink once becomes the timed indication and transparency
 defaults to off. Rainbow phase spacing defaults to 60° on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to activate inputs after upgrading.
+through the active editor to store v7. Existing v6 profiles continue running before migration.
 
-LED control bindings expose all thirteen commands, relative steps of -1 or +1,
+LED control bindings expose existing LED commands plus Set all LEDs, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
 Relative rainbow phase and speed also offer -2 and +2 to toggle between settings
 two positions apart in their four-setting cycles.
@@ -115,3 +116,22 @@ Saved layer colors/visibility and global rainbow defaults remain independent.
 Runtime overrides reset on configuration save or USB reset and bypass preview.
 Formats before v5 receive Fast speed and 60° spacing; v5 rainbow settings survive
 migration unchanged. JSON and drafts retain semantic action names as action codes shift.
+
+## Timed actions and temporary LED effects (v7)
+
+Four timers share the profile's storage budget, at five bytes each. Intervals
+are clamped to 1–64 ticks of 131.072 seconds. The editor displays “131 seconds”,
+whole-minute/second durations, and a first-firing range on hover. Restart on input
+is enabled by default; consume wake input is disabled by default. Optional
+next-input actions run once after firing; consuming suppresses the physical
+binding even with no next-input action. Held actions cannot be assigned to timers.
+
+Set all LEDs is a single LED-command choice with an effect selector (As configured,
+Always on, Blink 1–8 times) and full-brightness color swatches including Rainbow.
+As configured hides the swatches. Always-on permits pressed-key feedback;
+blinking covers it. No dedicated reminder layer is required.
+
+The protocol simulator accepts valid v6 and v7 profiles and round-trips the new
+flags/effects. It models configuration transport, not timed HID or LED playback.
+Hardware testing remains necessary for those effects. Bundled `../profiles/*.json`
+files use v7 and are checked against the firmware parser in the regression suite.

@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v6 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v7 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -38,3 +38,8 @@ and link to the latest editor. Its existing v4 draft namespace is preserved.
 source edits from commit `3fda45b8482b0004aa9084e7ee03010b6e72d5cf`. An HTML banner
 and latest-editor link were added; its existing v5 draft namespace is preserved.
 The production build and v6 archive checksum/serving tests passed.
+
+`../public/versions/format-v6/` preserves the v6 editor from commit `38d4786`,
+including its v6 draft namespace, with an HTML banner and latest-editor link.
+TypeScript, the Vite editor build, and all 234 tests passed at that revision.
+Only the editor assets are archived; uploader generation is unrelated.

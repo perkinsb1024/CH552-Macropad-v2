@@ -114,7 +114,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   }
 
   for (const timer of timers) {
-    image[offset] = (timer.ticks - 1) | (timer.resetOnInput ? 128 : 0);
+    image[offset] = (timer.ticks - 1) | (timer.consumeInput ? 64 : 0) | (timer.resetOnInput ? 128 : 0);
     image.set(encodeAction(timer.action, offsets), offset + 1);
     image.set(encodeAction(timer.resumeAction, offsets), offset + 3);
     offset += TIMED_ENTRY_SIZE;

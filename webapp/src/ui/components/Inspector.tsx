@@ -1,4 +1,4 @@
-import { LED_COMMANDS, ledCommandCode, ledValueOptions, type LedCommand, type LedValue } from '../../model/ledControl';
+import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useMemo } from 'preact/hooks';
 import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
@@ -154,18 +154,41 @@ export function Inspector() {
 
       {action.type === 'ledControl' && <>
         <label class="field"><span class="field-label">LED command</span>
-          <select value={action.command} onChange={(e) => {
-            const command = (e.target as HTMLSelectElement).value as LedCommand;
-            const spec = LED_COMMANDS[ledCommandCode(command)];
+          <select value={isLedEffect(action.command) ? 'temporaryEffect' : action.command} onChange={(e) => {
+            const selection = (e.target as HTMLSelectElement).value;
+            const command = (selection === 'temporaryEffect' ? 'effectRestore' : selection) as LedCommand;
+            const spec = ledCommandSpec(command);
             if (!spec) return;
-            update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' ? 0 : command === 'commonPresetSet' ? 0 : command === 'commonPresetToggle' ? 3 : 'asConfigured' });
+            update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' || command === 'effectRestore' ? 0 : command === 'commonPresetSet' ? 0 : command === 'commonPresetToggle' ? 3 : 'asConfigured' });
           }}>
-            {LED_COMMANDS.filter((c) => c.command !== 'restoreAll').map((c) => <option value={c.command}>{c.label}</option>)}
+            {LED_COMMANDS.filter((c) => c.command !== 'restoreAll' && !isLedEffect(c.command)).map((c) => <option value={c.command}>{c.label}</option>)}
+            <option value="temporaryEffect">Set all LEDs</option>
             <option value="" disabled>────────────────────</option>
             {LED_COMMANDS.filter((c) => c.command === 'restoreAll').map((c) => <option value={c.command}>{c.label}</option>)}
           </select>
         </label>
-        {LED_COMMANDS[ledCommandCode(action.command)]?.relative ?
+        {isLedEffect(action.command) ? <>
+          <label class="field"><span class="field-label">Effect</span>
+            <select value={action.command} onChange={(e) => {
+              const command = (e.target as HTMLSelectElement).value as LedCommand;
+              if (!isLedEffect(command)) return;
+              update({ type: 'ledControl', command, value: command === 'effectRestore' ? 0 : action.command === 'effectRestore' ? 15 : action.value });
+            }}>
+              {LED_COMMANDS.filter(c => isLedEffect(c.command)).map(c => <option value={c.command}>{c.label}</option>)}
+            </select>
+          </label>
+          {action.command !== 'effectRestore' && <div class="field led-color-field">
+            <span class="field-label">Color · Full brightness</span>
+            <div class="palette" role="radiogroup" aria-label="Temporary LED effect color">
+              {PALETTE.map(c => <button type="button" role="radio" aria-checked={action.value === c.index}
+                aria-label={c.index === 15 ? 'Rainbow' : c.name} title={c.index === 15 ? 'Rainbow' : c.name}
+                class={`swatch-btn ${action.value === c.index ? 'is-selected' : ''}`}
+                style={c.index === 15 ? 'background:linear-gradient(135deg, red, yellow, lime, cyan, blue, magenta)' : `--c:${c.hex}`}
+                onClick={() => update({ ...action, value: c.index })} />)}
+            </div>
+          </div>}
+          <p class="hint">Always on persists until replaced, restored, or the layer changes. Key feedback can cover it. Blinking covers key feedback and restores the layer indication when finished. As configured clears the effect; brightness overrides remain in effect.</p>
+        </> : ledCommandSpec(action.command)?.relative ?
           <label class="field"><span class="field-label">Relative step</span>
             <select value={action.value} onChange={(e) => {
               const value = Number((e.target as HTMLSelectElement).value);
@@ -183,9 +206,9 @@ export function Inspector() {
             </select>
             {action.command === 'commonPresetToggle' && <span class="hint">Press to apply this preset. When it is active, press again to restore configured layer and key brightness. Rainbow speed and phase stay unchanged.</span>}
           </label>}
-        <p class="hint">{action.command === 'commonPresetToggle'
+        {!isLedEffect(action.command) && <p class="hint">{action.command === 'commonPresetToggle'
           ? 'Lighting overrides apply across layers. Indicator brightness preserves its configured visibility mode.'
-          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative advances each brightness separately; common presets change both together and include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>
+          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative advances each brightness separately; common presets change both together and include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
       </>}
 
       {(action.type === 'keyTap' || action.type === 'keyHold') && (

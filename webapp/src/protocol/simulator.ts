@@ -50,7 +50,7 @@ export class SimulatedDevice implements Transport {
   }
 
   private boot(): void {
-    this.flashValid = this.flash[2] === FORMAT_VERSION && decodeImage(this.flash, this.options.variant).ok;
+    this.flashValid = [6, FORMAT_VERSION].includes(this.flash[2]!) && decodeImage(this.flash, this.options.variant).ok;
     this.activeValid = this.flashValid;
     this.active.set(this.flash);
     this.uploadState = 0;
@@ -146,7 +146,7 @@ export class SimulatedDevice implements Transport {
         if (this.uploadState !== 1 || this.uploadNext !== IMAGE_SIZE) return Status.Incomplete;
         const crc = imageCrc(this.staging);
         if (crc !== this.uploadCrc || this.staging[6] !== (crc & 0xff) || this.staging[7] !== crc >> 8) return Status.BadCrc;
-        if (this.staging[2] !== FORMAT_VERSION || !decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
+        if (![6, FORMAT_VERSION].includes(this.staging[2]!) || !decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
         if (this.options.failNextCommit) {
           this.options.failNextCommit = false;
           this.flash[0] = 0; // invalidated magic, as after an interrupted save

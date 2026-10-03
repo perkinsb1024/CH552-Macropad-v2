@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { Inspector } from '../src/ui/components/Inspector';
 import { profile, selectedSlot } from '../src/ui/store';
 import { defaultProfile } from '../src/model/defaults';
-import { LED_COMMANDS, ledProblem, ledValueOptions } from '../src/model/ledControl';
+import { LED_COMMANDS, isLedEffect, ledProblem, ledValueOptions } from '../src/model/ledControl';
 vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
 type Node = { type: unknown; props: Record<string, unknown> };
 function nodes(value: unknown): Node[] {
@@ -18,17 +18,17 @@ function setup() {
 }
 function selects() { return nodes(Inspector()).filter(n => n.type === 'select'); }
 function change(node: Node, value: string) { (node.props.onChange as (e: unknown) => void)({ target: { value } }); }
-it('offers all 14 LED commands and switches each to a valid default', () => {
+it('offers all existing LED commands plus one temporary-effect command and switches each to a valid default', () => {
   setup();
   const commands = nodes(selects()[1]!.props.children);
   expect(commands.filter(n => !n.props.disabled).map(n => n.props.value)).toEqual([
-    ...LED_COMMANDS.filter(c => c.command !== 'restoreAll').map(c => c.command), 'restoreAll',
+    ...LED_COMMANDS.filter(c => c.command !== 'restoreAll' && !isLedEffect(c.command)).map(c => c.command), 'temporaryEffect', 'restoreAll',
   ]);
   expect(commands.at(-2)!.props).toMatchObject({ value: '', disabled: true });
   const before = profile.value!.layers[0]!.keys[0];
   change(selects()[1]!, '');
   expect(profile.value!.layers[0]!.keys[0]).toEqual(before);
-  for (const spec of LED_COMMANDS) {
+  for (const spec of LED_COMMANDS.filter(c => !isLedEffect(c.command))) {
     change(selects()[1]!, spec.command);
     const action = profile.value!.layers[0]!.keys[0]!;
     if (action.type !== 'ledControl') throw new Error('wrong action');
@@ -72,4 +72,28 @@ it('defaults the toggle to dark mode and excludes the configured endpoint', () =
   setup(); change(selects()[1]!, 'commonPresetToggle');
   expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'commonPresetToggle', value: 3 });
   expect(nodes(selects()[2]!.props.children).filter(n => n.type === 'option').map(n => n.props.value)).toEqual([1, 2, 3, 4]);
+});
+
+function effectColors() {
+  const group = nodes(Inspector()).find(n => n.props['aria-label'] === 'Temporary LED effect color');
+  return nodes(group).filter(n => n.props.role === 'radio');
+}
+it('groups temporary effects into one command, hides restored controls, and selects rainbow', () => {
+  setup(); change(selects()[1]!, 'temporaryEffect');
+  expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'effectRestore', value: 0 });
+  expect(effectColors()).toHaveLength(0);
+  change(selects()[2]!, 'effectOn');
+  expect(profile.value!.layers[0]!.keys[0]).toMatchObject({ command: 'effectOn', value: 15 });
+  for (const mode of LED_COMMANDS.filter(c => isLedEffect(c.command) && c.command !== 'effectRestore')) {
+    change(selects()[2]!, mode.command);
+    const colors = effectColors();
+    expect(colors).toHaveLength(16);
+    for (const [index, swatch] of colors.entries()) {
+      (swatch.props.onClick as () => void)();
+      expect(profile.value!.layers[0]!.keys[0]).toMatchObject({ command: mode.command, value: index });
+    }
+    expect(colors[15]!.props['aria-label']).toBe('Rainbow');
+  }
+  change(selects()[2]!, 'effectRestore');
+  expect(effectColors()).toHaveLength(0);
 });

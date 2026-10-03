@@ -60,7 +60,7 @@ describe('versioned drafts', () => {
   });
 });
 
-it.each([3, 4, 5])('recovers v%s drafts without clearing them or resurrecting them after clearing v7', (version) => {
+it.each([3, 4, 5, 6])('recovers v%s drafts without clearing them or resurrecting them after clearing v7', (version) => {
   const storage = new Map<string, string>();
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => storage.get(key) ?? null,

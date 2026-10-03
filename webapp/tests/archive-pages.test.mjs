@@ -16,7 +16,7 @@ describe('archived pages in development', () => {
   });
   afterAll(async () => { await server?.close(); });
 
-  it.each([2, 3, 4])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
+  it.each([2, 3, 4, 5, 6])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
     const frozen = await readFile(new URL(`../public/versions/format-v${version}/index.html`, import.meta.url), 'utf8');
     for (const path of [`/versions/format-v${version}/`, `/versions/format-v${version}/?sim=six`, `/versions/format-v${version}/index.html`]) {
       const response = await fetch(origin + path);

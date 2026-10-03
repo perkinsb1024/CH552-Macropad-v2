@@ -1,4 +1,4 @@
-import { LED_COMMANDS, ledProblem } from '../model/ledControl';
+import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
   MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
@@ -46,9 +46,9 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
   const nonZeroAux = aux !== 0;
   switch (type) {
     case ActionCode.LedControl: {
-      const spec = LED_COMMANDS[b1];
-      if (!spec) return 'Unknown LED command';
-      const value = spec.relative ? (aux < 8 ? aux : aux - 16) : aux === 15 ? 'asConfigured' : aux;
+      const spec = ledCommandFromCode(b1);
+      if (!spec || (version < 7 && b1 >= 0x80)) return 'Unknown LED command';
+      const value = b1 >= 0x80 ? aux : spec.relative ? (aux < 8 ? aux : aux - 16) : aux === 15 ? 'asConfigured' : aux;
       const problem = ledProblem(spec.command, value);
       return problem ?? { type: 'ledControl', command: spec.command, value };
     }
@@ -205,7 +205,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const resumeAction = decodeAction(image[offset + 3]!, image[offset + 4]!, layerCount, true, pool, image[2]!);
     if (typeof action === 'string' || typeof resumeAction === 'string')
       return fail('malformed', `Timed action ${i + 1}: ${typeof action === 'string' ? action : resumeAction}.`);
-    timedActions.push({ ticks: (image[offset]! & 127) + 1, resetOnInput: !!(image[offset]! & 128), action, resumeAction });
+    timedActions.push({ ticks: (image[offset]! & 63) + 1, consumeInput: !!(image[offset]! & 64), resetOnInput: !!(image[offset]! & 128), action, resumeAction });
   }
 
   if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');

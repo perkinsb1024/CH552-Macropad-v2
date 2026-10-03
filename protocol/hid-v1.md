@@ -28,8 +28,8 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
-The format-6 action mask reports all sixteen action types, including LED control
-at F. Use GET_INFO format version 6 to identify its action map and LED support;
+The format-7 action mask reports all sixteen action types, including LED control
+at F. Use GET_INFO format version 7 to identify its action map and LED support;
 older versions also reported mask 0xFFFF, so the mask alone is insufficient.
 The GET_INFO layout and transport version remain unchanged. Chord recognition uses the
 saved profile window; zero disables it. A second press must arrive strictly
@@ -101,3 +101,7 @@ button, and consumer state; relative mouse movement is always returned as zero.
 GET_IDLE and SET_IDLE support report IDs 1, 2, and 5, plus report ID 0 to set
 all three idle rates. Idle rates use the standard four millisecond units, and
 the scheduler sends unchanged reports when their configured interval expires.
+
+Format 7 adds timer records and temporary LED-control commands without changing
+transport v1. See [config-v7.md](config-v7.md). Format 6 images remain accepted
+by current firmware and can be read/migrated in the browser before saving v7.

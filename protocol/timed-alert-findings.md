@@ -13,7 +13,9 @@ Only the timed-action clock changed: both initialization and polling now use
 (139.81 minutes). LED, USB, debounce and other millisecond consumers are unchanged.
 Shared uptime alignment remains: first firing may be up to 131.072 seconds early,
 while subsequent repetitions use the full interval. Earlier local v7 timer bytes
-and UI interval labels require updating; the editor work remains pending.
+were superseded. The v7 editor, codecs, JSON, simulator, v6 migration, bundled
+profiles and protocol documentation are now implemented; hardware validation
+remains pending. See [config-v7.md](config-v7.md).
 
 | Variant | Flash used | Flash free | Stack capacity |
 | --- | ---: | ---: | ---: |

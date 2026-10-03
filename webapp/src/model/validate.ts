@@ -165,8 +165,9 @@ export function validateProfile(profile: Profile): Issue[] {
   if (timers.length > MAX_TIMED_ACTIONS) issues.push({ where: 'Timed actions', message: `At most ${MAX_TIMED_ACTIONS} timed actions are supported.` });
   timers.forEach((timer, index) => {
     const where = `Timed action ${index + 1}`;
-    if (!Number.isInteger(timer.ticks) || timer.ticks < 1 || timer.ticks > 128)
-      issues.push({ where, message: 'Interval must be a whole number from 1 to 128 ticks.' });
+    if (!Number.isInteger(timer.ticks) || timer.ticks < 1 || timer.ticks > 64)
+      issues.push({ where, message: 'Interval must be a whole number from 1 to 64 ticks.' });
+    if (typeof timer.consumeInput !== 'boolean') issues.push({ where, message: 'Consume input must be on or off.' });
     if (typeof timer.resetOnInput !== 'boolean') issues.push({ where, message: 'Reset on input must be on or off.' });
     for (const resume of [false, true]) {
       const slot: Slot = { kind: 'timed', layer: 0, index, resume };

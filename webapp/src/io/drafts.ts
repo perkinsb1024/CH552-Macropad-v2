@@ -27,7 +27,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
     const key = draftKey(variant);
     const keys = [key];
     if (!localStorage.getItem(`${key}:cleared`)) {
-      for (const version of [5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
+      for (const version of [6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
       keys.push(legacyDraftKey(variant));
     }
     for (const source of keys) {
@@ -35,11 +35,12 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         const raw = localStorage.getItem(source);
         if (!raw) continue;
         const parsed = JSON.parse(raw) as Draft;
-        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
+        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
         if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) continue;
         parsed.profile = migrateLegacyProfile(parsed.profile);
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action)];
         if ((parsed.formatVersion ?? 2) < 6 && actions.some((a) => a.type === 'ledControl')) continue;
+        if ((parsed.formatVersion ?? 2) < 7 && (parsed.profile.timedActions?.length || actions.some(a => a.type === 'ledControl' && a.command.startsWith('effect')))) continue;
         if (validateProfile(parsed.profile).length) continue;
         parsed.formatVersion = FORMAT_VERSION;
         return parsed;

@@ -8,8 +8,9 @@ export function maxLayers(variant: Variant): number {
 }
 export const CHORD_ENTRY_SIZE = 3;
 export const MAX_TIMED_ACTIONS = 4;
+export const MAX_TIMED_TICKS = 64;
 export const TIMED_ENTRY_SIZE = 5;
-export const TIMED_TICK_SECONDS = 65.536;
+export const TIMED_TICK_SECONDS = 131.072;
 export const MAX_CHORD_WINDOW_UNITS = 15; // 5 ms units, 0–75 ms
 export const CHORD_WINDOW_STEP_MS = 5;
 export const RAINBOW_PHASE_DEGREES = [0, 30, 60, 150] as const;
