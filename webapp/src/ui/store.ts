@@ -196,6 +196,8 @@ export function getAction(p: Profile, slot: Slot): Action | undefined {
   const layer = p.layers[slot.layer];
   if (!layer) return undefined;
   switch (slot.kind) {
+    case 'timed':
+      return p.timedActions?.[slot.index]?.[slot.resume ? 'resumeAction' : 'action'];
     case 'key':
       return layer.keys[slot.index];
     case 'encoderButton':
@@ -229,6 +231,11 @@ export function setAction(slot: Slot, action: Action): void {
     const layer = draft.layers[slot.layer];
     if (!layer) return;
     switch (slot.kind) {
+      case 'timed': {
+        const timer = draft.timedActions?.[slot.index];
+        if (timer) timer[slot.resume ? 'resumeAction' : 'action'] = action;
+        break;
+      }
       case 'key':
         layer.keys[slot.index] = action;
         break;
@@ -255,11 +262,12 @@ function sameSlot(a: Slot, b: Slot): boolean {
 }
 
 function isRotationSlot(slot: Slot): boolean {
-  return slot.kind === 'clockwise' || slot.kind === 'counterclockwise';
+  return slot.kind === 'timed' || slot.kind === 'clockwise' || slot.kind === 'counterclockwise';
 }
 
 function slotOrder(p: Profile, slot: Slot): Slot[] | null {
   if (!p.layers[slot.layer]) return null;
+  if (slot.kind === 'timed') return null;
   if (slot.kind === 'key') return p.layers[slot.layer]!.keys.map((_, index) => ({ kind: 'key', layer: slot.layer, index }));
   if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB)
@@ -287,6 +295,11 @@ function putAction(p: Profile, slot: Slot, action: Action): void {
   const layer = p.layers[slot.layer];
   if (!layer) return;
   switch (slot.kind) {
+    case 'timed': {
+      const timer = p.timedActions?.[slot.index];
+      if (timer) timer[slot.resume ? 'resumeAction' : 'action'] = action;
+      break;
+    }
     case 'key': layer.keys[slot.index] = action; break;
     case 'encoderButton': layer.encoderButton = action; break;
     case 'clockwise': layer.clockwise = action; break;
@@ -337,7 +350,7 @@ export function pasteSelectedConfiguration(text: string): boolean {
     copied = JSON.parse(text);
     if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || copied.version !== 1 || !copied.action) return false;
     if (copied.led !== undefined && (!Number.isInteger(copied.led) || copied.led < 0 || copied.led > 15)) return false;
-    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot) });
+    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed' });
     if (problem) {
       notify('error', `Cannot paste here: ${problem}`);
       return true;
@@ -442,6 +455,7 @@ function applyLayerOrder(order: number[]): void {
       layer.counterclockwise = updateTarget(layer.counterclockwise);
     }
     for (const chord of draft.chords) chord.action = updateTarget(chord.action);
+    for (const timer of draft.timedActions ?? []) { timer.action = updateTarget(timer.action); timer.resumeAction = updateTarget(timer.resumeAction); }
     draft.startupLayer = remap(draft.startupLayer);
   });
   selectedLayer.value = remap(selectedLayer.value);
@@ -578,6 +592,7 @@ export function removeLayer(layer: number): void {
       l.counterclockwise = shift(l.counterclockwise);
     }
     for (const c of draft.chords) c.action = shift(c.action);
+    for (const timer of draft.timedActions ?? []) { timer.action = shift(timer.action); timer.resumeAction = shift(timer.resumeAction); }
     if (draft.startupLayer > layer) draft.startupLayer--;
     else if (draft.startupLayer === layer) draft.startupLayer = 0;
   });

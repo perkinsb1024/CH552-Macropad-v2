@@ -187,7 +187,6 @@ The action types are:
 | C | Relative layer | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -6 to +6; added to the selected base-layer index with wraparound. `0` has no effect. |
 | D | Mouse X movement | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
 | E | Mouse Y movement | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
-
 | F | LED control | Value or signed step (see below) | Full command byte (see below) |
 
 For action A and C, auxiliary value `0` changes the selected base layer

@@ -9,6 +9,7 @@ export interface ReachabilityWarning {
 function actionsOnLayer(profile: Profile, layerIndex: number): Action[] {
   const layer = profile.layers[layerIndex]!;
   return [
+    ...(profile.timedActions ?? []).flatMap((timer) => [timer.action, timer.resumeAction]),
     ...layer.keys,
     layer.encoderButton,
     layer.clockwise,

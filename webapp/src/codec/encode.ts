@@ -1,6 +1,6 @@
 import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
-  HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
+  TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
   LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, keyCount, layerSize,
 } from '../model/constants';
@@ -77,8 +77,9 @@ export function encodeProfile(profile: Profile): Uint8Array {
   image[0] = 0x4d; // M
   image[1] = 0x50; // P
   image[2] = FORMAT_VERSION;
-  image[3] = (profile.layers.length - 1) | (profile.startupLayer << 3);
-  image[4] = poolLength;
+  const timers = profile.timedActions ?? [];
+  image[3] = (profile.layers.length - 1) | (profile.startupLayer << 3) | ((timers.length & 3) << 6);
+  image[4] = poolLength | ((timers.length >> 2) << 7);
   image[5] = profile.variant | (chords.length << 1) | (profile.transparentBlack ? 0x80 : 0);
   image[8] = (profile.chordWindow & 15) |
     (profile.rainbowPhase << HEADER_RAINBOW_PHASE_SHIFT) |
@@ -110,6 +111,13 @@ export function encodeProfile(profile: Profile): Uint8Array {
     image[offset + 1] = b0;
     image[offset + 2] = b1;
     offset += CHORD_ENTRY_SIZE;
+  }
+
+  for (const timer of timers) {
+    image[offset] = (timer.ticks - 1) | (timer.resetOnInput ? 128 : 0);
+    image.set(encodeAction(timer.action, offsets), offset + 1);
+    image.set(encodeAction(timer.resumeAction, offsets), offset + 3);
+    offset += TIMED_ENTRY_SIZE;
   }
 
   for (const text of pool) {

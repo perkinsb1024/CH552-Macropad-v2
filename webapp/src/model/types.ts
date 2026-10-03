@@ -48,6 +48,13 @@ export interface Chord {
   action: Action;
 }
 
+export interface TimedAction {
+  ticks: number;
+  resetOnInput: boolean;
+  action: Action;
+  resumeAction: Action;
+}
+
 export interface Profile {
   variant: Variant;
   transparentBlack: boolean;
@@ -60,10 +67,12 @@ export interface Profile {
   rainbowSpeed: number;
   layers: Layer[];
   chords: Chord[];
+  timedActions?: TimedAction[];
 }
 
 /** Identifies one editable binding slot within a profile. */
 export type Slot =
+  | { kind: 'timed'; layer: number; index: number; resume: boolean }
   | { kind: 'key'; layer: number; index: number }
   | { kind: 'encoderButton'; layer: number }
   | { kind: 'clockwise'; layer: number }

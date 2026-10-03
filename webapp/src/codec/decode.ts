@@ -1,10 +1,10 @@
 import { LED_COMMANDS, ledProblem } from '../model/ledControl';
 import {
-  DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
+  MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
-import type { Action, Chord, Layer, Profile } from '../model/types';
+import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
 import { isSupportedUsage } from '../keys/keyboard';
@@ -113,11 +113,11 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2, 3, 4, 5 or ${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2, 3, 4, 5, 6 or ${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
-  if (image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
+  if (image[2]! < 7 && image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
   if (!configurableRainbow && (image[8]! & 0xf0)) return fail('malformed', 'Reserved bits set in chord-window byte.');
 
   const variant = (image[5]! & 1) as Variant;
@@ -132,8 +132,10 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const keys = keyCount(variant);
   const size = layerSize(variant);
   const chordCount = (image[5]! >> 1) & 63;
-  const poolUsed = image[4]!;
-  const poolStart = HEADER_SIZE + size * layerCount + CHORD_ENTRY_SIZE * chordCount;
+  const timerCount = image[2] === 7 ? (image[3]! >> 6) | ((image[4]! >> 7) << 2) : 0;
+  if (timerCount > MAX_TIMED_ACTIONS) return fail('malformed', 'Too many timed actions.');
+  const poolUsed = image[2] === 7 ? image[4]! & 127 : image[4]!;
+  const poolStart = HEADER_SIZE + size * layerCount + CHORD_ENTRY_SIZE * chordCount + TIMED_ENTRY_SIZE * timerCount;
   const end = poolStart + poolUsed;
   if (end > IMAGE_SIZE) return fail('malformed', `Declared content ends at byte ${end}, beyond the 128-byte image.`);
   const pool: PoolView = { start: poolStart, used: poolUsed, bytes: image };
@@ -197,10 +199,19 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     chords.push({ layer, keyA, keyB, global, action: decoded });
   }
 
+  const timedActions: TimedAction[] = [];
+  for (let i = 0; i < timerCount; i++, offset += TIMED_ENTRY_SIZE) {
+    const action = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, true, pool, image[2]!);
+    const resumeAction = decodeAction(image[offset + 3]!, image[offset + 4]!, layerCount, true, pool, image[2]!);
+    if (typeof action === 'string' || typeof resumeAction === 'string')
+      return fail('malformed', `Timed action ${i + 1}: ${typeof action === 'string' ? action : resumeAction}.`);
+    timedActions.push({ ticks: (image[offset]! & 127) + 1, resetOnInput: !!(image[offset]! & 128), action, resumeAction });
+  }
+
   if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');
 
   return {
     ok: true,
-    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, rainbowSpeed: configurableRainbow ? image[8]! >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED, layers, chords },
+    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, rainbowSpeed: configurableRainbow ? image[8]! >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED, layers, chords, ...(timedActions.length ? { timedActions } : {}) },
   };
 }

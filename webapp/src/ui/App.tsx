@@ -8,9 +8,11 @@ import { Welcome } from './components/Welcome';
 import { ProfilePanel } from './components/ProfilePanel';
 import { LayerTabs } from './components/LayerTabs';
 import { DeviceView } from './components/DeviceView';
+import { TimedActionsPanel } from './components/TimedActionsPanel';
 import { ChordPanel } from './components/ChordPanel';
 import { LayerOptions } from './components/LayerOptions';
 import { Inspector } from './components/Inspector';
+import { Sidebar } from './components/Sidebar';
 import { Shortcuts } from './components/Shortcuts';
 import { StorageMeter } from './components/StorageMeter';
 import { IssuesPanel } from './components/IssuesPanel';
@@ -127,14 +129,15 @@ export function App() {
               <ChordPanel />
               <LayerOptions />
             </div>
+            <TimedActionsPanel />
           </div>
-          <aside class="column column-side">
+          <Sidebar>
             <Inspector />
             <IssuesPanel />
             <Shortcuts />
             <StorageMeter />
             <ToolsPanel />
-          </aside>
+          </Sidebar>
         </main>
       )}
       <footer class="footer">

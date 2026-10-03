@@ -1,4 +1,4 @@
-import { CHORD_ENTRY_SIZE, HEADER_SIZE, IMAGE_SIZE, layerSize } from './constants';
+import { TIMED_ENTRY_SIZE, CHORD_ENTRY_SIZE, HEADER_SIZE, IMAGE_SIZE, layerSize } from './constants';
 import type { Action, Profile } from './types';
 import { encodedLength } from './strings';
 
@@ -7,6 +7,7 @@ export interface Capacity {
   layers: number;
   chords: number;
   strings: number;
+  timedActions: number;
   used: number;
   remaining: number;
   /** Distinct strings in pool order. */
@@ -26,6 +27,7 @@ export function stringActionsInOrder(profile: Profile): string[] {
     visit(layer.counterclockwise);
   }
   for (const chord of sortedChords(profile)) visit(chord.action);
+  for (const timer of profile.timedActions ?? []) { visit(timer.action); visit(timer.resumeAction); }
   return out;
 }
 
@@ -52,6 +54,7 @@ export function computeCapacity(profile: Profile): Capacity {
   const layers = layerSize(profile.variant) * profile.layers.length;
   const chords = CHORD_ENTRY_SIZE * profile.chords.length;
   const strings = pool.reduce((sum, s) => sum + encodedLength(s), 0);
-  const used = header + layers + chords + strings;
-  return { header, layers, chords, strings, used, remaining: IMAGE_SIZE - used, pool };
+  const timedActions = TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0);
+  const used = header + layers + chords + timedActions + strings;
+  return { header, layers, chords, timedActions, strings, used, remaining: IMAGE_SIZE - used, pool };
 }

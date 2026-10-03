@@ -43,6 +43,29 @@ static void testTimedLighting(void) {
     loop(); // Deadline and debounced input in the same frame.
     assert(ledSettings[2] == 3 && ledSettings[3] == 1 && ledData[3] == 255);
 #endif
+    // Coarse ticks are aligned to uptime, not to the last save/input. Reproduce
+    // a ~33-second first firing without changing the millisecond clock rate.
+    const uint32_t starts[] = {0, 30000, 32000, 65000};
+    for (uint8_t i = 0; i < sizeof(starts) / sizeof(starts[0]); i++) {
+        P1 = P3 = 0xFF;
+        currentMs = starts[i];
+        firmwareApplyConfig();
+        actionsTimedInput();
+        currentMs = 65535;
+        loop();
+        assert(ledSettings[2] == 3);
+        currentMs = 65536;
+        loop();
+        assert(ledSettings[2] == 0);
+        // Subsequent firings remain one full 65.536-second tick apart.
+        firmwareLedAction(CONFIG_LED_BOTH_SET, 15);
+        currentMs = 131071;
+        loop();
+        assert(ledSettings[2] == 3);
+        currentMs = 131072;
+        loop();
+        assert(ledSettings[2] == 0);
+    }
 }
 
 static uint8_t expectedDim(uint8_t v) { return (v >> 4) | (v != 0); }

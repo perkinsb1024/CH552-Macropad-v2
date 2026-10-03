@@ -62,6 +62,17 @@ function SaveButton() {
 }
 
 export function TopBar() {
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = headerRef.current;
+    const app = header?.parentElement;
+    if (!header || !app) return;
+    const updateOffset = () => app.style.setProperty('--topbar-height', `${header.offsetHeight}px`);
+    updateOffset();
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
   const c = connection.value;
   const confirmRead = () => ask({
     title: 'Read from device?',
@@ -92,7 +103,7 @@ export function TopBar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   return (
-    <header class="topbar">
+    <header class="topbar" ref={headerRef}>
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
           <span /><span /><span /><span /><span /><span />

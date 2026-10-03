@@ -60,6 +60,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
           layer.counterclockwise = shift(layer.counterclockwise);
         }
         draft.chords.forEach((chord) => { chord.action = shift(chord.action); });
+        draft.timedActions?.forEach((timer) => { timer.action = shift(timer.action); timer.resumeAction = shift(timer.resumeAction); });
         if (draft.startupLayer > i) draft.startupLayer--;
         else if (draft.startupLayer === i) draft.startupLayer = Math.min(i, draft.layers.length - 1);
       } });
@@ -115,6 +116,14 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
   }
   if (!changes.length && JSON.stringify(before.chords) !== JSON.stringify(after.chords)) {
     changes.push({ where: 'Chord order updated', undo: (draft) => { draft.chords = structuredClone(before.chords); } });
+  }
+  if (JSON.stringify(before.timedActions ?? []) !== JSON.stringify(after.timedActions ?? [])) {
+    const describe = (p: Profile) => (p.timedActions ?? []).map((t, i) =>
+      `${i + 1}: ${t.ticks} ticks${t.resetOnInput ? ', resets on input' : ''} → ${actionName(t.action)}; resume: ${actionName(t.resumeAction)}`).join(' · ') || 'None';
+    changes.push({ where: 'Timed actions', before: describe(before), after: describe(after), undo: (draft) => {
+      if (before.timedActions) draft.timedActions = structuredClone(before.timedActions);
+      else delete draft.timedActions;
+    } });
   }
   return changes;
 }

@@ -12,7 +12,7 @@ const FILTERS = [
 export function Shortcuts() {
   const [os, setOS] = useState<ShortcutOS>(() =>
     typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? 'mac' : 'windows');
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const shortcuts = filterShortcuts(os, query);
   return (

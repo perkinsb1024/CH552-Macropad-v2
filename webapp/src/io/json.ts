@@ -1,4 +1,4 @@
-import type { Action, Chord, Layer, Profile } from '../model/types';
+import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
 import { RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_SPEED, RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 6;
+export const JSON_VERSION = 7;
 const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
@@ -37,6 +37,7 @@ export interface ExportedProfile {
     indicatorFullBrightness: boolean;
   }>;
   chords: Array<{ layer: number; keys: [number, number]; global?: boolean; action: Action }>;
+  timedActions?: TimedAction[];
   localMetadata?: LocalMetadata;
 }
 
@@ -63,6 +64,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
     })),
     chords: profile.chords.map((c) => ({ layer: c.layer, keys: [c.keyA, c.keyB], global: !!c.global, action: c.action })),
   };
+  if (profile.timedActions) out.timedActions = profile.timedActions;
   if (meta && (meta.layerNames?.some(Boolean) || meta.profileName)) out.localMetadata = meta;
   return JSON.stringify(out, null, 2) + '\n';
 }
@@ -146,7 +148,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4 && raw.version !== 5 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4 && raw.version !== 5 && raw.version !== 6 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -189,6 +191,15 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       label.toLowerCase() === raw.rainbowSpeed || LEGACY_RAINBOW_SPEED_NAMES[i] === raw.rainbowSpeed) : -1;
   if (rainbowSpeed < 0) throw new ImportError('rainbowSpeed must be extra fast, fast, slow or extra slow.');
   const profile: Profile = { rainbowSpeed, rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  if (raw.timedActions !== undefined) {
+    if (raw.version !== JSON_VERSION || !Array.isArray(raw.timedActions)) throw new ImportError('Timed actions require a version 7 list.');
+    profile.timedActions = raw.timedActions.map((timer, i) => {
+      if (!isRecord(timer)) throw new ImportError(`Timed action ${i + 1} is malformed.`);
+      if (typeof timer.resetOnInput !== 'boolean') throw new ImportError('Reset on input must be true or false.');
+      return { ticks: int(timer.ticks, 'Timer interval'), resetOnInput: timer.resetOnInput,
+        action: action(timer.action, `Timed action ${i + 1}`), resumeAction: action(timer.resumeAction, `Timed action ${i + 1} resume`) };
+    });
+  }
   migrateLegacyProfile(profile);
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
   const issues = validateProfile(profile);

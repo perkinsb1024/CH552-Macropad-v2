@@ -63,7 +63,7 @@ export function canApplyShortcut(shortcut: Shortcut, slot: Slot): boolean {
   const p = profile.value;
   return !!p && !!getAction(p, slot) && !actionProblem(shortcut.action, {
     layerCount: p.layers.length,
-    rotation: slot.kind === 'clockwise' || slot.kind === 'counterclockwise',
+    rotation: slot.kind === 'timed' || slot.kind === 'clockwise' || slot.kind === 'counterclockwise',
   });
 }
 

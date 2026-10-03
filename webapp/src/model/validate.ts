@@ -1,3 +1,4 @@
+import { MAX_TIMED_ACTIONS } from './constants';
 import { ledProblem } from './ledControl';
 import { MAX_CHORD_WINDOW_UNITS, maxLayers, keyCount } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
@@ -10,15 +11,16 @@ export interface ActionContext {
   layerCount: number;
   /** Encoder rotation: actions needing a physical release are not allowed. */
   rotation: boolean;
+  timed?: boolean;
 }
 
 /** Returns a problem description, or null when the action is legal in this context. */
 export function actionProblem(action: Action, ctx: ActionContext): string | null {
   const actionDescriptor = ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   if (!actionDescriptor) return 'This action type is no longer supported. Choose another action.';
-  if (ctx.rotation && actionNeedsRelease(action)) {
+  if ((ctx.rotation || ctx.timed) && actionNeedsRelease(action)) {
     const label = action.type === 'mouseX' || action.type === 'mouseY' ? 'Pointer hold' : actionDescriptor.label;
-    return `${label} needs a release and cannot be bound to rotation.`;
+    return `${label} needs a release and cannot be bound to ${ctx.timed ? 'a timed action' : 'rotation'}.`;
   }
   switch (action.type) {
     case 'ledControl': return ledProblem(action.command, action.value);
@@ -67,6 +69,8 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
 export function slotLabel(slot: Slot): string {
   const layer = `Layer ${slot.layer + 1}`;
   switch (slot.kind) {
+    case 'timed':
+      return `Timed action ${slot.index + 1}${slot.resume ? ' · Resume' : ''}`;
     case 'key':
       return `${layer} · Key ${slot.index + 1}`;
     case 'encoderButton':
@@ -156,9 +160,25 @@ export function validateProfile(profile: Profile): Issue[] {
     if (problem) issues.push({ where, message: problem, slot });
   }
 
+  const timers = profile.timedActions ?? [];
+  if (!Array.isArray(timers)) return [...issues, { where: 'Timed actions', message: 'Timed actions must be a list.' }];
+  if (timers.length > MAX_TIMED_ACTIONS) issues.push({ where: 'Timed actions', message: `At most ${MAX_TIMED_ACTIONS} timed actions are supported.` });
+  timers.forEach((timer, index) => {
+    const where = `Timed action ${index + 1}`;
+    if (!Number.isInteger(timer.ticks) || timer.ticks < 1 || timer.ticks > 128)
+      issues.push({ where, message: 'Interval must be a whole number from 1 to 128 ticks.' });
+    if (typeof timer.resetOnInput !== 'boolean') issues.push({ where, message: 'Reset on input must be on or off.' });
+    for (const resume of [false, true]) {
+      const slot: Slot = { kind: 'timed', layer: 0, index, resume };
+      const action = resume ? timer.resumeAction : timer.action;
+      const problem = action ? actionProblem(action, { layerCount, rotation: false, timed: true }) : 'Choose an action.';
+      if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
+    }
+  });
+
   const capacity = computeCapacity(profile);
   if (capacity.remaining < 0) {
-    issues.push({ where: 'Storage', message: `Profile needs ${capacity.used} bytes but the device holds 128. Remove ${-capacity.remaining} byte${capacity.remaining === -1 ? '' : 's'} of chords or text.` });
+    issues.push({ where: 'Storage', message: `Profile needs ${capacity.used} bytes but the device holds 128. Remove ${-capacity.remaining} byte${capacity.remaining === -1 ? '' : 's'} of timers, chords or text.` });
   }
   return issues;
 }

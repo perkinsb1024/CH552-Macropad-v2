@@ -68,9 +68,10 @@ export function Inspector() {
   const p = profile.value;
   const slot = selectedSlot.value;
   const action = p && slot ? getAction(p, slot) : undefined;
-  const rotation = slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
+  const timed = slot?.kind === 'timed';
+  const rotation = slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
   const layerCount = p?.layers.length ?? 0;
-  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation }) : null;
+  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed }) : null;
   const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   const custom = useMemo(() => action?.type === 'consumer' && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
   const savedStrings = useMemo(() => {
@@ -86,6 +87,7 @@ export function Inspector() {
       add(savedLayer.counterclockwise);
     }
     p.chords.forEach((chord) => add(chord.action));
+    p.timedActions?.forEach((timer) => { add(timer.action); add(timer.resumeAction); });
     return [...strings];
   }, [p]);
 
@@ -93,7 +95,7 @@ export function Inspector() {
     return (
       <section class="card inspector inspector-empty">
         <h2>Action editor</h2>
-        <p class="muted">Select a key, the encoder, or a chord on the left to edit what it does.</p>
+        <p class="muted">Select a key, the encoder, a chord, or a timed action on the left to edit what it does.</p>
       </section>
     );
   }
@@ -125,8 +127,8 @@ export function Inspector() {
     <section class="card inspector">
       <header class="card-head">
         <div class="inspector-title">
-          <h2>{slotLabel(slot).split(' · ')[1]}</h2>
-          <span class="muted">{layerName(slot.layer)}</span>
+          <h2>{slot.kind === 'timed' ? slotLabel(slot) : slotLabel(slot).split(' · ')[1]}</h2>
+          <span class="muted">{slot.kind === 'timed' ? 'Across all layers' : layerName(slot.layer)}</span>
         </div>
         {slot.kind === 'chord' && (
           <button class="btn btn-icon btn-ghost" aria-label="Remove chord" onClick={() => removeChord(slot)}><IconTrash /></button>
@@ -213,7 +215,7 @@ export function Inspector() {
               <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
             </div>
           </>}
-          <span class="hint">{rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
+          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
         </div>
       )}
 
@@ -266,7 +268,7 @@ export function Inspector() {
         <label class="field">
           <span class="field-label">Target layer</span>
           <select value={action.layer} onChange={(e) => update({ ...action, layer: Number((e.target as HTMLSelectElement).value) })}>
-            {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}{i === slot.layer ? ' (this layer)' : ''}</option>)}
+            {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}{slot.kind !== 'timed' && i === slot.layer ? ' (this layer)' : ''}</option>)}
             {action.layer >= layerCount && <option value={action.layer}>Layer {action.layer + 1} (missing)</option>}
           </select>
         </label>
@@ -276,11 +278,11 @@ export function Inspector() {
         <label class="field">
           <span class="field-label">Relative offset <output>{action.offset > 0 ? `+${action.offset}` : action.offset}</output></span>
           <input type="range" min={1 - maxLayers(p.variant)} max={maxLayers(p.variant) - 1} step={1} value={action.offset} aria-label="Relative offset" onInput={(e) => update({ ...action, offset: Number((e.target as HTMLInputElement).value) })} />
-          <span class="hint">Layer {slot.layer + 1} → Layer {relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}</span>
+          <span class="hint">{slot.kind === 'timed' ? 'Relative to the active layer when the timer fires.' : `Layer ${slot.layer + 1} → Layer ${relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}`}</span>
         </label>
       )}
 
-      {(((action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer === slot.layer) ||
+      {slot.kind !== 'timed' && (((action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer === slot.layer) ||
         ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && relativeTargetLayer(slot.layer, action.offset, layerCount) === slot.layer)) && (
         <div class="notice notice-info">Changing to the same layer is useful to display the current layer's indicator</div>
       )}
