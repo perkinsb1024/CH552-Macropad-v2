@@ -137,6 +137,10 @@ static void testConsumedPhysicalInput(void) {
     expectBootloader = 0;
 }
 
+static uint8_t effectComponent(uint8_t value, uint8_t dim) {
+    return dim ? (value >> 4) | (value != 0) : value;
+}
+
 static void testTemporaryEffects(void) {
     // Clearing/completing an effect must not replay a layer-entry indication.
     for (uint8_t behavior = 0; behavior < 4; behavior++) {
@@ -149,10 +153,12 @@ static void testTemporaryEffects(void) {
                behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER ? 2 : 0));
         firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
         assert(!previewOptions && !layerIndicatorPhasesLeft);
-        for (uint8_t mode = 0; mode < 3; mode++) {
-            firmwareLedAction(mode == 1 ? CONFIG_LED_EFFECT_BLINK_8 :
-                              mode == 2 ? CONFIG_LED_EFFECT_BLINK_1 : CONFIG_LED_EFFECT_ON, 15);
-            if (mode == 2) {
+        for (uint8_t mode = 0; mode < 6; mode++) {
+            uint8_t command = mode % 3 == 1 ? CONFIG_LED_EFFECT_BLINK_8 :
+                              mode % 3 == 2 ? CONFIG_LED_EFFECT_BLINK_1 : CONFIG_LED_EFFECT_ON;
+            if (mode >= 3) command |= CONFIG_LED_EFFECT_DIM;
+            firmwareLedAction(command, 15);
+            if (mode % 3 == 2) {
                 currentMs += 250; loop();
                 currentMs += 250; loop();
             } else firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
@@ -167,6 +173,7 @@ static void testTemporaryEffects(void) {
         assert(layerIndicatorPhasesLeft == (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 :
                behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER ? 2 : 0));
     }
+    for (uint8_t dim = 0; dim < 2; dim++) {
     for (uint8_t color = 0; color < 16; color++) {
         for (uint8_t blinks = 0; blinks <= 8; blinks++) {
             testLoadStarterProfile(PHYSICAL_VARIANT);
@@ -174,17 +181,27 @@ static void testTemporaryEffects(void) {
             currentMs = 1000; firmwareApplyConfig();
             firmwareLedAction(CONFIG_LED_INDICATOR_SET, 0);
             uint8_t command = blinks ? CONFIG_LED_EFFECT_ON + blinks : CONFIG_LED_EFFECT_ON;
+            if (dim) command |= CONFIG_LED_EFFECT_DIM;
             firmwareLedAction(command, color);
             assert((previewOptions & LED_EFFECT_FLAG) && (previewOptions >> 4) == color);
+            assert((previewOptions & CONFIG_LAYER_OPT_FULL_BRIGHTNESS) == !dim);
             assert(layerIndicatorPhasesLeft == 2 * blinks);
             for (uint8_t i = 0; i < NUM_LEDS; i++) {
                 if (color != 15) {
-                    assert(ledData[3 * i] == configPalette[color][1]);
-                    assert(ledData[3 * i + 1] == configPalette[color][0]);
-                    assert(ledData[3 * i + 2] == configPalette[color][2]);
+                    assert(ledData[3 * i] == effectComponent(configPalette[color][1], dim));
+                    assert(ledData[3 * i + 1] == effectComponent(configPalette[color][0], dim));
+                    assert(ledData[3 * i + 2] == effectComponent(configPalette[color][2], dim));
                 }
             }
             if (color == 15) {
+                uint8_t brightFrame[NUM_BYTES];
+                memcpy(brightFrame, ledData, NUM_BYTES);
+                // Compare the same rainbow hue/phase at bright and dim levels.
+                previewOptions |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
+                updateLeds();
+                for (uint8_t i = 0; i < NUM_BYTES; i++)
+                    assert(brightFrame[i] == effectComponent(ledData[i], dim));
+                firmwareLedAction(command, color);
                 uint8_t hue = rainbowHue;
                 currentMs += 18; loop();
                 assert(rainbowHue != hue); // Animates on a non-rainbow/disabled layer.
@@ -194,7 +211,7 @@ static void testTemporaryEffects(void) {
                 assert(layerIndicatorPhasesLeft == 2 * blinks - phase);
                 if ((phase & 1) || phase == 2 * blinks) {
                     for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
-                } else if (color != 15) assert(ledData[0] == configPalette[color][1]);
+                } else if (color != 15) assert(ledData[0] == effectComponent(configPalette[color][1], dim));
             }
             if (blinks) assert(!previewOptions && ledSettings[2] == 0);
             else {
@@ -203,6 +220,7 @@ static void testTemporaryEffects(void) {
                 assert(!previewOptions && ledSettings[2] == 0);
             }
         }
+    }
     }
     // Pressed-key feedback overrides always-on, but not blinking effects.
     testLoadStarterProfile(PHYSICAL_VARIANT);
@@ -216,6 +234,15 @@ static void testTemporaryEffects(void) {
     assert(ledData[1] == 255 && ledData[2] == 0);
     currentMs = 260; loop(); assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
     currentMs = 510; loop(); assert(!previewOptions && ledData[2] == 255);
+    firmwareLedAction(CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM, 0);
+    assert(ledData[2] == 255 && ledData[1] == 0); // Key retains its bright feedback.
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_1 | CONFIG_LED_EFFECT_DIM, 0);
+    assert(ledData[1] == 15 && ledData[2] == 0);
+    currentMs += 250; loop(); assert(!ledData[1] && !ledData[2]);
+    currentMs += 250; loop(); assert(!previewOptions && !layerIndicatorPhasesLeft && ledData[2] == 255);
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_8 | CONFIG_LED_EFFECT_DIM, 15);
+    firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
+    assert(!previewOptions && !layerIndicatorPhasesLeft && ledData[2] == 255);
     // Replacing a blink with always-on cancels the old deadline.
     firmwareLedAction(CONFIG_LED_EFFECT_BLINK_8, 15);
     firmwareLedAction(CONFIG_LED_EFFECT_ON, 4);

@@ -187,8 +187,11 @@ The existing alternate indicator option byte is shared with UI color preview.
 Bit 1 marks a persistent effect; its mode/color/brightness reuse the layer option
 layout. Blink effects reuse the existing phase counter and 250ms deadline.
 Rainbow animation activates even when the actual layer has no rainbow indicator.
-Effects use current rainbow speed/phase settings and force bright indicator
-output even if the underlying indicator brightness policy is off/dim.
+Effects use current rainbow speed/phase settings and force their selected
+brightness even if the underlying indicator brightness policy is off/dim.
+Existing commands use Bright; firmware now also supports Dim using command bit
+`0x10` (`91`–`99`). Editor support for Dim remains pending. Both brightnesses
+reuse the existing effect-state byte and color renderer.
 
 - Always-on survives ordinary key/encoder activity until replaced, explicitly
   cleared, or an actual layer switch/config application occurs. Reselecting the

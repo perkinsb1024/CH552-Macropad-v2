@@ -257,11 +257,14 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 | `0C` | Relative common brightness preset | Signed nonzero step |
 | `0D` | Toggle common brightness preset / configured | Preset index 1..4 |
 | `80` | Clear temporary effect / as configured | Only 0 |
-| `81` | Temporary effect: always on | Palette index, including rainbow |
-| `82`–`89` | Temporary effect: blink 1–8 times | Palette index, including rainbow |
+| `81` | Bright temporary effect: always on | Palette index, including rainbow |
+| `82`–`89` | Bright temporary effect: blink 1–8 times | Palette index, including rainbow |
+| `90` | (Reserved) | (Reserved) |
+| `91` | Dim temporary effect: always on | Palette index, including rainbow |
+| `92`–`99` | Dim temporary effect: blink 1–8 times | Palette index, including rainbow |
 
 All other command IDs and payload values are rejected during image validation.
-There are 261 valid payloads. LED commands are legal for every binding, including
+There are 405 valid firmware payloads. LED commands are legal for every binding, including
 rotation, chords, and both timer actions. They execute immediately after chord/one-shot resolution,
 redraw once, and queue no HID report. Holding a binding does not repeat it.
 A resolved LED action consumes a one-shot layer before applying its policy.
@@ -391,8 +394,14 @@ no timers. JSON import rejects invalid ranges/types; UI edits clamp to 1–64.
 ## Temporary LED effects
 
 The editor groups commands `80`–`89` under **Set all LEDs**. Choose **As configured**,
-**Always on**, or **Blink 1–8 times**. Effects use full brightness and a palette
-swatch; index F means Rainbow, including on a layer without configured rainbow.
+**Always on**, or **Blink 1–8 times**, with a palette swatch; index F means Rainbow,
+including on a layer without configured rainbow. Existing commands use Bright.
+Firmware also accepts Dim by setting command bit `0x10` on Always on or Blink
+(`91`–`99`). Dim uses the existing layer-indicator color reduction for both solid
+colors and rainbow; no extra record or runtime RAM bytes are required. `90` is
+invalid: As configured remains `80` with auxiliary zero and has no brightness.
+Dim support is currently firmware only; editor, binary codec and JSON support
+for choosing Dim remain pending.
 As configured hides the color controls and encodes auxiliary zero. JSON retains
 ordinary LED-control actions with commands `effectRestore`, `effectOn`, or
 `effectBlink1` through `effectBlink8`; value is the numeric palette index, not the

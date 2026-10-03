@@ -77,8 +77,10 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
     switch (type) {
         case CONFIG_ACTION_LED_CONTROL:
             if (param >= CONFIG_LED_EFFECT_RESTORE) {
-                return param <= CONFIG_LED_EFFECT_BLINK_8 &&
-                       (param != CONFIG_LED_EFFECT_RESTORE || aux == 0);
+                if (param == CONFIG_LED_EFFECT_RESTORE) return aux == 0;
+                param &= ~CONFIG_LED_EFFECT_DIM;
+                return (uint8_t)(param - CONFIG_LED_EFFECT_ON) <=
+                       CONFIG_LED_EFFECT_BLINK_8 - CONFIG_LED_EFFECT_ON;
             }
             if (param > CONFIG_LED_PRESET_TOGGLE) return 0;
             if (param == CONFIG_LED_RESTORE) return aux == 0;

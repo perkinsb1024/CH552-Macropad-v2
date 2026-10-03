@@ -190,7 +190,8 @@ void startLayerIndicator(uint8_t layer, uint16_t now);
 void firmwareLedAction(uint8_t command, uint8_t value) {
   if (command >= CONFIG_LED_EFFECT_RESTORE) {
     colorPreviewActive = 0;
-    previewOptions = (value << 4) | LED_EFFECT_FLAG | 1 | 8;
+    previewOptions = (value << 4) | LED_EFFECT_FLAG | 8 | !(command & CONFIG_LED_EFFECT_DIM);
+    command &= ~CONFIG_LED_EFFECT_DIM;
     layerIndicatorPhasesLeft = (command - CONFIG_LED_EFFECT_ON) << 1;
     if (command == CONFIG_LED_EFFECT_ON) previewOptions |= 4;
     if (command == CONFIG_LED_EFFECT_RESTORE) {

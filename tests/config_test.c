@@ -322,6 +322,8 @@ static void testLedPayloads(void) {
                 else if (command == 13) expected = value >= 1 && value <= 4;
                 else if (command == CONFIG_LED_EFFECT_RESTORE) expected = value == 0;
                 else if (command >= CONFIG_LED_EFFECT_ON && command <= CONFIG_LED_EFFECT_BLINK_8) expected = 1;
+                else if (command >= (CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM) &&
+                         command <= (CONFIG_LED_EFFECT_BLINK_8 | CONFIG_LED_EFFECT_DIM)) expected = 1;
                 else expected = 0;
                 activeConfig[9] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
                 activeConfig[10] = command;
@@ -337,7 +339,7 @@ static void testLedPayloads(void) {
                 activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
             }
         }
-        assert(accepted == 261);
+        assert(accepted == 405);
     }
 }
 

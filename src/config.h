@@ -74,6 +74,7 @@
 #define CONFIG_LED_EFFECT_ON       0x81
 #define CONFIG_LED_EFFECT_BLINK_1  0x82
 #define CONFIG_LED_EFFECT_BLINK_8  0x89
+#define CONFIG_LED_EFFECT_DIM      0x10 // OR into effect ON/BLINK commands, never RESTORE.
 #define CONFIG_LED_OFF 0
 #define CONFIG_LED_DIM 1
 #define CONFIG_LED_BRIGHT 2
