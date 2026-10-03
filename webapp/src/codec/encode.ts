@@ -18,9 +18,9 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
   const code = descriptor(action.type).code;
   switch (action.type) {
     case 'ledControl': {
-      const problem = ledProblem(action.command, action.value);
+      const problem = ledProblem(action.command, action.value, action.brightness);
       if (problem) throw new EncodeError(problem);
-      return [code | ((action.value === 'asConfigured' ? 15 : action.value & 15) << 4), ledCommandCode(action.command)];
+      return [code | ((action.value === 'asConfigured' ? 15 : action.value & 15) << 4), ledCommandCode(action.command, action.brightness)];
     }
     case 'none':
       return [code, 0];

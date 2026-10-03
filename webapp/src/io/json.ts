@@ -96,7 +96,10 @@ function action(v: unknown, what: string): Action {
   switch (type) {
     case 'ledControl':
       if (typeof v.command !== 'string') throw new ImportError(`${what}: LED command must be a string.`);
-      return { type, command: v.command as import('../model/ledControl').LedCommand, value: v.value === 'asConfigured' ? v.value : int(v.value, `${what} LED value`) };
+      if (v.brightness !== undefined && v.brightness !== 'bright' && v.brightness !== 'dim') throw new ImportError(`${what}: LED brightness must be bright or dim.`);
+      if (v.brightness !== undefined && !/^effect(On|Blink[1-8])$/.test(v.command)) throw new ImportError(`${what}: brightness applies only to Always on or Blink effects.`);
+      return { type, command: v.command as import('../model/ledControl').LedCommand, value: v.value === 'asConfigured' ? v.value : int(v.value, `${what} LED value`),
+        ...(v.brightness === 'dim' ? { brightness: 'dim' as const } : {}) };
     case 'none':
       return { type };
     case 'relativeLayer':

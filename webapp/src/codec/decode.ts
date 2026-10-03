@@ -50,7 +50,8 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (!spec || (version < 7 && b1 >= 0x80)) return 'Unknown LED command';
       const value = b1 >= 0x80 ? aux : spec.relative ? (aux < 8 ? aux : aux - 16) : aux === 15 ? 'asConfigured' : aux;
       const problem = ledProblem(spec.command, value);
-      return problem ?? { type: 'ledControl', command: spec.command, value };
+      return problem ?? { type: 'ledControl', command: spec.command, value,
+        ...(b1 >= 0x91 && b1 <= 0x99 ? { brightness: 'dim' as const } : {}) };
     }
     case ActionCode.None:
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };

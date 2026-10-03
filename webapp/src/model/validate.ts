@@ -23,7 +23,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     return `${label} needs a release and cannot be bound to ${ctx.timed ? 'a timed action' : 'rotation'}.`;
   }
   switch (action.type) {
-    case 'ledControl': return ledProblem(action.command, action.value);
+    case 'ledControl': return ledProblem(action.command, action.value, action.brightness);
     case 'none':
       return null;
     case 'relativeLayer':

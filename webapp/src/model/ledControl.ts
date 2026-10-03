@@ -29,15 +29,19 @@ export const LED_COMMANDS = [
 ] as const;
 export type LedCommand = typeof LED_COMMANDS[number]['command'];
 export type LedValue = number | 'asConfigured';
+export type LedBrightness = 'bright' | 'dim';
+export const LED_EFFECT_DIM = 0x10;
 export const COMMON_PRESET_LABELS = ['Both as configured', 'Layers dim, keys bright', 'Layers and keys dim', 'Layers off, keys dim', 'Both off'] as const;
 export const BRIGHTNESS_LABELS = ['Force off', 'Force dim', 'Force bright'] as const;
-export function ledCommandCode(command: LedCommand): number {
-  return ledCommandSpec(command)?.code ?? -1;
+export function ledCommandCode(command: LedCommand, brightness?: LedBrightness): number {
+  const code = ledCommandSpec(command)?.code ?? -1;
+  return code >= 0x81 && brightness === 'dim' ? code | LED_EFFECT_DIM : code;
 }
 export function ledCommandSpec(command: LedCommand) {
   return LED_COMMANDS.find((c) => c.command === command);
 }
 export function ledCommandFromCode(code: number) {
+  if (code >= 0x91 && code <= 0x99) code &= ~LED_EFFECT_DIM;
   return LED_COMMANDS.find((c) => c.code === code);
 }
 export function isLedEffect(command: LedCommand): boolean {
@@ -54,9 +58,13 @@ export function ledValueOptions(command: LedCommand): Array<{ value: LedValue; l
   if (code !== 11) options.push({ value: 'asConfigured', label: 'As configured' });
   return options;
 }
-export function ledProblem(command: LedCommand, value: LedValue): string | null {
+export function ledProblem(command: LedCommand, value: LedValue, brightness?: LedBrightness): string | null {
   const code = ledCommandCode(command);
   if (code < 0) return 'Unknown LED command.';
+  if (brightness !== undefined) {
+    if (brightness !== 'bright' && brightness !== 'dim') return 'Choose Bright or Dim effect brightness.';
+    if (code < 0x81) return 'Brightness applies only to Always on or Blink effects.';
+  }
   if (code === 0x80) return value === 0 ? null : 'Effect restore uses value zero.';
   if (code >= 0x81) return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 15 ? null : 'Choose an effect color.';
   if (ledCommandSpec(command)!.relative) return typeof value === 'number' && Number.isInteger(value) && value !== 0 && value >= -7 && value <= 7 ? null : 'LED step must be a non-zero whole number from -7 to 7.';
@@ -65,11 +73,11 @@ export function ledProblem(command: LedCommand, value: LedValue): string | null 
   if (value === 'asConfigured' && code !== 11) return null;
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= (code < 4 ? 3 : code === 11 ? 4 : 2) ? null : 'Invalid LED setting.';
 }
-export function ledSummary(command: LedCommand, value: LedValue, compact = false): string {
+export function ledSummary(command: LedCommand, value: LedValue, compact = false, brightness?: LedBrightness): string {
   const code = ledCommandCode(command);
   if (code < 0) return 'Unknown LED command';
   if (code >= 0x80) return code === 0x80 ? 'All LEDs: As configured'
-    : `All LEDs: ${value === 15 ? 'Rainbow' : PALETTE[Number(value)]?.name ?? '?'} · ${ledCommandSpec(command)!.label}`;
+    : `All LEDs: ${value === 15 ? 'Rainbow' : PALETTE[Number(value)]?.name ?? '?'} · ${brightness === 'dim' ? 'Dim · ' : ''}${ledCommandSpec(command)!.label}`;
   if (code === 10) return compact ? 'LED Restore' : ledCommandSpec(command)!.label;
   const label = compact
     ? code === 13 ? 'LED Toggle' : code >= 11 ? 'LED Preset' : ['LED Phase', 'LED Speed', 'Layer LEDs', 'Key LEDs', 'All LEDs'][code >> 1]

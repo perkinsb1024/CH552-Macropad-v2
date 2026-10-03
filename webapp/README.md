@@ -127,9 +127,12 @@ next-input actions run once after firing; consuming suppresses the physical
 binding even with no next-input action. Held actions cannot be assigned to timers.
 
 Set all LEDs is a single LED-command choice with an effect selector (As configured,
-Always on, Blink 1–8 times) and full-brightness color swatches including Rainbow.
-As configured hides the swatches. Always-on permits pressed-key feedback;
-blinking covers it. No dedicated reminder layer is required.
+Always on, Blink), a 1–8 blink-count slider shown only for Blink, and color swatches
+including Rainbow with a Full Brightness / Dim control. As configured hides these
+controls. Always-on permits pressed-key feedback; blinking covers it. Clearing or
+finishing an effect does not replay the layer's blink/timed indication.
+No dedicated reminder layer is required. JSON uses optional `brightness: "dim"`
+for effects; omission defaults to Bright, preserving existing profiles.
 
 The protocol simulator accepts valid v6 and v7 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.

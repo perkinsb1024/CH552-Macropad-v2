@@ -169,16 +169,27 @@ export function Inspector() {
         </label>
         {isLedEffect(action.command) ? <>
           <label class="field"><span class="field-label">Effect</span>
-            <select value={action.command} onChange={(e) => {
-              const command = (e.target as HTMLSelectElement).value as LedCommand;
-              if (!isLedEffect(command)) return;
-              update({ type: 'ledControl', command, value: command === 'effectRestore' ? 0 : action.command === 'effectRestore' ? 15 : action.value });
+            <select value={action.command.startsWith('effectBlink') ? 'blink' : action.command} onChange={(e) => {
+              const selection = (e.target as HTMLSelectElement).value;
+              if (!['effectRestore', 'effectOn', 'blink'].includes(selection)) return;
+              const command = (selection === 'blink' ? 'effectBlink1' : selection) as LedCommand;
+              update({ type: 'ledControl', command, value: command === 'effectRestore' ? 0 : action.command === 'effectRestore' ? 15 : action.value,
+                ...(command !== 'effectRestore' && action.brightness === 'dim' ? { brightness: 'dim' as const } : {}) });
             }}>
-              {LED_COMMANDS.filter(c => isLedEffect(c.command)).map(c => <option value={c.command}>{c.label}</option>)}
+              <option value="effectRestore">As configured</option>
+              <option value="effectOn">Always on</option>
+              <option value="blink">Blink</option>
             </select>
           </label>
+          {action.command.startsWith('effectBlink') && <label class="field">
+            <span class="field-label">Blink count <output>{ledCommandSpec(action.command)!.code - 0x81} {action.command === 'effectBlink1' ? 'time' : 'times'}</output></span>
+            <input type="range" min={1} max={8} step={1} value={ledCommandSpec(action.command)!.code - 0x81} aria-label="Blink count" onInput={(e) => {
+              const count = Number((e.target as HTMLInputElement).value);
+              if (Number.isInteger(count) && count >= 1 && count <= 8) update({ ...action, command: `effectBlink${count}` as LedCommand });
+            }} />
+          </label>}
           {action.command !== 'effectRestore' && <div class="field led-color-field">
-            <span class="field-label">Color · Full brightness</span>
+            <span class="field-label">Color</span>
             <div class="palette" role="radiogroup" aria-label="Temporary LED effect color">
               {PALETTE.map(c => <button type="button" role="radio" aria-checked={action.value === c.index}
                 aria-label={c.index === 15 ? 'Rainbow' : c.name} title={c.index === 15 ? 'Rainbow' : c.name}
@@ -186,8 +197,17 @@ export function Inspector() {
                 style={c.index === 15 ? 'background:linear-gradient(135deg, red, yellow, lime, cyan, blue, magenta)' : `--c:${c.hex}`}
                 onClick={() => update({ ...action, value: c.index })} />)}
             </div>
+            <div class="segmented" role="group" aria-label="Temporary LED effect brightness">
+              <button type="button" class={action.brightness !== 'dim' ? 'is-selected' : ''}
+                aria-pressed={action.brightness !== 'dim'} onClick={() => {
+                  const { brightness, ...brightAction } = action;
+                  update(brightAction);
+                }}>Full Brightness</button>
+              <button type="button" class={action.brightness === 'dim' ? 'is-selected' : ''}
+                aria-pressed={action.brightness === 'dim'} onClick={() => update({ ...action, brightness: 'dim' })}>Dim</button>
+            </div>
           </div>}
-          <p class="hint">Always on persists until replaced, restored, or the layer changes. Key feedback can cover it. Blinking covers key feedback and restores the layer indication when finished. As configured clears the effect; brightness overrides remain in effect.</p>
+          <p class="hint">Always on persists until replaced, restored, or the layer changes. Key feedback can cover it. Blinking covers key feedback. Clearing or finishing an effect restores normal lighting without replaying the layer's blink or timed indication; brightness overrides remain in effect.</p>
         </> : ledCommandSpec(action.command)?.relative ?
           <label class="field"><span class="field-label">Relative step</span>
             <select value={action.value} onChange={(e) => {

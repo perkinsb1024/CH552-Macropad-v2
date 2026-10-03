@@ -9,7 +9,7 @@ import { importProfile, exportProfile } from '../src/io/json';
 import { legacyActionCodes } from './legacy-image';
 
 describe('LED control format 7', () => {
-  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 261 accepted', (variant) => {
+  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 405 accepted', (variant) => {
     const image = encodeProfile(defaultProfile(variant));
     let accepted = 0;
     for (let command = 0; command < 256; command++) for (let nibble = 0; nibble < 16; nibble++) {
@@ -26,7 +26,7 @@ describe('LED control format 7', () => {
         expect(actionProblem(action, { rotation: true, layerCount: 2 })).toBeNull();
       }
     }
-    expect(accepted).toBe(261);
+    expect(accepted).toBe(405);
   });
   it('rejects malformed LED inputs before standalone encoding can truncate them', () => {
     for (const value of [0, -8, 8, 127, 16, NaN]) {

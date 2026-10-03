@@ -393,19 +393,21 @@ no timers. JSON import rejects invalid ranges/types; UI edits clamp to 1–64.
 
 ## Temporary LED effects
 
-The editor groups commands `80`–`89` under **Set all LEDs**. Choose **As configured**,
-**Always on**, or **Blink 1–8 times**, with a palette swatch; index F means Rainbow,
+The editor groups bright and dim commands under **Set all LEDs**. Choose
+**As configured**, **Always on**, or **Blink**. Blink exposes a 1–8 count slider.
+Choose a palette swatch and **Full Brightness / Dim**; index F means Rainbow,
 including on a layer without configured rainbow. Existing commands use Bright.
-Firmware also accepts Dim by setting command bit `0x10` on Always on or Blink
+Dim sets command bit `0x10` on Always on or Blink
 (`91`–`99`). Dim uses the existing layer-indicator color reduction for both solid
 colors and rainbow; no extra record or runtime RAM bytes are required. `90` is
 invalid: As configured remains `80` with auxiliary zero and has no brightness.
-Dim support is currently firmware only; editor, binary codec and JSON support
-for choosing Dim remain pending.
-As configured hides the color controls and encodes auxiliary zero. JSON retains
+As configured hides color, brightness and blink-count controls and encodes auxiliary zero. JSON retains
 ordinary LED-control actions with commands `effectRestore`, `effectOn`, or
 `effectBlink1` through `effectBlink8`; value is the numeric palette index, not the
-legacy `asConfigured` sentinel.
+legacy `asConfigured` sentinel. The optional `brightness` field is `"dim"` or
+`"bright"`; omitted means Bright. It is valid only on Always on and Blink effects.
+The editor/decoder omit the Bright field by default, preserving existing profile
+shapes and wire bytes. JSON import normalizes explicit `"bright"` to omission.
 
 Always-on effects persist until replaced, explicitly cleared, an actual layer
 change, or configuration application/USB reset. Selecting the already active

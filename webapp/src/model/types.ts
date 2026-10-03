@@ -1,8 +1,8 @@
-import type { LedCommand, LedValue } from './ledControl';
+import type { LedBrightness, LedCommand, LedValue } from './ledControl';
 import type { LayerIndicatorBehavior, Variant } from './constants';
 
 export type Action =
-  | { type: 'ledControl'; command: LedCommand; value: LedValue }
+  | { type: 'ledControl'; command: LedCommand; value: LedValue; brightness?: LedBrightness }
   | { type: 'none' }
   | { type: 'keyTap'; usage: number; modifiers: number }
   | { type: 'keyHold'; usage: number; modifiers: number }

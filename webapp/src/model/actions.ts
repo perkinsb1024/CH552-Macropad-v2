@@ -108,7 +108,7 @@ export function mouseButtonNames(mask: number): string[] {
 /** Short label used on key caps and lists. */
 export function summarize(action: Action): string {
   switch (action.type) {
-    case 'ledControl': return ledSummary(action.command, action.value);
+    case 'ledControl': return ledSummary(action.command, action.value, false, action.brightness);
     case 'none':
       return '—';
     case 'keyTap':

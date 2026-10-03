@@ -190,7 +190,9 @@ Rainbow animation activates even when the actual layer has no rainbow indicator.
 Effects use current rainbow speed/phase settings and force their selected
 brightness even if the underlying indicator brightness policy is off/dim.
 Existing commands use Bright; firmware now also supports Dim using command bit
-`0x10` (`91`–`99`). Editor support for Dim remains pending. Both brightnesses
+`0x10` (`91`–`99`). The editor exposes Full Brightness / Dim and a single Blink
+choice with a 1–8 count slider. JSON stores optional `brightness: "dim"`, with
+Bright as the default when omitted. Both brightnesses
 reuse the existing effect-state byte and color renderer.
 
 - Always-on survives ordinary key/encoder activity until replaced, explicitly

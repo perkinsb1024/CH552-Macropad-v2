@@ -3,6 +3,7 @@ import { Inspector } from '../src/ui/components/Inspector';
 import { profile, selectedSlot } from '../src/ui/store';
 import { defaultProfile } from '../src/model/defaults';
 import { LED_COMMANDS, isLedEffect, ledProblem, ledValueOptions } from '../src/model/ledControl';
+import { encodeAction } from '../src/codec/encode';
 vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
 type Node = { type: unknown; props: Record<string, unknown> };
 function nodes(value: unknown): Node[] {
@@ -85,7 +86,11 @@ it('groups temporary effects into one command, hides restored controls, and sele
   change(selects()[2]!, 'effectOn');
   expect(profile.value!.layers[0]!.keys[0]).toMatchObject({ command: 'effectOn', value: 15 });
   for (const mode of LED_COMMANDS.filter(c => isLedEffect(c.command) && c.command !== 'effectRestore')) {
-    change(selects()[2]!, mode.command);
+    change(selects()[2]!, mode.command === 'effectOn' ? 'effectOn' : 'blink');
+    if (mode.command !== 'effectOn') {
+      const slider = nodes(Inspector()).find(n => n.props['aria-label'] === 'Blink count')!;
+      (slider.props.onInput as (e: unknown) => void)({ target: { value: String(mode.code - 0x81) } });
+    }
     const colors = effectColors();
     expect(colors).toHaveLength(16);
     for (const [index, swatch] of colors.entries()) {
@@ -96,4 +101,45 @@ it('groups temporary effects into one command, hides restored controls, and sele
   }
   change(selects()[2]!, 'effectRestore');
   expect(effectColors()).toHaveLength(0);
+});
+
+function brightnessButtons() {
+  return nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Temporary LED effect brightness')).filter(n => n.type === 'button');
+}
+function blinkSlider() { return nodes(Inspector()).find(n => n.props['aria-label'] === 'Blink count'); }
+
+it('offers one Blink mode and a 1–8 count slider, preserving color and dim brightness', () => {
+  setup(); change(selects()[1]!, 'temporaryEffect');
+  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['As configured', 'Always on', 'Blink']);
+  expect(blinkSlider()).toBeUndefined();
+  expect(brightnessButtons()).toHaveLength(0);
+  change(selects()[2]!, 'effectOn');
+  expect(brightnessButtons().map(n => n.props.children)).toEqual(['Full Brightness', 'Dim']);
+  expect(brightnessButtons()[0]!.props['aria-pressed']).toBe(true);
+  (brightnessButtons()[1]!.props.onClick as () => void)();
+  (effectColors()[4]!.props.onClick as () => void)();
+  change(selects()[2]!, 'blink');
+  for (let count = 1; count <= 8; count++) {
+    const slider = blinkSlider()!;
+    expect(slider.props).toMatchObject({ type: 'range', min: 1, max: 8, step: 1 });
+    (slider.props.onInput as (e: unknown) => void)({ target: { value: String(count) } });
+    const action = profile.value!.layers[0]!.keys[0]!;
+    expect(action).toEqual({ type: 'ledControl', command: `effectBlink${count}`, value: 4, brightness: 'dim' });
+    expect(encodeAction(action, new Map())).toEqual([0x4f, 0x91 + count]);
+    expect(blinkSlider()!.props.value).toBe(count);
+    expect(nodes(Inspector()).filter(n => n.type === 'output').some(n =>
+      JSON.stringify(n.props.children) === JSON.stringify([count, ' ', count === 1 ? 'time' : 'times']))).toBe(true);
+  }
+  // Existing saved counts render as Blink with their original count.
+  expect(selects()[2]!.props.value).toBe('blink');
+  change(selects()[2]!, 'effectOn');
+  expect(blinkSlider()).toBeUndefined();
+  expect(profile.value!.layers[0]!.keys[0]).toMatchObject({ value: 4, brightness: 'dim' });
+  (brightnessButtons()[0]!.props.onClick as () => void)();
+  expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'effectOn', value: 4 });
+  (brightnessButtons()[1]!.props.onClick as () => void)();
+  change(selects()[2]!, 'effectRestore');
+  expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'effectRestore', value: 0 });
+  expect(brightnessButtons()).toHaveLength(0);
+  expect(blinkSlider()).toBeUndefined();
 });
