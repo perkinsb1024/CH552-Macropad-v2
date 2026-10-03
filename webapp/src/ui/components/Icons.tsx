@@ -36,6 +36,9 @@ export const IconGlobe = () => (
 export const IconChevron = () => (
   <svg {...base}><path d="M6 9l6 6 6-6" /></svg>
 );
+export const IconArrow = ({ up = false }: { up?: boolean }) => (
+  <svg {...base} style={up ? 'transform:rotate(180deg)' : undefined}><path d="M12 5v14" /><path d="M5 12l7 7 7-7" /></svg>
+);
 export const IconSearch = () => (
   <svg {...base}><circle cx="10.5" cy="10.5" r="6.5" /><path d="M16 16l5 5" /></svg>
 );

@@ -853,41 +853,58 @@ output {
   align-self: start;
   min-width: 0;
 }
+.sidebar-scroll-arrow {
+  display: none;
+}
 @media (min-width: 1081px) {
   .column-side {
     position: sticky;
     top: var(--sidebar-top, calc(var(--topbar-height, 64px) + 18px));
   }
   .sidebar-scroll {
-    /* Sticky positioning stops at the workspace's bottom edge. Leave room
-       for its padding and the footer even at the end of the document. */
-    max-height: calc(100dvh - var(--sidebar-top, calc(var(--topbar-height, 64px) + 18px)) - var(--footer-height) - var(--workspace-bottom-space) - 18px);
+    max-height: var(--sidebar-height, calc(100dvh - var(--sidebar-top, calc(var(--topbar-height, 64px) + 18px)) - 18px));
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
-  .column-side::before,
-  .column-side::after {
-    content: '';
+  .sidebar-scroll-arrow {
+    display: grid;
+    place-items: center;
     position: absolute;
-    left: 0;
-    right: 0;
-    height: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--bg-elev);
+    color: var(--accent);
     z-index: 1;
-    pointer-events: none;
     opacity: 0;
-    transition: opacity 120ms ease;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    cursor: pointer;
   }
-  .column-side::before {
-    top: 0;
-    background: linear-gradient(to bottom, rgb(0 0 0 / 0.16), transparent);
+  .sidebar-scroll-arrow svg {
+    width: 32px;
+    height: 32px;
   }
-  .column-side::after {
-    bottom: 0;
-    background: linear-gradient(to top, rgb(0 0 0 / 0.16), transparent);
+  .sidebar-scroll-arrow:hover {
+    background: var(--accent-soft);
   }
-  .column-side[data-more-above="true"]::before,
-  .column-side[data-more-below="true"]::after {
+  .sidebar-scroll-up {
+    top: 10px;
+  }
+  .sidebar-scroll-down {
+    bottom: 10px;
+  }
+  .column-side[data-more-above="true"] .sidebar-scroll-up,
+  .column-side[data-more-below="true"] .sidebar-scroll-down {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
   }
 }
 .two-up {

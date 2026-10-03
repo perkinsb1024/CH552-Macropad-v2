@@ -249,7 +249,7 @@ export function Inspector() {
 
       {action.type === 'string' && (
         <label class="field">
-          <span class="field-label">Text <output>{action.text.length + 1} bytes</output></span>
+          <span class="field-label">Text <output>{action.text.length + 1} byte{action.text.length === 0 ? '' : 's'}</output></span>
           <textarea rows={4} value={action.text} spellcheck={false} onInput={(e) => update({ ...action, text: normalizeText((e.target as HTMLTextAreaElement).value) })} placeholder="Typed with the US keyboard layout" />
           {savedStrings.length > 0 && (
             <select aria-label="Reuse an existing string" value="" onChange={(e) => {

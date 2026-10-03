@@ -10,7 +10,7 @@ export function StorageMeter() {
     { key: 'header', label: 'Header', bytes: cap.header, detail: 'Fixed' },
     { key: 'layers', label: `${p.layers.length} layer${p.layers.length > 1 ? 's' : ''}`, bytes: cap.layers, detail: `${layerSize(p.variant)} bytes each` },
     { key: 'chords', label: `${p.chords.length} chord${p.chords.length === 1 ? '' : 's'}`, bytes: cap.chords, detail: '3 bytes each' },
-    { key: 'timers', label: `${p.timedActions?.length ?? 0} timed actions`, bytes: cap.timedActions, detail: '5 bytes each' },
+    { key: 'timers', label: `${p.timedActions?.length ?? 0} timed action${p.timedActions?.length === 1 ? '' : 's'}`, bytes: cap.timedActions, detail: '5 bytes each' },
     { key: 'strings', label: `${cap.pool.length} string${cap.pool.length === 1 ? '' : 's'}`, bytes: cap.strings, detail: 'length + terminator' },
   ];
   return (
@@ -22,7 +22,7 @@ export function StorageMeter() {
         </span>
       </header>
       <div class="meter" role="img" aria-label={`${cap.used} of ${IMAGE_SIZE} bytes used`}>
-        {segments.map((s) => s.bytes > 0 && <span key={s.key} class={`meter-seg seg-${s.key}`} style={`width:${pct(s.bytes)}`} title={`${s.label}: ${s.bytes} bytes`} />)}
+        {segments.map((s) => s.bytes > 0 && <span key={s.key} class={`meter-seg seg-${s.key}`} style={`width:${pct(s.bytes)}`} title={`${s.label}: ${s.bytes} byte${s.bytes === 1 ? '' : 's'}`} />)}
       </div>
       <ul class="meter-legend">
         {segments.map((s) => (
@@ -42,7 +42,7 @@ export function StorageMeter() {
       </ul>
       {cap.pool.length > 0 && (
         <details class="pool">
-          <summary>String pool ({cap.strings} bytes)</summary>
+          <summary>String pool ({cap.strings} byte{cap.strings === 1 ? '' : 's'})</summary>
           <ol>
             {cap.pool.map((s, i) => (
               <li key={i}><code>{s === '' ? '(empty)' : s.replace(/\n/g, '⏎').replace(/\t/g, '⇥')}</code> <span class="muted mono">{s.length + 1}</span></li>
