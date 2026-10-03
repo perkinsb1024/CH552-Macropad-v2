@@ -72,6 +72,10 @@ static uint8_t actionValid(const __xdata uint8_t *image, uint8_t offset,
     uint8_t param = image[offset + 1];
     switch (type) {
         case CONFIG_ACTION_LED_CONTROL:
+            if (param >= CONFIG_LED_EFFECT_RESTORE) {
+                return param <= CONFIG_LED_EFFECT_BLINK_8 &&
+                       (param != CONFIG_LED_EFFECT_RESTORE || aux == 0);
+            }
             if (param > CONFIG_LED_PRESET_TOGGLE) return 0;
             if (param == CONFIG_LED_RESTORE) return aux == 0;
             if (param == CONFIG_LED_PRESET_TOGGLE) {

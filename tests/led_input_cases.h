@@ -120,6 +120,101 @@ static void testConsumedPhysicalInput(void) {
     expectBootloader = 0;
 }
 
+static void testTemporaryEffects(void) {
+    for (uint8_t color = 0; color < 16; color++) {
+        for (uint8_t blinks = 0; blinks <= 8; blinks++) {
+            testLoadStarterProfile(PHYSICAL_VARIANT);
+            P1 = P3 = 0xFF; previewOptions = 0; activeConfigValid = 1;
+            currentMs = 1000; firmwareApplyConfig();
+            firmwareLedAction(CONFIG_LED_INDICATOR_SET, 0);
+            uint8_t command = blinks ? CONFIG_LED_EFFECT_ON + blinks : CONFIG_LED_EFFECT_ON;
+            firmwareLedAction(command, color);
+            assert((previewOptions & LED_EFFECT_FLAG) && (previewOptions >> 4) == color);
+            assert(layerIndicatorPhasesLeft == 2 * blinks);
+            for (uint8_t i = 0; i < NUM_LEDS; i++) {
+                if (color != 15) {
+                    assert(ledData[3 * i] == configPalette[color][1]);
+                    assert(ledData[3 * i + 1] == configPalette[color][0]);
+                    assert(ledData[3 * i + 2] == configPalette[color][2]);
+                }
+            }
+            if (color == 15) {
+                uint8_t hue = rainbowHue;
+                currentMs += 18; loop();
+                assert(rainbowHue != hue); // Animates on a non-rainbow/disabled layer.
+            }
+            for (uint8_t phase = 1; phase <= 2 * blinks; phase++) {
+                currentMs = 1000 + 250 * phase; loop();
+                assert(layerIndicatorPhasesLeft == 2 * blinks - phase);
+                if ((phase & 1) || phase == 2 * blinks) {
+                    for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+                } else if (color != 15) assert(ledData[0] == configPalette[color][1]);
+            }
+            if (blinks) assert(!previewOptions && ledSettings[2] == 0);
+            else {
+                currentMs += 2000; loop(); assert(previewOptions & LED_EFFECT_FLAG);
+                firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
+                assert(!previewOptions && ledSettings[2] == 0);
+            }
+        }
+    }
+    // Pressed-key feedback overrides always-on, but not blinking effects.
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[9] = activeConfig[10] = 0;
+    activeConfig[9 + 2 * (NUM_LEDS + 3)] = 10; // Key 0: blue.
+    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+    firmwareLedAction(CONFIG_LED_EFFECT_ON, 0); // Bright red.
+    P1 &= ~2; currentMs = 1; loop(); currentMs = 11; loop();
+    assert((previewOptions & LED_EFFECT_FLAG) && ledData[2] == 255 && ledData[1] == 0);
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_1, 0);
+    assert(ledData[1] == 255 && ledData[2] == 0);
+    currentMs = 260; loop(); assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
+    currentMs = 510; loop(); assert(!previewOptions && ledData[2] == 255);
+    // Replacing a blink with always-on cancels the old deadline.
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_8, 15);
+    firmwareLedAction(CONFIG_LED_EFFECT_ON, 4);
+    currentMs += 500; loop(); assert((previewOptions >> 4) == 4 && !layerIndicatorPhasesLeft);
+    // Config application cancels the overlay; UI preview also replaces it cleanly.
+    firmwareApplyConfig(); assert(!previewOptions && !layerIndicatorPhasesLeft);
+#if ENABLE_COLOR_PREVIEW
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_8, 15);
+    firmwarePreviewColor(0xA5);
+    assert(previewOptions == 0xA5 && !layerIndicatorPhasesLeft);
+    firmwarePreviewColor(0); assert(!previewOptions);
+#endif
+    // Same-layer selection leaves the alert; actual switching clears it.
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    activeConfig[3] = 1;
+    activeConfig[9] = CONFIG_ACTION_SET_LAYER; activeConfig[10] = 0;
+    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+    activeConfig[9 + 2 * size - 1] = 0xAD; // Bright blue, always-on.
+    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+    firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
+    actionsPress(0, 0); loop(); assert(previewOptions & LED_EFFECT_FLAG);
+    actionsRelease(0);
+    actionsPress(1, 1); loop();
+    assert(!previewOptions && actionsLayer() == 1 && ledData[2] == 255);
+    actionsRelease(1);
+    // A timer may start an alert; its resume restores the same layer, consuming wake.
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[3] = 1 << 6;
+    uint8_t timer = configTimedOffset();
+    activeConfig[timer] = 128;
+#if CONFIG_TIMED_CONSUME_INLINE
+    activeConfig[timer] |= CONFIG_TIMED_CONSUME;
+#else
+    activeConfig[127] = 1;
+#endif
+    activeConfig[timer + 1] = 0xFF; activeConfig[timer + 2] = CONFIG_LED_EFFECT_ON;
+    activeConfig[timer + 3] = 0x0F; activeConfig[timer + 4] = CONFIG_LED_EFFECT_RESTORE;
+    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+    currentMs = 65536; loop(); assert(previewOptions == 0xFF);
+    uint8_t before = frameCount;
+    P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
+    assert(!previewOptions && frameCount == before && actionsLayer() == 0);
+}
+
 static uint8_t expectedDim(uint8_t v) { return (v >> 4) | (v != 0); }
 static uint8_t stepModel(uint8_t n, int8_t d, uint8_t count) {
     int value = n + d;

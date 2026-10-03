@@ -28,6 +28,7 @@
 #define DEBOUNCE_MS     10
 #define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
+#define LED_EFFECT_FLAG 2 // Unused by color preview; shares the alternate option byte.
 
 __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 #if PHYSICAL_VARIANT == CONFIG_SIX_KEYS
@@ -68,11 +69,7 @@ __idata uint8_t rainbowDrift[NUM_LEDS];
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
 __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with actions.c.
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
-#if ENABLE_COLOR_PREVIEW
-__pdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
-#else
-#define previewOptions 0
-#endif
+__pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 // With invalid config, actions are inactive: reuse this timer for the error LED.
 __xdata uint16_t encoderPressedMs;
 
@@ -107,12 +104,10 @@ void updateLeds() {
   uint8_t indicator = indicatorBrightness(options);
   uint8_t keyLevel = ledSettings[3];
   uint8_t spacing = ledSettings[0];
-#if ENABLE_COLOR_PREVIEW
   if (previewOptions) {
     indicator = 1 + (options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS);
-    spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
+    if (!(previewOptions & LED_EFFECT_FLAG)) spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
   } else
-#endif
   if (!indicator) {
     // Suppressed indications must not obscure key feedback.
     phases = 0;
@@ -124,15 +119,13 @@ void updateLeds() {
     uint8_t color = palette;
     uint8_t level = indicator;
     uint8_t rainbow = palette == 15 &&
-        (previewOptions ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
+        (previewOptions && !(previewOptions & LED_EFFECT_FLAG) ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-#if ENABLE_COLOR_PREVIEW
-    if (previewOptions) {
+    if (previewOptions && !(previewOptions & LED_EFFECT_FLAG)) {
       // Preview bypasses runtime brightness policies.
     } else
-#endif
     if (phases) {
       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
     } else if (keyLevel && stableState[i] &&
@@ -191,7 +184,17 @@ uint8_t ledStep(uint8_t current, int8_t delta, uint8_t count) {
   return next;
 }
 
+void startLayerIndicator(uint8_t layer, uint16_t now);
+
 void firmwareLedAction(uint8_t command, uint8_t value) {
+  if (command >= CONFIG_LED_EFFECT_RESTORE) {
+    previewOptions = (value << 4) | LED_EFFECT_FLAG | 1 | 8;
+    layerIndicatorPhasesLeft = (command - CONFIG_LED_EFFECT_ON) << 1;
+    if (command == CONFIG_LED_EFFECT_ON) previewOptions |= 4;
+    if (command == CONFIG_LED_EFFECT_RESTORE) previewOptions = 0;
+    startLayerIndicator(actionsLayer(), millis());
+    return;
+  }
   int8_t delta = value;
   if (value & 8) delta -= 16;
   uint8_t relative = command & 1;
@@ -257,6 +260,7 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
 
 #if ENABLE_COLOR_PREVIEW
 void firmwarePreviewColor(uint8_t options) {
+  if (previewOptions & LED_EFFECT_FLAG) layerIndicatorPhasesLeft = 0;
   previewOptions = options;
   if (!options && !activeConfigValid) {
     clearLeds();
@@ -271,13 +275,15 @@ void firmwarePreviewColor(uint8_t options) {
 #endif
 
 void startLayerIndicator(uint8_t layer, uint16_t now) {
+  if (!(previewOptions & LED_EFFECT_FLAG)) {
   uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   layerIndicatorPhasesLeft = 0;
   if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
       behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
     layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 : 2 * (layer + 1);
-    layerIndicatorDeadline = (uint8_t)((now >> 1) + LAYER_INDICATOR_PHASE_TICKS);
   }
+  }
+  layerIndicatorDeadline = (uint8_t)((now >> 1) + LAYER_INDICATOR_PHASE_TICKS);
   updateLeds();
 }
 
@@ -288,6 +294,11 @@ void serviceLayerIndicator(uint16_t now) {
   }
   layerIndicatorPhasesLeft--;
   layerIndicatorDeadline += LAYER_INDICATOR_PHASE_TICKS;
+  if (!layerIndicatorPhasesLeft && (previewOptions & LED_EFFECT_FLAG)) {
+    previewOptions = 0;
+    startLayerIndicator(actionsLayer(), now);
+    return;
+  }
   updateLeds();
 }
 
@@ -339,7 +350,7 @@ void scanButton(uint8_t input, uint16_t now) {
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
 #if ENABLE_COLOR_PREVIEW
-    if (previewOptions) firmwarePreviewColor(0);
+    if (previewOptions && !(previewOptions & LED_EFFECT_FLAG)) firmwarePreviewColor(0);
     if (!activeConfigValid) return;
 #endif
     if (pressed) {
@@ -362,7 +373,7 @@ void scanEncoder() {
     return;
   }
 #if ENABLE_COLOR_PREVIEW
-  if (previewOptions) firmwarePreviewColor(0);
+  if (previewOptions && !(previewOptions & LED_EFFECT_FLAG)) firmwarePreviewColor(0);
 #endif
   movement = encoderTransitions[(encoderState << 2) | state];
   encoderState = state;
@@ -386,6 +397,7 @@ void scanEncoder() {
 }
 
 void firmwareApplyConfig(void) {
+  if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
   actionsTimedReset(clock >> 16);
@@ -461,12 +473,8 @@ void loop() {
   scanEncoder();
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
       rainbowFrameMs[previewOptions ? activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]] &&
-#if ENABLE_COLOR_PREVIEW
       ((previewOptions ? (previewOptions & 8 ? previewOptions : 0) :
         (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) > 0xF0)
-#else
-      (configLayerOptions(actionsLayer()) & 0xFC) > 0xF0)
-#endif
   {
     rainbowChanged = (uint8_t)now;
     rainbowHue++;
@@ -491,11 +499,12 @@ void loop() {
   actionsPoll(now);
   if (actionsTakeLayerSelection() || lastLayer != actionsLayer()) {
     if (lastLayer != actionsLayer()) {
+      if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
       lastLayer = actionsLayer();
       encoderState = readEncoder();
       encoderMovement = 0;
     }
-    startLayerIndicator(lastLayer, now);
+    if (!(previewOptions & LED_EFFECT_FLAG)) startLayerIndicator(lastLayer, now);
   }
   serviceLayerIndicator(now);
   if (allowRunBootloader && stableState[NUM_LEDS] &&

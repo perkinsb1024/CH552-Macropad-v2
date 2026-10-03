@@ -504,6 +504,7 @@ static void testOneShotChordIndicator(void) {
 
 int main(void) {
     testConsumedPhysicalInput();
+    testTemporaryEffects();
     testTimedLighting();
     testLedControls();
     testSameLayerIndicator();
