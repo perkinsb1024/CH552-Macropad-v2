@@ -438,7 +438,9 @@ void firmwareApplyConfig(void) {
   rainbowChanged = (uint8_t)now;
   rainbowHue = 0;
   for (uint8_t i = 0; i < NUM_LEDS; i++) rainbowDrift[i] = 0;
-  updateLeds();
+  // Enumeration reapplies config: wait for SET_CONFIGURATION to avoid an extra blink.
+  if (UsbConfig) startLayerIndicator(lastLayer, now);
+  else updateLeds();
 }
 
 void setup() {

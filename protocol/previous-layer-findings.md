@@ -1,7 +1,7 @@
 # Previous-layer investigation
 
 The firmware prototype fits both variants without removing existing features.
-It reuses Set layer action A with parameter **7** to mean the previous persistent
+It reuses Set layer action A with parameter **`0xFF` (255)** to mean the previous persistent
 base layer. Real indices remain 0–4 on six-key and 0–6 on three-key hardware.
 Record size remains two bytes; there is no extra configuration storage or version
 bump. This can be folded into the still-unpublished v7 after the UI work is added.
@@ -9,6 +9,10 @@ The preserved baseline is `experiment/timed-alerts-v7-64` at `7a7d066`; the
 prototype is committed separately on `experiment/previous-layer`.
 
 ## Measured cost
+
+The original measurements below used parameter 7. Fresh comparison builds confirm
+that replacing it with `0xFF` changes neither flash usage nor RAM/stack capacity
+in either variant. Parameter 7 is no longer accepted as a previous-layer target.
 
 | Variant | Baseline flash | Prototype flash | Added | Remaining flash | Baseline stack | Prototype stack |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -71,7 +75,7 @@ this is an additional navigation/return option rather than a prerequisite.
 
 ## Validation and remaining editor work
 
-Firmware accepts parameter 7 only for Set layer, with auxiliary 0 or 1, in v7.
+Firmware accepts parameter `0xFF` only for Set layer, with auxiliary 0 or 1, in v7.
 It remains invalid for Momentary layer and v6. Other out-of-range parameters remain
 invalid. Ordinary relative offsets retain their existing meaning.
 
@@ -80,9 +84,9 @@ editor rejects profiles containing the new sentinel; the firmware prototype is
 not yet an end-to-end configurable feature. To complete it:
 
 1. Add a Previous layer target to persistent and one-shot Set layer selectors,
-   excluding Momentary layer. Display it as a named target, not missing Layer 8.
+   excluding Momentary layer. Display it as a named target, not missing Layer 256.
 2. Update model validation, binary decoding, action labels and JSON documentation
-   for target 7, guarded to v7. Encoding can reuse the existing Set layer record.
+   for target 255, guarded to v7. Encoding can reuse the existing Set layer record.
 3. Preserve the sentinel through layer insertion, deletion, reorder/duplicate,
    clipboard, undo and timer/chord target remapping. `store.ts` currently remaps
    every numeric Set layer target; it must skip the sentinel. Other target-display
@@ -92,7 +96,7 @@ not yet an end-to-end configurable feature. To complete it:
 5. Test on hardware. No physical-device tests were performed here.
 
 The simplest model extension is to retain `setLayer`/`oneShotSetLayer` with numeric
-`layer: 7` and a shared sentinel helper. A semantic `previous` model target is
+`layer: 255` and a shared sentinel helper. A semantic `previous` model target is
 another option, but requires a larger type migration. Either uses the same wire
 encoding, and no additional flash is needed for browser-only work.
 

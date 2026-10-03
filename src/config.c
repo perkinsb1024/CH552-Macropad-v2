@@ -26,9 +26,13 @@ __code uint8_t configPalette[16][3] = {
 #ifdef __SDCC
 #define layerSize(variant) ((uint8_t)(PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 15 : 22))
 #define keyCount(variant) ((uint8_t)(PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 3 : 6))
+#define maxLayers(variant) ((uint8_t)CONFIG_MAX_LAYERS)
+#define pairCount(variant) ((uint8_t)(PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 3 : 15))
 #else
 static uint8_t layerSize(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 15 : 22; }
 static uint8_t keyCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 3 : 6; }
+static uint8_t maxLayers(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 7 : 5; }
+static uint8_t pairCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 3 : 15; }
 #endif
 
 static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
@@ -157,7 +161,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     }
     keys = keyCount(variant);
     size = layerSize(variant);
-    if (layers > (keys == 3 ? 7 : 5)) return 0;
+    if (layers > maxLayers(variant)) return 0;
     chords = (image[5] >> 1) & 63;
     // Each product fits a byte after the layer/chord count checks; the sum
     // remains 16-bit so malformed images cannot wrap past the capacity check.
@@ -184,7 +188,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     for (i = 0; i < chords; i++) {
         id = image[offset];
         if (((id >> 4) & 7) >= layers ||
-            (id & 15) >= (keys == 3 ? 3 : 15) ||
+            (id & 15) >= pairCount(variant) ||
             (i && id <= previous) ||
             !actionValid(image, offset + 1, layers, 0, pool, used)) {
             return 0;

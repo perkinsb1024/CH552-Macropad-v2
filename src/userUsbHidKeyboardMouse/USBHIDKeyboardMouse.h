@@ -15,6 +15,8 @@ extern "C" {
 #endif
 
 void USBInit(void);
+// Zero until the host configures the device, and during USB bus reset.
+extern volatile __xdata uint8_t UsbConfig;
 FW_BIT USB_EP1_sendConfig(const __xdata uint8_t *reply) USB_CRITICAL;
 void USB_EP1_receiveReady(void) USB_CRITICAL;
 void USB_setKeyboardLedStatus(uint8_t leds);

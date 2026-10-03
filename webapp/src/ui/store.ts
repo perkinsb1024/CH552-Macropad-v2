@@ -619,7 +619,7 @@ export function startOffline(variant: Variant): void {
   profile.value = draft?.profile ?? defaultProfile(variant);
   meta.value = draft?.meta ?? {};
   baseline.value = null;
-  selectedLayer.value = 0;
+  selectedLayer.value = profile.value.startupLayer;
   selectedSlot.value = null;
   saveState.value = { phase: 'idle' };
   if (draft) notify('info', 'Restored your saved draft from this browser.');
@@ -641,7 +641,7 @@ export function resetToDefaults(): void {
           profile.value = defaultProfile(p.variant);
           freshStart.value = { profile: cloneProfile(profile.value), kind: 'starter' };
           meta.value = {};
-          selectedLayer.value = 0;
+          selectedLayer.value = profile.value.startupLayer;
           selectedSlot.value = null;
           closeDialog();
         },
@@ -811,7 +811,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
       profile.value = fromDevice;
       baseline.value = cloneProfile(fromDevice);
       freshStart.value = null;
-      selectedLayer.value = Math.min(selectedLayer.value, fromDevice.layers.length - 1);
+      selectedLayer.value = fromDevice.startupLayer;
       selectedSlot.value = null;
       saveState.value = { phase: 'idle' };
     };
@@ -835,7 +835,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
         comparison: { device: cloneProfile(fromDevice), editor: cloneProfile(draft.profile), editorLabel: 'Draft' },
         actions: [
           { label: 'Load from device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Use the draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
+          { label: 'Use the draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); selectedLayer.value = draft.profile.startupLayer; selectedSlot.value = null; closeDialog(); } },
         ],
       });
     } else {
@@ -996,7 +996,7 @@ function importProfileText(text: string, source: string): void {
       profile.value = imported;
       freshStart.value = { profile: cloneProfile(imported), kind: 'imported' };
       meta.value = importedMeta;
-      selectedLayer.value = 0;
+      selectedLayer.value = imported.startupLayer;
       selectedSlot.value = null;
       closeDialog();
       notify('success', `Imported ${source}.`);

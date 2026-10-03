@@ -14,6 +14,7 @@ uint8_t testP1DirPu;
 uint8_t testP3ModOc;
 uint8_t testP3DirPu;
 volatile uint8_t USB_CTRL;
+volatile uint8_t UsbConfig = 1;
 uint8_t TMOD;
 volatile uint8_t EA;
 static uint32_t currentMs;
@@ -26,6 +27,9 @@ static uint8_t encoderHeldAtStartup;
 static uint8_t frames[32][9];
 static uint8_t frameCount;
 static uint8_t bytesWritten;
+static uint8_t indicatorRisingEdges;
+static uint8_t indicatorWasLit;
+static uint8_t resetPending;
 static uint8_t flash[CONFIG_SIZE];
 uint8_t activeConfigValid;
 
@@ -38,7 +42,9 @@ void delayMicroseconds(uint16_t us) {
     }
 }
 void neopixel_show_P3_4(uint8_t *data, uint8_t length) {
-    (void)data;
+    uint8_t lit = data[0] || data[1] || data[2];
+    if (lit && !indicatorWasLit) indicatorRisingEdges++;
+    indicatorWasLit = lit;
     bytesWritten = length;
 }
 void set_pixel_for_GRB_LED(uint8_t *data, uint8_t index,
@@ -82,12 +88,20 @@ void USB_EP1_reset(void) {}
 void USB_EP1_receiveReady(void) {}
 void USB_setKeyboardLedStatus(uint8_t leds) { (void)leds; }
 uint8_t USB_EP1_sendConfig(const uint8_t *reply) { (void)reply; return 1; }
-void protocolReset(void) {}
+void protocolReset(void) { resetPending = 1; }
 void protocolInit(void) {
     memcpy(activeConfig, flash, CONFIG_SIZE);
     activeConfigValid = configValid(activeConfig, PHYSICAL_VARIANT);
+    resetPending = 0;
 }
-void protocolPoll(uint16_t now) { (void)now; }
+void firmwareApplyConfig(void);
+void protocolPoll(uint16_t now) {
+    (void)now;
+    if (resetPending) {
+        firmwareApplyConfig();
+        resetPending = 0;
+    }
+}
 uint8_t protocolReceive(const uint8_t *packet) { (void)packet; return 0; }
 
 #include "../CH552_Universal_Macropad.ino"
@@ -103,6 +117,61 @@ static void assertIndicatorLeds(uint8_t full, uint8_t lit, uint8_t held) {
         assert(ledData[3*i] == (lit ? (full ? 66 : 5) : 0));
         assert(ledData[3*i+1] == (lit ? (full ? 255 : 15) : (i == 0 && held ? 255 : 0)));
         assert(ledData[3*i+2] == 0);
+    }
+}
+
+static void testStartupIndicatorEnumeration(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
+        for (uint8_t behavior = CONFIG_LAYER_INDICATOR_TIMED_ON;
+             behavior <= CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER; behavior++) {
+            testLoadStarterProfile(PHYSICAL_VARIANT);
+            for (uint8_t i = 1; i < CONFIG_MAX_LAYERS; i++) {
+                memcpy(activeConfig + 9 + size * i, activeConfig + 9, size);
+            }
+            activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3);
+            activeConfig[9 + size * (layer + 1) - 1] =
+                (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+            uint16_t crc = configCrc(activeConfig);
+            activeConfig[6] = crc;
+            activeConfig[7] = crc >> 8;
+            memcpy(flash, activeConfig, CONFIG_SIZE);
+            P1 = P3 = 0xFF;
+            previewOptions = 0;
+            UsbConfig = 0;
+            currentMs = 0;
+            indicatorRisingEdges = indicatorWasLit = 0;
+            setup();
+            assert(activeConfigValid && actionsLayer() == layer);
+            assert(!layerIndicatorPhasesLeft && !indicatorRisingEdges);
+            assertIndicatorLeds(0, 0, 0);
+
+            // Bus resets before configuration must not flash the indicator.
+            protocolReset(); tick(100);
+            protocolReset(); tick(350);
+            assert(!layerIndicatorPhasesLeft && !indicatorRisingEdges);
+            assertIndicatorLeds(0, 0, 0);
+
+            // SET_CONFIGURATION schedules the same main-loop config application.
+            UsbConfig = 1;
+            protocolReset(); tick(600);
+            uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
+            uint8_t phases = timed ? 6 : 2 * (layer + 1);
+            assert(layerIndicatorPhasesLeft == phases);
+            assertIndicatorLeds(0, 1, 0);
+            for (uint8_t phase = 1; phase <= phases; phase++) {
+                uint16_t deadline = 600 + 250 * phase;
+                tick(deadline - 1);
+                assert(layerIndicatorPhasesLeft == phases - phase + 1);
+                tick(deadline);
+                assertIndicatorLeds(0, (timed || !(phase & 1)) && phase < phases, 0);
+            }
+            tick(600 + 250 * (phases + 1));
+            assert(!layerIndicatorPhasesLeft);
+            assertIndicatorLeds(0, 0, 0);
+            assert(indicatorRisingEdges == (timed ? 1 : layer + 1));
+        }
     }
 }
 
@@ -503,6 +572,7 @@ static void testOneShotChordIndicator(void) {
 #include "led_input_cases.h"
 
 int main(void) {
+    testStartupIndicatorEnumeration();
     testConsumedPhysicalInput();
     testTemporaryEffects();
     testTimedLighting();

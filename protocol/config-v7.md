@@ -179,7 +179,7 @@ The action types are:
 | 7 | Scroll step | `0` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
 | 8 | Consumer tap | High four bits of the usage | Low eight bits of the usage |
 | 9 | String | `0` | String-pool offset |
-| A | Set layer | `0` for persistent; `1` for one-shot | Layer index |
+| A | Set layer | `0` for persistent; `1` for one-shot | Layer index, or `0xFF` for previous persistent layer |
 | B | Momentary layer | `0` | Layer index |
 | C | Relative layer | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -6 to +6; added to the selected base-layer index with wraparound. `0` has no effect. |
 | D | Mouse X movement | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
@@ -190,6 +190,22 @@ For action A and C, auxiliary value `0` changes the selected base layer
 persistently. Auxiliary value `1` makes that layer active for the next input
 action, then returns to the previously selected base layer. Other auxiliary
 values are invalid. These meanings are preserved when migrating old A/D records to v7 A/C.
+
+In v7, Set layer parameter `0xFF` (255) selects the previous persistent base layer.
+Both persistent and one-shot forms support this target; Momentary layer and v6
+profiles reject it. All other targets must be actual configured layer indices.
+The previous-layer target is currently implemented in firmware only; browser
+editor, codec and JSON support remain pending.
+
+History starts at the startup layer. Actual persistent absolute/relative changes
+remember the base layer being left; selecting the same base layer preserves
+history. Persistent previous-layer selection swaps the current and remembered
+layers, so repeated selections toggle between them. Momentary overlays and
+one-shot visits/automatic returns do not update history. One-shot previous visits
+the remembered layer and returns without rewriting history. A held momentary
+layer retains priority over the selected base layer. During an armed one-shot
+visit, a persistent selection remembers the underlying return layer rather than
+the transient visit. Timed expiry and next-input actions can use this target.
 
 A chord-eligible press keeps the one-shot layer active through its chord window.
 The resolved single-key or chord action consumes it. The selected action runs
@@ -241,8 +257,8 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 | `0C` | Relative common brightness preset | Signed nonzero step |
 | `0D` | Toggle common brightness preset / configured | Preset index 1..4 |
 | `80` | Clear temporary effect / as configured | Only 0 |
-| `81` | Temporary effect: always on | Palette 0–14, F=Rainbow |
-| `82`–`89` | Temporary effect: blink 1–8 times | Palette 0–14, F=Rainbow |
+| `81` | Temporary effect: always on | Palette index, including rainbow |
+| `82`–`89` | Temporary effect: blink 1–8 times | Palette index, including rainbow |
 
 All other command IDs and payload values are rejected during image validation.
 There are 261 valid payloads. LED commands are legal for every binding, including
