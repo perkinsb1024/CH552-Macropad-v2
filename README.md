@@ -14,6 +14,7 @@ _A three-key macropad of the type this project supports_
 This project is an update to my original [CH552-macropad](https://github.com/perkinsb1024/CH552-macropad) project, a replacement firmware for generic wired USB macropads based on the [CH55xDuino library](https://github.com/DeqingSun/ch55xduino/).
 
 Compared to the previous version, this project adds:
+
 - A browser-based configurator, so you can update the device profile without editing or compiling the firmware
   - Drag and drop / copy and paste support
   - Importing and exporting of JSON profiles
@@ -22,6 +23,8 @@ Compared to the previous version, this project adds:
 - Layers
    - Including support for LED layer indicators (blink or always-on)
 - Chords (multi-key inputs)
+- Timed actions, with optional inactivity reset and input consumption
+- Temporary bright LED effects for reminders, including rainbow and blinking
 - Mouse-move actions
 - Rainbow RGB effect (come on, what good is a keyboard without it?)
 
@@ -34,12 +37,14 @@ Profiles are saved on the macropad; the configurator does not need to stay open 
 The firmware supports three-key and six-key CH552 macropads with an encoder wheel. Select the correct variant before compiling. Four-key and wireless models are not supported by this build. Look for a wired macropad like the one pictured above and check that it uses a CH552 chip. Similar-looking models can use different hardware. Some boards do not have RGB LEDs fitted.
 
 You can configure:
+
 - Keyboard shortcuts, text, mouse actions and media controls
 - The encoder button and both rotation directions
 - Up to five layers on six-key pads or seven on three-key pads, plus two-key chords
-- Key LED colors and layer indicators, including a rainbow effect
+- Key LED colors, layer indicators, and temporary bright color/rainbow effects
+- Up to four repeating or inactivity timers with optional next-input actions
 
-Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. The maximum assignable actions for each model are:
+Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. With no timers and one global chord reserved for switching layers, the maximum remaining physical-input action slots for each model are:
 
 | 3-Key Macropad | 6-Key Macropad |
 | --- | --- |
@@ -53,7 +58,7 @@ To use this configuration as a starting point, copy the contents of either the [
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
-Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware)
+Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware). The checked-in releases currently use format v6; timed actions and temporary LED effects require compiling the current v7 source.
 
 A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
 
@@ -107,6 +112,18 @@ pio run
 ```
 
 A successful build creates `.pio/build/ch552/firmware.hex`. Clean and rebuild whenever you switch hardware variants or change firmware source files.
+
+### Available Memory
+
+Remaining space in the current source builds, in bytes:
+
+| Resource | 3-key | 6-key |
+| --- | ---: | ---: |
+| Flash | 175 | 171 |
+| Contiguous external RAM | 231 | 222 |
+| Stack capacity | 124 | 121 |
+
+Stack capacity is the linker allocation, not measured peak usage.
 
 ### Build Release HEX Files for Both Variants
 
@@ -176,13 +193,15 @@ No local web app installation is needed. Open the **[Macropad Configurator](http
 
 1. Plug the macropad into the computer running the browser. It must be running this firmware, rather than sitting in bootloader mode.
 2. Click **Connect macropad** and select **Universal Macropad** in the browser's device chooser
-3. Set up the keys, encoder, layers, chords and LED colors. If no valid profile is saved, the editor loads a starter profile for you to customize.
+3. Set up the keys, encoder, layers, chords, timed actions and LED effects. If no valid profile is saved, the editor loads a starter profile for you to customize.
 4. Click **Save to device** and wait for the saved confirmation. Changes in the editor take effect on the hardware only after saving.
 5. Close the browser and use the macropad normally. Its saved profile survives unplugging it.
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-Configuration format 6 supports five six-key layers or seven three-key layers in a 128-byte profile. **LED control** actions adjust rainbow phase/speed, layer-indicator and key-press brightness, or five common dark-mode presets, using absolute settings or signed relative steps. Overrides apply across layers until configuration application or USB reset. Common cycling includes Both as configured and follows matching individual brightness changes. Color preview remains available and bypasses overrides. Global **Rainbow phase spacing** offers 0°, 30°, 60°, and 150°; **Rainbow speed** offers Extra fast, Fast, Slow, and Extra slow. Defaults are 60° and Fast. The configurator migrates binary formats 2–5, JSON versions 1–5, and older drafts while preserving bindings and metadata. After updating firmware, load, review, and save the migrated profile to activate physical inputs. Older firmware is routed to frozen format 2–5 editors under `versions/format-vN/`. See [configuration format 6](protocol/config-v6.md) and [implementation measurements](protocol/led-control-implementation.md).
+Configuration format 7 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. The first firing can be up to 131 seconds early; later repetitions use the full interval.
+
+**LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change; blinking restores the layer indicator when finished. Saved layer settings remain independent. The editor migrates binary formats 2–6, JSON versions 1–6, and older drafts while preserving bindings and metadata. Existing v6 profiles continue working on v7 firmware without erasing configuration; saving from the current editor upgrades them to v7. Older firmware uses frozen format 2–6 editors under `versions/format-vN/`. See [configuration format 7](protocol/config-v7.md).
 
 Use **Export JSON** and **Import JSON** in the Tools panel to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -230,5 +249,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v6.md)
+- [Configuration format](protocol/config-v7.md)
 - [USB configuration protocol](protocol/hid-v1.md)

@@ -87,10 +87,10 @@ is rebuilt from dependencies in CI.
   `417f276fda788f71dfcd38d781ddc67306988739`.
 - `versions/format-v3/` serves the frozen v3 editor from the revision recorded in its manifest.
 - `versions/format-v4/` serves the frozen v4 editor from the revision recorded in its manifest.
-- `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
 - `versions/format-v5/` serves the frozen v5 editor from the revision recorded in its manifest.
+- `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
 
-The footer links to the archive list. Detecting format 2, 3, 4 or 5 firmware presents a
+The footer links to the archive list. Detecting format 2, 3, 4, 5 or 6 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
