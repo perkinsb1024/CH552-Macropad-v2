@@ -341,6 +341,25 @@ static void testLedPayloads(void) {
     }
 }
 
+static void testPreviousLayerSentinel(void) {
+    for (uint8_t variant = 0; variant <= 1; variant++) {
+        for (uint8_t version = 6; version <= CONFIG_VERSION; version++) {
+            testLoadStarterProfile(variant); activeConfig[2] = version;
+            for (uint8_t aux = 0; aux < 3; aux++) {
+                activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4);
+                for (uint16_t target = 0; target < 256; target++) {
+                    activeConfig[10] = target; seal();
+                    assert(configValid(activeConfig, variant) == (aux <= 1 &&
+                        (target < configLayerCount() || (version == CONFIG_VERSION && target == CONFIG_LAYER_PREVIOUS))));
+                }
+            }
+            activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+            activeConfig[10] = CONFIG_LAYER_PREVIOUS; seal();
+            assert(!configValid(activeConfig, variant));
+        }
+    }
+}
+
 int main(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t timers = 0; timers < 8; timers++) {
@@ -397,6 +416,7 @@ int main(void) {
             assert(!configValid(activeConfig, variant)); // Superseded local experiments.
         }
     }
+    testPreviousLayerSentinel();
     testLedPayloads();
     testExpandedLayers(0);
     testExpandedLayers(1);

@@ -67,6 +67,77 @@ static void reset(void) {
     ledCalls = 0;
 }
 
+// Drive the real CCW binding path, preserving ordinary one-shot consumption.
+static void selectLayer(uint8_t target, uint8_t oneShot) {
+    uint8_t offset = 9 + 22 * actionsLayer() + 16;
+    activeConfig[offset] = CONFIG_ACTION_SET_LAYER | (oneShot ? 0x10 : 0);
+    activeConfig[offset + 1] = target;
+    actionsRotate(0);
+}
+static void previous(void) { selectLayer(CONFIG_LAYER_PREVIOUS, 0); }
+static void testPreviousLayer(void) {
+    reset(); activeConfig[3] = 1;
+    previous(); assert(actionsLayer() == 0); // No history after initialization.
+    selectLayer(1, 0); selectLayer(1, 0); // Same-layer selection preserves history.
+    previous(); assert(actionsLayer() == 0);
+    previous(); assert(actionsLayer() == 1);
+    previous(); assert(actionsLayer() == 0);
+    // Relative persistent selection also populates history.
+    activeConfig[25] = CONFIG_ACTION_RELATIVE_LAYER; activeConfig[26] = 1;
+    actionsRotate(0); assert(actionsLayer() == 1);
+    previous(); assert(actionsLayer() == 0);
+    // Initialization/config application resets history to startup layer.
+    activeConfig[3] = 1 | (1 << 3); actionsInit();
+    previous(); assert(actionsLayer() == 1);
+    reset(); activeConfig[3] = 1;
+    selectLayer(1, 0);
+    selectLayer(CONFIG_LAYER_PREVIOUS, 1); assert(actionsLayer() == 0);
+    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
+    previous(); assert(actionsLayer() == 0);
+    previous(); assert(actionsLayer() == 1);
+    // Momentary layers overlay the base; visiting/releasing them is not history.
+    reset(); activeConfig[3] = 1; activeConfig[3] = 2; // Three layers.
+    selectLayer(1, 0); selectLayer(0, 0); // Previous persistent layer is 1.
+    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[10] = 2;
+    actionsPress(0, 0); assert(actionsLayer() == 2);
+    previous(); assert(actionsLayer() == 2); // Held momentary layer keeps priority.
+    actionsRelease(0); assert(actionsLayer() == 1);
+    previous(); assert(actionsLayer() == 0);
+    // History is one entry, not a stack of every visited layer.
+    reset(); activeConfig[3] = 2;
+    selectLayer(1, 0); selectLayer(2, 0);
+    previous(); assert(actionsLayer() == 1);
+    previous(); assert(actionsLayer() == 2);
+    // Ordinary one-shot visits and their automatic return do not enter history.
+    reset(); activeConfig[3] = 2;
+    selectLayer(1, 0); selectLayer(2, 1); assert(actionsLayer() == 2);
+    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
+    previous(); assert(actionsLayer() == 0);
+    // A timed reminder can revert to wherever the persistent user selection was.
+    reset(); activeConfig[3] = 1;
+    activeConfig[3] |= 1 << 6;
+    uint8_t timer = configTimedOffset();
+    activeConfig[timer] = 128 | CONFIG_TIMED_CONSUME;
+    activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 2] = 1;
+    activeConfig[timer + 3] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 4] = CONFIG_LAYER_PREVIOUS;
+    actionsTimedReset(0); actionsTimedPoll(1); assert(actionsLayer() == 1);
+    actionsTimedPoll(2); assert(actionsLayer() == 1); // Repeat must preserve return target.
+    assert(actionsTimedInput()); assert(actionsLayer() == 0);
+    previous(); assert(actionsLayer() == 1);
+    // Persistent timer actions during a one-shot visit remember the underlying
+    // base, and retain the existing pending one-shot return behavior.
+    reset(); activeConfig[3] = 1; activeConfig[3] = 2 | (1 << 6);
+    selectLayer(1, 0); selectLayer(0, 1);
+    timer = configTimedOffset();
+    activeConfig[timer] = 0;
+    activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 2] = 2;
+    actionsTimedReset(0); actionsTimedPoll(1); assert(actionsLayer() == 2);
+    // A timer next-input action sees the remembered base (1), not visit (0).
+    activeConfig[timer + 3] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 4] = CONFIG_LAYER_PREVIOUS;
+    actionsTimedInput(); assert(actionsLayer() == 1);
+    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
+}
+
 static void testDefaults(void) {
     reset();
     actionsPress(0, 0);
@@ -1090,6 +1161,7 @@ int main(void) {
     testHighLayerActions();
     testPointerHold();
     testPointerSteps();
+    testPreviousLayer();
     testOneShot();
     testOneShotGlobalLayerChord();
     testRelativeLayer();

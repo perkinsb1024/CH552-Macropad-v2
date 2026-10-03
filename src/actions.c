@@ -32,6 +32,7 @@ __data uint8_t eventUsed;
 __pdata uint8_t droppedButtons;
 __pdata uint8_t droppedRotation;
 __data uint8_t baseLayer;
+__data uint8_t previousLayer;
 __data uint8_t effectiveLayer;
 __pdata uint8_t layerSelectionPending;
 // 0xFF means no one-shot layer is waiting to be consumed.
@@ -193,9 +194,13 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       }
       // Fall through: both layer actions share the one-shot flag and assignment.
     case CONFIG_ACTION_SET_LAYER:
+      if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
       layerSelectionPending = 1;
       if (first & 0x10) {
         oneShotReturnLayer = baseLayer;
+      } else {
+        selectedLayer = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
+        if (second != selectedLayer) previousLayer = selectedLayer;
       }
       baseLayer = second;
       break;
@@ -257,6 +262,7 @@ static void updateLayer(void) {
 void actionsInit(void) {
   uint8_t i;
   baseLayer = configStartupLayer();
+  previousLayer = baseLayer;
   effectiveLayer = baseLayer;
   layerSelectionPending = 0;
   oneShotReturnLayer = 0xFF;

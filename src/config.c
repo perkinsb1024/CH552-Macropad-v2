@@ -119,7 +119,8 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
             // A valid string starts at the pool beginning or immediately after NUL.
             return param == 0 || image[pool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
-            return aux <= 1 && param < layers;
+            return aux <= 1 && (param < layers ||
+                   (param == CONFIG_LAYER_PREVIOUS && image[2] == CONFIG_VERSION));
         case CONFIG_ACTION_MOMENTARY_LAYER:
             return aux == 0 && param < layers && !rotation;
         default:

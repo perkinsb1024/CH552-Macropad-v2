@@ -8,6 +8,7 @@
 // In-progress v7: six interval bits, consume bit 6, restart bit 7.
 #define CONFIG_VERSION 7
 #define CONFIG_TIMED_CONSUME 0x40
+#define CONFIG_LAYER_PREVIOUS 7
 #ifndef CONFIG_TIMED_MAX
 #define CONFIG_TIMED_MAX 4
 #endif

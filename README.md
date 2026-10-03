@@ -119,9 +119,9 @@ Remaining space in the current source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash | 175 | 171 |
+| Flash | 123 | 119 |
 | Contiguous external RAM | 231 | 222 |
-| Stack capacity | 124 | 121 |
+| Stack capacity | 123 | 120 |
 
 Stack capacity is the linker allocation, not measured peak usage.
 
