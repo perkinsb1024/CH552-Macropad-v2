@@ -279,12 +279,12 @@ void firmwarePreviewColor(uint8_t options) {
 
 void startLayerIndicator(uint8_t layer, uint16_t now) {
   if (!(previewOptions & LED_EFFECT_FLAG)) {
-  uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
-  layerIndicatorPhasesLeft = 0;
-  if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
-      behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
-    layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 : 2 * (layer + 1);
-  }
+    uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
+    layerIndicatorPhasesLeft = 0;
+    if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
+        behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
+      layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 : 2 * (layer + 1);
+    }
   }
   layerIndicatorDeadline = (uint8_t)((now >> 1) + LAYER_INDICATOR_PHASE_TICKS);
   updateLeds();

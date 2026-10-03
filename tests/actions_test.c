@@ -993,6 +993,29 @@ static void testConsumeWake(void) {
     assert(ledCalls == 0);
     actionsTimedPoll(128);
     assert(ledCalls == 1 && !actionsTimedInput());
+    // Consuming the wake binding must not consume an already-armed one-shot layer.
+    reset();
+    activeConfig[3] = 1 | (1 << 6);
+    activeConfig[9] = 0x1A; activeConfig[10] = 1;
+    activeConfig[33] = CONFIG_ACTION_KEY_TAP; activeConfig[34] = 4;
+    timer = configTimedOffset();
+#if CONFIG_TIMED_CONSUME_INLINE
+    activeConfig[timer] = CONFIG_TIMED_CONSUME;
+#else
+    activeConfig[127] = 1;
+#endif
+    actionsInit(); actionsTimedReset(0);
+    actionsPress(0, 0); actionsRelease(0);
+    assert(actionsLayer() == 1);
+    actionsTimedPoll(1);
+    assert(actionsTimedInput());
+    actionsRelease(1); // The consumed press created no action state.
+    assert(actionsLayer() == 1);
+    assert(!actionsTimedInput());
+    actionsPress(1, 1);
+    assert(actionsLayer() == 0);
+    actionsPoll(1);
+    assert(count && reports[0][3] == 4);
 }
 
 int main(void) {

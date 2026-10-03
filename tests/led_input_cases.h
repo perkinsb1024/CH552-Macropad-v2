@@ -97,6 +97,11 @@ static void testConsumedPhysicalInput(void) {
     P1 |= 2; currentMs++; loop(); currentMs += 10; loop();
     P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
     assert(ledSettings[3] == 1); // The next distinct press is normal.
+    // A due timer and debounced wake press in the same loop still consume once.
+    P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
+    P1 &= ~2; currentMs = 65525; loop();
+    currentMs = 65536; loop();
+    assert(ledSettings[3] == 3);
     P1 = P3 = 0xFF;
     currentMs = 0; firmwareApplyConfig();
     currentMs = 65536; loop();
@@ -314,6 +319,7 @@ static void testLedControls(void) {
     assert(ledData[0] == 255 && ledData[1] == 255);
     firmwareLedAction(CONFIG_LED_BOTH_SET, 0);
     for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+#if ENABLE_COLOR_PREVIEW
     firmwarePreviewColor(0xED);
     assert(ledData[0] == 255 && ledData[1] == 255);
     firmwarePreviewColor(0);
@@ -326,6 +332,7 @@ static void testLedControls(void) {
     firmwareLedAction(CONFIG_LED_PHASE_SET, 0);
     assert(memcmp(previewFrame, ledData, NUM_BYTES) == 0);
     firmwarePreviewColor(0);
+#endif
     firmwareLedAction(CONFIG_LED_RESTORE, 0);
     assert(ledSettings[0] == 2 && ledSettings[1] == 1 && ledSettings[2] == 3 && ledSettings[3] == 3);
     firmwareLedAction(CONFIG_LED_BOTH_SET, 0);

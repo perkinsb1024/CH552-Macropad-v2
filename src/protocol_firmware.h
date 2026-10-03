@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include "firmware_types.h"
 
-// Set to 0 to omit LED color preview: saves 204 flash bytes and 1 xRAM byte
-// on both variants (CH55xDuino 0.0.25 / SDCC build.13407_4).
-// The code-size optimizations remain enabled in either mode.
+// Set to 0 to omit UI color preview. Temporary LED effects remain available.
 #ifndef ENABLE_COLOR_PREVIEW
 #define ENABLE_COLOR_PREVIEW 1
 #endif

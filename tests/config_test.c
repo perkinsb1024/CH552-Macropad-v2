@@ -386,6 +386,14 @@ int main(void) {
         activeConfig[configTimedOffset()] = 255;
         seal();
         assert(configValid(activeConfig, variant) && configTimedCount() == 1);
+        testLoadStarterProfile(variant);
+        activeConfig[2] = 7;
+        activeConfig[4] = CONFIG_SIZE - (9 + (variant ? 15 : 22));
+        seal();
+        assert(configValid(activeConfig, variant)); // Full legacy string-pool budget.
+        activeConfig[2] = CONFIG_VERSION;
+        seal();
+        assert(configValid(activeConfig, variant) == CONFIG_TIMED_CONSUME_INLINE);
 #if !CONFIG_TIMED_CONSUME_INLINE
         testLoadStarterProfile(variant);
         activeConfig[127] = 0x10;

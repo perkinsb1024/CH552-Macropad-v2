@@ -6,7 +6,7 @@
 
 #define CONFIG_SIZE 128
 #ifndef CONFIG_TIMED_CONSUME_INLINE
-#define CONFIG_TIMED_CONSUME_INLINE 1
+#define CONFIG_TIMED_CONSUME_INLINE 0
 #endif
 // Experimental formats: v8 has 64 ticks + inline consume; v9 retains 128
 // ticks and reserves byte 127 for a consume mask. Both retain v6/v7 loading.
