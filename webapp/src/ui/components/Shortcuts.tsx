@@ -46,7 +46,7 @@ export function Shortcuts() {
           ))}
         </div>
         {shortcuts.length === 0 && <p class="empty" role="status">No shortcuts match your search.</p>}
-        <p class="hint">Drag a shortcut onto a key, encoder input, or chord. You can also select an input and click a shortcut.</p>
+        <p class="hint">Drag a shortcut onto a key, encoder input, chord, or timed action. You can also select an input and click a shortcut.</p>
       </div>
     </section>
   );

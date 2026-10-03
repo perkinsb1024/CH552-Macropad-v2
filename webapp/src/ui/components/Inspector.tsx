@@ -1,4 +1,4 @@
-import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, type LedCommand, type LedValue } from '../../model/ledControl';
+import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useMemo } from 'preact/hooks';
 import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
@@ -218,7 +218,7 @@ export function Inspector() {
                 <option value={action.value} disabled>Current: {typeof action.value === 'number' && action.value > 0 ? '+' : ''}{action.value}</option>}
               {ledRelativeSteps.map((v) => <option value={v}>{v > 0 ? '+' : ''}{v}</option>)}
             </select>
-            <span class="hint">Cycles with wraparound. Positive speed steps are faster; positive common-preset steps select the next darker preset, then return to configured.</span>
+            <span class="hint">{ledRelativeCycle(action.command, action.value)}</span>
           </label>
           : action.command !== 'restoreAll' && <label class="field"><span class="field-label">{action.command === 'commonPresetToggle' ? 'Preset' : 'LED setting'}</span>
             <select value={action.value} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; update({ ...action, value: v === 'asConfigured' ? v : Number(v) as LedValue }); }}>
@@ -334,7 +334,7 @@ export function Inspector() {
 
       {keyIndex !== null && (
         <div class="field led-color-field">
-          <span class="field-label">LED color on this layer</span>
+          <span class="field-label">LED color on key press</span>
           <div class="color-toolbar">
             <span class="color-selection">
               <span class={`color-selection-dot ${layer.leds[keyIndex] === 15 ? 'swatch-off' : ''}`} style={`--c:${PALETTE[layer.leds[keyIndex]!]?.hex ?? '#000000'}`} aria-hidden="true" />

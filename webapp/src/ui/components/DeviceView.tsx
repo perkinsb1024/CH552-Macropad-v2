@@ -41,7 +41,7 @@ export function DeviceView() {
     if (shortcutDrop(event, target)) return;
     event.preventDefault();
     const source = draggedSlot.value;
-    const position = slotDrop.value && sameSlot(slotDrop.value.slot, target)
+    const position = source?.kind === 'timed' ? 'swap' : slotDrop.value && sameSlot(slotDrop.value.slot, target)
       ? slotDrop.value.position : dropPosition(event, orientation);
     if (source && valid(source, target, position)) {
       if (position === 'swap') swapSlotActions(source, target);
@@ -52,7 +52,7 @@ export function DeviceView() {
   const dragOver = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical') => {
     if (shortcutDragOver(event, target)) return;
     const source = draggedSlot.value;
-    const position = dropPosition(event, orientation);
+    const position = source?.kind === 'timed' ? 'swap' : dropPosition(event, orientation);
     if (!source || !valid(source, target, position)) {
       slotDrop.value = null;
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';

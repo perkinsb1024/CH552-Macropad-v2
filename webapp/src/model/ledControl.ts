@@ -58,6 +58,14 @@ export function ledValueOptions(command: LedCommand): Array<{ value: LedValue; l
   if (code !== 11) options.push({ value: 'asConfigured', label: 'As configured' });
   return options;
 }
+export function ledRelativeCycle(command: LedCommand, step: LedValue): string {
+  const code = ledCommandCode(command);
+  const labels: string[] = code === 1 ? [...RAINBOW_PHASE_LABELS]
+    : code === 3 ? [...RAINBOW_SPEED_LABELS].reverse()
+    : code === 12 ? [...COMMON_PRESET_LABELS]
+    : [...BRIGHTNESS_LABELS];
+  return labels.join(typeof step === 'number' && step < 0 ? ' ← ' : ' → ');
+}
 export function ledProblem(command: LedCommand, value: LedValue, brightness?: LedBrightness): string | null {
   const code = ledCommandCode(command);
   if (code < 0) return 'Unknown LED command.';

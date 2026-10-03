@@ -1060,13 +1060,13 @@ output {
 .tab-add {
   color: var(--fg-faint);
 }
-.tab.is-dragging, .keycap.is-dragging, .enc-part.is-dragging, .chord-main.is-dragging {
+.tab.is-dragging, .keycap.is-dragging, .enc-part.is-dragging, .chord-main.is-dragging, .timer-action.is-dragging {
   opacity: 0.45;
 }
-.keycap.drag-invalid, .enc-part.drag-invalid, .chord.drag-invalid .chord-main {
+.keycap.drag-invalid, .enc-part.drag-invalid, .chord.drag-invalid .chord-main, .timer-action.drag-invalid {
   cursor: not-allowed;
 }
-.keycap:not(.drag-invalid)[draggable="true"], .enc-part:not(.drag-invalid)[draggable="true"], .chord-main:not(.drag-invalid)[draggable="true"], .tab[draggable="true"] {
+.keycap:not(.drag-invalid)[draggable="true"], .enc-part:not(.drag-invalid)[draggable="true"], .chord-main:not(.drag-invalid)[draggable="true"], .tab[draggable="true"], .timer-action:not(.drag-invalid)[draggable="true"] {
   cursor: grab;
 }
 .drop-line {
@@ -1294,7 +1294,7 @@ output {
   font-size: 12.5px;
   font-weight: 500;
 }
-.tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main {
+.tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main, .timer-action.is-drop-target {
   z-index: 2;
   border-color: #1680ff;
   outline: 5px solid #1680ff;

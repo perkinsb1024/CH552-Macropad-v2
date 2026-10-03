@@ -6,7 +6,7 @@ import { computeCapacity } from '../src/model/capacity';
 import { profile, selectedSlot, getAction, setAction, updateProfile, undo, redo, insertLayer, removeLayer, copySelectedConfiguration, pasteSelectedConfiguration } from '../src/ui/store';
 import { storeDraft, loadDraft } from '../src/io/drafts';
 vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
-type Node = { type: unknown; props: Record<string, unknown> };
+type Node = { type: unknown; props: Record<string, unknown>; ref?: unknown };
 function nodes(value: unknown): Node[] {
   if (Array.isArray(value)) return value.flatMap(nodes);
   if (!value || typeof value !== 'object' || !('props' in value)) return [];
@@ -17,6 +17,28 @@ function click(node: Node) { (node.props.onClick as () => void)(); }
 function add() { click(nodes(TimedActionsPanel()).find(n => n.type === 'button' && n.props.title === 'Add a timed action')!); }
 function start() { profile.value = defaultProfile(0); selectedSlot.value = null; }
 afterEach(() => vi.unstubAllGlobals());
+
+it('keeps the next-input section open when consume is unchecked without selecting its action', () => {
+  start(); add();
+  updateProfile(draft => { draft.timedActions![0]!.consumeInput = true; });
+  const element = { open: false } as HTMLDetailsElement;
+  const section = () => nodes(TimedActionsPanel()).find(n => n.type === 'details')!;
+  const attach = () => (section().ref as (element: HTMLDetailsElement) => void)(element);
+  attach(); expect(element.open).toBe(true);
+  const consume = nodes(section()).filter(n => n.type === 'input' && n.props.type === 'checkbox')[0]!;
+  (consume.props.onChange as (e: unknown) => void)({ target: { checked: false } });
+  attach();
+  expect(element.open).toBe(true);
+  expect(profile.value!.timedActions![0]!.consumeInput).toBe(false);
+  expect(selectedSlot.value).toMatchObject({ kind: 'timed', resume: false });
+  // Manual closing remains intact through unrelated edits.
+  element.open = false;
+  updateProfile(draft => { draft.timedActions![0]!.ticks = 2; });
+  attach(); expect(element.open).toBe(false);
+  // Explicitly selecting the next-input action still reveals it.
+  selectedSlot.value = { kind: 'timed', layer: 0, index: 0, resume: true };
+  attach(); expect(element.open).toBe(true);
+});
 
 it('adds and edits expiry/resume actions through the common inspector, including undo', () => {
   start(); add();
@@ -36,6 +58,7 @@ it('adds and edits expiry/resume actions through the common inspector, including
 it('edits interval and reset flag, and removes a timer without leaving a stale selection', () => {
   start(); add(); add();
   const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
+  expect(input.props).toMatchObject({ type: 'range', min: 1, max: 64, step: 1 });
   (input.props.onInput as (e: unknown) => void)({ target: { value: '55' } });
   const checkbox = nodes(TimedActionsPanel()).find(n => n.props.type === 'checkbox')!;
   (checkbox.props.onChange as (e: unknown) => void)({ target: { checked: false } });
