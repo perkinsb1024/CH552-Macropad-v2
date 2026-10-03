@@ -912,11 +912,7 @@ static void testConsumeWake(void) {
     activeConfig[3] = 1 << 6;
     uint8_t timer = configTimedOffset();
     activeConfig[timer] = 128;
-#if CONFIG_TIMED_CONSUME_INLINE
     activeConfig[timer] |= CONFIG_TIMED_CONSUME;
-#else
-    activeConfig[127] = 1;
-#endif
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
     // Consume even with a None resume action; no state should be created for a hold.
@@ -948,11 +944,7 @@ static void testConsumeWake(void) {
     activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_KEY_TAP; activeConfig[33] = 6;
     activeConfig[3] = 1 << 6;
     activeConfig[timer] = 128;
-#if CONFIG_TIMED_CONSUME_INLINE
     activeConfig[timer] |= CONFIG_TIMED_CONSUME;
-#else
-    activeConfig[127] = 1;
-#endif
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
     actionsTimedReset(0);
@@ -971,39 +963,17 @@ static void testConsumeWake(void) {
         activeConfig[timer + 5 * i + 3] = CONFIG_ACTION_LED_CONTROL;
         activeConfig[timer + 5 * i + 4] = CONFIG_LED_RESTORE;
     }
-#if CONFIG_TIMED_CONSUME_INLINE
     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
-#else
-    activeConfig[127] = 2;
-#endif
     actionsTimedReset(0); actionsTimedPoll(1);
     assert(actionsTimedInput() && ledCalls == 2);
     assert(!actionsTimedInput() && ledCalls == 2);
-    // A legacy v7 interval's bit 6 must never become a consume flag or shorten it.
-    reset();
-    activeConfig[2] = 7;
-    activeConfig[3] = 1 << 6;
-    timer = configTimedOffset();
-    activeConfig[timer] = 127;
-    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
-    activeConfig[timer + 2] = CONFIG_LED_RESTORE;
-    activeConfig[127] = 15;
-    actionsTimedReset(0);
-    for (uint8_t tick = 1; tick < 128; tick++) actionsTimedPoll(tick);
-    assert(ledCalls == 0);
-    actionsTimedPoll(128);
-    assert(ledCalls == 1 && !actionsTimedInput());
     // Consuming the wake binding must not consume an already-armed one-shot layer.
     reset();
     activeConfig[3] = 1 | (1 << 6);
     activeConfig[9] = 0x1A; activeConfig[10] = 1;
     activeConfig[33] = CONFIG_ACTION_KEY_TAP; activeConfig[34] = 4;
     timer = configTimedOffset();
-#if CONFIG_TIMED_CONSUME_INLINE
     activeConfig[timer] = CONFIG_TIMED_CONSUME;
-#else
-    activeConfig[127] = 1;
-#endif
     actionsInit(); actionsTimedReset(0);
     actionsPress(0, 0); actionsRelease(0);
     assert(actionsLayer() == 1);
@@ -1048,7 +1018,7 @@ int main(void) {
     assert(ledCommand == CONFIG_LED_INDICATOR_SET);
     actionsTimedPoll(1);
     assert(ledCommand == CONFIG_LED_KEY_SET && ledValue == 1);
-    // Endpoint 128, and resume does not disturb a non-reset periodic phase.
+    // Endpoint 64, and resume does not disturb a non-reset periodic phase.
     reset();
     timer = configTimedOffset();
     activeConfig[3] = 1 << 6;

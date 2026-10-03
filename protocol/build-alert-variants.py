@@ -13,12 +13,13 @@ source = base / "source"
 source.mkdir(parents=True, exist_ok=True)
 shutil.copytree(ROOT / "src", source / "src", dirs_exist_ok=True)
 shutil.copyfile(ROOT / "CH552_Universal_Macropad.ino", source / "CH552_Universal_Macropad.ino")
-for inline in (1, 0):
+failed = False
+for timer_range in (64,):
     settings = ConfigParser()
     settings.read(ROOT / "platformio.ini")
     flags = settings.get("env:ch552", "build_flags", fallback="")
-    settings.set("env:ch552", "build_flags", flags + f" -DCONFIG_TIMED_CONSUME_INLINE={inline}")
-    project = base / f"range{'64' if inline else '128'}"
+    settings.set("env:ch552", "build_flags", flags)
+    project = base / f"range{timer_range}"
     shutil.copytree(source, project, dirs_exist_ok=True)
     with (project / "platformio.ini").open("w") as output:
         settings.write(output)
@@ -36,5 +37,8 @@ for inline in (1, 0):
             print("\n".join(line for line in report.read_text().splitlines()
                             if any(word in line for word in ("Stack starts", "RAM   ", "FLASH", "ERROR"))), flush=True)
         if result.returncode:
+            failed = True
             print("\n".join(line for line in (build / "build.log").read_text().splitlines()
                             if "Error" in line), flush=True)
+
+sys.exit(1 if failed else 0)

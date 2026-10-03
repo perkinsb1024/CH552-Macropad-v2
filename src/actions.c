@@ -439,8 +439,7 @@ static ACTION_BIT timedEvent(ACTION_BIT tick) {
     uint8_t age = timedAge[i];
     uint8_t action = 0;
     if (tick) {
-      timedWork = activeConfig[offset] & 127;
-      if (activeConfig[2] == CONFIG_VERSION) timedWork &= CONFIG_TIMED_INTERVAL_MASK;
+      timedWork = activeConfig[offset] & CONFIG_TIMED_INTERVAL_MASK;
       if ((age & 127) == timedWork) {
         age = CONFIG_TIMED_RESUME ? 128 : 0;
         action = 1;
@@ -449,13 +448,7 @@ static ACTION_BIT timedEvent(ACTION_BIT tick) {
 #if CONFIG_TIMED_RESUME
       if (age & 128) {
         action = 3;
-        if (activeConfig[2] == CONFIG_VERSION) {
-#if CONFIG_TIMED_CONSUME_INLINE
-          if (activeConfig[offset] & CONFIG_TIMED_CONSUME) consume = 1;
-#else
-          if (activeConfig[127] & (1 << i)) consume = 1;
-#endif
-        }
+        if (activeConfig[offset] & CONFIG_TIMED_CONSUME) consume = 1;
       }
 #endif
       age &= 127;

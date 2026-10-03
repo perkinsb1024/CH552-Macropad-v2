@@ -5,14 +5,9 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-#ifndef CONFIG_TIMED_CONSUME_INLINE
-#define CONFIG_TIMED_CONSUME_INLINE 0
-#endif
-// Experimental formats: v8 has 64 ticks + inline consume; v9 retains 128
-// ticks and reserves byte 127 for a consume mask. Both retain v6/v7 loading.
-#define CONFIG_VERSION (CONFIG_TIMED_CONSUME_INLINE ? 8 : 9)
+// In-progress v7: six interval bits, consume bit 6, restart bit 7.
+#define CONFIG_VERSION 7
 #define CONFIG_TIMED_CONSUME 0x40
-#define CONFIG_TIMED_CONSUME_MASK_OFFSET 127
 #ifndef CONFIG_TIMED_MAX
 #define CONFIG_TIMED_MAX 4
 #endif
@@ -20,7 +15,7 @@
 #define CONFIG_TIMED_ALL_RESET 0
 #endif
 #ifndef CONFIG_TIMED_INTERVAL_MASK
-#define CONFIG_TIMED_INTERVAL_MASK (CONFIG_TIMED_CONSUME_INLINE ? 63 : 127)
+#define CONFIG_TIMED_INTERVAL_MASK 63
 #endif
 #ifndef CONFIG_TIMED_RESUME
 #define CONFIG_TIMED_RESUME 1

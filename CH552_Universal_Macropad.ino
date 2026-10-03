@@ -403,7 +403,8 @@ void firmwareApplyConfig(void) {
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
-  actionsTimedReset(clock >> 16);
+  // Timer-only coarse clock: 131.072 seconds per tick.
+  actionsTimedReset(clock >> 17);
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
@@ -469,7 +470,7 @@ void loop() {
   }
 #endif
   // Process due timers before physical input so resume/input actions win this frame.
-  if (activeConfigValid) actionsTimedPoll(clock >> 16);
+  if (activeConfigValid) actionsTimedPoll(clock >> 17);
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     scanButton(i, now);
   }

@@ -1,5 +1,46 @@
 # Consume wake input and temporary LED effects
 
+## Updated decision: finalize in-progress v7 with longer ticks
+
+The user confirmed v7 was never published. The selected implementation now uses
+v7, with bits 0–5 storing `ticks - 1`, bit 6 consuming wake input, and bit 7
+restarting on input. No tail byte is reserved; all 128 configuration bytes remain
+available. Superseded local v8/v9 experiments are rejected. Released v6 profiles
+remain accepted with no timers.
+
+Only the timed-action clock changed: both initialization and polling now use
+`millis() >> 17`. One tick is 131.072 seconds; 64 ticks is 8,388.608 seconds
+(139.81 minutes). LED, USB, debounce and other millisecond consumers are unchanged.
+Shared uptime alignment remains: first firing may be up to 131.072 seconds early,
+while subsequent repetitions use the full interval. Earlier local v7 timer bytes
+and UI interval labels require updating; the editor work remains pending.
+
+| Variant | Flash used | Flash free | Stack capacity |
+| --- | ---: | ---: | ---: |
+| Six keys | 14,165 | 171 | 121 |
+| Three keys | 14,161 | 175 | 124 |
+
+Both builds pass the 14,336-byte limit. This saves 30 bytes versus the previously
+selected 128-tick implementation, or 8 versus the earlier 64-tick prototype.
+Paged RAM remains 108 bytes; external RAM remains 526/517 bytes (six/three).
+Both temporary hardware builds and ordinary `pio run` passed. Host suites passed
+with color preview enabled and disabled; all 251 web regressions passed.
+Host regressions cover the new clock boundaries, repeated firing, the complete
+64-tick interval, consumption and LED effects. These are software checks, not a
+hardware timing measurement.
+
+Reproduce with `python3 protocol/build-alert-variants.py v7-long-ticks 14336`
+and `python3 tests/run_host_tests.py` (also `--no-preview`). Temporary measurements
+are in `/private/tmp/macropad-v7-long-ticks/range64/build-0` and `build-1`.
+The helper now builds only the selected format; comparison variants remain
+preserved in the historical experiment branches below.
+
+## Historical investigation (before the updated decision)
+
+The remaining sections record the original comparison; references to selected
+v9, legacy v7 timing, and four comparison builds describe that earlier checkpoint.
+
+
 Both high-priority features are implemented in firmware and fit both CH552
 variants. No existing feature was removed. This is an experimental firmware
 checkpoint: editor controls, JSON/binary encoding, migration, and final protocol

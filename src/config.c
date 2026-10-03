@@ -146,11 +146,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     if (variant != PHYSICAL_VARIANT) return 0;
 #endif
     if (variant > CONFIG_THREE_KEYS || image[0] != 'M' || image[1] != 'P' ||
-#if CONFIG_TIMED_CONSUME_INLINE
-        (uint8_t)(image[2] - 6) > 2 ||
-#else
-        (image[2] != CONFIG_VERSION && (uint8_t)(image[2] - 6) > 1) ||
-#endif
+        (uint8_t)(image[2] - 6) > 1 ||
         ((image[5] & 1) != variant)) {
         return 0;
     }
@@ -173,9 +169,6 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     if (end > CONFIG_SIZE) {
         return 0;
     }
-#if !CONFIG_TIMED_CONSUME_INLINE
-    if (image[2] == CONFIG_VERSION && (end == CONFIG_SIZE || (image[127] & 0xF0))) return 0;
-#endif
     pool = (uint8_t)end - used;
     for (layer = 0; layer < layers; layer++) {
         offset = 9 + size * layer;

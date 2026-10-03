@@ -6,10 +6,6 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 flags = ["cc", "-std=c99", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-bitwise-op-parentheses", "-Wno-pointer-to-int-cast", "-D__data=", "-D__idata=", "-D__pdata=", "-D__xdata=", "-D__code=", "-Itests/stubs", "-IwebUploader/upstream/ch55xduino/ch55x/variants/ch552", "-IwebUploader/upstream/ch55xduino/ch55x/cores/ch55xduino"]
-if "--consume-mask" in sys.argv:
-    flags.append("-DCONFIG_TIMED_CONSUME_INLINE=0")
-if "--consume-inline" in sys.argv:
-    flags.append("-DCONFIG_TIMED_CONSUME_INLINE=1")
 if "--no-preview" in sys.argv:
     flags.append("-DENABLE_COLOR_PREVIEW=0")
 with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
