@@ -58,7 +58,7 @@ To use this configuration as a starting point, copy the contents of either the [
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
-Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware). The source and current configurator implement format v7; use firmware built from this source for timed actions, temporary LED effects, and Previous layer. The existing checked-in HEX pair remains format v6 until the v7 release artifacts are generated. See [Publishing a v7 release](#publishing-a-v7-release).
+Pre-built format v7 firmware is available for [three-key](releases/ch552-macropad-3-key-63e67919.hex) and [six-key](releases/ch552-macropad-6-key-63e67919.hex) macropads, built from source revision `63e67919`. Both include timed actions, temporary LED effects, and previous layer support. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
 A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
 
@@ -142,15 +142,6 @@ The `dirty` marker only counts uncommitted changes to the main firmware sketch, 
 When those firmware or PlatformIO files have changes, the name includes `dirty` before the hash, such as `ch552-macropad-6-key-dirty-a1b2c3d4.hex`. Commit those changes before generating files that should match a specific revision.
 
 After both builds and exports succeed, older generated HEX files are deleted so `releases/` keeps only the latest three-key and six-key pair. If a build fails, the previous release files are kept.
-
-### Publishing a v7 Release
-
-1. Test the final source on hardware, run the firmware host tests and web tests/build, then commit and merge the finished source into `main` locally.
-2. From that committed revision, run `pio run -t releases` to generate the two revision-labelled HEX files. This is a local build target, separate from the website deployment workflow.
-3. Commit the replacement HEX pair and update the artifact-status note above to reflect the generated v7 firmware.
-4. Push `main` with the source and HEX commits together. The GitHub Actions workflow tests and deploys the current configurator, frozen editors, and uploader with the checked-in firmware pair. Confirm the deployment succeeds and the live uploader offers the new files.
-
-The v7 editor migrates existing v6 profiles when they are loaded and saved; erasing configuration is not required. Older firmware is routed to its frozen editor. Firmware filenames identify the source commit, which precedes the commit containing the generated HEX files.
 
 ## How To Upload the Firmware
 
