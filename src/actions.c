@@ -22,7 +22,7 @@ __pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both 
 __pdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
 __pdata uint8_t pendingLayer;
 __pdata uint16_t pendingSince;
-__data uint8_t lastMouse;
+__idata uint8_t lastMouse;
 __pdata uint8_t lastReportGeneration;
 // Bindings are resolved before queuing; playback only needs the action bytes.
 __pdata uint8_t eventData[EVENT_COUNT][2];
@@ -48,6 +48,7 @@ __pdata uint8_t clicksLeft;
 __pdata uint8_t stringIndex;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
+__pdata uint8_t timedWork; // Interval scratch on ticks; aggregated consume flag on input.
 __pdata uint8_t consumerReleasePending;
 __pdata uint16_t deadline;
 __pdata uint8_t pointerRepeated;
@@ -392,7 +393,9 @@ void actionsRelease(uint8_t input) {
   if (input > configKeyCount()) {
     return;
   }
-  inputDown &= ~(1 << input);
+  timedWork = 1 << input;
+  if (!(inputDown & timedWork)) return;
+  inputDown &= ~timedWork;
   if (pendingInput == input + 1) {
     resolvePending();
     updateLayer();
@@ -431,17 +434,29 @@ void actionsTimedReset(uint8_t tick) {
 // Tick and physical-input events share record traversal and action dispatch.
 static void timedEvent(uint8_t tick) {
   __pdata uint8_t offset = configTimedOffset();
+  timedWork = 0;
   for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t age = timedAge[i];
     uint8_t action = 0;
     if (tick) {
-      if ((age & 127) == (activeConfig[offset] & CONFIG_TIMED_INTERVAL_MASK)) {
+      timedWork = activeConfig[offset] & 127;
+      if (activeConfig[2] == CONFIG_VERSION) timedWork &= CONFIG_TIMED_INTERVAL_MASK;
+      if ((age & 127) == timedWork) {
         age = CONFIG_TIMED_RESUME ? 128 : 0;
         action = 1;
       } else age++;
     } else {
 #if CONFIG_TIMED_RESUME
-      if (age & 128) action = 3;
+      if (age & 128) {
+        action = 3;
+        if (activeConfig[2] == CONFIG_VERSION) {
+#if CONFIG_TIMED_CONSUME_INLINE
+          if (activeConfig[offset] & CONFIG_TIMED_CONSUME) timedWork = 1;
+#else
+          if (activeConfig[127] & (1 << i)) timedWork = 1;
+#endif
+        }
+      }
 #endif
       age &= 127;
       if (CONFIG_TIMED_ALL_RESET || (activeConfig[offset] & 128)) age = 0;
@@ -461,8 +476,9 @@ void actionsTimedPoll(uint8_t tick) {
   timedEvent(1);
 }
 
-void actionsTimedInput(void) {
+uint8_t actionsTimedInput(void) {
   timedEvent(0);
+  return timedWork;
 }
 
 void actionsPoll(uint16_t now) {

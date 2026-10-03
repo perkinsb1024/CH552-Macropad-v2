@@ -907,7 +907,96 @@ static void testLedDispatch(void) {
     assert(ledCalls == 1 && count == 0 && actionsLayer() == 0);
 }
 
+static void testConsumeWake(void) {
+    reset();
+    activeConfig[3] = 1 << 6;
+    uint8_t timer = configTimedOffset();
+    activeConfig[timer] = 128;
+#if CONFIG_TIMED_CONSUME_INLINE
+    activeConfig[timer] |= CONFIG_TIMED_CONSUME;
+#else
+    activeConfig[127] = 1;
+#endif
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_RESTORE;
+    // Consume even with a None resume action; no state should be created for a hold.
+    activeConfig[9] = CONFIG_ACTION_KEY_HOLD; activeConfig[10] = 4;
+    actionsTimedReset(0);
+    actionsTimedPoll(1);
+    assert(actionsTimedInput());
+    actionsRelease(0);
+    actionsPoll(0);
+    assert(count == 0);
+    assert(!actionsTimedInput());
+    actionsPress(0, 1); actionsPoll(1);
+    assert(count == 1 && reports[0][3] == 4);
+    actionsRelease(0); actionsPoll(2);
+    assert(reports[count - 1][3] == 0);
+    // One completed encoder detent is consumed, subsequent detents work normally.
+    actionsTimedPoll(2);
+    uint8_t before = count;
+    assert(actionsTimedInput()); // scanEncoder would skip actionsRotate here.
+    actionsPoll(10);
+    assert(count == before);
+    assert(!actionsTimedInput());
+    actionsRotate(1); actionsPoll(11);
+    assert(count > before && reports[count - 1][0] == 2);
+    // A consumed chord partner does not complete the pending chord.
+    reset();
+    activeConfig[5] = 2;
+    timer = configTimedOffset();
+    activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_KEY_TAP; activeConfig[33] = 6;
+    activeConfig[3] = 1 << 6;
+    activeConfig[timer] = 128;
+#if CONFIG_TIMED_CONSUME_INLINE
+    activeConfig[timer] |= CONFIG_TIMED_CONSUME;
+#else
+    activeConfig[127] = 1;
+#endif
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_RESTORE;
+    actionsTimedReset(0);
+    actionsPress(1, 0); // Pending single, awaiting key 0.
+    actionsTimedPoll(1);
+    assert(actionsTimedInput());
+    actionsRelease(0);
+    actionsPoll(100);
+    assert(count && reports[0][3] == 0x2C); // Single key, not chord usage 6.
+    actionsRelease(1);
+    // All armed timers resume once; any one may request consuming the event.
+    reset();
+    activeConfig[3] = 2 << 6;
+    timer = configTimedOffset();
+    for (uint8_t i = 0; i < 2; i++) {
+        activeConfig[timer + 5 * i + 3] = CONFIG_ACTION_LED_CONTROL;
+        activeConfig[timer + 5 * i + 4] = CONFIG_LED_RESTORE;
+    }
+#if CONFIG_TIMED_CONSUME_INLINE
+    activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
+#else
+    activeConfig[127] = 2;
+#endif
+    actionsTimedReset(0); actionsTimedPoll(1);
+    assert(actionsTimedInput() && ledCalls == 2);
+    assert(!actionsTimedInput() && ledCalls == 2);
+    // A legacy v7 interval's bit 6 must never become a consume flag or shorten it.
+    reset();
+    activeConfig[2] = 7;
+    activeConfig[3] = 1 << 6;
+    timer = configTimedOffset();
+    activeConfig[timer] = 127;
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_RESTORE;
+    activeConfig[127] = 15;
+    actionsTimedReset(0);
+    for (uint8_t tick = 1; tick < 128; tick++) actionsTimedPoll(tick);
+    assert(ledCalls == 0);
+    actionsTimedPoll(128);
+    assert(ledCalls == 1 && !actionsTimedInput());
+}
+
 int main(void) {
+    testConsumeWake();
     reset();
     uint8_t timer = configTimedOffset();
     activeConfig[3] = 2 << 6;

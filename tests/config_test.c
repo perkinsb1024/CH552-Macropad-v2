@@ -78,7 +78,7 @@ static void testHeaderAndIgnoredFields(void) {
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         activeConfig[3] |= 0xC0;
         activeConfig[8] |= 0xC0;
-        activeConfig[127] = 0xFF;
+        activeConfig[127] = CONFIG_TIMED_CONSUME_INLINE ? 0xFF : 0x0F;
         seal();
         assert(configValid(activeConfig, variant));
         assert(configLayerCount() == 1 && configStartupLayer() == 0);
@@ -102,8 +102,8 @@ static void testCapacityAndStrings(uint8_t variant) {
         testLoadStarterProfile(variant);
         activeConfig[3] = layers - 1;
         pool = 9 + size * layers;
-        remaining = CONFIG_SIZE - pool;
-        assert(remaining == (variant ? 119 - 15 * layers : 119 - 22 * layers));
+        remaining = CONFIG_SIZE - !CONFIG_TIMED_CONSUME_INLINE - pool;
+        assert(remaining == (variant ? 119 - 15 * layers : 119 - 22 * layers) - !CONFIG_TIMED_CONSUME_INLINE);
         // Extra layers contain canonical empty actions and LED colors.
         activeConfig[4] = remaining;
         activeConfig[pool + remaining - 1] = 0;
@@ -359,7 +359,7 @@ int main(void) {
         activeConfig[offset + CONFIG_TIMED_SIZE] = 'A';
         activeConfig[offset + CONFIG_TIMED_SIZE + 1] = 0;
         seal();
-        assert(configValid(activeConfig, variant) == (CONFIG_TIMED_INTERVAL_MASK == 127));
+        assert(configValid(activeConfig, variant)); // v8 bit 6 is consume, not interval.
         activeConfig[offset] = 128;
         seal();
         assert(configValid(activeConfig, variant));
@@ -378,6 +378,18 @@ int main(void) {
         activeConfig[3] |= 0xC0; // Old reserved bits are not timer counts.
         seal();
         assert(configValid(activeConfig, variant) && configTimedCount() == 0);
+        testLoadStarterProfile(variant);
+        activeConfig[2] = 7;
+        activeConfig[3] = 1 << 6;
+        activeConfig[configTimedOffset()] = 255;
+        seal();
+        assert(configValid(activeConfig, variant) && configTimedCount() == 1);
+#if !CONFIG_TIMED_CONSUME_INLINE
+        testLoadStarterProfile(variant);
+        activeConfig[127] = 0x10;
+        seal();
+        assert(!configValid(activeConfig, variant));
+#endif
     }
     testLedPayloads();
     testExpandedLayers(0);

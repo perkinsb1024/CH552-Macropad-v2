@@ -56,11 +56,11 @@ __xdata uint8_t stableState[7];
 __xdata uint16_t rawChanged[7];
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
-__pdata uint8_t lastLayer;
+__idata uint8_t lastLayer;
 __xdata uint8_t allowRunBootloader;
 __pdata uint8_t layerIndicatorPhasesLeft;
 __pdata uint8_t layerIndicatorDeadline;
-__data uint8_t rainbowChanged;
+__idata uint8_t rainbowChanged;
 __data uint8_t rainbowHue;
 // Per-LED extra hue steps; staggered rates gently change relative phases.
 __idata uint8_t rainbowDrift[NUM_LEDS];
@@ -347,8 +347,7 @@ void scanButton(uint8_t input, uint16_t now) {
         allowRunBootloader = configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN;
         encoderPressedMs = now;
       }
-      actionsTimedInput();
-      actionsPress(input, now);
+      if (!actionsTimedInput()) actionsPress(input, now);
     } else {
       actionsRelease(input);
     }
@@ -376,13 +375,11 @@ void scanEncoder() {
     encoderMovement += movement;
     if (encoderMovement >= 4) {
       encoderMovement = 0;
-      actionsTimedInput();
-      actionsRotate(1);
+      if (!actionsTimedInput()) actionsRotate(1);
       updateLeds();
     } else if (encoderMovement <= -4) {
       encoderMovement = 0;
-      actionsTimedInput();
-      actionsRotate(0);
+      if (!actionsTimedInput()) actionsRotate(0);
       updateLeds();
     }
   }

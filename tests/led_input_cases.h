@@ -68,6 +68,58 @@ static void testTimedLighting(void) {
     }
 }
 
+static void testConsumedPhysicalInput(void) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[3] = 1 << 6;
+    uint8_t offset = configTimedOffset();
+    activeConfig[offset] = 128;
+#if CONFIG_TIMED_CONSUME_INLINE
+    activeConfig[offset] |= CONFIG_TIMED_CONSUME;
+#else
+    activeConfig[127] = 1;
+#endif
+    activeConfig[offset + 1] = 0x3F;
+    activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
+    activeConfig[offset + 3] = 0xFF;
+    activeConfig[offset + 4] = CONFIG_LED_BOTH_SET;
+    activeConfig[9] = 0x1F; activeConfig[10] = CONFIG_LED_KEY_SET;
+    uint8_t encoder = 9 + 2 * NUM_LEDS;
+    activeConfig[encoder] = 0x1F; activeConfig[encoder + 1] = CONFIG_LED_KEY_SET;
+    activeConfig[encoder + 2] = 0x1F; activeConfig[encoder + 3] = CONFIG_LED_KEY_SET;
+    P1 = P3 = 0xFF;
+    activeConfigValid = 1;
+    previewOptions = 0;
+    currentMs = 0;
+    firmwareApplyConfig();
+    currentMs = 65536; loop();
+    P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
+    assert(ledSettings[3] == 3); // Resume works; the key's Dim command did not.
+    P1 |= 2; currentMs++; loop(); currentMs += 10; loop();
+    P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
+    assert(ledSettings[3] == 1); // The next distinct press is normal.
+    P1 = P3 = 0xFF;
+    currentMs = 0; firmwareApplyConfig();
+    currentMs = 65536; loop();
+    // One clockwise detent starting at 11; partial transitions do not wake.
+    const uint8_t sequence[] = {2, 0, 1, 3};
+    for (uint8_t i = 0; i < 4; i++) {
+        P3 = (P3 & ~3) | sequence[i];
+        currentMs++; loop();
+        if (i < 3) assert(ledSettings[3] == 1);
+    }
+    assert(ledSettings[3] == 3); // Completed detent resumes and is consumed.
+    for (uint8_t i = 0; i < 4; i++) { P3 = (P3 & ~3) | sequence[i]; currentMs++; loop(); }
+    assert(ledSettings[3] == 1);
+    // Encoder button may still enter the bootloader even when its binding is consumed.
+    P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
+    currentMs = 65536; loop();
+    P3 &= ~8; currentMs++; loop(); currentMs += 10; loop();
+    assert(allowRunBootloader);
+    expectBootloader = 1;
+    if (!setjmp(bootloaderJump)) { currentMs += 3000; loop(); assert(0); }
+    expectBootloader = 0;
+}
+
 static uint8_t expectedDim(uint8_t v) { return (v >> 4) | (v != 0); }
 static uint8_t stepModel(uint8_t n, int8_t d, uint8_t count) {
     int value = n + d;

@@ -142,7 +142,12 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     if (variant != PHYSICAL_VARIANT) return 0;
 #endif
     if (variant > CONFIG_THREE_KEYS || image[0] != 'M' || image[1] != 'P' ||
-        (image[2] != 6 && image[2] != CONFIG_VERSION) || ((image[5] & 1) != variant)) {
+#if CONFIG_TIMED_CONSUME_INLINE
+        (uint8_t)(image[2] - 6) > 2 ||
+#else
+        (image[2] != CONFIG_VERSION && (uint8_t)(image[2] - 6) > 1) ||
+#endif
+        ((image[5] & 1) != variant)) {
         return 0;
     }
     layers = (image[3] & 7) + 1;
@@ -155,15 +160,18 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
     chords = (image[5] >> 1) & 63;
     // Each product fits a byte after the layer/chord count checks; the sum
     // remains 16-bit so malformed images cannot wrap past the capacity check.
-    timers = image[2] == CONFIG_VERSION ? ((image[3] >> 6) | ((image[4] >> 7) << 2)) : 0;
+    timers = image[2] >= 7 ? ((image[3] >> 6) | ((image[4] >> 7) << 2)) : 0;
     if (timers > CONFIG_TIMED_MAX) return 0;
     used = image[4];
-    if (image[2] == CONFIG_VERSION) used &= 127;
+    if (image[2] >= 7) used &= 127;
     end = 9 + (uint8_t)(size * layers) + (uint8_t)(3 * chords) +
           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)used;
     if (end > CONFIG_SIZE) {
         return 0;
     }
+#if !CONFIG_TIMED_CONSUME_INLINE
+    if (image[2] == CONFIG_VERSION && (end == CONFIG_SIZE || (image[127] & 0xF0))) return 0;
+#endif
     pool = (uint8_t)end - used;
     for (layer = 0; layer < layers; layer++) {
         offset = 9 + size * layer;
@@ -187,7 +195,6 @@ uint8_t configValid(const __xdata uint8_t *image, uint8_t variant) {
         offset += 3;
     }
     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
-        if (image[offset] & (127 ^ CONFIG_TIMED_INTERVAL_MASK)) return 0;
         if (!actionValid(image, offset + 1, layers, 1, pool, used)) return 0;
 #if CONFIG_TIMED_RESUME
         if (!actionValid(image, offset + 3, layers, 1, pool, used)) return 0;
@@ -275,7 +282,7 @@ uint8_t configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
 }
 
 uint8_t configTimedCount(void) {
-    return activeConfig[2] == CONFIG_VERSION ?
+    return activeConfig[2] >= 7 ?
         (activeConfig[3] >> 6) | ((activeConfig[4] >> 7) << 2) : 0;
 }
 
@@ -286,7 +293,7 @@ uint8_t configTimedOffset(void) {
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
     uint8_t position = offset + index;
     uint8_t start;
-    if (position < offset || position >= (activeConfig[2] == CONFIG_VERSION ? (activeConfig[4] & 127) : activeConfig[4])) {
+    if (position < offset || position >= (activeConfig[2] >= 7 ? (activeConfig[4] & 127) : activeConfig[4])) {
         return 0;
     }
     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
