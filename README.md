@@ -183,6 +183,8 @@ If the device cannot run the firmware, use the hardware method above to recover 
 
 ## Configuring Your Macropad
 
+For a complete end-user guide to actions, layers, chords, timed reminders, lighting, and the editor's shortcuts, see the **[Configuration Overview](Configuration%20Overview.md)**.
+
 ### Use the Hosted Web App
 
 <img src="images/configurator.png" alt="A screenshot of the Configurator Web App" width="100%">
