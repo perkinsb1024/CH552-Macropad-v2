@@ -386,11 +386,14 @@ Always-on effects persist until replaced, explicitly cleared, an actual layer
 change, or configuration application/USB reset. Selecting the already active
 layer leaves the effect intact. Key feedback can cover an always-on effect;
 blinking effects cover key feedback and include fully dark alternating phases.
-Each phase lasts 250 ms; when blinking finishes, the layer's configured indicator
-sequence starts again. Rainbow uses the current runtime speed and phase policies.
+Each phase lasts 250 ms; when blinking finishes, normal LED rendering resumes
+without replaying the layer's blink/timed indication. Rainbow uses the current
+runtime speed and phase policies.
 
-Clearing an effect reveals the layer indication under current runtime brightness
-policies. It does not reset other LED overrides; use the separate **Restore all
+Clearing an effect reveals the layer's steady state under current runtime brightness
+policies, without replaying its blink/timed indication. Always-on indicators resume;
+blink/timed indicators remain finished until another layer selection. It does not
+reset other LED overrides; use the separate **Restore all
 configured LED settings** command for those. Ordinary LED-control commands may
 change the underlying policies while an effect persists. USB color preview and
 effects share state and replace each other; physical input cancels USB preview,

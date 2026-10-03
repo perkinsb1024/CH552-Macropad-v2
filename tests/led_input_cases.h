@@ -138,6 +138,35 @@ static void testConsumedPhysicalInput(void) {
 }
 
 static void testTemporaryEffects(void) {
+    // Clearing/completing an effect must not replay a layer-entry indication.
+    for (uint8_t behavior = 0; behavior < 4; behavior++) {
+        testLoadStarterProfile(PHYSICAL_VARIANT);
+        uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+        activeConfig[9 + size - 1] = 1 | (behavior << 2); // Bright red.
+        P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+        startLayerIndicator(0, currentMs);
+        assert(layerIndicatorPhasesLeft == (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 :
+               behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER ? 2 : 0));
+        firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
+        assert(!previewOptions && !layerIndicatorPhasesLeft);
+        for (uint8_t mode = 0; mode < 3; mode++) {
+            firmwareLedAction(mode == 1 ? CONFIG_LED_EFFECT_BLINK_8 :
+                              mode == 2 ? CONFIG_LED_EFFECT_BLINK_1 : CONFIG_LED_EFFECT_ON, 15);
+            if (mode == 2) {
+                currentMs += 250; loop();
+                currentMs += 250; loop();
+            } else firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
+            assert(!previewOptions && !layerIndicatorPhasesLeft);
+            assert(ledData[1] == (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON ? 255 : 0));
+            currentMs += 250; loop();
+            assert(!layerIndicatorPhasesLeft);
+            assert(ledData[1] == (behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON ? 255 : 0));
+        }
+        // A subsequent layer selection still starts its configured sequence.
+        startLayerIndicator(0, currentMs);
+        assert(layerIndicatorPhasesLeft == (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 :
+               behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER ? 2 : 0));
+    }
     for (uint8_t color = 0; color < 16; color++) {
         for (uint8_t blinks = 0; blinks <= 8; blinks++) {
             testLoadStarterProfile(PHYSICAL_VARIANT);

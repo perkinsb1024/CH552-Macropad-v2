@@ -193,8 +193,13 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
     previewOptions = (value << 4) | LED_EFFECT_FLAG | 1 | 8;
     layerIndicatorPhasesLeft = (command - CONFIG_LED_EFFECT_ON) << 1;
     if (command == CONFIG_LED_EFFECT_ON) previewOptions |= 4;
-    if (command == CONFIG_LED_EFFECT_RESTORE) previewOptions = 0;
-    startLayerIndicator(actionsLayer(), millis());
+    if (command == CONFIG_LED_EFFECT_RESTORE) {
+      previewOptions = 0;
+      layerIndicatorPhasesLeft = 0;
+    }
+    // Effects share the phase clock, but clearing one is not a layer selection.
+    layerIndicatorDeadline = (uint8_t)(((uint16_t)millis() >> 1) + LAYER_INDICATOR_PHASE_TICKS);
+    updateLeds();
     return;
   }
   int8_t delta = value;
@@ -299,8 +304,6 @@ void serviceLayerIndicator(uint16_t now) {
   layerIndicatorDeadline += LAYER_INDICATOR_PHASE_TICKS;
   if (!layerIndicatorPhasesLeft && (previewOptions & LED_EFFECT_FLAG)) {
     previewOptions = 0;
-    startLayerIndicator(actionsLayer(), now);
-    return;
   }
   updateLeds();
 }

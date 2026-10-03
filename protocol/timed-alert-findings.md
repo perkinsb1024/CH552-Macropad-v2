@@ -195,8 +195,8 @@ output even if the underlying indicator brightness policy is off/dim.
   same layer does not cancel it.
 - Blinks automatically clear the overlay and resume normal indication when
   their complete light/dark sequence finishes. A blink is 250ms light and 250ms
-  dark. Restoring a layer configured for blink/timed indication restarts that
-  configured indication sequence.
+  dark. Clearing or completing an effect returns to normal steady-state rendering
+  without restarting the layer's configured blink/timed indication.
 - Pressed-key feedback overrides always-on effects, but blink phases take
   precedence, matching existing layer-indicator behavior.
 - As configured removes the overlay and reveals the existing underlying runtime
