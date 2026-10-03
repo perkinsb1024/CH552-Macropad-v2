@@ -54,12 +54,12 @@ __xdata uint8_t ledData[NUM_BYTES];
 __xdata uint8_t rawState[7];
 __xdata uint8_t stableState[7];
 __xdata uint16_t rawChanged[7];
-__xdata uint8_t encoderState;
-__xdata int8_t encoderMovement;
-__xdata uint8_t lastLayer;
+__pdata uint8_t encoderState;
+__pdata int8_t encoderMovement;
+__pdata uint8_t lastLayer;
 __xdata uint8_t allowRunBootloader;
-__xdata uint8_t layerIndicatorPhasesLeft;
-__xdata uint8_t layerIndicatorDeadline;
+__pdata uint8_t layerIndicatorPhasesLeft;
+__pdata uint8_t layerIndicatorDeadline;
 __data uint8_t rainbowChanged;
 __data uint8_t rainbowHue;
 // Per-LED extra hue steps; staggered rates gently change relative phases.
@@ -69,7 +69,7 @@ __idata uint8_t rainbowDrift[NUM_LEDS];
 __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with actions.c.
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 #if ENABLE_COLOR_PREVIEW
-__xdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
+__pdata uint8_t previewOptions; // Zero = normal LEDs; otherwise reuse layer option bits.
 #else
 #define previewOptions 0
 #endif

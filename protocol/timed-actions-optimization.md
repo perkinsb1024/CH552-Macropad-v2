@@ -175,3 +175,47 @@ page selection. The changes are in the current `experiment/timed-actions` workin
 tree on top of the user's checkpoint; extra experiment branches were unnecessary.
 The original [findings](timed-actions-findings.md) preserve the first-pass costs
 and remaining UI/behavior limitations. This report supersedes their size outcome.
+
+## Follow-up: fill the remaining six paged bytes
+
+Starting from checkpoint `18fb0aa`, moved the six one-byte sketch variables
+previously identified in four groups: `encoderState`, `encoderMovement`,
+`layerIndicatorPhasesLeft`, `layerIndicatorDeadline`, `lastLayer`, and
+`previewOptions`. Only their storage declarations changed from `__xdata` to
+`__pdata`; the maximum timer count remains four. The linker places all paged
+objects, so the newly moved variables do not necessarily occupy FA–FF themselves;
+the entire linked paged allocation now spans 0x0094–0x00FF.
+
+Fresh before/after temporary builds at the normal 14,336-byte limit measured:
+
+| Hardware | Before flash | After flash | Saved | After free | Stack before / after |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Six-key | 14,255 | 14,231 | **24** | **105** | 122 / 122 |
+| Three-key | 14,251 | 14,227 | **24** | **109** | 125 / 125 |
+
+PSEG increases from 102 to 108 bytes. Ordinary XSEG decreases by six bytes
+(538 → 532 on six-key, 529 → 523 on three-key), leaving the final RAM address
+unchanged. Stack capacities are linker capacities, not measured peak usage.
+The complete host regression suite and both boards' build/layout checks pass.
+No hardware testing or release generation was performed.
+
+This is an alternative use of the same six page slots as increasing the timer
+limit to seven. The seven-timer alternative at `18fb0aa` used 14,255 flash bytes
+on six-key and the same 122-byte stack capacity. Combining these six moves with
+seven timers exceeds the current page-zero layout; the build guard rejects it.
+Consequently, the earlier all-variant reproduction script's seven-timer case
+requires the pre-follow-up sketch declarations until a choice is made. The
+current candidate remains uncommitted for the user's comparison.
+
+Before/after sources, ordinary firmware outputs and logs for this measurement
+were written under `/private/tmp/macropad-page-fill-h4nw7q96/`; these temporary
+files may be removed by system cleanup. `baseline` is a source snapshot of
+`18fb0aa`. Each `baseline-0`, `baseline-1`, `candidate-0`, and `candidate-1`
+folder contains its `firmware.mem` and `firmware.map`; corresponding `.log`
+files capture compilation. Reproduce one build with:
+
+```sh
+python3 pio-platform/build_firmware.py build . /private/tmp/macropad-page-fill-check 24000000 148 14336 0
+```
+
+Use variant `1` for three-key and a different temporary output directory.
