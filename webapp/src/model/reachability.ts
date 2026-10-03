@@ -1,5 +1,5 @@
 import type { Action, Profile } from './types';
-import { relativeTargetLayer } from './actions';
+import { isPreviousLayer, relativeTargetLayer } from './actions';
 
 export interface ReachabilityWarning {
   layer: number;
@@ -60,7 +60,10 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
     if (!reachable.has(layer)) {
       warnings.push({ layer, message: `${name(layer)} cannot be reached from startup ${name(startup)}.` });
     } else if (layer !== startup && !reachableFrom(layer).has(startup)) {
-      warnings.push({ layer, message: `There is no path from ${name(layer)} back to startup ${name(startup)}.` });
+      const dynamicReturn = [...reachableFrom(layer)].some(source => actionsOnLayer(profile, source).some(isPreviousLayer));
+      warnings.push({ layer, message: dynamicReturn
+        ? `Returning from ${name(layer)} via Previous layer depends on persistent layer history.`
+        : `There is no path from ${name(layer)} back to startup ${name(startup)}.` });
     }
   }
   return warnings;

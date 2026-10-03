@@ -24,7 +24,7 @@ Compared to the previous version, this project adds:
    - Including support for LED layer indicators (blink or always-on)
 - Chords (multi-key inputs)
 - Timed actions, with optional inactivity reset and input consumption
-- Temporary bright LED effects for reminders, including rainbow and blinking
+- Temporary bright or dim LED effects for reminders, including rainbow and blinking
 - Mouse-move actions
 - Rainbow RGB effect (come on, what good is a keyboard without it?)
 
@@ -41,7 +41,7 @@ You can configure:
 - Keyboard shortcuts, text, mouse actions and media controls
 - The encoder button and both rotation directions
 - Up to five layers on six-key pads or seven on three-key pads, plus two-key chords
-- Key LED colors, layer indicators, and temporary bright color/rainbow effects
+- Key LED colors, layer indicators, and temporary bright or dim color/rainbow effects
 - Up to four repeating or inactivity timers with optional next-input actions
 
 Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. With no timers and one global chord reserved for switching layers, the maximum remaining physical-input action slots for each model are:
@@ -58,7 +58,7 @@ To use this configuration as a starting point, copy the contents of either the [
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
-Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware). The checked-in releases currently use format v6; timed actions and temporary LED effects require compiling the current v7 source.
+Pre-built firmware files for both three-key and six-key macropads are available in [releases/](releases/). To use those, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware). The source and current configurator implement format v7; use firmware built from this source for timed actions, temporary LED effects, and Previous layer. The existing checked-in HEX pair remains format v6 until the v7 release artifacts are generated. See [Publishing a v7 release](#publishing-a-v7-release).
 
 A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
 
@@ -143,6 +143,15 @@ When those firmware or PlatformIO files have changes, the name includes `dirty` 
 
 After both builds and exports succeed, older generated HEX files are deleted so `releases/` keeps only the latest three-key and six-key pair. If a build fails, the previous release files are kept.
 
+### Publishing a v7 Release
+
+1. Test the final source on hardware, run the firmware host tests and web tests/build, then commit and merge the finished source into `main` locally.
+2. From that committed revision, run `pio run -t releases` to generate the two revision-labelled HEX files. This is a local build target, separate from the website deployment workflow.
+3. Commit the replacement HEX pair and update the artifact-status note above to reflect the generated v7 firmware.
+4. Push `main` with the source and HEX commits together. The GitHub Actions workflow tests and deploys the current configurator, frozen editors, and uploader with the checked-in firmware pair. Confirm the deployment succeeds and the live uploader offers the new files.
+
+The v7 editor migrates existing v6 profiles when they are loaded and saved; erasing configuration is not required. Older firmware is routed to its frozen editor. Firmware filenames identify the source commit, which precedes the commit containing the generated HEX files.
+
 ## How To Upload the Firmware
 
 A macropad with its factory firmware requires a hardware bootloader entry for the first upload. Once this firmware is installed, you can enter the bootloader again by holding the encoder button while powering on the macropad.
@@ -201,9 +210,13 @@ On first use, or when the saved profile is invalid, the keys and encoder stay in
 
 Configuration format 7 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. The first firing can be up to 131 seconds early; later repetitions use the full interval.
 
-**LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change; blinking restores the layer indicator when finished. Saved layer settings remain independent. The editor migrates binary formats 2–6, JSON versions 1–6, and older drafts while preserving bindings and metadata. Existing v6 profiles continue working on v7 firmware without erasing configuration; saving from the current editor upgrades them to v7. Older firmware uses frozen format 2–6 editors under `versions/format-vN/`. See [configuration format 7](protocol/config-v7.md).
+**LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
 
-Use **Export JSON** and **Import JSON** in the Tools panel to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
+**Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating Previous layer swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot Previous layer option visits the remembered layer for one action, then returns. Timed actions can use either variant.
+
+The editor migrates binary formats 2–6, JSON versions 1–6, and older drafts while preserving bindings and metadata. Existing v6 profiles continue working on v7 firmware without erasing configuration; saving from the current editor upgrades them to v7. Older firmware uses frozen format 2–6 editors under `versions/format-vN/`. See [configuration format 7](protocol/config-v7.md).
+
+Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
 You can also edit offline or try a simulated macropad from the welcome screen. Browsers without WebHID, including Safari and Firefox, can edit and export profiles but cannot save them directly to hardware.
 

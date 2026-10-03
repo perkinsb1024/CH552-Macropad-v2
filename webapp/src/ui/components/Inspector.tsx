@@ -1,8 +1,8 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useMemo } from 'preact/hooks';
-import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../../model/actions';
+import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
-import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, keyCount, maxLayers } from '../../model/constants';
+import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
 import { normalizeText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
@@ -312,8 +312,12 @@ export function Inspector() {
           <span class="field-label">Target layer</span>
           <select value={action.layer} onChange={(e) => update({ ...action, layer: Number((e.target as HTMLSelectElement).value) })}>
             {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}{slot.kind !== 'timed' && i === slot.layer ? ' (this layer)' : ''}</option>)}
-            {action.layer >= layerCount && <option value={action.layer}>Layer {action.layer + 1} (missing)</option>}
+            {action.type !== 'momentaryLayer' && <option value={PREVIOUS_LAYER}>Previous layer</option>}
+            {action.layer >= layerCount && !isPreviousLayer(action) && <option value={action.layer}>Layer {action.layer + 1} (missing)</option>}
           </select>
+          {isPreviousLayer(action) && <span class="hint">{action.type === 'oneShotSetLayer'
+            ? 'Visit the previous base layer for one action, then return. This does not change layer history.'
+            : 'Return to the previous base layer. Repeating this action toggles between the two layers.'} Momentary and one-shot visits do not replace history.</span>}
         </label>
       )}
 

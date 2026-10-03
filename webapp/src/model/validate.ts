@@ -5,7 +5,7 @@ import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
 import { computeCapacity } from './capacity';
-import { ACTION_DESCRIPTORS, actionNeedsRelease } from './actions';
+import { ACTION_DESCRIPTORS, actionNeedsRelease, isPreviousLayer } from './actions';
 
 export interface ActionContext {
   layerCount: number;
@@ -61,6 +61,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'setLayer':
     case 'oneShotSetLayer':
     case 'momentaryLayer':
+      if (isPreviousLayer(action)) return null;
       if (!Number.isInteger(action.layer) || action.layer < 0 || action.layer >= ctx.layerCount) return `Layer ${action.layer + 1} does not exist.`;
       return null;
   }

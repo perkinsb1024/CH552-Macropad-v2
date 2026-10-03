@@ -126,6 +126,11 @@ is enabled by default; consume wake input is disabled by default. Optional
 next-input actions run once after firing; consuming suppresses the physical
 binding even with no next-input action. Held actions cannot be assigned to timers.
 
+Interval editing uses a full-width 1–64 slider. Both timer action slots accept
+dragged shortcuts and swap actions with keys, encoder inputs, chords and other
+timers; timer interval/flags and per-key LED colors stay attached to their inputs.
+Actions requiring a release are rejected on either timer slot.
+
 Set all LEDs is a single LED-command choice with an effect selector (As configured,
 Always on, Blink), a 1–8 blink-count slider shown only for Blink, and color swatches
 including Rainbow with a Full Brightness / Dim control. As configured hides these
@@ -133,6 +138,13 @@ controls. Always-on permits pressed-key feedback; blinking covers it. Clearing o
 finishing an effect does not replay the layer's blink/timed indication.
 No dedicated reminder layer is required. JSON uses optional `brightness: "dim"`
 for effects; omission defaults to Bright, preserving existing profiles.
+
+Persistent and one-shot Switch to layer selectors offer Previous layer, represented
+by `layer: 255` in v7 JSON and `0xFF` in the two-byte action record. The target is
+preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
+Previous layer remembers persistent base selections, ignoring momentary/one-shot
+visits. Repeating a persistent Previous layer action swaps between two layers.
+Return-path warnings explain that this target depends on runtime history.
 
 The protocol simulator accepts valid v6 and v7 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.

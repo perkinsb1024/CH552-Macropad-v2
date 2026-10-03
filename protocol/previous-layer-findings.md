@@ -73,32 +73,28 @@ layer 5 was active. Consume can suppress the dismissing input's normal binding.
 The temporary LED feature already covers reminders without switching layers, so
 this is an additional navigation/return option rather than a prerequisite.
 
-## Validation and remaining editor work
+## Validation and completed editor work
 
 Firmware accepts parameter `0xFF` only for Set layer, with auxiliary 0 or 1, in v7.
 It remains invalid for Momentary layer and v6. Other out-of-range parameters remain
 invalid. Ordinary relative offsets retain their existing meaning.
 
-The web UI/codec deliberately remain unchanged in this investigation. The current
-editor rejects profiles containing the new sentinel; the firmware prototype is
-not yet an end-to-end configurable feature. To complete it:
+The original investigation stopped at firmware. The v7 completion now includes
+Previous layer in persistent and one-shot target selectors, excluding Momentary
+layer, with named labels and explanatory history text. Model validation, binary
+decoding, JSON and drafts accept `layer: 255` only in v7; older profiles reject it.
+Encoding reuses the unchanged Set layer record.
 
-1. Add a Previous layer target to persistent and one-shot Set layer selectors,
-   excluding Momentary layer. Display it as a named target, not missing Layer 256.
-2. Update model validation, binary decoding, action labels and JSON documentation
-   for target 255, guarded to v7. Encoding can reuse the existing Set layer record.
-3. Preserve the sentinel through layer insertion, deletion, reorder/duplicate,
-   clipboard, undo and timer/chord target remapping. `store.ts` currently remaps
-   every numeric Set layer target; it must skip the sentinel. Other target-display
-   helpers and comparisons must recognize it too.
-4. Test full binary/JSON/draft round trips and layer edits; document one-entry
-   swap, momentary/one-shot behavior and timer interaction in `config-v7.md`.
-5. Test on hardware. No physical-device tests were performed here.
+The shared `isPreviousLayer` helper protects the target during layer insertion,
+deletion, reorder/duplication, clipboard and undo, including per-change layer undo
+and timer/chord remapping. Return-path advice describes the history dependency
+instead of assuming a fixed destination or inventing entry paths to unreachable
+layers. The simulator round-trips the target through configuration transport.
 
-The simplest model extension is to retain `setLayer`/`oneShotSetLayer` with numeric
-`layer: 255` and a shared sentinel helper. A semantic `previous` model target is
-another option, but requires a larger type migration. Either uses the same wire
-encoding, and no additional flash is needed for browser-only work.
+No additional firmware changes or flash/RAM bytes were needed for the editor work.
+The historical measurements above predate subsequent LED changes; current free
+flash is 135 bytes (three keys) and 131 bytes (six keys), with stack capacities
+123/120 bytes. No physical-device tests were performed as part of this completion.
 
 ## Verification
 
@@ -110,8 +106,9 @@ encoding, and no additional flash is needed for browser-only work.
 - Configuration tests exhaustively check all 256 Set layer parameters and auxiliary
   values 0–2 for v6/v7 on both hardware variants, plus Momentary rejection.
 - Both hardware builds pass the actual flash limit and RAM/startup layout checks.
-- All 265 existing web regressions pass; they do not assert support for the new
-  sentinel, which is still pending in the browser.
+- All 291 web regressions pass, including previous-layer binary/JSON/draft and
+  simulator round trips, old-format rejection, selectors/labels, clipboard,
+  layer insertion/deletion/reordering/duplication, undo and advisory checks.
 - Checked-in release files are unchanged. Nothing was uploaded or pushed.
 
 Reproduce on the prototype branch:

@@ -1,4 +1,4 @@
-import { actionsEqual, summarize } from './actions';
+import { actionsEqual, summarize, isPreviousLayer } from './actions';
 import { RAINBOW_SPEED_LABELS, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior, variantName } from './constants';
 import { PALETTE } from './palette';
 import type { Action, Chord, Profile } from './types';
@@ -52,7 +52,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
         draft.layers.splice(i, 1);
         draft.chords = draft.chords.filter((chord) => chord.layer !== i).map((chord) => chord.layer > i ? { ...chord, layer: chord.layer - 1 } : chord);
         const shift = (action: Action): Action =>
-          (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer > i ? { ...action, layer: action.layer - 1 } : action;
+          !isPreviousLayer(action) && (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer > i ? { ...action, layer: action.layer - 1 } : action;
         for (const layer of draft.layers) {
           layer.keys = layer.keys.map(shift);
           layer.encoderButton = shift(layer.encoderButton);

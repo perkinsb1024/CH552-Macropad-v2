@@ -2,6 +2,7 @@
 
 export const IMAGE_SIZE = 128;
 export const FORMAT_VERSION = 7;
+export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
   return variant === VARIANT_THREE_KEYS ? 7 : 5;

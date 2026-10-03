@@ -14,7 +14,7 @@ zero values for those fields. CRC covers them regardless.
 
 Version 7 retains the v6 palette, layer geometry, action map, and 128-byte image.
 It adds four repeating timed actions, optional next-input actions and consumption,
-and temporary full-brightness LED effects. No additional configuration byte is
+and temporary bright/dim LED effects, plus a Previous layer target. No additional configuration byte is
 reserved for flags. All v7 work before this format was finalized was unpublished.
 
 The editor writes v7 and reads binary formats 2–7 and JSON versions 1–7. Released
@@ -194,8 +194,12 @@ values are invalid. These meanings are preserved when migrating old A/D records 
 In v7, Set layer parameter `0xFF` (255) selects the previous persistent base layer.
 Both persistent and one-shot forms support this target; Momentary layer and v6
 profiles reject it. All other targets must be actual configured layer indices.
-The previous-layer target is currently implemented in firmware only; browser
-editor, codec and JSON support remain pending.
+The editor offers **Previous layer** in persistent and one-shot target selectors,
+but not Momentary layer. JSON retains the existing action shape with `layer: 255`.
+Layer insertion, deletion, duplication and reordering preserve this reserved target.
+Older binary/JSON profiles and drafts reject it rather than treating it as a real
+layer. Return-path advice marks this target as history-dependent; it cannot by
+itself make a previously unreachable layer reachable.
 
 History starts at the startup layer. Actual persistent absolute/relative changes
 remember the base layer being left; selecting the same base layer preserves

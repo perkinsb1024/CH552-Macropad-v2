@@ -1,7 +1,7 @@
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
 import { RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_SPEED, RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
-import { descriptor, ACTION_DESCRIPTORS } from '../model/actions';
+import { descriptor, ACTION_DESCRIPTORS, isPreviousLayer } from '../model/actions';
 import { PALETTE } from '../model/palette';
 import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
@@ -205,6 +205,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     });
   }
   if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(a => a.type === 'ledControl' && a.command.startsWith('effect'))) throw new ImportError('Temporary LED effects require profile version 7.');
+  if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(isPreviousLayer)) throw new ImportError('Previous layer requires profile version 7.');
   migrateLegacyProfile(profile);
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
   const issues = validateProfile(profile);

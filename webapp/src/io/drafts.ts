@@ -2,6 +2,7 @@ import type { Profile } from '../model/types';
 import { FORMAT_VERSION } from '../model/constants';
 import { migrateLegacyProfile } from '../model/defaults';
 import { validateProfile } from '../model/validate';
+import { isPreviousLayer } from '../model/actions';
 import type { LocalMetadata } from './json';
 
 const PREFIX = `universal-macropad:format-v${FORMAT_VERSION}:`;
@@ -41,6 +42,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action)];
         if ((parsed.formatVersion ?? 2) < 6 && actions.some((a) => a.type === 'ledControl')) continue;
         if ((parsed.formatVersion ?? 2) < 7 && (parsed.profile.timedActions?.length || actions.some(a => a.type === 'ledControl' && a.command.startsWith('effect')))) continue;
+        if ((parsed.formatVersion ?? 2) < 7 && actions.some(isPreviousLayer)) continue;
         if (validateProfile(parsed.profile).length) continue;
         parsed.formatVersion = FORMAT_VERSION;
         return parsed;

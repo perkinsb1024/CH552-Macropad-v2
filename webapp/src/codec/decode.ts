@@ -1,6 +1,6 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
-  MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
+  PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
@@ -94,7 +94,8 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     }
     case ActionCode.SetLayer:
     case ActionCode.MomentaryLayer: {
-      if ((type === ActionCode.SetLayer ? aux > 1 : nonZeroAux) || b1 >= layers) return `Layer ${b1 + 1} does not exist`;
+      const previous = version >= 7 && type === ActionCode.SetLayer && b1 === PREVIOUS_LAYER;
+      if ((type === ActionCode.SetLayer ? aux > 1 : nonZeroAux) || (b1 >= layers && !previous)) return `Layer ${b1 + 1} does not exist`;
       if (rotation && type === ActionCode.MomentaryLayer) return 'Momentary layer bound to rotation';
       const t = type === ActionCode.SetLayer ? (aux ? 'oneShotSetLayer' : 'setLayer') : 'momentaryLayer';
       return { type: t, layer: b1 };

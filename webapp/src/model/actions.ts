@@ -1,8 +1,12 @@
 import { ledSummary } from './ledControl';
-import { ActionCode, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT } from './constants';
+import { ActionCode, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER } from './constants';
 import type { Action, ActionType } from './types';
 import { keyName } from '../keys/keyboard';
 import { consumerName } from '../keys/consumer';
+
+export function isPreviousLayer(action: Action): boolean {
+  return (action.type === 'setLayer' || action.type === 'oneShotSetLayer') && action.layer === PREVIOUS_LAYER;
+}
 
 export interface ActionDescriptor {
   type: ActionType;
@@ -137,9 +141,9 @@ export function summarize(action: Action): string {
     case 'string':
       return action.text.length ? `“${action.text.length > 14 ? action.text.slice(0, 13) + '…' : action.text}”` : 'Empty text';
     case 'setLayer':
-      return `Layer ${action.layer + 1}`;
+      return isPreviousLayer(action) ? 'Previous layer' : `Layer ${action.layer + 1}`;
     case 'oneShotSetLayer':
-      return `Layer ${action.layer + 1} (one-shot)`;
+      return isPreviousLayer(action) ? 'Previous layer (one-shot)' : `Layer ${action.layer + 1} (one-shot)`;
     case 'momentaryLayer':
       return `Layer ${action.layer + 1} (hold)`;
     case 'relativeLayer':

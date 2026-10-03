@@ -1,7 +1,7 @@
 import { computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
-import { actionNeedsRelease } from '../model/actions';
+import { actionNeedsRelease, isPreviousLayer } from '../model/actions';
 import { FORMAT_VERSION, maxLayers, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { actionProblem, validateProfile } from '../model/validate';
@@ -444,7 +444,7 @@ function applyLayerOrder(order: number[]): void {
     draft.layers = order.map((oldIndex) => draft.layers[oldIndex]!);
     draft.chords = draft.chords.map((chord) => ({ ...chord, layer: remap(chord.layer) }));
     const updateTarget = (action: Action): Action => (
-      action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer'
+      !isPreviousLayer(action) && (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer')
         ? { ...action, layer: remap(action.layer) }
         : action
     );
@@ -582,7 +582,7 @@ export function removeLayer(layer: number): void {
     draft.layers.splice(layer, 1);
     draft.chords = draft.chords.filter((c) => c.layer !== layer).map((c) => (c.layer > layer ? { ...c, layer: c.layer - 1 } : c));
     const shift = (a: Action): Action => {
-      if ((a.type === 'setLayer' || a.type === 'oneShotSetLayer' || a.type === 'momentaryLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
+      if (!isPreviousLayer(a) && (a.type === 'setLayer' || a.type === 'oneShotSetLayer' || a.type === 'momentaryLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
       return a;
     };
     for (const l of draft.layers) {
