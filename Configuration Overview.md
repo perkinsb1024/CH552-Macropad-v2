@@ -195,6 +195,10 @@ An offset of **0** stays on the current layer and will replay its layer indicato
 
 **Give yourself a route back.** Add a layer-switch button on every layer, or make a global chord that cycles layers. Clicking layer tabs in the configurator does not change the selected layer on your macropad. Review any **Layer reachability** warnings before saving.
 
+The reachability check tracks persistent layer history and pending one-shot returns. It warns when a reachable layer cannot return to startup, including when only some histories leave you trapped. **Previous layer** is one remembered layer, not a stack: with Layer 1 → Layer 2 → Layer 5, Previous on Layer 5 returns to Layer 2; another Previous returns to Layer 5, not Layer 1. A direct jump from Layer 1 to Layer 5 can still return to Layer 1, so the warning for Layer 5 depends on history. A simple two-layer Previous toggle with a reliable route back does not need a warning.
+
+This is a route check, not a complete simulation of physical inputs: timer actions are treated as possible transitions without enforcing their timing, order or input consumption, and multiple held-layer inputs are approximated. Having no reachability warnings does not guarantee that every input sequence is safe.
+
 ## Chords: two keys together
 
 A chord assigns an extra action to a pair of numbered keys. For example, Key 1 can copy, Key 2 can paste, and **Keys 1 + 2** together can switch layers.
@@ -549,7 +553,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 <details>
 <summary><strong>Advanced: Gotchas and things to watch out for with Timed Actions</strong></summary>
 
-Timed actions and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to **one-shot layer returns** and **layer changes cancelling queued actions**.
+Timed actions and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that all layer changes cancel pending actions.
 
 ### How multiple pending follow-ups run
 

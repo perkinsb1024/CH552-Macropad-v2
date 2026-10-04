@@ -146,7 +146,7 @@ it('does not invent entry paths or claim a fixed return path for history-depende
   p.layers[0]!.keys.fill({ type: 'none' }); p.layers[1]!.keys.fill({ type: 'none' });
   for (const layer of p.layers) layer.encoderButton = layer.clockwise = layer.counterclockwise = { type: 'none' };
   p.layers[0]!.keys[0] = { type: 'setLayer', layer: 1 }; p.layers[1]!.keys[0] = previous;
-  expect(layerReachabilityWarnings(p)).toEqual([{ layer: 1, message: 'Returning from Layer 2 via Previous layer depends on persistent layer history.' }]);
+  expect(layerReachabilityWarnings(p)).toEqual([]);
   expect(selfReferentialLayerWarnings(p)).toEqual([]);
   p.layers[0]!.keys[0] = previous;
   expect(layerReachabilityWarnings(p)).toEqual([{ layer: 1, message: 'Layer 2 cannot be reached from startup Layer 1.' }]);

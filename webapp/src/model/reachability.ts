@@ -9,7 +9,6 @@ export interface ReachabilityWarning {
 function actionsOnLayer(profile: Profile, layerIndex: number): Action[] {
   const layer = profile.layers[layerIndex]!;
   return [
-    ...(profile.timedActions ?? []).flatMap((timer) => [timer.action, timer.resumeAction]),
     ...layer.keys,
     layer.encoderButton,
     layer.clockwise,
@@ -20,50 +19,110 @@ function actionsOnLayer(profile: Profile, layerIndex: number): Action[] {
   ];
 }
 
-/** Warns about layers that cannot be entered from startup or cannot return to it. */
+interface LayerState {
+  base: number;
+  previous: number;
+  oneShotReturn: number;
+  held: number;
+}
+
+const effectiveLayer = (state: LayerState): number => state.held < 0 ? state.base : state.held;
+const stateKey = (state: LayerState): string =>
+  `${state.base},${state.previous},${state.oneShotReturn},${state.held}`;
+
+/** Layer/history analysis, rather than treating Previous as an arbitrary return edge.
+ * Timers are optional transitions: timing, consumption and simultaneous inputs are
+ * deliberately not simulated. Held visits retain the underlying persistent state;
+ * nested holds are approximated by allowing the newest hold or all holds to release.
+ */
 export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning[] {
   const count = profile.layers.length;
   const startup = profile.startupLayer;
   if (!count || !Number.isInteger(startup) || startup < 0 || startup >= count) return [];
 
-  const edges = Array.from({ length: count }, () => new Set<number>());
-  for (let source = 0; source < count; source++) {
-    for (const action of actionsOnLayer(profile, source)) {
-      if ((action.type === 'setLayer' || action.type === 'oneShotSetLayer') && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
-        edges[source]!.add(action.layer);
-      } else if (action.type === 'momentaryLayer' && Number.isInteger(action.layer) && action.layer >= 0 && action.layer < count) {
-        edges[source]!.add(action.layer);
-        edges[action.layer]!.add(source); // Releasing the momentary input returns to the prior layer.
-      } else if ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && Number.isInteger(action.offset) && action.offset >= -6 && action.offset <= 6) {
-        edges[source]!.add(relativeTargetLayer(source, action.offset, count));
-      }
-    }
-  }
+  const bindings = profile.layers.map((_, layer) => actionsOnLayer(profile, layer));
+  const timers = (profile.timedActions ?? []).flatMap(timer => [timer.action, timer.resumeAction]);
+  const states: LayerState[] = [];
+  const ids = new Map<string, number>();
+  const predecessors: Set<number>[] = [];
+  const add = (state: LayerState): number => {
+    const key = stateKey(state);
+    const existing = ids.get(key);
+    if (existing !== undefined) return existing;
+    const id = states.length;
+    ids.set(key, id);
+    states.push(state);
+    predecessors.push(new Set());
+    return id;
+  };
+  add({ base: startup, previous: startup, oneShotReturn: -1, held: -1 });
 
-  const reachableFrom = (from: number): Set<number> => {
-    const reached = new Set<number>([from]);
-    const queue = [from];
-    while (queue.length) {
-      const current = queue.shift()!;
-      for (const next of edges[current]!) {
-        if (reached.has(next)) continue;
-        reached.add(next);
-        queue.push(next);
-      }
+  const transition = (state: LayerState, action: Action, timed: boolean): LayerState | undefined => {
+    // Normal input resolves its binding first, then consumes the pending one-shot.
+    // Timer actions use the effective layer and leave that pending return armed.
+    const selected = timed ? effectiveLayer(state) : state.base;
+    const next = { ...state };
+    if (!timed && next.oneShotReturn >= 0) {
+      next.base = next.oneShotReturn;
+      next.oneShotReturn = -1;
     }
-    return reached;
+    let target: number;
+    if (action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') {
+      if (!Number.isInteger(action.offset) || action.offset < -6 || action.offset > 6) return;
+      target = relativeTargetLayer(selected, action.offset, count);
+    } else if (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') {
+      target = isPreviousLayer(action) ? next.previous : action.layer;
+      if (!Number.isInteger(target) || target < 0 || target >= count) return;
+    } else {
+      return next;
+    }
+    if (action.type === 'momentaryLayer') {
+      next.held = target;
+    } else {
+      if (action.type === 'oneShotSetLayer' || action.type === 'oneShotRelativeLayer') {
+        next.oneShotReturn = next.base;
+      } else {
+        const persistent = next.oneShotReturn < 0 ? next.base : next.oneShotReturn;
+        if (target !== persistent) next.previous = persistent;
+      }
+      next.base = target;
+    }
+    return next;
   };
 
-  const reachable = reachableFrom(startup);
+  // Discover only states possible from the actual startup history.
+  for (let id = 0; id < states.length; id++) {
+    const state = states[id]!;
+    const connect = (next: LayerState | undefined): void => {
+      if (next) predecessors[add(next)]!.add(id);
+    };
+    for (const action of bindings[effectiveLayer(state)]!) connect(transition(state, action, false));
+    for (const action of timers) connect(transition(state, action, true));
+    if (state.held >= 0) connect({ ...state, held: -1 });
+  }
+
+  // Reverse traversal finds all histories with some route back to startup.
+  const canReturn = new Set<number>();
+  const queue: number[] = [];
+  states.forEach((state, id) => {
+    if (effectiveLayer(state) === startup) { canReturn.add(id); queue.push(id); }
+  });
+  for (let index = 0; index < queue.length; index++) {
+    for (const prior of predecessors[queue[index]!]!) {
+      if (!canReturn.has(prior)) { canReturn.add(prior); queue.push(prior); }
+    }
+  }
+  const histories = Array.from({ length: count }, () => [] as number[]);
+  states.forEach((state, id) => histories[effectiveLayer(state)]!.push(id));
   const warnings: ReachabilityWarning[] = [];
   for (let layer = 0; layer < count; layer++) {
-    if (!reachable.has(layer)) {
+    const visits = histories[layer]!;
+    if (!visits.length) {
       warnings.push({ layer, message: `${name(layer)} cannot be reached from startup ${name(startup)}.` });
-    } else if (layer !== startup && !reachableFrom(layer).has(startup)) {
-      const dynamicReturn = [...reachableFrom(layer)].some(source => actionsOnLayer(profile, source).some(isPreviousLayer));
-      warnings.push({ layer, message: dynamicReturn
-        ? `Returning from ${name(layer)} via Previous layer depends on persistent layer history.`
-        : `There is no path from ${name(layer)} back to startup ${name(startup)}.` });
+    } else if (layer !== startup && visits.some(id => !canReturn.has(id))) {
+      warnings.push({ layer, message: visits.every(id => !canReturn.has(id))
+        ? `There is no path from ${name(layer)} back to startup ${name(startup)}.`
+        : `After some layer changes, ${name(layer)} has no path back to startup ${name(startup)}. Returning depends on layer history; Previous layer remembers only one layer.` });
     }
   }
   return warnings;
