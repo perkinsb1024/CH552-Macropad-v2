@@ -1,11 +1,11 @@
 import { computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
-import { actionNeedsRelease, isPreviousLayer } from '../model/actions';
+import { actionNeedsRelease, isPreviousLayer, summarize } from '../model/actions';
 import { FORMAT_VERSION, maxLayers, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { chordSlot, matchesChord } from '../model/chords';
-import { actionProblem, validateProfile } from '../model/validate';
+import { actionProblem, slotLabel, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
 import { encoderBootloaderWarnings, selfReferentialLayerWarnings } from '../model/layerWarnings';
 import { computeCapacity } from '../model/capacity';
@@ -314,12 +314,18 @@ function putAction(p: Profile, slot: Slot, action: Action): void {
 
 const ACTION_CLIPBOARD_FORMAT = 'universal-macropad-action';
 
-export function copySelectedConfiguration(): string | null {
+function notifyActionClipboard(verb: 'Copied' | 'Cut' | 'Pasted', action: Action, slot: Slot): void {
+  const label = action.type === 'none' ? 'No action' : summarize(action);
+  notify('success', `${verb} "${label}" ${verb === 'Pasted' ? 'to' : 'from'} ${slotLabel(slot).replaceAll(' · ', ', ')}`);
+}
+
+export function copySelectedConfiguration(showToast = true): string | null {
   const p = profile.value;
   const slot = selectedSlot.value;
   if (!p || !slot) return null;
   const action = getAction(p, slot);
   if (!action) return null;
+  if (showToast) notifyActionClipboard('Copied', action, slot);
   return JSON.stringify({
     format: ACTION_CLIPBOARD_FORMAT,
     version: 1,
@@ -339,6 +345,7 @@ export function cutSelectedConfiguration(): void {
     putAction(draft, slot, { type: 'none' });
     if (slot.kind === 'key') draft.layers[slot.layer]!.leds[slot.index] = 15;
   });
+  notifyActionClipboard('Cut', action, slot);
 }
 
 /** Returns false for clipboard text belonging to another application. */
@@ -365,6 +372,7 @@ export function pasteSelectedConfiguration(text: string): boolean {
     putAction(draft, slot, action);
     if (slot.kind === 'key' && copied.led !== undefined) draft.layers[slot.layer]!.leds[slot.index] = copied.led;
   });
+  notifyActionClipboard('Pasted', action, slot);
   return true;
 }
 

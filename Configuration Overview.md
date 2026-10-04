@@ -391,7 +391,7 @@ Check the Action editor afterward to see the assigned combination or text. Appli
 | Redo an editor change | Ctrl+Shift+Z or Ctrl+Y | Command+Shift+Z |
 | Clear selected action | Delete or Backspace | Delete or Backspace |
 
-Click the **input itself** before copying or pasting an action. If you are typing in a text box or have ordinary page text selected, the shortcuts work on that text instead. Copying one action is different from **Export to Clipboard**, which copies the entire profile for backup.
+Copy, cut and paste act on the **highlighted input**, even after you click another control such as its LED color. If you are typing in a text box or have ordinary page text selected, the shortcuts work on that text instead. Clicking anywhere clears existing page-text selection; dragging to select new text still lets you copy that text. A toast confirms the action and the trigger it was copied or cut from, or pasted to. Copying one action is different from **Export to Clipboard**, which copies the entire profile for backup.
 
 Copying or cutting a numbered key also includes its press color. Pasting it onto another numbered key transfers that color; pasting onto a wheel input, chord, or timer transfers only the action. Cutting clears the original action and turns its key press color Off.
 
@@ -535,7 +535,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | I cannot get back to my usual layer | Configure a return action or a global layer-cycle chord. Reconnecting starts on the saved startup layer |
 | Save is disabled | Check the connection, key count, storage meter, and **Fix before saving**. Follow any compatibility notice for older firmware |
 | A chord runs two ordinary actions | Increase the chord window slightly, check that it is not Off, press the pair nearly simultaneously, and release both keys before trying again. Check the chord's layer or global setting |
-| Copy or paste acts on text instead of a binding | Click the actual key, wheel input, chord row, or timer action first. Do not leave focus in an editor field or a page-text selection |
+| Copy or paste acts on text instead of a binding | Select the key, wheel input, chord row, or timer action. Leave any text editor and clear page-text selection; the highlighted input remains the clipboard target |
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; Type text expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |

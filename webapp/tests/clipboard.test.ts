@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultProfile } from '../src/model/defaults';
 import { VARIANT_SIX_KEYS } from '../src/model/constants';
-import { dialog, profile, selectedSlot } from '../src/ui/store';
+import { dialog, profile, selectedSlot, toasts } from '../src/ui/store';
 import { App } from '../src/ui/App';
 
 const effects = vi.hoisted(() => [] as Array<() => void | (() => void)>);
@@ -26,7 +26,7 @@ let cleanup: (() => void) | void;
 const body = new Target();
 function fire(type: string, target = body, extra: Record<string, unknown> = {}) {
   const event = {
-    type, target, defaultPrevented: false, preventDefault: vi.fn(),
+    type, target, detail: 1, defaultPrevented: false, preventDefault: vi.fn(),
     clipboardData: { setData: vi.fn(), getData: vi.fn(() => '') }, ...extra,
   };
   listeners.get(type)!(event as unknown as Event);
@@ -42,11 +42,12 @@ beforeEach(() => {
   vi.stubGlobal('window', {
     addEventListener: (type: string, listener: EventListener) => listeners.set(type, listener),
     removeEventListener: (type: string) => listeners.delete(type),
-    getSelection: () => ({ isCollapsed: collapsed }),
+    getSelection: () => ({ isCollapsed: collapsed, removeAllRanges: () => { collapsed = true; } }),
   });
   profile.value = defaultProfile(VARIANT_SIX_KEYS);
   selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
   dialog.value = null;
+  toasts.value = [];
   App();
   cleanup = effects[0]!();
 });
@@ -57,41 +58,48 @@ afterEach(() => {
 });
 
 describe('configuration clipboard event scope', () => {
-  it('requires clicking an action, including its nested label, before copying', () => {
-    expect(fire('copy').preventDefault).not.toHaveBeenCalled();
-    fire('click', new Target(false, new Target(true)));
+  it('copies the selected action even after clicking its LED color or another control', () => {
     const copy = fire('copy');
     expect(copy.preventDefault).toHaveBeenCalledOnce();
     expect(copy.clipboardData.setData).toHaveBeenCalledWith('text/plain', expect.stringContaining('universal-macropad-action'));
+    fire('pointerdown', new Target());
+    fire('click', new Target());
+    expect(fire('copy').preventDefault).toHaveBeenCalledOnce();
   });
 
-  it('stops intercepting copy, cut, paste and repeated shortcuts after clicking elsewhere', () => {
-    fire('click', new Target(true));
+  it('keeps cut, paste and repeated shortcuts scoped to the still-selected action', () => {
     const copy = fire('copy');
     const text = copy.clipboardData.setData.mock.calls[0]![1] as string;
     fire('click', new Target());
     const before = structuredClone(profile.value);
-    for (const type of ['copy', 'cut', 'paste']) {
-      const event = fire(type, body, { clipboardData: { setData: vi.fn(), getData: vi.fn(() => text) } });
-      expect(event.preventDefault).not.toHaveBeenCalled();
-      expect(event.clipboardData.setData).not.toHaveBeenCalled();
-    }
+    expect(fire('cut').preventDefault).toHaveBeenCalledOnce();
+    expect(fire('paste', body, { clipboardData: { setData: vi.fn(), getData: vi.fn(() => text) } }).preventDefault).toHaveBeenCalledOnce();
     for (const key of ['c', 'x', 'v']) {
-      expect(fire('keydown', body, { key, repeat: true, metaKey: true }).preventDefault).not.toHaveBeenCalled();
+      expect(fire('keydown', body, { key, repeat: true, metaKey: true }).preventDefault).toHaveBeenCalledOnce();
     }
     expect(profile.value).toEqual(before);
   });
 
-  it('allows text copying after selection drags and even within an action target', () => {
-    fire('click', new Target(true));
-    fire('pointerdown', new Target());
-    expect(fire('copy').preventDefault).not.toHaveBeenCalled();
-    fire('click', new Target(true));
+  it('clears existing page text on pointer-down regardless of the click target', () => {
+    for (const target of [new Target(true), new Target(), new Target(false, null, true)]) {
+      collapsed = false;
+      fire('pointerdown', target);
+      expect(collapsed).toBe(true);
+    }
     collapsed = false;
+    fire('click', new Target(true), { detail: 0 });
+    expect(collapsed).toBe(true);
+  });
+
+  it('preserves fresh text-selection drags and native copying and cutting', () => {
+    fire('pointerdown', new Target());
+    collapsed = false;
+    fire('click', new Target());
     const before = structuredClone(profile.value);
     for (const type of ['copy', 'cut']) expect(fire(type).preventDefault).not.toHaveBeenCalled();
     expect(fire('keydown', body, { key: 'c', repeat: true, metaKey: true }).preventDefault).not.toHaveBeenCalled();
     expect(profile.value).toEqual(before);
+    expect(toasts.value).toEqual([]);
   });
 
   it.each(['key', 'clockwise', 'encoderButton', 'counterclockwise', 'chord'] as const)(
@@ -128,12 +136,42 @@ describe('configuration clipboard event scope', () => {
     expect(profile.value!.layers[0]!.encoderButton).toEqual({ type: 'relativeLayer', offset: 1 });
   });
 
-  it('preserves native clipboard behavior for editors and removed targets', () => {
+  it('preserves native clipboard behavior for editors, dialogs and no selection', () => {
     const target = new Target(true);
     fire('click', target);
     expect(fire('copy', new Target(false, null, true)).preventDefault).not.toHaveBeenCalled();
-    target.isConnected = false;
+    dialog.value = { title: 'Test' } as typeof dialog.value;
     expect(fire('copy').preventDefault).not.toHaveBeenCalled();
+    dialog.value = null;
+    selectedSlot.value = null;
+    expect(fire('copy').preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('reports one descriptive toast per successful operation', () => {
+    profile.value!.layers[0]!.keys[0] = { type: 'relativeLayer', offset: 1 };
+    const copy = fire('copy');
+    expect(toasts.value.map(t => t.text)).toEqual(['Copied "Relative Layer: +1" from Layer 1, Key 1']);
+    const text = copy.clipboardData.setData.mock.calls[0]![1] as string;
+    fire('cut');
+    expect(toasts.value.map(t => t.text)).toEqual([
+      'Copied "Relative Layer: +1" from Layer 1, Key 1', 'Cut "Relative Layer: +1" from Layer 1, Key 1',
+    ]);
+    selectedSlot.value = { kind: 'clockwise', layer: 0 };
+    fire('paste', body, { clipboardData: { getData: vi.fn(() => text) } });
+    expect(toasts.value.at(-1)!.text).toBe('Pasted "Relative Layer: +1" to Layer 1, Encoder clockwise');
+    const count = toasts.value.length;
+    fire('paste', body, { clipboardData: { getData: vi.fn(() => 'ordinary text') } });
+    expect(toasts.value.length).toBe(count);
+  });
+
+  it('reports validation errors without a successful-paste toast', () => {
+    const text = JSON.stringify({ format: 'universal-macropad-action', version: 1,
+      action: { type: 'keyHold', usage: 4, modifiers: 0 } });
+    selectedSlot.value = { kind: 'clockwise', layer: 0 };
+    fire('paste', body, { clipboardData: { getData: vi.fn(() => text) } });
+    expect(toasts.value).toHaveLength(1);
+    expect(toasts.value[0]!.tone).toBe('error');
+    expect(toasts.value[0]!.text).toContain('Cannot paste here:');
   });
 
   it('removes all clipboard and target listeners on unmount', () => {

@@ -24,19 +24,21 @@ import { variantName } from '../model/constants';
 
 export function App() {
   useEffect(() => {
-    let clipboardTarget: HTMLElement | null = null;
-    const onTarget = (event: Event) => {
-      clipboardTarget = event.target instanceof Element
-        ? event.target.closest<HTMLElement>('[data-clipboard-target]') : null;
+    // Clear old page text before a new click/drag. A fresh text-selection drag
+    // can then create a selection that still takes precedence over action copying.
+    const clearPageSelection = () => window.getSelection()?.removeAllRanges();
+    const onClick = (event: MouseEvent) => {
+      // Keyboard activation has no pointer-down event.
+      if (event.detail === 0) clearPageSelection();
     };
     const isEditing = (target: EventTarget | null) => target instanceof HTMLElement &&
-      (target.isContentEditable || !!target.closest('input, textarea, select, [role="textbox"]'));
+      (target.isContentEditable || !!target.closest('textarea, [role="textbox"], input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="reset"])'));
     const canHandleClipboard = (event: Event) => !event.defaultPrevented && !dialog.value &&
-      !!clipboardTarget?.isConnected && !isEditing(event.target) && !!selectedSlot.value;
+      !isEditing(event.target) && !!selectedSlot.value;
     const hasSelectedText = () => window.getSelection()?.isCollapsed === false;
     const onCopyOrCut = (event: ClipboardEvent) => {
       if (!canHandleClipboard(event) || hasSelectedText() || !event.clipboardData) return;
-      const text = copySelectedConfiguration();
+      const text = copySelectedConfiguration(event.type !== 'cut');
       if (text === null) return;
       event.clipboardData.setData('text/plain', text);
       event.preventDefault();
@@ -51,17 +53,15 @@ export function App() {
           ['x', 'c', 'v'].includes(event.key.toLowerCase()) && canHandleClipboard(event) &&
           (event.key.toLowerCase() === 'v' || !hasSelectedText())) event.preventDefault();
     };
-    // Pointer-down also catches text-selection drags that never produce a click.
-    // Click covers keyboard activation of the action buttons.
-    window.addEventListener('pointerdown', onTarget, true);
-    window.addEventListener('click', onTarget, true);
+    window.addEventListener('pointerdown', clearPageSelection, true);
+    window.addEventListener('click', onClick, true);
     window.addEventListener('copy', onCopyOrCut);
     window.addEventListener('cut', onCopyOrCut);
     window.addEventListener('paste', onPaste);
     window.addEventListener('keydown', onRepeat);
     return () => {
-      window.removeEventListener('pointerdown', onTarget, true);
-      window.removeEventListener('click', onTarget, true);
+      window.removeEventListener('pointerdown', clearPageSelection, true);
+      window.removeEventListener('click', onClick, true);
       window.removeEventListener('copy', onCopyOrCut);
       window.removeEventListener('cut', onCopyOrCut);
       window.removeEventListener('paste', onPaste);

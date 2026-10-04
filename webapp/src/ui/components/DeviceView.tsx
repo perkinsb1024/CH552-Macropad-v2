@@ -140,8 +140,7 @@ export function DeviceView() {
   };
 
   // Render helpers keep button identity stable across selection updates. Defining
-  // component types inside DeviceView remounts them on every render, losing focus
-  // and disconnecting the clipboard handler's clicked target.
+  // component types inside DeviceView remounts them on every render, losing focus.
   const renderKeyCap = (index: number) => {
     const slot: Slot = { kind: 'key', layer: li, index };
     const action = layer.keys[index]!;
