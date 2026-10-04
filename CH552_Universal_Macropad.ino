@@ -68,6 +68,8 @@ __idata uint8_t rainbowDrift[NUM_LEDS];
 // Current global rainbow presets; saved defaults remain in activeConfig.
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
 __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with actions.c.
+// Independent shared-brightness cycle; initialized to Bright on runtime reset.
+__idata uint8_t relativeBrightness;
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
@@ -205,6 +207,14 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
   }
   int8_t delta = value;
   if (value & 8) delta -= 16;
+  if (command == CONFIG_LED_BOTH_RELATIVE) {
+    value = ledStep(relativeBrightness, delta, 3);
+    relativeBrightness = value;
+    ledSettings[2] = value;
+    ledSettings[3] = value;
+    updateLeds();
+    return;
+  }
   uint8_t relative = command & 1;
   uint8_t current;
   uint8_t end;
@@ -227,15 +237,6 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
     ledSettings[2] = value & 3;
     ledSettings[3] = value >> 2;
   } else {
-    if (command == CONFIG_LED_BOTH_RELATIVE) {
-      // Normalize both policies to the brighter resolved level before cycling.
-      current = indicatorBrightness(configLayerOptions(actionsLayer()));
-      end = ledSettings[3];
-      if (end == 3) end = 2;
-      if (current < end) current = end;
-      ledSettings[2] = current;
-      ledSettings[3] = current;
-    }
     if (command == CONFIG_LED_RESTORE) {
       current = 0;
       end = 4;
@@ -421,6 +422,7 @@ void firmwareApplyConfig(void) {
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
+  relativeBrightness = 2;
 #if !ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) {
     encoderPressedMs = now;

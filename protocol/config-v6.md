@@ -256,8 +256,8 @@ Phase and speed preserve current hue; changing/restoring speed rebases the frame
 Brightness cycles Off → Dim → Bright → Off. Before ordinary relative stepping,
 configured indicator brightness resolves from the current layer and configured key
 brightness resolves to Bright. The independent command `09` stepping documented
-here describes historical v6 firmware. Current firmware resolves both policies,
-steps once from the brighter value, and sets both to that result; see
+here describes historical v6 firmware. Current firmware advances a shared cycle
+position, initially Bright, and sets both to that result; see
 [the current v7 semantics](config-v7.md#led-control-action-f). This change requires
 updated firmware and leaves the action encoding unchanged.
 Common-preset cycling includes configured policies:

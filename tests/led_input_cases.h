@@ -402,10 +402,10 @@ static void testLedControls(void) {
     stableState[0] = 0;
 }
 
-static void testSynchronizedBrightness(void) {
+static void testRelativeBrightnessState(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
-    activeConfig[3] = 1; // Two layers with opposite configured brightnesses.
+    activeConfig[3] = 1;
     memcpy(activeConfig + 9 + size, activeConfig + 9, size);
     activeConfig[9 + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
     activeConfig[10 + 2 * (NUM_LEDS + 2)] = 1;
@@ -418,36 +418,106 @@ static void testSynchronizedBrightness(void) {
             activeConfig[9 + size - 1] = !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
             activeConfig[9 + 2 * size - 1] = full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
             firmwareApplyConfig();
-            actionsRotate(0); // Resolve configured brightness from the current layer.
-            assert(actionsLayer() == 1);
+            assert(relativeBrightness == 2 && ledSettings[2] == 3 && ledSettings[3] == 3);
+            firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, 1);
+            assert(relativeBrightness == 0 && ledSettings[2] == 0 && ledSettings[3] == 0);
+            actionsRotate(0);
+            assert(actionsLayer() == 1 && relativeBrightness == 0);
             uint8_t image[CONFIG_SIZE];
             memcpy(image, activeConfig, CONFIG_SIZE);
             rainbowHue = 42;
             for (uint8_t indicator = 0; indicator < 4; indicator++) {
                 for (uint8_t key = 0; key < 4; key++) {
-                    uint8_t indicatorLevel = indicator == 3 ? 1 + full : indicator;
-                    uint8_t keyLevel = key == 3 ? 2 : key;
-                    uint8_t brighter = indicatorLevel > keyLevel ? indicatorLevel : keyLevel;
-                    for (int8_t delta = -7; delta <= 7; delta++) {
-                        if (!delta) continue;
-                        ledSettings[2] = indicator; ledSettings[3] = key;
-                        firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, delta & 15);
-                        uint8_t expected = stepModel(brighter, delta, 3);
-                        assert(ledSettings[2] == expected && ledSettings[3] == expected);
-                        assert(ledSettings[0] == 2 && ledSettings[1] == 1 && rainbowHue == 42);
-                        // Individual relative commands still leave the other policy alone.
-                        ledSettings[2] = indicator; ledSettings[3] = key;
-                        firmwareLedAction(CONFIG_LED_INDICATOR_RELATIVE, delta & 15);
-                        assert(ledSettings[2] == stepModel(indicatorLevel, delta, 3));
-                        assert(ledSettings[3] == key);
-                        ledSettings[2] = indicator; ledSettings[3] = key;
-                        firmwareLedAction(CONFIG_LED_KEY_RELATIVE, delta & 15);
-                        assert(ledSettings[2] == indicator);
-                        assert(ledSettings[3] == stepModel(keyLevel, delta, 3));
+                    for (uint8_t state = 0; state < 3; state++) {
+                        for (int8_t delta = -7; delta <= 7; delta++) {
+                            if (!delta) continue;
+                            relativeBrightness = state;
+                            firmwareLedAction(CONFIG_LED_INDICATOR_SET, indicator == 3 ? 15 : indicator);
+                            firmwareLedAction(CONFIG_LED_KEY_SET, key == 3 ? 15 : key);
+                            assert(relativeBrightness == state);
+                            firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, delta & 15);
+                            uint8_t expected = stepModel(state, delta, 3);
+                            assert(relativeBrightness == expected);
+                            assert(ledSettings[2] == expected && ledSettings[3] == expected);
+                            assert(ledSettings[0] == 2 && ledSettings[1] == 1 && rainbowHue == 42);
+                            // Individual relative actions affect their target, not the counter.
+                            uint8_t indicatorLevel = indicator == 3 ? 1 + full : indicator;
+                            uint8_t keyLevel = key == 3 ? 2 : key;
+                            ledSettings[2] = indicator; ledSettings[3] = key;
+                            firmwareLedAction(CONFIG_LED_INDICATOR_RELATIVE, delta & 15);
+                            assert(ledSettings[2] == stepModel(indicatorLevel, delta, 3));
+                            assert(ledSettings[3] == key && relativeBrightness == expected);
+                            ledSettings[2] = indicator; ledSettings[3] = key;
+                            firmwareLedAction(CONFIG_LED_KEY_RELATIVE, delta & 15);
+                            assert(ledSettings[2] == indicator);
+                            assert(ledSettings[3] == stepModel(keyLevel, delta, 3));
+                            assert(relativeBrightness == expected);
+                        }
                     }
                 }
             }
             assert(memcmp(image, activeConfig, CONFIG_SIZE) == 0);
         }
     }
+    // Presets, toggles, restore-all, phase/speed, and effects leave the cycle alone.
+    relativeBrightness = 1;
+    for (uint8_t preset = 0; preset < 5; preset++) {
+        firmwareLedAction(CONFIG_LED_PRESET_SET, preset);
+        assert(relativeBrightness == 1);
+        firmwareLedAction(CONFIG_LED_PRESET_RELATIVE, 1);
+        assert(relativeBrightness == 1);
+        if (preset) {
+            firmwareLedAction(CONFIG_LED_PRESET_TOGGLE, preset);
+            firmwareLedAction(CONFIG_LED_PRESET_TOGGLE, preset);
+            assert(relativeBrightness == 1);
+        }
+    }
+    firmwareLedAction(CONFIG_LED_BOTH_SET, 0);
+    firmwareLedAction(CONFIG_LED_RESTORE, 0);
+    firmwareLedAction(CONFIG_LED_PHASE_RELATIVE, 1);
+    firmwareLedAction(CONFIG_LED_SPEED_RELATIVE, 1);
+    firmwareLedAction(CONFIG_LED_EFFECT_ON, 0);
+    firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
+    assert(relativeBrightness == 1);
+    firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, 1);
+    assert(relativeBrightness == 2 && ledSettings[2] == 2 && ledSettings[3] == 2);
+    // Physical bindings and both slots of a timer share the same counter.
+    uint8_t layer = 9 + size;
+    activeConfig[layer] = 0x1F; activeConfig[layer + 1] = CONFIG_LED_BOTH_RELATIVE;
+    activeConfig[layer + 2 * (NUM_LEDS + 1)] = 0x1F;
+    activeConfig[layer + 2 * (NUM_LEDS + 1) + 1] = CONFIG_LED_BOTH_RELATIVE;
+    activeConfig[3] |= 1 << 6;
+    uint8_t timer = configTimedOffset();
+    activeConfig[timer] = CONFIG_TIMED_CONSUME;
+    activeConfig[timer + 1] = activeConfig[timer + 3] = 0x1F;
+    activeConfig[timer + 2] = activeConfig[timer + 4] = CONFIG_LED_BOTH_RELATIVE;
+    actionsPress(0, currentMs); actionsRelease(0);
+    assert(relativeBrightness == 0 && ledSettings[2] == 0 && ledSettings[3] == 0);
+    actionsRotate(1);
+    assert(relativeBrightness == 1 && ledSettings[2] == 1 && ledSettings[3] == 1);
+    actionsTimedReset(0); actionsTimedPoll(1);
+    assert(relativeBrightness == 2 && ledSettings[2] == 2 && ledSettings[3] == 2);
+    assert(actionsTimedInput());
+    assert(relativeBrightness == 0 && ledSettings[2] == 0 && ledSettings[3] == 0);
+    // Every useful cycle step reaches all three policies within three activations.
+    const int8_t steps[] = {-2, -1, 1, 2};
+    for (uint8_t i = 0; i < sizeof(steps); i++) {
+        for (uint8_t start = 0; start < 3; start++) {
+            relativeBrightness = start;
+            uint8_t seen = 0;
+            for (uint8_t press = 0; press < 3; press++) {
+                firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, steps[i] & 15);
+                seen |= 1 << ledSettings[2];
+                assert(ledSettings[2] == ledSettings[3]);
+            }
+            assert(seen == 7);
+        }
+    }
+    relativeBrightness = 0;
+    firmwareApplyConfig();
+    assert(relativeBrightness == 2 && ledSettings[2] == 3 && ledSettings[3] == 3);
+    firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, 15); // First -1 after reset is Dim.
+    assert(relativeBrightness == 1 && ledSettings[2] == 1 && ledSettings[3] == 1);
+    protocolReset(); protocolPoll(currentMs);
+    assert(relativeBrightness == 2 && ledSettings[2] == 3 && ledSettings[3] == 3);
 }

@@ -577,7 +577,7 @@ int main(void) {
     testTemporaryEffects();
     testTimedLighting();
     testLedControls();
-    testSynchronizedBrightness();
+    testRelativeBrightnessState();
     testSameLayerIndicator();
     testOneShotChordIndicator();
     testIndicatorBrightness();

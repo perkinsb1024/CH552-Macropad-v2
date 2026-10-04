@@ -119,9 +119,9 @@ Remaining space in the current source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash | 77 | 73 |
+| Flash | 99 | 95 |
 | Contiguous external RAM | 231 | 222 |
-| Stack capacity | 123 | 120 |
+| Stack capacity | 122 | 119 |
 
 Stack capacity is the linker allocation, not measured peak usage.
 
@@ -205,7 +205,7 @@ Configuration format 7 supports five six-key layers or seven three-key layers in
 
 **LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
 
-**Relative both brightnesses** starts from the brighter current indicator/key brightness, applies the signed step once through Off → Dim → Bright → Off, and sets both to the result. Configured policies resolve to the current layer's saved indicator brightness and Bright key feedback first. Earlier firmware stepped each brightness independently; synchronized stepping requires updated firmware, with no profile conversion.
+**Relative both brightnesses** advances one shared Off / Dim / Bright cycle and sets both brightnesses to the result. The cycle starts at Bright on startup, configuration application, and USB reset; +1 therefore selects Off first. Other LED actions and layer changes leave the cycle position unchanged. Steps of ±1 or ±2 reach every level within three activations; multiples of three do not advance the cycle. Earlier firmware used independent stepping or the brighter current brightness; the shared cycle requires updated firmware, with no profile conversion.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating Previous layer swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot Previous layer option visits the remembered layer for one action, then returns. Timed actions can use either variant.
 

@@ -18,9 +18,10 @@ fourth option “Variable — Scattered colors.”
 
 The five common presets include Both as configured. Their relative position follows
 the actual policy pair, including matching results from other brightness commands.
-Current firmware makes both-relative step once from the brighter resolved policy
-and assigns the result to both targets. This supersedes the original independent
-advancement; the encoding remains unchanged. Indicator brightness retains the
+Current firmware makes both-relative advance a separate shared Off / Dim / Bright
+cycle position, initially Bright, and assign it to both targets. Other LED actions
+and layer changes leave that position unchanged. This supersedes independent
+advancement and the later brighter-policy stepping; the encoding remains unchanged. Indicator brightness retains the
 saved visibility mode; indicator Off releases animation priority; key Off reveals
 idle background. Both Off suppresses ordinary lighting. Preview and bootloader/error
 feedback remain visible. Runtime changes never alter the active image or DataFlash.
@@ -247,10 +248,10 @@ and validation edits were restored exactly to the working toggle implementation.
 The new preset was not retained or behavior-tested. No release artifacts were
 changed and no hardware was flashed for this experiment.
 
-## Synchronized relative-both brightness
+## Synchronized relative-both brightness (superseded)
 
-Current firmware resolves the indicator and key brightness policies, selects the
-brighter value, applies the signed step once through Off / Dim / Bright, and stores
+The earlier synchronized implementation resolved the indicator and key brightness policies, selected the
+brighter value, applied the signed step once through Off / Dim / Bright, and stored
 the same concrete result for both targets. Configured indicator brightness comes
 from the current layer's saved brightness bit, regardless of visibility mode;
 configured key brightness resolves to Bright. Individual relative controls and
@@ -285,5 +286,54 @@ visibility modes after selecting a different layer. It checks synchronized resul
 individual-target behavior, hue/speed/phase preservation, and unchanged active
 configuration bytes. All 20 focused LED configurator tests also passed. The
 configuration overview, README, protocol documentation, and current editor help
-describe the updated behavior; the v6 specification labels its original semantics
-as historical.
+described that behavior at the time; the v6 specification labels its original
+semantics as historical. The shared-cycle change below supersedes this implementation.
+
+## Independent shared-cycle brightness
+
+The shared-cycle implementation replaces the brighter-policy lookup with one
+dedicated `__idata` byte containing Off=0, Dim=1, or Bright=2. Startup, configuration
+application, and USB reset/reconfiguration initialize it to Bright without changing
+the normal As configured startup policies. Command `09` adds its signed step modulo
+three, stores the new cycle position, and applies it to both brightness policies.
+All physical bindings, chords, and timer slots share this position. Other LED
+actions, preview, and layer changes leave it unchanged, including absolute both,
+presets, toggles, and restore-all. A fresh +1 selects Off; a fresh -1 selects Dim.
+Steps ±1 and ±2 reach all three policies within three activations. Multiples of
+three reapply the stored position without advancing it.
+
+This deliberately trades a current-brightness starting point for a smaller
+implementation: forcing another brightness does not rebase the cycle. For
+example, +1 can select Off, a different action can force Bright, and the next +1
+still selects Dim. The wire command and valid signed payloads are unchanged;
+existing profiles need no conversion, but devices need updated firmware.
+
+Fresh temporary builds using the same production toolchain and settings measured:
+
+| Variant | Brighter-policy flash | Shared-cycle flash | Flash saved | Flash free | Contiguous xRAM free | Stack capacity |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Three-key | 14,259 | 14,237 | 22 | 99 | 231 | 122 |
+| Six-key | 14,263 | 14,241 | 22 | 95 | 222 | 119 |
+
+The total flash increase over the pre-synchronization baseline is now 36 bytes per
+variant, compared with 58 bytes for the brighter-policy implementation and 74 for
+its initial version. The counter uses one internal RAM byte, reducing linker stack
+capacity by one byte; external RAM and the page-zero allocation are unchanged.
+Stack capacity is an allocation, not measured peak use. Both production builds
+passed the memory-layout checks.
+
+An external-RAM counter with the same early-return dispatch used six more flash
+bytes per variant and one external RAM byte, preserving stack capacity. A two-bit
+counter preserved the RAM allocations but increased flash usage above the
+brighter-policy implementation. A variant reusing the ordinary relative loop
+failed internal RAM allocation. These alternatives were kept only in temporary
+directories; no release artifacts were generated or hardware flashed.
+
+The firmware host suites passed with preview enabled and disabled on both hardware
+variants. Counter regression tests cover all three stored positions, all 16 current
+policy pairs, all 14 signed steps, both saved indicator brightnesses, all four
+indicator modes, layer changes, other LED actions, physical/timer sharing,
+configuration and USB resets, three-activation coverage, preserved hue/speed/phase,
+and unchanged active configuration bytes. All 20 focused LED configurator tests
+passed. The README, configuration overview (including timed-action gotchas), current
+editor help, and protocol documentation now describe the shared-cycle behavior.

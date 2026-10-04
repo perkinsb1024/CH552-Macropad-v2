@@ -320,7 +320,7 @@ Choose **LED control** as an input's action, then select an **LED command**. The
 | **Set key-press brightness** | Forces key feedback off, dim, or bright, or restores configured behavior |
 | **Relative key-press brightness** | Cycles key feedback through off, dim, and bright |
 | **Set both brightnesses** | Applies the same brightness choice to both kinds of lighting |
-| **Relative both brightnesses** | Starts from the brighter current brightness, applies the relative step, and sets both to the same result |
+| **Relative both brightnesses** | Advances a shared Off / Dim / Bright cycle and sets both brightnesses to that result |
 | **Set common brightness preset** | Applies one of the combinations listed below |
 | **Relative common brightness preset** | Cycles through those preset combinations |
 | **Toggle preset on/off** | Applies the chosen preset; when that preset is active, activating again restores configured layer and key brightness. This affects brightness only, rainbow speed and spacing stay unchanged |
@@ -335,11 +335,13 @@ The **common brightness presets** are:
 4. **Layers off, keys dim**
 5. **Both off**
 
-Relative settings use a **Relative step** to choose direction and, for rainbow controls, whether to skip a choice. The editor shows the cycle order. **Relative both brightnesses** resolves each current brightness, starts from the brighter one, and applies the step once through Off → Dim → Bright → Off (backwards for a negative step). It sets both brightnesses to that same result.
+Relative settings use a **Relative step** to choose direction and, for rainbow controls, whether to skip a choice. The editor shows the cycle order. **Relative both brightnesses** uses one shared cycle position, initially Bright. Each activation advances that position through Off → Dim → Bright → Off (backwards for a negative step), and sets both brightnesses to the result. The first +1 after a restart selects Off, followed by Dim and Bright; the first −1 selects Dim.
 
-For example, Dim indicator + Bright key feedback becomes both Off with +1, or both Dim with −1. **As configured** resolves to the current layer's saved indicator brightness and Bright key feedback before comparing. This uses the brightness settings, regardless of whether an indicator or key is currently lit.
+All bindings and timers using this action share the same cycle position. Other LED actions, including absolute brightness changes, presets, and **Restore all configured LED settings**, leave it unchanged, as do layer changes. For example, after +1 selects Off, another action can force both Bright; the next +1 still selects Dim. With a step of ±1 or ±2, the three levels are always reachable within three activations (at most two more after the first). Steps divisible by three leave the cycle position unchanged.
 
-Earlier firmware advanced both brightnesses independently; update the firmware to get synchronized stepping. Existing profiles need no conversion.
+Startup, saving a configuration, and USB resets restart the cycle at Bright. This initializes the cycle position; the LEDs still start with their saved configured lighting. Individual relative brightness controls continue stepping from their own current brightness, resolving **As configured** first.
+
+Earlier firmware used independent stepping or started from the brighter current brightness. Update the firmware to get the shared cycle described here. Existing profiles need no conversion.
 
 Indicator brightness preserves the selected indicator mode: making it bright does not turn **Do not indicate** into an always-on background (use **Set all LEDs** to accomplish that). Forcing key feedback off lets the idle background show through.
 
@@ -549,7 +551,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 <details>
 <summary><strong>Advanced: Gotchas and things to watch out for with Timed Actions</strong></summary>
 
-Timed actions and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to **one-shot layer returns** and **layer changes cancelling queued actions**.
+Timed actions and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that all layer changes cancel pending actions.
 
 ### How multiple pending follow-ups run
 
@@ -589,7 +591,8 @@ The same cancellation can happen when the **unconsumed input's normal binding** 
 | Multiple **Relative layer** follow-ups | Their changes accumulate sequentially and wrap around. Two +1 selections normally advance two layers |
 | A persistent layer selection while **Layer while held** is active | The held layer keeps priority. Releasing the held input reveals the new persistent selection. Relative timed selections use the currently active layer as their starting point |
 | Different timers using **Mouse toggle** for the same mouse button | Each timer has its own toggle latch. Turning one timer's latch off does not release a button still latched by another timer. A change to the effective layer clears all mouse-toggle latches |
-| Conflicting **LED control** follow-ups | Later actions overwrite overlapping settings. Relative adjustments and toggles operate on the state left by earlier actions. An unconsumed input's own LED action runs afterwards and can change the result again |
+| Conflicting **LED control** follow-ups | Later actions overwrite overlapping settings. Individual relative adjustments, preset cycles, and toggles use the settings left by earlier actions. **Relative both brightnesses** uses its separate shared cycle position. An unconsumed input's own LED action runs afterwards and can change the result again |
+| **Relative both brightnesses** in multiple bindings or timers | Every execution advances the same shared cycle. Two +1 follow-ups advance it twice. Other LED actions and layer changes leave its position unchanged, so the next step can differ from one based on the visible brightness |
 | Output follow-ups while playback is backed up | The playback queue has eight entries. New output can be dropped when it is full; the timer's pending follow-up is still cleared, so it is not automatically retried |
 
 **Consume this input** only suppresses the waking input's normal binding. It does not cancel earlier presses or release buttons that are already held. In particular, consuming the second key of a possible chord prevents that key from completing the chord; the earlier key can still run its single-key action. Consumption by itself also leaves an already-armed one-shot layer waiting for a normal input.

@@ -255,7 +255,7 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 | `06` | Set key-press brightness | 0=Off, 1=Dim, 2=Bright, F=configured |
 | `07` | Relative key-press brightness | Signed nonzero step |
 | `08` | Set both brightness policies | 0=Off, 1=Dim, 2=Bright, F=configured |
-| `09` | Relative both brightness policies | Signed nonzero step; step from the brighter resolved policy and set both to the result |
+| `09` | Relative both brightness policies | Signed nonzero step; advance the shared cycle, initially Bright, and set both to the result |
 | `0A` | Restore all configured LED settings | Only 0 |
 | `0B` | Set common brightness preset | Preset index 0..4 |
 | `0C` | Relative common brightness preset | Signed nonzero step |
@@ -276,16 +276,20 @@ A resolved LED action consumes a one-shot layer before applying its policy.
 Overrides are global across layers and reset on power-up, configuration application,
 and USB reset/reconfiguration. They change neither the active image nor flash or CRC.
 Phase and speed preserve current hue; changing/restoring speed rebases the frame timer.
-Brightness cycles Off → Dim → Bright → Off. Before ordinary relative stepping,
-configured indicator brightness resolves from the current layer and configured key
-brightness resolves to Bright. Command `09` compares those resolved policies, applies
-the step once to the brighter value, and stores that concrete result for both
-brightnesses. It uses policy levels rather than instantaneous rendered RGB or
-indicator visibility. Dim indicator / Bright keys with +1 becomes Off / Off;
-with -1 it becomes Dim / Dim. Multiples of three also synchronize a mixed pair
-even though the brighter value completes a full cycle. Earlier firmware builds
-advanced the two policies independently; the updated behavior requires a firmware
-update but does not change the encoding or require profile migration.
+Brightness cycles Off → Dim → Bright → Off. Individual relative commands resolve
+configured indicator brightness from the current layer and configured key
+brightness to Bright before stepping. Command `09` instead advances a separate
+shared cycle position, initialized to Bright (`2`) on startup, configuration
+application, and USB reset/reconfiguration. It computes `(position + delta) mod 3`,
+stores the new position, and assigns it as a concrete override to both targets.
+All bindings and timers share that position; other LED commands (including
+restore-all and presets), preview, and layer changes do not modify it. Initializing
+the position does not force startup lighting to Bright: the policies still reset
+to As configured. A fresh +1 selects Off; a fresh -1 selects Dim. With steps ±1
+or ±2 every level is reached within three activations. Multiples of three retain
+the position while applying it to both targets. Earlier firmware used independent
+stepping or the brighter resolved policy; the shared cycle requires updated firmware
+without changing the encoding or requiring profile migration.
 Common-preset cycling includes configured policies:
 
 | Preset | Indicator policy | Key policy |

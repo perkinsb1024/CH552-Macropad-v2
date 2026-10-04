@@ -1,6 +1,6 @@
 # LED control action `0xF`: investigation and implementation plan
 
-Status: implemented using config version 6. See [implementation results and measured flash](led-control-implementation.md). The design investigation and baseline measurements below are retained for context. Both-relative semantics below have been updated to match current firmware: synchronize both targets after stepping once from the brighter resolved policy, superseding the original independent advancement.
+Status: implemented using config version 6. See [implementation results and measured flash](led-control-implementation.md). The design investigation and baseline measurements below are retained for context. Both-relative semantics below have been updated to match current firmware: advance an independent shared cycle position, initially Bright, and apply it to both targets. This supersedes independent advancement and the later brighter-policy starting point.
 
 ## Finding
 
@@ -52,7 +52,7 @@ This gives **256 commands with 16 value encodings each**, using the same 12 payl
 | `0x06` | Set pressed-key brightness policy | `0x0` Off, `0x1` Dim, `0x2` Bright, `0xF` As configured |
 | `0x07` | Relative pressed-key brightness | Same signed step and brightness cycle |
 | `0x08` | Set both brightness policies | `0x0` Off, `0x1` Dim, `0x2` Bright, `0xF` As configured; set both atomically |
-| `0x09` | Relative both brightness policies | Same signed step; step once from the brighter resolved policy and set both atomically |
+| `0x09` | Relative both brightness policies | Same signed step; advance the shared Off / Dim / Bright position and set both atomically |
 | `0x0A` | Restore all configured LED settings | Only `0x0`: restore phase, speed, and both brightness policies |
 | `0x0B` | Set common brightness preset | `0..4` preset index below |
 | `0x0C` | Relative common brightness preset | Signed nonzero step, `-7..+7`, wrapping over all five presets |
@@ -109,7 +109,7 @@ The same four values work for the layer-only, key-only, and both-target commands
 
 ## Relative semantics and selectable controls
 
-Individual and both-brightness relative commands operate on the effective runtime value. When a target is As configured, first resolve its configured value, apply the step, then store a concrete override. Those relative commands do not automatically return to As configured; the absolute restore command does that. Common-preset relative commands instead cycle stored policy pairs, including Both as configured, as specified below.
+Individual relative brightness commands operate on their target's effective runtime value. When the target is As configured, first resolve its configured value, apply the step, then store a concrete override. Both-relative advances a separate shared cycle position as specified below. Those relative commands do not automatically return to As configured; the absolute restore command does that. Common-preset relative commands cycle stored policy pairs, including Both as configured, as specified below.
 
 | Target | Positive step | Negative step | Suggested editor options |
 | --- | --- | --- | --- |
@@ -117,12 +117,12 @@ Individual and both-brightness relative commands operate on the effective runtim
 | Speed | Next faster preset; Extra fast wraps to Extra slow | Next slower preset; Extra slow wraps to Extra fast | Faster / slower; step size 1, 2, or 3 |
 | Indicator brightness | Off → Dim → Bright → Off | Reverse cycle | Next / previous brightness; step size 1 or 2 |
 | Key brightness | Off → Dim → Bright → Off | Reverse cycle | Next / previous brightness; step size 1 or 2 |
-| Both brightnesses | Step once from the brighter resolved target through that cycle; set both to the result | Reverse the shared cycle from the brighter resolved target; set both to the result | Next / previous brightness; step size 1 or 2 |
+| Both brightnesses | Advance the shared cycle position, initially Bright; set both to the result | Reverse the shared cycle; set both to the result | Next / previous brightness; step size 1 or 2 |
 | Common presets | Next preset in the five-position dark-mode cycle | Previous preset in that cycle | Next darker / previous preset; step size 1, 2, 3, or 4 |
 
-Positive speed steps subtract from the stored speed index because index 0 is fastest. For phase use `(effectiveIndex + delta) mod 4`; for speed use `(effectiveIndex - delta) mod 4`. Use nonnegative modulo, including for negative deltas. Brightness uses conceptual ordinals Off=0, Dim=1, Bright=2, matching the absolute wire values; As configured (`0xF`) is resolved before ordinary relative stepping.
+Positive speed steps subtract from the stored speed index because index 0 is fastest. For phase use `(effectiveIndex + delta) mod 4`; for speed use `(effectiveIndex - delta) mod 4`. Use nonnegative modulo, including for negative deltas. Brightness uses conceptual ordinals Off=0, Dim=1, Bright=2, matching the absolute wire values; As configured (`0xF`) is resolved before individual relative stepping.
 
-Both-relative resolves both current policies, starts from the brighter value, applies the signed step once, and writes the same concrete override to both. For example, configured dim indicator + configured bright keys becomes both Off with +1 or both Dim with -1. Multiples of three synchronize mixed pairs while returning to the brighter starting value. This supersedes the original independent-advancement design without changing the wire encoding.
+Both-relative stores one shared cycle position, initialized to Bright on startup, configuration application, and USB reset. Each execution adds the signed step modulo three and applies the resulting concrete policy to both targets. All bindings and timers share it. Other LED commands, including absolute both, presets, and restore-all, leave it unchanged, as do layer changes and preview. The first +1 selects Off and the first -1 selects Dim. Steps ±1 and ±2 visit every level within three activations; multiples of three only reapply the stored position. Startup lighting remains As configured. This supersedes the original independent advancement and later brighter-policy stepping without changing the wire encoding.
 
 For resolving configured indicator brightness, use its saved brightness bit, even when its visibility mode is None; do not treat temporary blink darkness or a timed indication's expiration as a brightness setting. Configured key brightness resolves to Bright, irrespective of whether an individual key's saved color is Off. Relative controls change a global policy, not an individual key's color or instantaneous RGB output.
 
@@ -291,7 +291,7 @@ Update [constants.ts](../webapp/src/model/constants.ts), [types.ts](../webapp/sr
 
 Update [encode.ts](../webapp/src/codec/encode.ts), [decode.ts](../webapp/src/codec/decode.ts), [json.ts](../webapp/src/io/json.ts), draft handling, action summaries, and the action editor components. Use the existing configuration-version field in [packet.ts](../webapp/src/protocol/packet.ts) and update [simulator.ts](../webapp/src/protocol/simulator.ts) to report format 6 and exercise older saved images. Gate v6 uploads and route older firmware through the existing connection/version flow. Search all exhaustive action switches so imports, copy/paste, comparison, layer warnings, and capacity computations handle the new action consistently.
 
-The UI should explain global runtime lifetime, cycling/wrap behavior, both-relative synchronization from the brighter resolved policy, common-preset cycling through configured behavior and entry from unmatched policies, and key-Off background fallthrough. The saved layer/header settings continue to be the defaults; editing a binding does not modify them. Device preview tests should cover the bypass of overrides. Create the v6 format specification, preserve [config-v5.md](config-v5.md) as historical documentation, and update [hid-v1.md](hid-v1.md), README, and relevant configurator help when implemented.
+The UI should explain global runtime lifetime, cycling/wrap behavior, both-relative shared-cycle lifetime and independence from other LED actions, common-preset cycling through configured behavior and entry from unmatched policies, and key-Off background fallthrough. The saved layer/header settings continue to be the defaults; editing a binding does not modify them. Device preview tests should cover the bypass of overrides. Create the v6 format specification, preserve [config-v5.md](config-v5.md) as historical documentation, and update [hid-v1.md](hid-v1.md), README, and relevant configurator help when implemented.
 
 ## Program-memory feasibility
 
@@ -323,7 +323,7 @@ Required verification includes:
 - Cover indicator modes None/Timed/Blink/Always, bright and dim defaults, solid/Rainbow backgrounds, held keys, key Off colors, transparent black, and dark blink phases. Indicator-Off must allow key feedback; key-Off must allow background; both-Off must darken normal LEDs.
 - Verify all five common presets, forward/backward wrapping through Both as configured, larger/extreme signed steps, entry from unmatched policy pairs, and interleaving with individual/both commands. Cycle identity must follow stored policies across layer changes rather than resolved output. Assert one redraw and unchanged rainbow overrides per preset command.
 - For the remembered-index alternative, replace policy-matching/unmatched-entry expectations with tests that individual/both commands preserve the index, the next relative action resumes from it, common-preset absolute actions update it, and restore-all/configuration application reset it. Verify layer changes and preview preserve it, and packed index bits cannot affect renderer policies. The remaining common-preset tests still apply.
-- Verify both-relative resolves each starting policy and synchronizes both targets after one step from the brighter value, for every mixed/configured pair, signed step, and indicator visibility mode. Individual relative commands still change only their own target. Absolute both sets them together. Restore-configured follows the new layer's saved brightness after switching layers.
+- Verify both-relative steps from each shared cycle position regardless of the current brightness policies, for all signed steps and indicator visibility modes. Check startup/configuration/USB reset to Bright, independence from all other LED commands and layer changes, shared state across physical bindings and timers, and three-activation coverage for steps ±1 and ±2. Individual relative commands still change only their own target. Absolute both sets them together. Restore-configured follows the new layer's saved brightness after switching layers.
 - Check mid-animation updates without restarting timing, hue continuity, speed timer rebasing, timer rollover, and six-key perimeter spacing.
 - Verify power-up/config commit/USB reset lifetime, preview bypass/cancellation, and visible invalid-config/bootloader feedback. READ_ACTIVE and saved CRC/image bytes must remain unchanged by runtime actions.
 - Simulate GET_INFO replies reporting older config versions with action mask `0xFFFF`, and format-6 replies using the unchanged payload layout. Block v6 saves to old firmware before BEGIN_WRITE and verify archive routing. Exercise v6 firmware with invalid-for-firmware older flash images: READ_FLASH, browser migration, review/save, and verified v6 readback must work while physical inputs are inactive.
