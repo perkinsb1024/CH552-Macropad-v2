@@ -9,6 +9,11 @@
 #define ENABLE_COLOR_PREVIEW 1
 #endif
 
+// Temporary validation firmware; normal builds omit the diagnostic entirely.
+#ifndef ENABLE_STACK_TEST
+#define ENABLE_STACK_TEST 0
+#endif
+
 #define PROTOCOL_BIT FW_BIT
 extern PROTOCOL_BIT activeConfigValid;
 

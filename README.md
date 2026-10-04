@@ -115,7 +115,7 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Clean and rebuild wh
 
 ### Available Memory
 
-Remaining space in the current source builds, in bytes:
+Remaining space in the normal v7 builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
@@ -124,6 +124,11 @@ Remaining space in the current source builds, in bytes:
 | Stack capacity | 123 | 120 |
 
 Stack capacity is the linker allocation, not measured peak usage.
+
+This validation branch enables temporary stack diagnostic firmware. Both variants
+retain all features; the diagnostic leaves 19 flash bytes on six-key and 23 on
+three-key, with the same RAM/stack layout. Firmware, three six-key workload profiles,
+per-profile instructions and a browser reader are in [Stack Test](Stack%20Test/README.md).
 
 ### Build Release HEX Files for Both Variants
 

@@ -16,6 +16,7 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_COMMIT_WRITE 7
 #define PROTOCOL_ABORT_WRITE 8
 #define PROTOCOL_PREVIEW_COLOR 9
+#define PROTOCOL_GET_STACK 10 // Diagnostic builds only; no reset or flash writes.
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -109,6 +110,41 @@ static uint8_t processRequest(void) {
     return PROTOCOL_BAD_RANGE;
   }
   switch (opcode) {
+#if ENABLE_STACK_TEST
+    case PROTOCOL_GET_STACK:
+      protocolReply[7] = 3;
+      // Three bytes: pattern/diagnostic identifier, linker stack start,
+      // highest overwritten address (start-1 if the region is untouched).
+      // Inline assembly adds no call frame or internal-RAM allocation. Carry
+      // preserves EA: XRL/JNZ/MOV/DEC do not change it. Snapshot with interrupts
+      // masked so an ISR cannot modify the region halfway through the scan.
+      __asm
+        .globl __start__stack
+        mov c,_EA
+        clr _EA
+        mov r0,#0xff
+      00090$:
+        mov a,@r0
+        xrl a,#0xa5
+        jnz 00091$
+        dec r0
+        mov a,r0
+        xrl a,#(__start__stack - 1)
+        jnz 00090$
+      00091$:
+        mov dptr,#(_protocolReply + 9)
+        mov a,#0xa5
+        movx @dptr,a
+        inc dptr
+        mov a,#__start__stack
+        movx @dptr,a
+        inc dptr
+        mov a,r0
+        movx @dptr,a
+        mov _EA,c
+      __endasm;
+      break;
+#endif
     case PROTOCOL_GET_INFO:
       protocolReply[7] = 14;
       for (i = 0; i < sizeof(protocolInfo); i++)

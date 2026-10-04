@@ -1,0 +1,229 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 7,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "transparentBlack": true,
+  "chordWindowMs": 75,
+  "rainbowPhaseDegrees": 150,
+  "rainbowSpeed": "extra fast",
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "string",
+          "text": "Timer T!\n"
+        },
+        {
+          "type": "ledControl",
+          "command": "effectOn",
+          "value": 15
+        },
+        {
+          "type": "oneShotSetLayer",
+          "layer": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 9,
+          "modifiers": 0
+        },
+        {
+          "type": "mouseDouble",
+          "buttons": 1
+        },
+        {
+          "type": "ledControl",
+          "command": "commonPresetToggle",
+          "value": 4
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 3,
+      "indicatorColor": 15,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "keyTap",
+          "usage": 10,
+          "modifiers": 2
+        },
+        {
+          "type": "ledControl",
+          "command": "effectRestore",
+          "value": 0
+        },
+        {
+          "type": "setLayer",
+          "layer": 255
+        },
+        {
+          "type": "consumer",
+          "usage": 234
+        },
+        {
+          "type": "mouseX",
+          "delta": 3
+        },
+        {
+          "type": "ledControl",
+          "command": "restoreAll",
+          "value": 0
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "mouseY",
+        "delta": -3
+      },
+      "counterclockwise": {
+        "type": "mouseY",
+        "delta": 3
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 2,
+      "indicatorColor": 8,
+      "indicatorFullBrightness": false
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        0,
+        1
+      ],
+      "global": true,
+      "action": {
+        "type": "string",
+        "text": "Chord U?\n"
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        2,
+        3
+      ],
+      "global": true,
+      "action": {
+        "type": "ledControl",
+        "command": "effectBlink8",
+        "value": 15,
+        "brightness": "dim"
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        4,
+        5
+      ],
+      "global": true,
+      "action": {
+        "type": "setLayer",
+        "layer": 0
+      }
+    }
+  ],
+  "timedActions": [
+    {
+      "ticks": 1,
+      "resetOnInput": false,
+      "consumeInput": false,
+      "action": {
+        "type": "ledControl",
+        "command": "effectBlink8",
+        "value": 15,
+        "brightness": "dim"
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "effectRestore",
+        "value": 0
+      }
+    },
+    {
+      "ticks": 1,
+      "resetOnInput": false,
+      "consumeInput": false,
+      "action": {
+        "type": "string",
+        "text": "Timer T!\n"
+      },
+      "resumeAction": {
+        "type": "oneShotSetLayer",
+        "layer": 255
+      }
+    },
+    {
+      "ticks": 1,
+      "resetOnInput": true,
+      "consumeInput": false,
+      "action": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "restoreAll",
+        "value": 0
+      }
+    },
+    {
+      "ticks": 1,
+      "resetOnInput": true,
+      "consumeInput": true,
+      "action": {
+        "type": "ledControl",
+        "command": "commonPresetSet",
+        "value": 4
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "commonPresetSet",
+        "value": 0
+      }
+    }
+  ],
+  "localMetadata": {
+    "profileName": "Stack Test 3",
+    "layerNames": [
+      "Timers + traffic",
+      "Timer layer transitions"
+    ]
+  }
+}

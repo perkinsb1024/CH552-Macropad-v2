@@ -92,6 +92,10 @@ Build outputs are temporary; checked-in release artifacts were preserved.
 
 ### Stack usage still needs hardware validation
 
+Temporary diagnostic firmware and three six-key test workloads are now available
+in [Stack Test](../Stack%20Test/README.md). The instrumented build is verified;
+hardware peak-use measurements are still outstanding.
+
 Behavior appears stable during user testing, but explicit stack usage has not
 been validated on hardware. The 123-byte six-key and 126-byte three-key stack
 regions describe available capacity, not measured headroom. Passing host tests

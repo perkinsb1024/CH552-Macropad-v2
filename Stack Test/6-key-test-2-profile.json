@@ -1,0 +1,293 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 7,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "transparentBlack": true,
+  "chordWindowMs": 75,
+  "rainbowPhaseDegrees": 150,
+  "rainbowSpeed": "extra fast",
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "momentaryLayer",
+          "layer": 1
+        },
+        {
+          "type": "oneShotSetLayer",
+          "layer": 2
+        },
+        {
+          "type": "setLayer",
+          "layer": 3
+        },
+        {
+          "type": "ledControl",
+          "command": "effectBlink8",
+          "value": 15,
+          "brightness": "dim"
+        },
+        {
+          "type": "ledControl",
+          "command": "commonPresetToggle",
+          "value": 4
+        },
+        {
+          "type": "ledControl",
+          "command": "restoreAll",
+          "value": 0
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "ledControl",
+        "command": "rainbowPhaseRelative",
+        "value": 1
+      },
+      "counterclockwise": {
+        "type": "ledControl",
+        "command": "rainbowSpeedRelative",
+        "value": 1
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 3,
+      "indicatorColor": 15,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "ledControl",
+          "command": "brightnessBothRelative",
+          "value": 1
+        },
+        {
+          "type": "ledControl",
+          "command": "brightnessKeyRelative",
+          "value": -1
+        },
+        {
+          "type": "ledControl",
+          "command": "brightnessIndicatorRelative",
+          "value": 1
+        },
+        {
+          "type": "ledControl",
+          "command": "effectOn",
+          "value": 15
+        },
+        {
+          "type": "ledControl",
+          "command": "effectRestore",
+          "value": 0
+        },
+        {
+          "type": "setLayer",
+          "layer": 255
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": -1
+      },
+      "clockwise": {
+        "type": "ledControl",
+        "command": "commonPresetRelative",
+        "value": 1
+      },
+      "counterclockwise": {
+        "type": "ledControl",
+        "command": "commonPresetRelative",
+        "value": -1
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 2,
+      "indicatorColor": 10,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "ledControl",
+          "command": "rainbowPhaseSet",
+          "value": 3
+        },
+        {
+          "type": "ledControl",
+          "command": "rainbowSpeedSet",
+          "value": 0
+        },
+        {
+          "type": "ledControl",
+          "command": "effectBlink1",
+          "value": 0
+        },
+        {
+          "type": "ledControl",
+          "command": "effectBlink4",
+          "value": 8
+        },
+        {
+          "type": "ledControl",
+          "command": "effectOn",
+          "value": 15,
+          "brightness": "dim"
+        },
+        {
+          "type": "setLayer",
+          "layer": 255
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "ledControl",
+        "command": "rainbowSpeedRelative",
+        "value": 1
+      },
+      "counterclockwise": {
+        "type": "ledControl",
+        "command": "rainbowPhaseRelative",
+        "value": -1
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 5,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "oneShotSetLayer",
+          "layer": 255
+        },
+        {
+          "type": "oneShotRelativeLayer",
+          "offset": -2
+        },
+        {
+          "type": "relativeLayer",
+          "offset": -3
+        },
+        {
+          "type": "ledControl",
+          "command": "commonPresetSet",
+          "value": 2
+        },
+        {
+          "type": "ledControl",
+          "command": "restoreAll",
+          "value": 0
+        },
+        {
+          "type": "setLayer",
+          "layer": 255
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "ledControl",
+        "command": "brightnessIndicatorSet",
+        "value": "asConfigured"
+      },
+      "counterclockwise": {
+        "type": "ledControl",
+        "command": "brightnessKeySet",
+        "value": "asConfigured"
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 2,
+      "indicatorColor": 15,
+      "indicatorFullBrightness": false
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        3,
+        4
+      ],
+      "global": true,
+      "action": {
+        "type": "ledControl",
+        "command": "effectBlink8",
+        "value": 15
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        1,
+        5
+      ],
+      "global": true,
+      "action": {
+        "type": "setLayer",
+        "layer": 0
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        2,
+        4
+      ],
+      "global": true,
+      "action": {
+        "type": "oneShotSetLayer",
+        "layer": 255
+      }
+    }
+  ],
+  "localMetadata": {
+    "profileName": "Stack Test 2",
+    "layerNames": [
+      "Base + momentary",
+      "LED policies",
+      "One-shot LED effects",
+      "Previous + relative layers"
+    ]
+  }
+}

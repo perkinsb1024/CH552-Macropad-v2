@@ -1,0 +1,859 @@
+ASxxxx Linker V03.00 + NoICE + sdld,  page 1.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+IABS3                               00000000    00000001 =           1. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000000  l_CABS                          
+     00000000  l_GSINIT1                       
+     00000000  l_GSINIT3                       
+     00000000  l_GSINIT5                       
+     00000000  l_IABS                          
+     00000000  l_REG_BANK_2                    
+     00000000  l_REG_BANK_3                    
+     00000000  l_RSEG                          
+     00000000  l_RSEG0                         
+     00000000  l_RSEG1                         
+     00000000  l_XABS                          
+     00000000  l_XINIT                         
+     00000000  l_XISEG                         
+     00000000  l__CODE                         
+     00000000  s_BSEG                          
+     00000000  s_CABS                          
+     00000000  s_DSEG                          
+     00000000  s_HOME                          
+     00000000  s_IABS                          
+     00000000  s_IABS2                         
+     00000000  s_IABS3                         
+     00000000  s_REG_BANK_0                    
+     00000000  s_RSEG                          
+     00000000  s_RSEG0                         
+     00000000  s_RSEG1                         
+     00000000  s_XABS                          
+     00000001  l_BIT_BANK                      
+     00000001  l_IABS3                         
+     00000003  l_GSINIT0                       
+     00000003  l_OSEG                          
+     00000004  l_BSEG_BYTES                    
+     00000004  l_GSFINAL                       
+     00000004  l_IABS2                         
+     00000006  l_ISEG                          
+     00000008  l_REG_BANK_0                    
+     00000008  l_REG_BANK_1                    
+     00000008  s_REG_BANK_1                    
+     0000000A  l_GSINIT2                       
+     0000000C  _timer0_overflow_count_5th_byte    main
+     00000010  s_REG_BANK_2                    
+     00000012  l_GSINIT                        
+     00000018  s_REG_BANK_3                    
+     0000001E  l_BSEG                          
+     00000020  s_BSEG_BYTES                    
+     00000020  s__CODE                         
+     00000024  s_BIT_BANK                      
+     0000002A  l_GSINIT4                       
+     00000049  l_HOME                          
+     00000049  s_GSINIT0                       
+     0000004C  s_GSINIT1                       
+ASxxxx Linker V03.00 + NoICE + sdld,  page 2.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+IABS3                               00000000    00000001 =           1. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     0000004C  s_GSINIT2                       
+     00000056  s_GSINIT3                       
+     00000056  s_GSINIT4                       
+     0000006C  l_PSEG                          
+     0000007B  l_SSEG                          
+     0000007D  s_OSEG                          
+     00000080  l_DSEG                          
+     00000080  s_GSINIT                        
+     00000080  s_GSINIT5                       
+     00000080  s_ISEG                          
+     00000085  s_SSEG                          
+     00000092  s_GSFINAL                       
+     00000094  s_PSEG                          
+     00000096  s_CSEG                          
+     00000100  l_IRAM                          
+     00000114  s_XSEG                          
+     00000205  l_XSEG                          
+     00000229  l_CONST                         
+     00000319  s_XISEG                         
+     0000352A  l_CSEG                          
+     000035C0  s_CONST                         
+     000037E9  s_XINIT                         
+ASxxxx Linker V03.00 + NoICE + sdld,  page 3.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+IABS2                               00000000    00000004 =           4. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000008  _timer0_overflow_count             main
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 4.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000000  .__.ABS.                           _startup
+     00000000  _Ep0Buffer                         USBhandler
+     0000000A  _Ep1Buffer                         USBhandler
+     00000080  _ADC_CHAN0                         wiring
+     00000080  _ADC_CTRL                          wiring
+     00000081  _ADC_CHAN1                         wiring
+     00000081  _SP                                wiring
+     00000082  _DPL                               wiring
+     00000083  _CMP_CHAN                          wiring
+     00000083  _DPH                               wiring
+     00000084  _ADC_START                         wiring
+     00000084  _ROM_ADDR_L                        wiring
+     00000085  _ADC_IF                            wiring
+     00000085  _ROM_ADDR_H                        wiring
+     00000086  _CMP_IF                            wiring
+     00000086  _ROM_CTRL                          wiring
+     00000087  _CMPO                              wiring
+     00000087  _PCON                              wiring
+     00000088  _IT0                               wiring
+     00000088  _TCON                              wiring
+     00000089  _IE0                               wiring
+     00000089  _TMOD                              wiring
+     0000008A  _IT1                               wiring
+     0000008A  _TL0                               wiring
+     0000008B  _IE1                               wiring
+     0000008B  _TL1                               wiring
+     0000008C  _TH0                               wiring
+     0000008C  _TR0                               wiring
+     0000008D  _TF0                               wiring
+     0000008D  _TH1                               wiring
+     0000008E  _ROM_DATA_L                        wiring
+     0000008E  _TR1                               wiring
+     0000008F  _ROM_DATA_H                        wiring
+     0000008F  _TF1                               wiring
+     00000090  _CAP1                              wiring
+     00000090  _P1                                wiring
+     00000090  _P1_0                              wiring
+     00000090  _T2                                wiring
+     00000090  _TIN0                              wiring
+     00000091  _AIN0                              wiring
+     00000091  _CAP2                              wiring
+     00000091  _P1_1                              wiring
+     00000091  _T2EX                              wiring
+     00000091  _TIN1                              wiring
+     00000091  _USB_C_CTRL                        wiring
+     00000091  _VBUS2                             wiring
+     00000092  _P1_2                              wiring
+     00000092  _P1_MOD_OC                         wiring
+     00000092  _RXD_                              wiring
+     00000093  _P1_3                              wiring
+ASxxxx Linker V03.00 + NoICE + sdld,  page 5.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000093  _P1_DIR_PU                         wiring
+     00000093  _TXD_                              wiring
+     00000094  _AIN1                              wiring
+     00000094  _CAP1_                             wiring
+     00000094  _P1_4                              wiring
+     00000094  _SCS                               wiring
+     00000094  _T2_                               wiring
+     00000094  _TIN2                              wiring
+     00000094  _UCC1                              wiring
+     00000095  _AIN2                              wiring
+     00000095  _MOSI                              wiring
+     00000095  _P1_5                              wiring
+     00000095  _PWM1                              wiring
+     00000095  _TIN3                              wiring
+     00000095  _UCC2                              wiring
+     00000096  _MISO                              wiring
+     00000096  _P1_6                              wiring
+     00000096  _P3_MOD_OC                         wiring
+     00000096  _RXD1                              wiring
+     00000096  _TIN4                              wiring
+     00000097  _P1_7                              wiring
+     00000097  _P3_DIR_PU                         wiring
+     00000097  _SCK                               wiring
+     00000097  _TIN5                              wiring
+     00000097  _TXD1                              wiring
+     00000098  _RI                                wiring
+     00000098  _SCON                              wiring
+     00000099  _SBUF                              wiring
+     00000099  _TI                                wiring
+     0000009A  _ADC_CFG                           wiring
+     0000009A  _RB8                               wiring
+     0000009B  _PWM_DATA2                         wiring
+     0000009B  _TB8                               wiring
+     0000009C  _PWM_DATA1                         wiring
+     0000009C  _REN                               wiring
+     0000009D  _PWM_CTRL                          wiring
+     0000009D  _SM2                               wiring
+     0000009E  _PWM_CK_SE                         wiring
+     0000009E  _SM1                               wiring
+     0000009F  _ADC_DATA                          wiring
+     0000009F  _SM0                               wiring
+     000000A0  _P2                                wiring
+     000000A0  __XPAGE                            
+     000000A1  _SAFE_MOD                          wiring
+     000000A2  _XBUS_AUX                          wiring
+     000000A8  _EX0                               wiring
+     000000A8  _IE                                wiring
+     000000A9  _ET0                               wiring
+     000000A9  _WAKE_CTRL                         wiring
+     000000AA  _EX1                               wiring
+     000000AB  _ET1                               wiring
+ASxxxx Linker V03.00 + NoICE + sdld,  page 6.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     000000AC  _ES                                wiring
+     000000AD  _ET2                               wiring
+     000000AE  _E_DIS                             wiring
+     000000AF  _EA                                wiring
+     000000B0  _P3                                wiring
+     000000B0  _P3_0                              wiring
+     000000B0  _PWM1_                             wiring
+     000000B0  _RXD                               wiring
+     000000B1  _GLOBAL_CFG                        wiring
+     000000B1  _P3_1                              wiring
+     000000B1  _PWM2_                             wiring
+     000000B1  _TXD                               wiring
+     000000B2  _AIN3                              wiring
+     000000B2  _INT0                              wiring
+     000000B2  _P3_2                              wiring
+     000000B2  _TXD1_                             wiring
+     000000B2  _VBUS1                             wiring
+     000000B3  _INT1                              wiring
+     000000B3  _P3_3                              wiring
+     000000B4  _P3_4                              wiring
+     000000B4  _PWM2                              wiring
+     000000B4  _RXD1_                             wiring
+     000000B4  _T0                                wiring
+     000000B5  _P3_5                              wiring
+     000000B5  _T1                                wiring
+     000000B6  _P3_6                              wiring
+     000000B6  _UDP                               wiring
+     000000B7  _P3_7                              wiring
+     000000B7  _UDM                               wiring
+     000000B8  _IP                                wiring
+     000000B8  _PX0                               wiring
+     000000B9  _CLOCK_CFG                         wiring
+     000000B9  _PT0                               wiring
+     000000BA  _PX1                               wiring
+     000000BB  _PT1                               wiring
+     000000BC  _PS                                wiring
+     000000BD  _PT2                               wiring
+     000000BE  _PL_FLAG                           wiring
+     000000BF  _PH_FLAG                           wiring
+     000000C0  _SCON1                             wiring
+     000000C0  _U1RI                              wiring
+     000000C1  _SBUF1                             wiring
+     000000C1  _U1TI                              wiring
+     000000C2  _SBAUD1                            wiring
+     000000C2  _U1RB8                             wiring
+     000000C3  _TKEY_CTRL                         wiring
+     000000C3  _U1TB8                             wiring
+     000000C4  _TKEY_DATL                         wiring
+     000000C4  _U1REN                             wiring
+     000000C5  _TKEY_DATH                         wiring
+     000000C5  _U1SMOD                            wiring
+ASxxxx Linker V03.00 + NoICE + sdld,  page 7.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     000000C6  _PIN_FUNC                          wiring
+     000000C7  _GPIO_IE                           wiring
+     000000C7  _U1SM0                             wiring
+     000000C8  _CP_RL2                            wiring
+     000000C8  _T2CON                             wiring
+     000000C9  _C_T2                              wiring
+     000000C9  _T2MOD                             wiring
+     000000CA  _RCAP2L                            wiring
+     000000CA  _TR2                               wiring
+     000000CB  _EXEN2                             wiring
+     000000CB  _RCAP2H                            wiring
+     000000CC  _TCLK                              wiring
+     000000CC  _TL2                               wiring
+     000000CD  _RCLK                              wiring
+     000000CD  _TH2                               wiring
+     000000CE  _EXF2                              wiring
+     000000CE  _T2CAP1L                           wiring
+     000000CF  _CAP1F                             wiring
+     000000CF  _T2CAP1H                           wiring
+     000000CF  _TF2                               wiring
+     000000D0  _P                                 wiring
+     000000D0  _PSW                               wiring
+     000000D1  _F1                                wiring
+     000000D1  _UDEV_CTRL                         wiring
+     000000D2  _OV                                wiring
+     000000D2  _UEP1_CTRL                         wiring
+     000000D3  _RS0                               wiring
+     000000D3  _UEP1_T_LEN                        wiring
+     000000D4  _RS1                               wiring
+     000000D4  _UEP2_CTRL                         wiring
+     000000D5  _F0                                wiring
+     000000D5  _UEP2_T_LEN                        wiring
+     000000D6  _AC                                wiring
+     000000D6  _UEP3_CTRL                         wiring
+     000000D7  _CY                                wiring
+     000000D7  _UEP3_T_LEN                        wiring
+     000000D8  _UIF_BUS_RST                       wiring
+     000000D8  _UIF_DETECT                        wiring
+     000000D8  _USB_INT_FG                        wiring
+     000000D9  _UIF_TRANSFER                      wiring
+     000000D9  _USB_INT_ST                        wiring
+     000000DA  _UIF_SUSPEND                       wiring
+     000000DA  _USB_MIS_ST                        wiring
+     000000DB  _UIF_HST_SOF                       wiring
+     000000DB  _USB_RX_LEN                        wiring
+     000000DC  _UEP0_CTRL                         wiring
+     000000DC  _UIF_FIFO_OV                       wiring
+     000000DD  _UEP0_T_LEN                        wiring
+     000000DD  _U_SIE_FREE                        wiring
+     000000DE  _UEP4_CTRL                         wiring
+     000000DE  _U_TOG_OK                          wiring
+ASxxxx Linker V03.00 + NoICE + sdld,  page 8.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+.  .ABS.                            00000000    00000000 =           0. bytes (ABS,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     000000DF  _UEP4_T_LEN                        wiring
+     000000DF  _U_IS_NAK                          wiring
+     000000E0  _ACC                               wiring
+     000000E1  _USB_INT_EN                        wiring
+     000000E2  _USB_CTRL                          wiring
+     000000E3  _USB_DEV_AD                        wiring
+     000000E4  _UEP2_DMA_L                        wiring
+     000000E5  _UEP2_DMA_H                        wiring
+     000000E6  _UEP3_DMA_L                        wiring
+     000000E7  _UEP3_DMA_H                        wiring
+     000000E8  _IE_EX                             wiring
+     000000E8  _IE_SPI0                           wiring
+     000000E9  _IE_TKEY                           wiring
+     000000E9  _IP_EX                             wiring
+     000000EA  _IE_USB                            wiring
+     000000EA  _UEP4_1_MOD                        wiring
+     000000EB  _IE_ADC                            wiring
+     000000EB  _UEP2_3_MOD                        wiring
+     000000EC  _IE_UART1                          wiring
+     000000EC  _UEP0_DMA_L                        wiring
+     000000ED  _IE_PWMX                           wiring
+     000000ED  _UEP0_DMA_H                        wiring
+     000000EE  _IE_GPIO                           wiring
+     000000EE  _UEP1_DMA_L                        wiring
+     000000EF  _IE_WDOG                           wiring
+     000000EF  _UEP1_DMA_H                        wiring
+     000000F0  _B                                 wiring
+     000000F8  _S0_R_FIFO                         wiring
+     000000F8  _SPI0_STAT                         wiring
+     000000F9  _SPI0_DATA                         wiring
+     000000FA  _S0_T_FIFO                         wiring
+     000000FA  _SPI0_CTRL                         wiring
+     000000FB  _S0_FREE                           wiring
+     000000FB  _SPI0_CK_SE                        wiring
+     000000FC  _S0_IF_BYTE                        wiring
+     000000FC  _SPI0_SETUP                        wiring
+     000000FD  _S0_IF_FIRST                       wiring
+     000000FE  _RESET_KEEP                        wiring
+     000000FE  _S0_IF_OV                          wiring
+     000000FF  _S0_FST_ACT                        wiring
+     000000FF  _WDOG_COUNT                        wiring
+     00008584  _ROM_ADDR                          wiring
+     00008F8E  _ROM_DATA                          wiring
+     0000C5C4  _TKEY_DAT                          wiring
+     0000CBCA  _RCAP2                             wiring
+     0000CDCC  _T2COUNT                           wiring
+     0000CFCE  _T2CAP1                            wiring
+     0000E5E4  _UEP2_DMA                          wiring
+     0000E7E6  _UEP3_DMA                          wiring
+     0000EDEC  _UEP0_DMA                          wiring
+     0000EFEE  _UEP1_DMA                          wiring
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 9.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+BSEG_BYTES                          00000020    00000004 =           4. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 10.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+REG_BANK_0                          00000000    00000008 =           8. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 11.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+REG_BANK_1                          00000008    00000008 =           8. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 12.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+BIT_BANK                            00000024    00000001 =           1. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 13.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+DSEG                                00000000    00000080 =         128. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000019  _USB_queueMouse_PARM_2             USBHIDKeyboardMouse
+     0000001A  _USB_queueMouse_PARM_3             USBHIDKeyboardMouse
+     0000001B  _USB_queueMouse_PARM_4             USBHIDKeyboardMouse
+     00000025  _rainbowHue                        sketch
+     00000038  _firmwareLedAction_PARM_2          sketch
+     0000003B  _startLayerIndicator_PARM_2        sketch
+     0000003D  _scanButton_PARM_2                 sketch
+     00000048  _configValid_PARM_2                config
+     00000051  _configLedColor_PARM_2             config
+     00000052  _configBinding_PARM_2              config
+     00000053  _configBinding_PARM_3              config
+     00000054  _configBinding_PARM_4              config
+     00000055  _configChord_PARM_2                config
+     00000056  _configChord_PARM_3                config
+     00000057  _configChord_PARM_4                config
+     00000058  _configChord_PARM_5                config
+     0000005B  _eventUsed                         actions
+     0000005C  _baseLayer                         actions
+     0000005D  _previousLayer                     actions
+     0000005E  _effectiveLayer                    actions
+     0000005F  _oneShotReturnLayer                actions
+     00000060  _currentFirst                      actions
+     00000061  _phase                             actions
+     00000062  _tempOn                            actions
+     00000067  _actionsPress_PARM_2               actions
+     00000074  _SetupLen                          USBhandler
+     00000076  _SetupReq                          USBhandler
+     00000077  _ep0ReportExpected                 USBhandler
+     00000078  _ep0ReportReceived                 USBhandler
+     00000079  _pDescr                            USBhandler
+     0000007B  _descriptorInRam                   USBhandler
+     0000007C  _usbMsgFlags                       USBhandler
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 14.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+OSEG                                0000007D    00000003 =           3. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     0000007D  _USB_getReport_PARM_2              USBHIDKeyboardMouse
+     0000007D  _USB_setIdle_PARM_2                USBHIDKeyboardMouse
+     0000007D  _ledStep_PARM_2                    sketch
+     0000007E  _USB_getReport_PARM_3              USBHIDKeyboardMouse
+     0000007E  _ledStep_PARM_3                    sketch
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 15.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+ISEG                                00000080    00000006 =           6. bytes (REL,CON)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     0000001F  _lastMouse                         actions
+     00000080  _lastLayer                         sketch
+     00000081  _rainbowChanged                    sketch
+     00000082  _rainbowDrift                      sketch
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 16.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+SSEG                                00000085    0000007B =         123. bytes (REL,OVR)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+     00000085  __start__stack                     main
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 17.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+PSEG                                00000094    0000006C =         108. bytes (REL,CON,PAG,XDATA)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+D:   00000094  _encoderState                      sketch
+D:   00000095  _encoderMovement                   sketch
+D:   00000096  _layerIndicatorPhasesLeft          sketch
+D:   00000097  _layerIndicatorDeadline            sketch
+D:   00000098  _ledSettings                       sketch
+D:   0000009C  _previewOptions                    sketch
+D:   0000009D  _buttonFirst                       actions
+D:   000000A4  _buttonSecond                      actions
+D:   000000AB  _buttonPressed                     actions
+D:   000000B2  _buttonOrder                       actions
+D:   000000B9  _latchedMouse                      actions
+D:   000000C6  _lastKeyboard                      actions
+D:   000000CE  _inputDown                         actions
+D:   000000CF  _chordPartner                      actions
+D:   000000D5  _pendingInput                      actions
+D:   000000D6  _pendingLayer                      actions
+D:   000000D7  _pendingSince                      actions
+D:   000000D9  _lastReportGeneration              actions
+D:   000000DA  _eventData                         actions
+D:   000000EA  _eventHead                         actions
+D:   000000EB  _eventTail                         actions
+D:   000000EC  _droppedButtons                    actions
+D:   000000ED  _droppedRotation                   actions
+D:   000000EE  _layerSelectionPending             actions
+D:   000000EF  _currentSecond                     actions
+D:   000000F0  _tempFirst                         actions
+D:   000000F1  _tempSecond                        actions
+D:   000000F2  _tempMouse                         actions
+D:   000000F3  _tempReady                         actions
+D:   000000F4  _clicksLeft                        actions
+D:   000000F5  _stringIndex                       actions
+D:   000000F6  _timedAge                          actions
+D:   000000FA  _timedClock                        actions
+D:   000000FB  _timedWork                         actions
+D:   000000FC  _consumerReleasePending            actions
+D:   000000FD  _deadline                          actions
+D:   000000FF  _pointerRepeated                   actions
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 18.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+XSEG                                00000114    00000205 =         517. bytes (REL,CON,XDATA)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+D:   00000114  _ledData                           sketch
+D:   0000011D  _rawState                          sketch
+D:   00000124  _stableState                       sketch
+D:   0000012B  _rawChanged                        sketch
+D:   00000139  _allowRunBootloader                sketch
+D:   0000013A  _encoderPressedMs                  sketch
+D:   0000013C  _activeConfig                      config
+D:   000001BC  _configStringChar_PARM_2           config
+D:   000001BD  _nextKeyboard                      actions
+D:   000001C5  _protocolInbox                     protocol_firmware
+D:   000001E5  _protocolReply                     protocol_firmware
+D:   00000205  _stagedConfig                      protocol_firmware
+D:   00000285  _protocolState                     protocol_firmware
+D:   00000286  _uploadState                       protocol_firmware
+D:   00000287  _uploadNext                        protocol_firmware
+D:   00000288  _uploadCrc                         protocol_firmware
+D:   0000028A  _uploadTime                        protocol_firmware
+D:   0000028C  _keyboardLedStatus                 USBHIDKeyboardMouse
+D:   0000028D  _reportQueue                       USBHIDKeyboardMouse
+D:   000002D5  _reportLength                      USBHIDKeyboardMouse
+D:   000002DD  _reportHead                        USBHIDKeyboardMouse
+D:   000002DE  _reportTail                        USBHIDKeyboardMouse
+D:   000002DF  _reportCount                       USBHIDKeyboardMouse
+D:   000002E0  _reportGeneration                  USBHIDKeyboardMouse
+D:   000002E1  _USB_idleRate                      USBHIDKeyboardMouse
+D:   000002E2  _USB_globalIdleRate                USBHIDKeyboardMouse
+D:   000002E3  _mouseIdleRate                     USBHIDKeyboardMouse
+D:   000002E4  _consumerIdleRate                  USBHIDKeyboardMouse
+D:   000002E5  _idleReport                        USBHIDKeyboardMouse
+D:   000002E6  _keyboardTime                      USBHIDKeyboardMouse
+D:   000002E8  _mouseTime                         USBHIDKeyboardMouse
+D:   000002EA  _consumerTime                      USBHIDKeyboardMouse
+D:   000002EC  _keyboardState                     USBHIDKeyboardMouse
+D:   000002F4  _mouseState                        USBHIDKeyboardMouse
+D:   000002F5  _consumerState                     USBHIDKeyboardMouse
+D:   000002F7  _Ep0Report                         USBhandler
+D:   00000317  _UsbConfig                         USBhandler
+D:   00000318  _eeprom_write_byte_PARM_2          eeprom
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 19.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+HOME                                00000000    00000049 =          73. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000046  __sdcc_program_startup             main
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 20.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT0                             00000049    00000003 =           3. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000049  __sdcc_gsinit_startup              
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 21.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT2                             0000004C    0000000A =          10. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 22.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT4                             00000056    0000002A =          42. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000056  __mcs51_genRAMCLEAR                
+C:   0000005C  __mcs51_genXRAMCLEAR               
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 23.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSINIT                              00000080    00000012 =          18. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 24.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+GSFINAL                             00000092    00000004 =           4. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+ASxxxx Linker V03.00 + NoICE + sdld,  page 25.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CSEG                                00000096    0000352A =       13610. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   00000096  _displayLeds                       sketch
+C:   000000AB  _clearLeds                         sketch
+C:   000000C4  _dimIndicatorComponent             sketch
+C:   000000D7  _indicatorBrightness               sketch
+C:   000000EC  _updateLeds                        sketch
+C:   00000344  _ledStep                           sketch
+C:   00000361  _firmwareLedAction                 sketch
+C:   00000535  _firmwarePreviewColor              sketch
+C:   00000572  _startLayerIndicator               sketch
+C:   000005CA  _serviceLayerIndicator             sketch
+C:   00000606  _enterBootloader                   sketch
+C:   0000069E  _readButton                        sketch
+C:   000006D0  _readEncoder                       sketch
+C:   000006DF  _scanButton                        sketch
+C:   000007AF  _scanEncoder                       sketch
+C:   00000828  _firmwareApplyConfig               sketch
+C:   00000920  _setup                             sketch
+C:   00000951  _loop                              sketch
+C:   00000B8A  _configCrc                         config
+C:   00000DF4  _configValid                       config
+C:   0000118A  _configLayerCount                  config
+C:   00001196  _configStartupLayer                config
+C:   000011A5  _configKeyCount                    config
+C:   000011A9  _configChordWindowMs               config
+C:   000011C3  _configLayerOptions                config
+C:   000011E2  _configLedColor                    config
+C:   00001256  _configBinding                     config
+C:   000012C6  _configChord                       config
+C:   000013AD  _configTimedCount                  config
+C:   000013DC  _configTimedOffset                 config
+C:   000013F6  _configStringChar                  config
+C:   00001826  _actionsInit                       actions
+C:   000018B4  _actionsClear                      actions
+C:   000018D6  _actionsDropped                    actions
+C:   000018E7  _actionsLayer                      actions
+C:   000018EB  _actionsTakeLayerSelection         actions
+C:   00001916  _actionsPress                      actions
+C:   00001B1A  _actionsRelease                    actions
+C:   00001BC1  _actionsRotate                     actions
+C:   00001C26  _actionsTimedReset                 actions
+C:   00001D12  _actionsTimedPoll                  actions
+C:   00001D24  _actionsTimedInput                 actions
+C:   00001D29  _actionsPoll                       actions
+C:   00002082  _protocolInit                      protocol_firmware
+C:   000020C4  _protocolReset                     protocol_firmware
+C:   000020C7  _protocolReceive                   protocol_firmware
+C:   000024D4  _protocolPoll                      protocol_firmware
+C:   000025B6  _storageRead                       storage
+C:   00002624  _storageSave                       storage
+C:   000026B6  _DeviceUSBInterrupt                main
+ASxxxx Linker V03.00 + NoICE + sdld,  page 26.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CSEG                                00000096    0000352A =       13610. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   000026F5  _main                              main
+C:   00002709  ___sdcc_external_startup           main
+C:   0000270E  _USBInit                           USBHIDKeyboardMouse
+C:   0000271E  _USB_EP1_IN                        USBHIDKeyboardMouse
+C:   0000272C  _USB_EP1_OUT                       USBHIDKeyboardMouse
+C:   00002763  _USB_EP1_sendConfig                USBHIDKeyboardMouse
+C:   000027D0  _USB_EP1_receiveReady              USBHIDKeyboardMouse
+C:   000027EE  _USB_setKeyboardLedStatus          USBHIDKeyboardMouse
+C:   000027F5  _USB_EP1_reset                     USBHIDKeyboardMouse
+C:   0000284B  _USB_reportGeneration              USBHIDKeyboardMouse
+C:   00002852  _USB_discardReports                USBHIDKeyboardMouse
+C:   000028FA  _USB_queueKeyboard                 USBHIDKeyboardMouse
+C:   0000296C  _USB_queueMouse                    USBHIDKeyboardMouse
+C:   000029D7  _USB_queueConsumer                 USBHIDKeyboardMouse
+C:   000029E8  _USB_reportsPending                USBHIDKeyboardMouse
+C:   000029FA  _USB_reportPoll                    USBHIDKeyboardMouse
+C:   00002BB2  _USB_asciiUsage                    USBHIDKeyboardMouse
+C:   00002BC5  _USB_setIdle                       USBHIDKeyboardMouse
+C:   00002BFF  _USB_getIdle                       USBHIDKeyboardMouse
+C:   00002C2D  _USB_getReport                     USBHIDKeyboardMouse
+C:   00002D52  _USB_EP0_SETUP                     USBhandler
+C:   000032AF  _USB_EP0_IN                        USBhandler
+C:   000032DA  _USB_EP0_OUT                       USBhandler
+C:   000033B8  _USBInterrupt                      USBhandler
+C:   00003448  _USBDeviceCfg                      USBhandler
+C:   00003461  _USBDeviceIntCfg                   USBhandler
+C:   00003472  _USBDeviceEndPointCfg              USBhandler
+C:   0000348C  _neopixel_show_long_P3_4           optionalLink_WS2812_P3_4
+C:   000034B0  _eeprom_write_byte                 eeprom
+C:   000034E6  _eeprom_read_byte                  eeprom
+C:   000034F6  _Timer0Interrupt                   wiring
+C:   0000350F  _millis                            wiring
+C:   0000354C  _delayMicroseconds                 wiring
+C:   00003587  _init                              wiring
+C:   000035BC  __sdcc_external_startup            _startup
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 27.
+Hexadecimal  [32-Bits]
+
+Area                                    Addr        Size        Decimal Bytes (Attributes)
+--------------------------------        ----        ----        ------- ----- ------------
+CONST                               000035C0    00000229 =         553. bytes (REL,CON,CODE)
+
+      Value  Global                              Global Defined In Module
+      -----  --------------------------------   ------------------------
+C:   000035C0  _KEY_MASK                          sketch
+C:   000035C5  _rainbowPositions                  sketch
+C:   000035C8  _rainbowDriftPositions             sketch
+C:   000035CB  _rainbowSteps                      sketch
+C:   000035CF  _rainbowFrameMs                    sketch
+C:   000035D3  _encoderTransitions                sketch
+C:   000035E3  _ledPresets                        sketch
+C:   000035E8  _configPalette                     config
+C:   00003626  __asciimap                         USBHIDKeyboardMouse
+C:   000036A6  _DeviceDescriptor                  USBconstant
+C:   000036B8  _ReportDescriptor                  USBconstant
+C:   0000376C  _ConfigurationDescriptor           USBconstant
+C:   00003795  _LanguageDescriptor                USBconstant
+C:   00003799  _SerialDescriptor                  USBconstant
+C:   000037B5  _ProductDescriptor                 USBconstant
+C:   000037DB  _ManufacturerDescriptor            USBconstant
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 28.
+
+Files Linked                              [ module(s) ]
+
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/sketch.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/config.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/actions.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/protocol_firmware.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/storage.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/core_main.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/hid_USBHIDKeyboardMouse.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/hid_USBconstant.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/hid_USBhandler.rel
+                                          [  ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/ws2812_p34.rel
+                                          [  ]
+
+
+Libraries Linked                          [ object file ]
+
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/core.lib
+                                          [ core_eeprom.rel ]
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/share/sdcc/lib/small_int_calc_stack_auto/mcs51.lib
+                                          [ crtclear.rel ]
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/ch552-stack-diagnostics-0qlehx_g/3-key/core.lib
+                                          [ core_wiring.rel ]
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/share/sdcc/lib/small_int_calc_stack_auto/mcs51.lib
+                                          [ crtxclear.rel ]
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/share/sdcc/lib/small_int_calc_stack_auto/mcs51.lib
+                                          [ crtpagesfr.rel ]
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/share/sdcc/lib/small_int_calc_stack_auto/mcs51.lib
+                                          [ crtstart.rel ]
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/share/sdcc/lib/small_int_calc_stack_auto/libsdcc.lib
+                                          [ _startup.rel ]
+
+ASxxxx Linker V03.00 + NoICE + sdld,  page 29.
+
+User Base Address Definitions
+
+HOME = 0x0000
+XSEG = 0x0094
+PSEG = 0x0094
+ISEG = 0x0000
+BSEG = 0x0000
+
+

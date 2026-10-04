@@ -19,6 +19,7 @@
 
 // Adapted from CH55xDuino 0.0.25: this board uses only USB and Timer0 interrupts.
 #include <Arduino.h>
+#include "protocol_firmware.h"
 
 void USBInterrupt(void);
 void DeviceUSBInterrupt(void) __interrupt(INT_NO_USB) {
@@ -31,6 +32,19 @@ __idata __at (0x0C) volatile uint8_t timer0_overflow_count_5th_byte = 0;
 void Timer0Interrupt(void) __interrupt(INT_NO_TMR0) __using(1);
 
 void main(void) {
+#if ENABLE_STACK_TEST
+  // C startup has finished clearing RAM; init() has not enabled interrupts yet.
+  // main is entered by LJMP, with SP = __start__stack - 1. No call/push here:
+  // fill only addresses above SP, using indirect addressing for upper IRAM.
+  __asm
+    mov r0,sp
+    inc r0
+  00090$:
+    mov @r0,#0xa5
+    inc r0
+    cjne r0,#0,00090$
+  __endasm;
+#endif
   init();
   setup();
   for (;;) {

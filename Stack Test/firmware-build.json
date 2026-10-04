@@ -1,0 +1,19 @@
+{
+  "builtUtc": "2026-10-04T16:54:02.104825+00:00",
+  "baseRevision": "1a85a41b059e4266164322cda621abdb7b9ec5cc",
+  "uncommittedValidationChanges": true,
+  "toolchain": "CH55xDuino 0.0.25 / SDCC build.13407_4",
+  "clockHz": 24000000,
+  "usbRamBytes": 148,
+  "buildFlags": [
+    "-DENABLE_STACK_TEST=1"
+  ],
+  "files": {
+    "6-key-stack-test-firmware.hex": "6bd20aea9594175798f82968949cba31b247edd942badc6ccf0fea56d2b5906a",
+    "6-key-stack-test-firmware.map": "7b50d5e258e81552e2a9357a932bb9d8c425a07169d8f5ac72929c207f23a661",
+    "6-key-stack-test-firmware.mem": "e96cacbe60b7029feaa13f6a6c2fc031c31b4b82266c53ef958ad35f456b8076",
+    "3-key-stack-test-firmware.hex": "03a85a32a4d58a4763a3a7a0d872ba21cd83d9ae14191eb47c62060c614ed0f4",
+    "3-key-stack-test-firmware.map": "502402c345e8c649f623e1d515196749468bffee09f3a5054ec5957fd5537cdb",
+    "3-key-stack-test-firmware.mem": "599defd455e4d4806c6cef635f2a8454ec041b7cca162af38831f33bfbaf014a"
+  }
+}

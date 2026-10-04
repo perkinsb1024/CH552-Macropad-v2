@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macropad stack validation</title>
+<style>
+  :root { color-scheme: light dark; font: 16px system-ui; }
+  body { max-width: 920px; margin: 32px auto; padding: 0 20px; }
+  h1 { font-size: 26px; } p { line-height: 1.5; }
+  button, select, input, textarea { font: inherit; padding: 8px; margin: 4px 6px 4px 0; }
+  button { cursor: pointer; } textarea { box-sizing: border-box; width: 100%; }
+  .results { display: flex; flex-wrap: wrap; gap: 20px; margin: 24px 0; }
+  .results div { border: 1px solid #888; border-radius: 8px; padding: 16px; min-width: 155px; }
+  strong { display: block; font-size: 32px; } #message { min-height: 28px; }
+  #log { height: 220px; font: 12px ui-monospace, monospace; }
+  .error { color: #dd5555; } .good { color: #37985e; }
+</style>
+<h1>Macropad stack validation</h1>
+<p>Connect the diagnostic firmware, save a test profile, then exercise the keys and encoder.
+The watermark includes initialization and every workload since firmware restart.
+Close the configurator's device connection before connecting here.</p>
+<button id="connect">Connect</button><button id="disconnect" disabled>Disconnect</button>
+<button id="sample" disabled>Read stack</button>
+<button id="monitor" disabled>Monitor once per second</button>
+<button id="stress" disabled>Start USB read stress</button>
+<button id="stop" disabled>Stop</button>
+<label><input id="preview" type="checkbox">Cycle LED previews during USB read stress</label>
+<p id="device">No device connected.</p><p id="message" role="status"></p>
+<div class="results">
+  <div>Observed usage<strong id="used">—</strong></div>
+  <div>Untouched headroom<strong id="free">—</strong></div>
+  <div>Stack capacity<strong id="capacity">—</strong></div>
+</div>
+<label>Run / stage label <input id="label" value="test-1-baseline" maxlength="100"></label>
+<p>
+  <select id="profile"><option value="1">Test 1 · HID and chords</option><option value="2">Test 2 · Layers and LEDs</option><option value="3">Test 3 · Timers and saves</option></select>
+  <button id="save" disabled>Save selected test profile to device</button>
+  <button id="invalid" disabled>Exercise rejected uploads</button>
+  <button id="download">Download results CSV</button>
+</p>
+<p>Saving replaces the stored profile. Export your existing profile in the configurator first.
+Rejected uploads test CRC and configuration validation and verify that flash stays unchanged.
+Stop monitoring or stress before saving. The checkbox cycles bright/dim Rainbow and solid-color previews.</p>
+<label>Typing target — focus here for keyboard/string tests:
+  <textarea id="sink" rows="5" placeholder="Test strings and held keys appear here"></textarea>
+</label>
+<label>Results and diagnostics:<textarea id="log" readonly></textarea></label>
+<p>Usage is the highest non-pattern byte in the stack region, expressed as bytes from its base.
+Readout adds no call frame and briefly masks interrupts. If headroom is zero, the top was touched;
+overflow beyond it cannot be measured reliably. Pattern collisions can undercount usage.
+Power cycling resets the watermark; closing this page or saving a profile does not.</p>
+<script type="module" src="reader.mjs"></script>
+</html>

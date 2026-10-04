@@ -1,0 +1,204 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 7,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "transparentBlack": true,
+  "chordWindowMs": 75,
+  "rainbowPhaseDegrees": 150,
+  "rainbowSpeed": "extra fast",
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "keyHold",
+          "usage": 4,
+          "modifiers": 0
+        },
+        {
+          "type": "keyHold",
+          "usage": 5,
+          "modifiers": 2
+        },
+        {
+          "type": "string",
+          "text": "Stack A! 09\txy\n"
+        },
+        {
+          "type": "mouseDouble",
+          "buttons": 1
+        },
+        {
+          "type": "mouseHold",
+          "buttons": 1
+        },
+        {
+          "type": "mouseX",
+          "delta": 3,
+          "hold": true
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -3
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 3
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 3,
+      "indicatorColor": 15,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "mouseToggle",
+          "buttons": 1
+        },
+        {
+          "type": "mouseClick",
+          "buttons": 2
+        },
+        {
+          "type": "mouseY",
+          "delta": -3,
+          "hold": true
+        },
+        {
+          "type": "consumer",
+          "usage": 234
+        },
+        {
+          "type": "keyTap",
+          "usage": 6,
+          "modifiers": 0
+        },
+        {
+          "type": "string",
+          "text": "Queue B? []{}\n"
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "mouseX",
+        "delta": 4
+      },
+      "counterclockwise": {
+        "type": "mouseY",
+        "delta": 4
+      },
+      "leds": [
+        "Red",
+        "Amber",
+        "Green",
+        "Cyan",
+        "Blue",
+        "Magenta"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 2,
+      "indicatorColor": 8,
+      "indicatorFullBrightness": false
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        0,
+        1
+      ],
+      "global": false,
+      "action": {
+        "type": "string",
+        "text": "Chord C!\n"
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        2,
+        3
+      ],
+      "global": false,
+      "action": {
+        "type": "keyTap",
+        "usage": 7,
+        "modifiers": 2
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        4,
+        5
+      ],
+      "global": false,
+      "action": {
+        "type": "mouseDouble",
+        "buttons": 1
+      }
+    },
+    {
+      "layer": 1,
+      "keys": [
+        0,
+        1
+      ],
+      "global": false,
+      "action": {
+        "type": "consumer",
+        "usage": 234
+      }
+    },
+    {
+      "layer": 1,
+      "keys": [
+        2,
+        3
+      ],
+      "global": false,
+      "action": {
+        "type": "scroll",
+        "delta": -7
+      }
+    },
+    {
+      "layer": 1,
+      "keys": [
+        4,
+        5
+      ],
+      "global": false,
+      "action": {
+        "type": "keyTap",
+        "usage": 8,
+        "modifiers": 0
+      }
+    }
+  ],
+  "localMetadata": {
+    "profileName": "Stack Test 1",
+    "layerNames": [
+      "HID + chords",
+      "Pointer + queue"
+    ]
+  }
+}
