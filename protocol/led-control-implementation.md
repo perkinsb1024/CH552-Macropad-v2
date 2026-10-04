@@ -261,13 +261,19 @@ firmware must be updated to obtain the synchronized behavior.
 Fresh temporary builds with CH55xDuino 0.0.25, SDCC build.13407_4,
 `--opt-code-size`, `ENABLE_COLOR_PREVIEW=1`, and the 14,336-byte limit measured:
 
-| Variant | Previously documented flash | Updated flash | Increase | Flash free | Contiguous xRAM free | Stack capacity |
+| Variant | Before synchronization | Updated flash | Increase | Flash free | Contiguous xRAM free | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,201 | 14,275 | 74 | 61 | 231 | 123 |
-| Six-key | 14,205 | 14,279 | 74 | 57 | 222 | 120 |
+| Three-key | 14,201 | 14,259 | 58 | 77 | 231 | 123 |
+| Six-key | 14,205 | 14,263 | 58 | 73 | 222 | 120 |
 
-Previous flash values come from the README's pre-change headroom. RAM allocation
-and stack capacity are unchanged. Stack capacity is the linker's
+Before synchronization, the README documented 135 / 131 bytes of flash headroom,
+giving the baseline figures above. The first synchronized implementation added
+74 bytes per variant. Normalizing both policies to the brighter resolved level
+before using the existing relative cycle saves 16 bytes, reducing the net cost to
+58 bytes without changing the behavior. More compact loop variants failed internal
+RAM allocation and were not retained.
+
+RAM allocation and stack capacity are unchanged. Stack capacity is the linker's
 allocation, not measured peak use. Both production builds passed the memory-layout
 checks. Build outputs were kept in temporary directories; release files were not
 regenerated.

@@ -119,7 +119,7 @@ Remaining space in the current source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash | 61 | 57 |
+| Flash | 77 | 73 |
 | Contiguous external RAM | 231 | 222 |
 | Stack capacity | 123 | 120 |
 

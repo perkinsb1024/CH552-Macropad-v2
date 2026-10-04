@@ -523,8 +523,9 @@ The first reminder may arrive about two minutes early because of the timer's sha
 
 | Problem | What to try |
 | --- | --- |
-| Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable, and a device running this project's firmware. Reconnect after installing firmware. Some boards require a USB-A to USB-C cable to power correctly. Linux users may need the [device access setup](webapp/README.md#linux-device-access) |
+| Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable, and a device running this project's firmware. Reconnect after installing firmware. These boards require a USB-A to USB-C cable to power on. Linux users may need the [device access setup](webapp/README.md#linux-device-access) |
 | One red LED blinks and controls do nothing | Connect and save a valid profile |
+| All LEDs are red and controls do nothing | Device is in bootloader mode (firmware update mode). Unplug and replug the device *without* holding the wheel button |
 | My edits have no effect | Click **Save to device** and wait for Saved. Check that you are connected to hardware, rather than a simulator |
 | Clicking a layer tab does not switch the device | Tabs choose what you edit. Use a saved layer-switch action on the macropad |
 | I cannot get back to my usual layer | Configure a return action or a global layer-cycle chord. Reconnecting starts on the saved startup layer |
@@ -537,17 +538,18 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | A reminder fires earlier than expected | The first firing after a start or restart can be up to about 131 seconds early. Choose a longer interval if needed |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns restart it |
 | My first press after a reminder does nothing | **Consume this input** may be enabled. That input dismisses the reminder; the next one runs normally |
-| Holding the wheel disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Reconnect normally to leave update mode |
+| Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Reconnect normally to leave update mode |
 | The mouse seems stuck dragging | Activate the same Mouse toggle input again, or change layers to clear toggled buttons |
-| LEDs do not look like the editor | Check layer indicators, key colors, temporary effects, and brightness overrides. Use **Restore all configured LED settings** to restore saved behavior. Confirm that your board has LEDs |
+| LEDs do not look like the editor | Check layer indicators, key colors, temporary effects, and brightness overrides. Use **Restore all configured LED settings** to restore saved behavior |
+| LEDs do not light up at all | The absolute cheapest versions of these macropads do not include LEDs. A skilled technician can solder them on, but it's probably easier to buy a macropad that includes them |
 | My device has older firmware | Follow the configurator's compatibility notice or use **Older firmware configurators**. Older editors may have fewer features than this guide |
 
 <a name="timed-action-gotchas"></a>
 
 <details>
-<summary><strong>Gotchas and things to watch out for with Timed Actions</strong></summary>
+<summary><strong>Advanced: Gotchas and things to watch out for with Timed Actions</strong></summary>
 
-These combinations are allowed, but their interactions can produce results you did not intend. Pay particular attention to **one-shot layer returns** and **layer changes cancelling queued actions**.
+Timed actions and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to **one-shot layer returns** and **layer changes cancelling queued actions**.
 
 ### How multiple pending follow-ups run
 
