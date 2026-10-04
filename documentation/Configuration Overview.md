@@ -4,7 +4,7 @@ Using this macropad gives you quick access to the things you do most often: copy
 
 You configure it in your browser with the configurator tool. Once you click **Save to device**, the settings stay on the macropad — even when you unplug it or use it on a different computer. You do not need to keep the configurator open for the macropad to work.
 
-This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted.
+This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted.
 
 ## Index
 
@@ -46,7 +46,7 @@ For editing without a connection, choose **edit offline** for a three-key or six
 
 ## Find your way around
 
-![The configurator with a simulated six-key macropad, profile settings, layers, and storage meter](images/configuration-overview/01-workspace.png)
+![The configurator with a simulated six-key macropad, profile settings, layers, and storage meter](../images/configuration-overview/01-workspace.png)
 
 *Screenshots in this guide use a simulated device. The controls work the same way when editing a connected macropad.*
 
@@ -78,7 +78,7 @@ For example, make a key copy the selected text:
 6. Click **Save to device** and wait for **Saved** to appear
 7. Select some text in another application and press your macropad key
 
-![Key tap settings showing C with the Mac Command modifier and the key LED palette](images/configuration-overview/02-key-editor.png)
+![Key tap settings showing C with the Mac Command modifier and the key LED palette](../images/configuration-overview/02-key-editor.png)
 
 Instead of selecting the individual keyboard keys your macropad should send, you can also click **Capture**, then press the desired combination on your normal keyboard. The configurator fills in the key and modifiers automatically. If your operating system or browser intercepts that combination, select it manually instead.
 
@@ -171,7 +171,7 @@ You can have up to **seven layers on a three-key macropad**, or **five on a six-
 
 ### Add, edit, and remove layers
 
-![Layer 2 selected for editing while Layer 1 remains the startup layer](images/configuration-overview/06-layers.png)
+![Layer 2 selected for editing while Layer 1 remains the startup layer](../images/configuration-overview/06-layers.png)
 
 - Click a layer tab to edit it
 - **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). Global chords and timers are already shared
@@ -203,7 +203,7 @@ This is a route check, not a complete simulation of physical inputs: timer actio
 
 A chord assigns an extra action to a pair of numbered keys. For example, Key 1 can copy, Key 2 can paste, and **Keys 1 + 2** together can switch layers.
 
-![Keys 1 and 2 form a global chord that cycles forward one layer](images/configuration-overview/07-chord.png)
+![Keys 1 and 2 form a global chord that cycles forward one layer](../images/configuration-overview/07-chord.png)
 
 1. Select the layer where you want the chord
 2. In **Chords**, choose a **Key pair** and click **Add chord**
@@ -230,7 +230,7 @@ A recognized chord runs its action instead of the two individual actions. For a 
 
 You can add up to **four timed actions**, depending on remaining configuration storage space. They operate across all layers and repeat automatically.
 
-![A repeating amber lighting reminder with a roughly twenty-minute interval and a next-input action that clears it](images/configuration-overview/08-timed-actions.png)
+![A repeating amber lighting reminder with a roughly twenty-minute interval and a next-input action that clears it](../images/configuration-overview/08-timed-actions.png)
 
 1. Click **Add timed action**
 2. Move the **Interval** slider to the approximate duration you want
@@ -349,7 +349,7 @@ Indicator brightness preserves the selected indicator mode: making it bright doe
 
 ### Temporary effects: Set all LEDs
 
-![LED control configured to blink all LEDs three times in a dim rainbow](images/configuration-overview/09-led-effect.png)
+![LED control configured to blink all LEDs three times in a dim rainbow](../images/configuration-overview/09-led-effect.png)
 
 With **LED command → Set all LEDs**, choose:
 
@@ -369,7 +369,7 @@ Finishing or clearing an effect returns to normal lighting without replaying the
 
 Expand **Shortcuts**, select **Mac** or **Windows**, and search for an action name or application. The library includes everyday editing, browser controls, window management, screenshots, media keys, standard keyboard keys, and application-specific shortcuts for Word, Google Docs, PowerPoint, VS Code, and Vim, plus short text snippets.
 
-![Shortcut library filtered to copy actions, with Mac and Windows choices and matching presets](images/configuration-overview/05-shortcuts.png)
+![Shortcut library filtered to copy actions, with Mac and Windows choices and matching presets](../images/configuration-overview/05-shortcuts.png)
 
 Drag a shortcut onto a numbered key, wheel input, chord, or timer action to **replace that input's action**. Clicking a shortcut does not apply it. Dragging from the library copies the preset; it does not remove it from the library or change the key's press color.
 
@@ -401,7 +401,7 @@ Use the top-bar **Undo** and **Redo** buttons if you prefer clicking. They undo 
 
 ### Drag and drop existing actions
 
-![Dragging to a key's center highlights a swap target; dragging to an edge shows an insertion line](images/configuration-overview/10-drag-drop.png)
+![Dragging to a key's center highlights a swap target; dragging to an edge shows an insertion line](../images/configuration-overview/10-drag-drop.png)
 
 | Where you drop | Result |
 | --- | --- |
@@ -426,7 +426,7 @@ To put that into perspecting, “The quick brown fox jumps over the lazy dog” 
 
 You do not have to calculate everything manually. **Device storage** adds it up as you edit, shows the free space, and reports when you go over the limit. Its “Header” line simply means the space reserved for basic profile settings.
 
-![Device storage meter showing a two-layer profile with 75 of 128 bytes free](images/configuration-overview/03-storage.png)
+![Device storage meter showing a two-layer profile with 75 of 128 bytes free](../images/configuration-overview/03-storage.png)
 
 | Item | Space used |
 | --- | --- |
@@ -467,7 +467,7 @@ The configurator disables saving if the profile is invalid, over capacity, for t
 
 In **Backup & restore**:
 
-![Backup and restore controls for exporting, importing, and resetting a profile](images/configuration-overview/04-backup.png)
+![Backup and restore controls for exporting, importing, and resetting a profile](../images/configuration-overview/04-backup.png)
 
 - **Export JSON** downloads your current editor profile as a file. Give the file a useful name, such as “Macropad – Photo editing.json.” You do not need to open or edit its contents
 - **Export to Clipboard** copies the same complete profile so you can keep or share it as text
@@ -490,7 +490,7 @@ The browser also keeps a local draft. On reconnect, it may ask whether to use th
 
 Under **Layer options → Advanced**, **Allow bootloader entry by long-pressing the encoder button** enables firmware update mode when you hold the wheel button for three seconds. It uses the layer active when the hold begins.
 
-This option is for updating the device software, not editing a profile. It can interrupt an encoder hold action, so leave it disabled on layers where you regularly hold that button. If you enter update mode accidentally, unplug and reconnect normally. Holding the wheel button while plugging in also enters update mode, independently of this setting. See the [firmware setup instructions](README.md#how-to-upload-the-firmware) when you actually need an update.
+This option is for updating the device software, not editing a profile. It can interrupt an encoder hold action, so leave it disabled on layers where you regularly hold that button. If you enter update mode accidentally, unplug and reconnect normally. Holding the wheel button while plugging in also enters update mode, independently of this setting. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) when you actually need an update.
 
 ## Example configurations
 
@@ -527,7 +527,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 
 | Problem | What to try |
 | --- | --- |
-| Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable, and a device running this project's firmware. Reconnect after installing firmware. These boards require a USB-A to USB-C cable to power on. Linux users may need the [device access setup](webapp/README.md#linux-device-access) |
+| Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable, and a device running this project's firmware. Reconnect after installing firmware. These boards require a USB-A to USB-C cable to power on. Linux users may need the [device access setup](../webapp/README.md#linux-device-access) |
 | One red LED blinks and controls do nothing | Connect and save a valid profile |
 | All LEDs are red and controls do nothing | Device is in bootloader mode (firmware update mode). Unplug and replug the device *without* holding the wheel button |
 | My edits have no effect | Click **Save to device** and wait for Saved. Check that you are connected to hardware, rather than a simulator |

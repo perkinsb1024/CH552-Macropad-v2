@@ -50,7 +50,7 @@ Remarkably, due to having a smaller fixed-layer byte size (and therefore more po
 | --- | --- |
 | 45 | 47 |
 
-*See the full calculations in [ACTION_CAPACITY.md](ACTION_CAPACITY.md)*
+*See the full calculations in [Action Capacity](documentation/Action%20Capacity.md)*
 
 To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click "Import from Clipboard" in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
 
@@ -58,7 +58,7 @@ To use this configuration as a starting point, copy the contents of either the [
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
-Pre-built format v7 firmware is available for [three-key](releases/ch552-macropad-3-key-63e67919.hex) and [six-key](releases/ch552-macropad-6-key-63e67919.hex) macropads, built from source revision `63e67919`. Both include timed actions, temporary LED effects, and previous layer support. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+Pre-built format v7 firmware is available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. Both include timed actions, temporary LED effects, and previous layer support. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
 A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
 
@@ -183,7 +183,7 @@ If the device cannot run the firmware, use the hardware method above to recover 
 
 ## Configuring Your Macropad
 
-For a complete end-user guide to actions, layers, chords, timed reminders, lighting, and the editor's shortcuts, see the **[Configuration Overview](Configuration%20Overview.md)**.
+For a complete guide to actions, layers, chords, timed reminders, lighting, and the editor's shortcuts, see the **[Configuration Overview](documentation/Configuration%20Overview.md)**.
 
 ### Use the Hosted Web App
 
