@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 afterEach(() => { draggedSlot.value = null; endShortcutDrag(); });
 
-it.each([false, true])('drops shortcuts onto timer resume=%s and supports click assignment and undo', resume => {
+it.each([false, true])('drops shortcuts onto timer resume=%s and supports assignment and undo', resume => {
   const shortcut = SHORTCUTS.find(s => s.id === 'volume-up')!;
   const before = structuredClone(profile.value);
   startShortcutDrag({ ...event(), currentTarget: null } as unknown as DragEvent, shortcut);

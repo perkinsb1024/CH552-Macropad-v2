@@ -60,7 +60,7 @@ For editing without a connection, choose **edit offline** for a three-key or six
 | **Chords** | Assign actions to two-key combinations |
 | **Layer options** | Set the current layer's indicator lighting |
 | **Timed actions** | Run actions repeatedly or after inactivity, across all layers |
-| **Shortcuts** | Search ready-made actions and apply them with a click or drag |
+| **Shortcuts** | Search ready-made actions and drag them onto an input |
 | **Device storage** | See how much of the 128-byte budget your profile uses |
 | **Backup & restore** | Export, import, or reset the profile in the editor |
 
@@ -82,7 +82,7 @@ For example, make a key copy the selected text:
 
 Instead of selecting the individual keyboard keys your macropad should send, you can also click **Capture**, then press the desired combination on your normal keyboard. The configurator fills in the key and modifiers automatically. If your operating system or browser intercepts that combination, select it manually instead.
 
-For a quicker option, select a macropad input, expand the **Shortcuts** section, choose **Mac** or **Windows**, search for “copy,” and click **Copy**. The correct keys will automatically be added to the selected key.
+For a quicker option, expand the **Shortcuts** section, choose **Mac** or **Windows**, search for “copy,” and drag **Copy** onto a numbered key in the macropad picture. The correct keys will automatically be assigned to that key.
 
 ## Triggers: what starts an action
 
@@ -371,7 +371,7 @@ Expand **Shortcuts**, select **Mac** or **Windows**, and search for an action na
 
 ![Shortcut library filtered to copy actions, with Mac and Windows choices and matching presets](images/configuration-overview/05-shortcuts.png)
 
-Select an input and click a shortcut, or drag the shortcut onto a numbered key, wheel input, chord, or timer action. Either method **replaces that input's action**. Dragging from the library copies the preset; it does not remove it from the library or change the key's press color.
+Drag a shortcut onto a numbered key, wheel input, chord, or timer action to **replace that input's action**. Clicking a shortcut does not apply it. Dragging from the library copies the preset; it does not remove it from the library or change the key's press color.
 
 Check the Action editor afterward to see the assigned combination or text. Application shortcuts depend on the application, its mode, and your computer's settings. Text snippets insert literal text; they do not automatically wrap a selection or move the cursor into a template.
 

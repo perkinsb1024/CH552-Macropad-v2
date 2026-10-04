@@ -1,7 +1,6 @@
 import { useState } from 'preact/hooks';
 import { filterShortcuts, type ShortcutOS } from '../../model/shortcuts';
-import { applyShortcut, endShortcutDrag, startShortcutDrag } from '../drag';
-import { selectedSlot } from '../store';
+import { endShortcutDrag, startShortcutDrag } from '../drag';
 import { IconChevron, IconSearch } from './Icons';
 
 const FILTERS = [
@@ -37,16 +36,15 @@ export function Shortcuts() {
         </div>
         <div class="shortcut-library" role="region" aria-label="Shortcut actions" tabIndex={0}>
           {shortcuts.map((shortcut) => (
-            <button key={shortcut.id} type="button" class="shortcut-preset" draggable
+            <div key={shortcut.id} class="shortcut-preset" draggable
               title={shortcut.binding}
-              onDragStart={(event) => startShortcutDrag(event, shortcut)} onDragEnd={endShortcutDrag}
-              onClick={() => { if (selectedSlot.value) applyShortcut(shortcut, selectedSlot.value); }}>
+              onDragStart={(event) => startShortcutDrag(event, shortcut)} onDragEnd={endShortcutDrag}>
               <span>{shortcut.name}</span>
-            </button>
+            </div>
           ))}
         </div>
         {shortcuts.length === 0 && <p class="empty" role="status">No shortcuts match your search.</p>}
-        <p class="hint">Drag a shortcut onto a key, encoder input, chord, or timed action. You can also select an input and click a shortcut.</p>
+        <p class="hint">Drag a shortcut onto a key, encoder input, chord, or timed action.</p>
       </div>
     </section>
   );
