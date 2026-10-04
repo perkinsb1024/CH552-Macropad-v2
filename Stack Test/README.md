@@ -40,6 +40,9 @@ are outside the measurement.
 7. Unplug/replug the board after saving each profile to begin a fresh per-profile
    run. Reconnect the reader and read a baseline, then follow that test's guide.
 
+All three test profiles enable **bootloader entry by holding the encoder button
+for 3 seconds** on every layer. Use short presses for ordinary layer changes.
+
 ## Reading and recording results
 
 **Read stack** displays bytes used, untouched bytes, and total capacity. Each
@@ -67,6 +70,22 @@ maximum observed usage/minimum untouched bytes rather than combining them as
 one cumulative watermark.
 
 ## Interpretation and limitations
+
+### Checking Enter/modifier behavior
+
+The reader also has **Trace key presses/releases in the typing target** and
+**Download keyboard trace CSV**. Reload the reader to load those controls, enable
+tracing, focus the typing target, and press Profile 3's Key 1 repeatedly.
+The browser should record `Enter` keydown/keyup with Shift/Ctrl/Alt/Meta all false.
+Uppercase `T` and `!` require Shift; their releases should precede Enter.
+This captures browser key events, not raw USB reports, and does not change them.
+Text areas insert a line on Enter; this check concerns which key/modifiers arrive,
+independent of whether a particular application chooses to submit on that key.
+
+`tests/string_usb_test.c` exercises Key 1 and timer-triggered `Timer T!\n` through
+the real action engine, ASCII map, USB queue and endpoint buffer. It checks the
+press/release sequence for repeated strings, both variants, slow acknowledgments,
+configuration traffic, clock wrap and unchanged-state idle reports.
 
 | Variant | Normal flash | Diagnostic flash | Diagnostic free | Stack base | Capacity |
 | --- | ---: | ---: | ---: | --- | ---: |

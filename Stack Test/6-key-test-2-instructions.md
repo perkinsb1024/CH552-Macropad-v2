@@ -4,6 +4,10 @@ Profile: [6-key-test-2-profile.json](6-key-test-2-profile.json).
 Six-key boards only. Keys 1–6 are firmware inputs U1–U6. Layer numbers below are
 one-based; previous layer is one remembered persistent layer, not a history stack.
 
+Bootloader entry by a **3-second encoder-button hold** is enabled on every
+layer. Use short encoder presses during normal workload steps. Download the
+results before entering the bootloader; restarting the firmware resets the watermark.
+
 ## Prepare and read results
 
 1. Export your existing profile. On this validation branch, use PlatformIO's

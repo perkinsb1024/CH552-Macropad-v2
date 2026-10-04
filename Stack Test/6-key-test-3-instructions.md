@@ -4,6 +4,10 @@ Profile: [6-key-test-3-profile.json](6-key-test-3-profile.json).
 Six-key boards only. Keys 1–6 are firmware inputs U1–U6. Layers below are
 one-based; JSON layer indexes are zero-based.
 
+Bootloader entry by a **3-second encoder-button hold** is enabled on every
+layer. Use short encoder presses during normal workload steps. Download the
+results before entering the bootloader; restarting the firmware resets the watermark.
+
 ## Prepare and read results
 
 1. Export your existing profile. On this validation branch, use PlatformIO's
@@ -43,9 +47,13 @@ at least 100 ms for overlapping single actions.
 
 All four timers use one tick: **131.072 seconds**. They run on shared uptime
 boundaries, so the first firing can be sooner; later firings repeat every tick.
-Saves/reset restart ages. Timer-generated layer changes/effects can replace
-earlier visuals in the same loop, so final LEDs alone cannot demonstrate that
-every timer ran.
+Saves/reset restart ages. Timers dispatch in record order before queued playback.
+Timer 2 queues its string, then Timer 3 changes layers and clears that queue before
+any characters are sent. With all four expiring together, no timer-generated text
+is expected. This exercises queue cancellation; Key 1 on Layer 1 exercises the
+same string's playback separately. Timer-generated layer changes/effects can also
+replace earlier visuals in the same loop, so final LEDs alone cannot demonstrate
+that every timer ran.
 
 | Timer | Reset on physical input | Consume next physical input | Expiry | Next-input action |
 | --- | --- | --- | --- | --- |
@@ -64,7 +72,8 @@ armed for that following input. All four timers apply across layers.
 1. Label `test-3-all-expire`. Start **Monitor once per second**, focus the typing
    target, and leave physical inputs idle for **at least 140 seconds**. At the
    first shared tick, all four expiry paths run; the final preset turns LEDs off.
-   Timer 2's text should play. Press a key or rotate one detent to run all four
+   Timer 2's queued text is canceled by Timer 3's layer change, so no phrase should
+   appear from that simultaneous expiry. Press a key or rotate one detent to run all four
    resume paths. That first event is consumed; try another event to exercise the
    normal binding/remaining one-shot. Repeat three full idle/expiry/resume rounds.
    Stop and read the stack.

@@ -44,6 +44,12 @@ Stop monitoring or stress before saving. The checkbox cycles bright/dim Rainbow 
 <label>Typing target — focus here for keyboard/string tests:
   <textarea id="sink" rows="5" placeholder="Test strings and held keys appear here"></textarea>
 </label>
+<label><input id="traceKeys" type="checkbox">Trace key presses/releases in the typing target</label>
+<button id="downloadKeys">Download keyboard trace CSV</button>
+<p>The trace records the browser's key events and modifier flags in this typing
+target. For the phrase's final Enter, check that <code>shift=false</code>,
+<code>ctrl=false</code>, <code>alt=false</code> and <code>meta=false</code>.
+The trace observes events without changing their behavior.</p>
 <label>Results and diagnostics:<textarea id="log" readonly></textarea></label>
 <p>Usage is the highest non-pattern byte in the stack region, expressed as bytes from its base.
 Readout adds no call frame and briefly masks interrupts. If headroom is zero, the top was touched;

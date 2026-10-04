@@ -11,6 +11,7 @@ if "--no-preview" in sys.argv:
 with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
     suites = [("config", ["src/config.c"]), ("actions", ["src/config.c", "src/actions.c"]), ("protocol", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"]), ("usb", [])]
     suites += [("input", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+    suites += [("string_usb", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     for suite in suites:
         name, sources, *variant = suite
         options = [f"-DPHYSICAL_VARIANT={variant[0]}"] if variant else []

@@ -61,7 +61,7 @@
         "Blue",
         "Magenta"
       ],
-      "bootloaderFromRun": false,
+      "bootloaderFromRun": true,
       "indicatorBehavior": 3,
       "indicatorColor": 15,
       "indicatorFullBrightness": false
@@ -120,7 +120,7 @@
         "Blue",
         "Magenta"
       ],
-      "bootloaderFromRun": false,
+      "bootloaderFromRun": true,
       "indicatorBehavior": 2,
       "indicatorColor": 10,
       "indicatorFullBrightness": false
@@ -180,7 +180,7 @@
         "Blue",
         "Magenta"
       ],
-      "bootloaderFromRun": false,
+      "bootloaderFromRun": true,
       "indicatorBehavior": 1,
       "indicatorColor": 5,
       "indicatorFullBrightness": false
@@ -236,7 +236,7 @@
         "Blue",
         "Magenta"
       ],
-      "bootloaderFromRun": false,
+      "bootloaderFromRun": true,
       "indicatorBehavior": 2,
       "indicatorColor": 15,
       "indicatorFullBrightness": false

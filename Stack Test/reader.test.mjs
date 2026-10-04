@@ -134,6 +134,17 @@ test('reader workflow connects, saves/verifies, rejects invalid uploads, stresse
     assert.equal(element('used').textContent, '25 B');
     assert.equal(element('free').textContent, '95 B');
     assert.equal(element('save').disabled, false);
+    element('traceKeys').checked = true;
+    const enter = { type: 'keydown', key: 'Enter', code: 'Enter', timeStamp: 123,
+      shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, repeat: false, isComposing: false };
+    element('sink').onkeydown(enter);
+    assert.match(element('log').value, /\[keyboard\] keydown Enter key="Enter" shift=false ctrl=false alt=false meta=false/);
+    element('sink').onkeyup({ ...enter, type: 'keyup', timeStamp: 131 });
+    assert.match(element('log').value, /\[keyboard\] keyup Enter/);
+    element('traceKeys').checked = false;
+    const logBefore = element('log').value;
+    element('sink').onkeydown({ ...enter, shiftKey: true });
+    assert.equal(element('log').value, logBefore);
     for (const number of ['2', '3']) {
       element('profile').value = number;
       await element('save').onclick();

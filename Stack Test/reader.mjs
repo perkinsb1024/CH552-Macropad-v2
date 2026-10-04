@@ -80,6 +80,7 @@ if (typeof document !== 'undefined') {
   const $ = (id) => document.getElementById(id);
   let link = null, info = null, busy = false, running = false;
   const rows = [];
+  const keyRows = [];
   const hex = (n) => `0x${n.toString(16).padStart(2, '0')}`;
   const note = (text) => { $('log').value += `${new Date().toISOString()} ${text}\n`; $('log').scrollTop = $('log').scrollHeight; };
   function controls() {
@@ -205,14 +206,28 @@ if (typeof document !== 'undefined') {
   $('stop').onclick = () => { running = false; controls(); };
   $('save').onclick = () => run(save);
   $('invalid').onclick = () => run(invalidUploads);
-  $('download').onclick = () => {
-    const header = ['utc', 'label', 'variant', 'stack_start', 'highest_touched', 'used_bytes', 'untouched_bytes', 'capacity_bytes', 'flash_valid', 'layer', 'upload_state', 'dropped_buttons', 'dropped_rotation'];
+  function downloadCsv(header, data, name) {
     const quote = (value) => `"${String(value).replaceAll('"', '""')}"`;
-    const csv = [header, ...rows].map((row) => row.map(quote).join(',')).join('\r\n') + '\r\n';
+    const csv = [header, ...data].map((row) => row.map(quote).join(',')).join('\r\n') + '\r\n';
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    const a = document.createElement('a'); a.href = url; a.download = `macropad-stack-${Date.now()}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `${name}-${Date.now()}.csv`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  $('download').onclick = () => downloadCsv(
+    ['utc', 'label', 'variant', 'stack_start', 'highest_touched', 'used_bytes', 'untouched_bytes', 'capacity_bytes', 'flash_valid', 'layer', 'upload_state', 'dropped_buttons', 'dropped_rotation'],
+    rows, 'macropad-stack');
+  $('downloadKeys').onclick = () => downloadCsv(
+    ['utc', 'label', 'event_ms', 'type', 'key', 'code', 'shift', 'ctrl', 'alt', 'meta', 'repeat', 'composing'],
+    keyRows, 'macropad-keyboard');
+  const traceKey = (event) => {
+    if (!$('traceKeys').checked) return;
+    keyRows.push([new Date().toISOString(), $('label').value, event.timeStamp, event.type,
+      event.key, event.code, event.shiftKey, event.ctrlKey, event.altKey, event.metaKey,
+      event.repeat, event.isComposing]);
+    note(`[keyboard] ${event.type} ${event.code} key=${JSON.stringify(event.key)} shift=${event.shiftKey} ctrl=${event.ctrlKey} alt=${event.altKey} meta=${event.metaKey} repeat=${event.repeat} composing=${event.isComposing}`);
   };
+  $('sink').onkeydown = traceKey;
+  $('sink').onkeyup = traceKey;
   navigator.hid?.addEventListener('disconnect', (event) => {
     if (link?.device !== event.device) return;
     running = false;
