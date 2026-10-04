@@ -22,7 +22,7 @@ it('keeps the next-input section open when consume is unchecked without selectin
   start(); add();
   updateProfile(draft => { draft.timedActions![0]!.consumeInput = true; });
   const element = { open: false } as HTMLDetailsElement;
-  const section = () => nodes(TimedActionsPanel()).find(n => n.type === 'details')!;
+  const section = () => nodes(TimedActionsPanel()).find(n => n.type === 'details' && n.props.class === 'timer-resume')!;
   const attach = () => (section().ref as (element: HTMLDetailsElement) => void)(element);
   attach(); expect(element.open).toBe(true);
   const consume = nodes(section()).filter(n => n.type === 'input' && n.props.type === 'checkbox')[0]!;

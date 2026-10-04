@@ -3,7 +3,7 @@ import type { Slot } from '../../model/types';
 import { canSwapSlots, capacity, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
 import { canApplyShortcut, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { ActionLabel } from './ActionLabel';
-import { IconPlus, IconTrash } from './Icons';
+import { IconChevron, IconPlus, IconTrash } from './Icons';
 
 // Let native details retain the user's choice across configuration edits.
 const initializedResumeSections = new WeakSet<HTMLDetailsElement>();
@@ -72,8 +72,8 @@ export function TimedActionsPanel() {
     });
     selectedSlot.value = { kind: 'timed', layer: 0, index: timers.length, resume: false };
   };
-  return <section class="card timed-actions">
-    <header class="card-head"><h2>Timed actions</h2><span class="muted">Across all layers · {timers.length}/{MAX_TIMED_ACTIONS}</span></header>
+  return <details class="card timed-actions">
+    <summary class="card-head"><h2>Timed actions</h2><span class="muted">Across all layers · {timers.length}/{MAX_TIMED_ACTIONS}</span><IconChevron /></summary>
     {!timers.length && <p class="empty">Repeat an action on a timer, or after inactivity. Each timer uses 5 bytes.</p>}
     <div class="timer-list">
       {timers.map((timer, index) => {
@@ -128,5 +128,5 @@ export function TimedActionsPanel() {
     <button class="btn" disabled={!!unavailable} title={unavailable || 'Add a timed action'} onClick={add}><IconPlus /> Add timed action</button>
     {unavailable && <p class="hint">{unavailable}</p>}
     <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Intervals use a shared clock; the first firing can be up to 131 seconds early. Held actions are unavailable.</p>
-  </section>;
+  </details>;
 }
