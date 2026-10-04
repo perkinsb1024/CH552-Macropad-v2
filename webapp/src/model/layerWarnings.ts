@@ -1,4 +1,5 @@
 import { relativeTargetLayer } from './actions';
+import { chordSlot } from './chords';
 import { LayerIndicatorBehavior } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { actionProblem, slotLabel } from './validate';
@@ -58,7 +59,7 @@ export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
   });
   for (const chord of profile.chords) {
     if (!Number.isInteger(chord.layer) || chord.layer < 0 || chord.layer >= layerCount) continue;
-    const slot: Slot = { kind: 'chord', layer: chord.layer, keyA: chord.keyA, keyB: chord.keyB };
+    const slot = chordSlot(chord);
     if (!chord.global) {
       check(chord.action, slot);
       continue;

@@ -1,9 +1,9 @@
 # Intro
-Counts below use [configuration format v7](protocol/config-v7.md), which supports 7 layers on a 3-key macropad and 5 layers on a 6-key macropad.
+Information on this page is based on [configuration format v7](protocol/config-v7.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad.
 
 Each count is the total number of assignable physical-input action slots across all configured layers, with no timed actions configured. Encoder wheel actions count clockwise and counterclockwise separately. Chords are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
 
-With the exception of [Optimal Layout](#optimal-layout-for-maximum-assignable-action-slots) these calculations assume all chords are layer-specific; global chords are not included.
+With the exception of the [Optimal Layout](#optimal-layout-for-maximum-assignable-action-slots) these calculations assume all chords are layer-specific; global chords are not included.
 Maximums assume no text strings and that all chords are layer-specific chords - global chords reduce storage required, but also reduce maximum distinct actions. Assignments used to switch layers count toward these totals. If you use layer-specific actions to transition layers, you will need at least `LAYER_COUNT` actions to reach all layers, but you can optimize this by using a global chord with a `Relative Layer: +1` action to increase the maximum assignable action slots.
 
 The 128-byte image uses a 9-byte header, 15 bytes per 3-key layer or 22 bytes per 6-key layer (including LED settings), 3 bytes per chord, and 5 bytes per timed action. There are 3 possible chords per 3-key layer and 15 per 6-key layer.

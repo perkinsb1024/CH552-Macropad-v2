@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { CHORD_ENTRY_SIZE, keyCount } from '../../model/constants';
 import { allPairs } from '../../model/pairs';
+import { chordSlot } from '../../model/chords';
 import { ActionLabel } from './ActionLabel';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
@@ -36,7 +37,7 @@ export function ChordPanel() {
     if (!closest) return null;
     const { index, position } = closest as { index: number; position: 'before' | 'after' };
     const chord = chords[index]!;
-    return { slot: { kind: 'chord', layer: chord.layer, keyA: chord.keyA, keyB: chord.keyB }, position };
+    return { slot: chordSlot(chord), position };
   };
 
   return (
@@ -66,9 +67,9 @@ export function ChordPanel() {
           slotDrop.value = null;
         }}>
           {chords.map((c) => {
-            const slot: Slot = { kind: 'chord', layer: c.layer, keyA: c.keyA, keyB: c.keyB };
+            const slot = chordSlot(c);
             const globalConflict = p.chords.some((other) => other !== c && other.global && other.keyA === c.keyA && other.keyB === c.keyB);
-            const localConflict = p.chords.some((other) => other !== c && other.layer === li && other.keyA === c.keyA && other.keyB === c.keyB);
+            const localConflict = p.chords.some((other) => other !== c && !other.global && other.layer === li && other.keyA === c.keyA && other.keyB === c.keyB);
             const globeDisabled = c.global ? localConflict : globalConflict;
             const selected = JSON.stringify(selectedSlot.value) === JSON.stringify(slot);
             const problem = actionProblem(c.action, { layerCount: p.layers.length, rotation: false });
@@ -76,7 +77,7 @@ export function ChordPanel() {
             const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
             const intent = slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : null;
             return (
-              <li key={`${c.layer}-${c.keyA}-${c.keyB}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
+              <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
                 <button data-clipboard-target class="chord-main" onClick={() => { selectedSlot.value = JSON.stringify(selectedSlot.value) === JSON.stringify(slot) ? null : slot; }} draggable onDragStart={(event) => { setRoundedDragImage(event); endShortcutDrag(); draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
                   if (shortcutDragOver(event, slot)) return;
                   const source = draggedSlot.value;

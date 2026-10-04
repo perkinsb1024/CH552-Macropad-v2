@@ -18,7 +18,9 @@ fourth option “Variable — Scattered colors.”
 
 The five common presets include Both as configured. Their relative position follows
 the actual policy pair, including matching results from other brightness commands.
-Both-relative advances each target independently. Indicator brightness retains the
+Current firmware makes both-relative step once from the brighter resolved policy
+and assigns the result to both targets. This supersedes the original independent
+advancement; the encoding remains unchanged. Indicator brightness retains the
 saved visibility mode; indicator Off releases animation priority; key Off reveals
 idle background. Both Off suppresses ordinary lighting. Preview and bootloader/error
 feedback remain visible. Runtime changes never alter the active image or DataFlash.
@@ -244,3 +246,38 @@ result exceeded the user's approximately 16-byte over-limit cutoff. The firmware
 and validation edits were restored exactly to the working toggle implementation.
 The new preset was not retained or behavior-tested. No release artifacts were
 changed and no hardware was flashed for this experiment.
+
+## Synchronized relative-both brightness
+
+Current firmware resolves the indicator and key brightness policies, selects the
+brighter value, applies the signed step once through Off / Dim / Bright, and stores
+the same concrete result for both targets. Configured indicator brightness comes
+from the current layer's saved brightness bit, regardless of visibility mode;
+configured key brightness resolves to Bright. Individual relative controls and
+common-preset cycling retain their existing behavior. The command remains `09`
+with the same signed nibble; existing profiles require no conversion, but earlier
+firmware must be updated to obtain the synchronized behavior.
+
+Fresh temporary builds with CH55xDuino 0.0.25, SDCC build.13407_4,
+`--opt-code-size`, `ENABLE_COLOR_PREVIEW=1`, and the 14,336-byte limit measured:
+
+| Variant | Previously documented flash | Updated flash | Increase | Flash free | Contiguous xRAM free | Stack capacity |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Three-key | 14,201 | 14,275 | 74 | 61 | 231 | 123 |
+| Six-key | 14,205 | 14,279 | 74 | 57 | 222 | 120 |
+
+Previous flash values come from the README's pre-change headroom. RAM allocation
+and stack capacity are unchanged. Stack capacity is the linker's
+allocation, not measured peak use. Both production builds passed the memory-layout
+checks. Build outputs were kept in temporary directories; release files were not
+regenerated.
+
+The firmware host suites passed with preview enabled and disabled, including both
+hardware variants. The brightness regression covers all 16 starting policy pairs,
+all 14 signed steps, both configured indicator brightnesses, and all four indicator
+visibility modes after selecting a different layer. It checks synchronized results,
+individual-target behavior, hue/speed/phase preservation, and unchanged active
+configuration bytes. All 20 focused LED configurator tests also passed. The
+configuration overview, README, protocol documentation, and current editor help
+describe the updated behavior; the v6 specification labels its original semantics
+as historical.

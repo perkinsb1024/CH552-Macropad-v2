@@ -227,6 +227,15 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
     ledSettings[2] = value & 3;
     ledSettings[3] = value >> 2;
   } else {
+    if (command == CONFIG_LED_BOTH_RELATIVE) {
+      // Resolve both policies, then apply one shared step from the brighter one.
+      current = indicatorBrightness(configLayerOptions(actionsLayer()));
+      end = ledSettings[3];
+      if (end == 3) end = 2;
+      if (current < end) current = end;
+      value = ledStep(current, delta, 3);
+      relative = 0;
+    }
     if (command == CONFIG_LED_RESTORE) {
       current = 0;
       end = 4;

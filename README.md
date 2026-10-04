@@ -119,7 +119,7 @@ Remaining space in the current source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash | 135 | 131 |
+| Flash | 61 | 57 |
 | Contiguous external RAM | 231 | 222 |
 | Stack capacity | 123 | 120 |
 
@@ -204,6 +204,8 @@ On first use, or when the saved profile is invalid, the keys and encoder stay in
 Configuration format 7 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. The first firing can be up to 131 seconds early; later repetitions use the full interval.
 
 **LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
+
+**Relative both brightnesses** starts from the brighter current indicator/key brightness, applies the signed step once through Off → Dim → Bright → Off, and sets both to the result. Configured policies resolve to the current layer's saved indicator brightness and Bright key feedback first. Earlier firmware stepped each brightness independently; synchronized stepping requires updated firmware, with no profile conversion.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating Previous layer swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot Previous layer option visits the remembered layer for one action, then returns. Timed actions can use either variant.
 

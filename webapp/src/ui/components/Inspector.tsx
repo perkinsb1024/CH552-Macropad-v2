@@ -228,7 +228,7 @@ export function Inspector() {
           </label>}
         {!isLedEffect(action.command) && <p class="hint">{action.command === 'commonPresetToggle'
           ? 'Lighting overrides apply across layers. Indicator brightness preserves its configured visibility mode.'
-          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative advances each brightness separately; common presets change both together and include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
+          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative starts from the brighter current brightness, applies the step once, and sets both to the result. As configured resolves to the current layer indicator brightness and bright key feedback. Common presets include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
       </>}
 
       {(action.type === 'keyTap' || action.type === 'keyHold') && (

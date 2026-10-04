@@ -5,6 +5,7 @@ import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
 import { computeCapacity } from './capacity';
+import { chordSlot } from './chords';
 import { ACTION_DESCRIPTORS, actionNeedsRelease, isPreviousLayer } from './actions';
 
 export interface ActionContext {
@@ -81,7 +82,7 @@ export function slotLabel(slot: Slot): string {
     case 'counterclockwise':
       return `${layer} · Encoder counterclockwise`;
     case 'chord':
-      return `${layer} · Chord ${slot.keyA + 1}+${slot.keyB + 1}`;
+      return `${slot.global ? 'Global' : layer} · Chord ${slot.keyA + 1}+${slot.keyB + 1}`;
   }
 }
 
@@ -139,7 +140,7 @@ export function validateProfile(profile: Profile): Issue[] {
   const seen = new Set<string>();
   const globalPairs = new Set<string>();
   for (const chord of profile.chords) {
-    const slot: Slot = { kind: 'chord', layer: chord.layer, keyA: chord.keyA, keyB: chord.keyB };
+    const slot = chordSlot(chord);
     const where = slotLabel(slot);
     if (chord.layer < 0 || chord.layer >= layerCount) {
       issues.push({ where, message: `Chord refers to layer ${chord.layer + 1}, which does not exist.`, slot });
@@ -149,7 +150,7 @@ export function validateProfile(profile: Profile): Issue[] {
       issues.push({ where, message: 'Chord keys must be two different physical keys.', slot });
       continue;
     }
-    const id = `${chord.layer}:${chord.keyA}:${chord.keyB}`;
+    const id = `${!!chord.global}:${chord.layer}:${chord.keyA}:${chord.keyB}`;
     if (seen.has(id)) issues.push({ where, message: 'Duplicate chord for this key pair.', slot });
     seen.add(id);
     const pair = `${chord.keyA}:${chord.keyB}`;

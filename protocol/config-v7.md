@@ -255,7 +255,7 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 | `06` | Set key-press brightness | 0=Off, 1=Dim, 2=Bright, F=configured |
 | `07` | Relative key-press brightness | Signed nonzero step |
 | `08` | Set both brightness policies | 0=Off, 1=Dim, 2=Bright, F=configured |
-| `09` | Relative both brightness policies | Signed nonzero step; each target advances independently |
+| `09` | Relative both brightness policies | Signed nonzero step; step from the brighter resolved policy and set both to the result |
 | `0A` | Restore all configured LED settings | Only 0 |
 | `0B` | Set common brightness preset | Preset index 0..4 |
 | `0C` | Relative common brightness preset | Signed nonzero step |
@@ -278,7 +278,15 @@ and USB reset/reconfiguration. They change neither the active image nor flash or
 Phase and speed preserve current hue; changing/restoring speed rebases the frame timer.
 Brightness cycles Off → Dim → Bright → Off. Before ordinary relative stepping,
 configured indicator brightness resolves from the current layer and configured key
-brightness resolves to Bright. Common-preset cycling includes configured policies:
+brightness resolves to Bright. Command `09` compares those resolved policies, applies
+the step once to the brighter value, and stores that concrete result for both
+brightnesses. It uses policy levels rather than instantaneous rendered RGB or
+indicator visibility. Dim indicator / Bright keys with +1 becomes Off / Off;
+with -1 it becomes Dim / Dim. Multiples of three also synchronize a mixed pair
+even though the brighter value completes a full cycle. Earlier firmware builds
+advanced the two policies independently; the updated behavior requires a firmware
+update but does not change the encoding or require profile migration.
+Common-preset cycling includes configured policies:
 
 | Preset | Indicator policy | Key policy |
 | --- | --- | --- |

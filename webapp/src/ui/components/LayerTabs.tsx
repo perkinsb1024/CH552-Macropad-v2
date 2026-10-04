@@ -24,7 +24,7 @@ export function LayerTabs() {
   const removeSelected = () => {
     ask({
       title: `Remove ${layerName(current)}?`,
-      body: `All chords and bindings on this layer will be deleted.${p.startupLayer === current ? '\nLayer 1 will become the new startup layer.' : ''}\nNothing changes on the device until you save.`,
+      body: `All local chords and bindings on this layer will be deleted. Global chords will be kept.${p.startupLayer === current ? '\nLayer 1 will become the new startup layer.' : ''}\nNothing changes on the device until you save.`,
       actions: [
         { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
         { label: 'Remove layer', tone: 'danger', onSelect: () => { removeLayer(current); closeDialog(); } },

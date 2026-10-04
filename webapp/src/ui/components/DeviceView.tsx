@@ -1,6 +1,7 @@
 import { keyCount } from '../../model/constants';
 import { paletteHex } from '../../model/palette';
 import { summarize } from '../../model/actions';
+import { matchesChord } from '../../model/chords';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
 import { canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
@@ -22,7 +23,7 @@ export function DeviceView() {
   for (const c of p.chords) if (c.global || c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
   const selection = selectedSlot.value;
   const selectedChord = selection?.kind === 'chord'
-    ? p.chords.find((c) => c.layer === selection.layer && c.keyA === selection.keyA && c.keyB === selection.keyB && (c.global || c.layer === li))
+    ? p.chords.find((c) => matchesChord(c, selection) && (c.global || c.layer === li))
     : undefined;
 
   const select = (slot: Slot) => { selectedSlot.value = sameSlot(selectedSlot.value, slot) ? null : slot; };

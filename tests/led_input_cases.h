@@ -319,10 +319,6 @@ static void testLedControls(void) {
             for (int8_t delta = -7; delta <= 7; delta++) {
                 if (!delta) continue;
                 ledSettings[2] = indicator; ledSettings[3] = key;
-                firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, delta & 15);
-                assert(ledSettings[2] == stepModel(indicator == 3 ? 1 : indicator, delta, 3));
-                assert(ledSettings[3] == stepModel(key == 3 ? 2 : key, delta, 3));
-                ledSettings[2] = indicator; ledSettings[3] = key;
                 uint8_t pair = indicator | key << 2;
                 uint8_t index;
                 for (index = 0; index < 5; index++) if (ledPresets[index] == pair) break;
@@ -404,4 +400,54 @@ static void testLedControls(void) {
     assert(ledSettings[2] == 3 && ledSettings[3] == 3);
     P1 = P3 = 0xFF;
     stableState[0] = 0;
+}
+
+static void testSynchronizedBrightness(void) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    activeConfig[3] = 1; // Two layers with opposite configured brightnesses.
+    memcpy(activeConfig + 9 + size, activeConfig + 9, size);
+    activeConfig[9 + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
+    activeConfig[10 + 2 * (NUM_LEDS + 2)] = 1;
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF;
+    previewOptions = 0;
+    currentMs = 200;
+    for (uint8_t full = 0; full < 2; full++) {
+        for (uint8_t mode = 0; mode < 4; mode++) {
+            activeConfig[9 + size - 1] = !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+            activeConfig[9 + 2 * size - 1] = full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+            firmwareApplyConfig();
+            actionsRotate(0); // Resolve configured brightness from the current layer.
+            assert(actionsLayer() == 1);
+            uint8_t image[CONFIG_SIZE];
+            memcpy(image, activeConfig, CONFIG_SIZE);
+            rainbowHue = 42;
+            for (uint8_t indicator = 0; indicator < 4; indicator++) {
+                for (uint8_t key = 0; key < 4; key++) {
+                    uint8_t indicatorLevel = indicator == 3 ? 1 + full : indicator;
+                    uint8_t keyLevel = key == 3 ? 2 : key;
+                    uint8_t brighter = indicatorLevel > keyLevel ? indicatorLevel : keyLevel;
+                    for (int8_t delta = -7; delta <= 7; delta++) {
+                        if (!delta) continue;
+                        ledSettings[2] = indicator; ledSettings[3] = key;
+                        firmwareLedAction(CONFIG_LED_BOTH_RELATIVE, delta & 15);
+                        uint8_t expected = stepModel(brighter, delta, 3);
+                        assert(ledSettings[2] == expected && ledSettings[3] == expected);
+                        assert(ledSettings[0] == 2 && ledSettings[1] == 1 && rainbowHue == 42);
+                        // Individual relative commands still leave the other policy alone.
+                        ledSettings[2] = indicator; ledSettings[3] = key;
+                        firmwareLedAction(CONFIG_LED_INDICATOR_RELATIVE, delta & 15);
+                        assert(ledSettings[2] == stepModel(indicatorLevel, delta, 3));
+                        assert(ledSettings[3] == key);
+                        ledSettings[2] = indicator; ledSettings[3] = key;
+                        firmwareLedAction(CONFIG_LED_KEY_RELATIVE, delta & 15);
+                        assert(ledSettings[2] == indicator);
+                        assert(ledSettings[3] == stepModel(keyLevel, delta, 3));
+                    }
+                }
+            }
+            assert(memcmp(image, activeConfig, CONFIG_SIZE) == 0);
+        }
+    }
 }

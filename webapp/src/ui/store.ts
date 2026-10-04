@@ -4,6 +4,7 @@ import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease, isPreviousLayer } from '../model/actions';
 import { FORMAT_VERSION, maxLayers, keyCount, type Variant } from '../model/constants';
 import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
+import { chordSlot, matchesChord } from '../model/chords';
 import { actionProblem, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
 import { encoderBootloaderWarnings, selfReferentialLayerWarnings } from '../model/layerWarnings';
@@ -207,7 +208,7 @@ export function getAction(p: Profile, slot: Slot): Action | undefined {
     case 'counterclockwise':
       return layer.counterclockwise;
     case 'chord':
-      return p.chords.find((c) => c.layer === slot.layer && c.keyA === slot.keyA && c.keyB === slot.keyB)?.action;
+      return p.chords.find((c) => matchesChord(c, slot))?.action;
   }
 }
 
@@ -249,7 +250,7 @@ export function setAction(slot: Slot, action: Action): void {
         layer.counterclockwise = action;
         break;
       case 'chord': {
-        const chord = draft.chords.find((c) => c.layer === slot.layer && c.keyA === slot.keyA && c.keyB === slot.keyB);
+        const chord = draft.chords.find((c) => matchesChord(c, slot));
         if (chord) chord.action = action;
         break;
       }
@@ -270,8 +271,8 @@ function slotOrder(p: Profile, slot: Slot): Slot[] | null {
   if (slot.kind === 'timed') return null;
   if (slot.kind === 'key') return p.layers[slot.layer]!.keys.map((_, index) => ({ kind: 'key', layer: slot.layer, index }));
   if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
-    .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB)
-    .map((chord) => ({ kind: 'chord', layer: slot.layer, keyA: chord.keyA, keyB: chord.keyB }));
+    .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB || Number(!!a.global) - Number(!!b.global))
+    .map(chordSlot);
   return [
     { kind: 'clockwise', layer: slot.layer },
     { kind: 'encoderButton', layer: slot.layer },
@@ -305,7 +306,7 @@ function putAction(p: Profile, slot: Slot, action: Action): void {
     case 'clockwise': layer.clockwise = action; break;
     case 'counterclockwise': layer.counterclockwise = action; break;
     case 'chord': {
-      const chord = p.chords.find((c) => c.layer === slot.layer && c.keyA === slot.keyA && c.keyB === slot.keyB);
+      const chord = p.chords.find((c) => matchesChord(c, slot));
       if (chord) chord.action = action;
     }
   }
@@ -502,31 +503,31 @@ export function rememberedAction(slot: Slot, type: Action['type']): Action | und
 export function addChord(layer: number, keyA: number, keyB: number): void {
   const [a, b] = keyA < keyB ? [keyA, keyB] : [keyB, keyA];
   updateProfile((draft) => {
-    if (draft.chords.some((c) => c.layer === layer && c.keyA === a && c.keyB === b)) return;
+    if (draft.chords.some((c) => !c.global && c.layer === layer && c.keyA === a && c.keyB === b)) return;
     draft.chords.push({ layer, keyA: a, keyB: b, action: { type: 'none' } });
   });
   selectedSlot.value = { kind: 'chord', layer, keyA: a, keyB: b };
 }
 
-export function removeChord(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB'>): void {
+export function removeChord(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB' | 'global'>): void {
   updateProfile((draft) => {
-    draft.chords = draft.chords.filter((c) => !(c.layer === chord.layer && c.keyA === chord.keyA && c.keyB === chord.keyB));
+    draft.chords = draft.chords.filter((c) => !matchesChord(c, chord));
   });
   const s = selectedSlot.value;
-  if (s?.kind === 'chord' && s.layer === chord.layer && s.keyA === chord.keyA && s.keyB === chord.keyB) selectedSlot.value = null;
+  if (s?.kind === 'chord' && matchesChord(s, chord)) selectedSlot.value = null;
 }
 
-export function setChordGlobal(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB'>, global: boolean, layer: number): void {
+export function setChordGlobal(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB' | 'global'>, global: boolean, layer: number): void {
   const p = profile.value;
   if (!p) return;
   const samePair = (c: Chord) => c.keyA === chord.keyA && c.keyB === chord.keyB;
   if (global && p.chords.some((c) => c.global && samePair(c))) return;
-  if (!global && p.chords.some((c) => c.layer === layer && samePair(c) && c.layer !== chord.layer)) return;
+  if (!global && p.chords.some((c) => !c.global && c.layer === layer && samePair(c) && !matchesChord(c, chord))) return;
   updateProfile((draft) => {
-    const target = draft.chords.find((c) => c.layer === chord.layer && samePair(c));
+    const target = draft.chords.find((c) => matchesChord(c, chord));
     if (target) { target.global = global; if (!global) target.layer = layer; }
   });
-  selectedSlot.value = { kind: 'chord', layer: global ? chord.layer : layer, keyA: chord.keyA, keyB: chord.keyB };
+  selectedSlot.value = chordSlot({ ...chord, layer: global ? chord.layer : layer, global });
 }
 
 export function addLayer(): void {
@@ -567,12 +568,13 @@ export function layerReferences(p: Profile, layer: number): { actions: number; c
     visit(l.clockwise);
     visit(l.counterclockwise);
   });
-  p.chords.forEach((c) => c.layer !== layer && visit(c.action));
-  return { actions, chords: p.chords.filter((c) => c.layer === layer).length };
+  p.chords.forEach((c) => (c.global || c.layer !== layer) && visit(c.action));
+  return { actions, chords: p.chords.filter((c) => !c.global && c.layer === layer).length };
 }
 
 /**
- * Removes a layer along with its chords. References to higher layers shift down;
+ * Removes a layer along with its local chords. Global chords keep a valid storage
+ * layer even when their original layer is removed. References to higher layers shift down;
  * references to the removed layer are left in place so validation flags them.
  */
 export function removeLayer(layer: number): void {
@@ -580,7 +582,11 @@ export function removeLayer(layer: number): void {
   updateProfile((draft) => {
     if (draft.layers.length <= 1) return;
     draft.layers.splice(layer, 1);
-    draft.chords = draft.chords.filter((c) => c.layer !== layer).map((c) => (c.layer > layer ? { ...c, layer: c.layer - 1 } : c));
+    draft.chords = draft.chords.filter((c) => c.global || c.layer !== layer).map((c) => {
+      if (c.layer > layer) return { ...c, layer: c.layer - 1 };
+      if (c.layer === layer) return { ...c, layer: Math.min(layer, draft.layers.length - 1) };
+      return c;
+    });
     const shift = (a: Action): Action => {
       if (!isPreviousLayer(a) && (a.type === 'setLayer' || a.type === 'oneShotSetLayer' || a.type === 'momentaryLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
       return a;

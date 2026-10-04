@@ -105,7 +105,7 @@ describe('shortcut assignment', () => {
     const keys = structuredClone(p.layers[0]!.keys);
     const mute = SHORTCUTS.find((shortcut) => shortcut.id === 'mute')!;
     const event = dragEvent();
-    const slot = { kind: 'chord', layer: 0, keyA: 0, keyB: 1 } as const;
+    const slot = { kind: 'chord', layer: 0, keyA: 0, keyB: 1, global: true } as const;
     startShortcutDrag(event as unknown as DragEvent, mute);
     shortcutDragOver(event as unknown as DragEvent, slot);
     shortcutDrop(event as unknown as DragEvent, slot);

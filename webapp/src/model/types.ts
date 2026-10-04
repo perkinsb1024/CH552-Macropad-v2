@@ -39,7 +39,7 @@ export interface Layer {
 
 export interface Chord {
   layer: number;
-  /** Applies on every layer; layer remains its editor/home layer. */
+  /** Applies on every layer; layer is retained for storage and editor identity only. */
   global?: boolean;
   /** Lower physical key index. */
   keyA: number;
@@ -78,7 +78,7 @@ export type Slot =
   | { kind: 'encoderButton'; layer: number }
   | { kind: 'clockwise'; layer: number }
   | { kind: 'counterclockwise'; layer: number }
-  | { kind: 'chord'; layer: number; keyA: number; keyB: number };
+  | { kind: 'chord'; layer: number; keyA: number; keyB: number; global?: boolean };
 
 export interface Issue {
   /** Human-readable location, e.g. "Layer 2 · Key 3". */
