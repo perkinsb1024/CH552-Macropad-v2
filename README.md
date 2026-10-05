@@ -54,7 +54,7 @@ Remarkably, due to having a smaller fixed-layer byte size (and therefore more po
 
 To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click "Import from Clipboard" in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
 
-## How To Compile the Firmware
+## How to Compile the Firmware
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -144,11 +144,11 @@ When those firmware or PlatformIO files have changes, the name includes `dirty` 
 
 After both builds and exports succeed, older generated HEX files are deleted so `releases/` keeps only the latest three-key and six-key pair. If a build fails, the previous release files are kept.
 
-## How To Upload the Firmware
+## How to Upload the Firmware
 
 A macropad with its factory firmware requires a hardware bootloader entry for the first upload. Once this firmware is installed, you can enter the bootloader again by holding the encoder button while powering on the macropad.
 
-### First Upload: Enter the Bootloader Via Hardware
+### First Upload: Enter the Bootloader via Hardware
 
 The following instructions and photo apply to the CH552G board shown in the original project. Confirm your chip's pin numbering and board layout before connecting anything.
 

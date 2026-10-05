@@ -24,7 +24,7 @@ npm run build      # typecheck + production build into dist/
 npm run preview    # serve dist/ locally
 ```
 
-## Trying it without hardware
+## Trying It without Hardware
 
 The current editor waits for **Connect macropad** before opening hardware, even if
 the browser has previously granted access. Firmware-version notices only appear
@@ -52,7 +52,7 @@ tests/        Golden fixtures (default images, capacity table) and round trips
 The model and codec have no DOM dependencies and are shared by the UI, the
 simulator, and the tests.
 
-## How saving works
+## How Saving Works
 
 1. The profile is validated and encoded into a canonical image. Save is disabled,
    with the reasons listed, while any problem remains.
@@ -117,7 +117,7 @@ Runtime overrides reset on configuration save or USB reset and bypass preview.
 Formats before v5 receive Fast speed and 60° spacing; v5 rainbow settings survive
 migration unchanged. JSON and drafts retain semantic action names as action codes shift.
 
-## Timed actions and temporary LED effects (v7)
+## Timed Actions and Temporary LED Effects (v7)
 
 Four timers share the profile's storage budget, at five bytes each. Intervals
 are clamped to 1–64 ticks of 131.072 seconds. The editor displays “131 seconds”,

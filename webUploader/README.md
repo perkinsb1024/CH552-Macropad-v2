@@ -1,4 +1,4 @@
-# Macropad firmware installer — Beta
+# Macropad Firmware Installer — Beta
 
 **This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.** It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
@@ -6,13 +6,13 @@ The static page is built into `webapp/dist/webUploader/` for the existing GitHub
 
 https://perkinsb1024.github.io/CH552-Macropad-v2/webUploader/
 
-## Attribution and upstream pin
+## Attribution and Upstream Pin
 
 The programming routine is from **Deqing Sun's [CH55xDuino bootloader web tool](https://github.com/DeqingSun/ch55xduino/tree/ch55xduino/bootloaderWebtool)**. `upstream/` is a Git submodule; the parent repository records the exact commit. The initial pin is `c9f9a2a6516255284064a9dd248670545f25a322`.
 
 Upstream supplies the [GNU Lesser General Public License 2.1](upstream/LICENSE). The published page includes its license, original source, patched adapter source, and patch. The build includes only the connection/programming portion of `ch55xbl.js`; it excludes upstream's DOM handlers and its Intel HEX parser (which credits bminer/intel-hex.js). Our strict HEX parser is separate.
 
-## Verification bug patched
+## Verification Bug Patched
 
 In the upstream verification loop, this line sends the **write** buffer instead of the populated verification buffer:
 
@@ -71,7 +71,7 @@ Check group membership with `id -nG`. If appropriate for your distribution, add 
 
 Sources: [Chrome's Linux WebUSB permissions](https://developer.chrome.com/docs/capabilities/build-for-webusb#linux), [udev rule reference](https://www.freedesktop.org/software/systemd/man/latest/udev.html), [udevadm reference](https://www.freedesktop.org/software/systemd/man/latest/udevadm.html).
 
-## Build and test
+## Build and Test
 
 Requires Node.js 22+ and Git. Initialize the pinned source after cloning:
 
@@ -91,7 +91,7 @@ Open `http://localhost:8080/`. The configurator backlink is intended for the com
 
 The build requires exactly one generated HEX per variant in `releases/` (including the release tool’s `dirty-` filename marker for uncommitted firmware), validates record checksums and the 14 KiB application boundary, copies those files into `firmware/`, and writes a SHA-256 manifest. The page checks each download against that manifest before enabling install. The Pages workflow watches `releases/`, `webUploader/`, and `.gitmodules` as well as the configurator.
 
-## Beta validation still required
+## Beta Validation Still Required
 
 macOS hardware installation has been tested and verified. Windows and Linux hardware installation remain unverified. This macOS result does not establish coverage of every board variant or bootloader version, or profile preservation on untested setups.
 

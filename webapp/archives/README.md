@@ -1,4 +1,4 @@
-# Frozen configurators
+# Frozen Configurators
 
 `../public/versions/format-v2/` is the production build of `webapp/` from
 commit `417f276fda788f71dfcd38d781ddc67306988739`, with the small hosting patch
