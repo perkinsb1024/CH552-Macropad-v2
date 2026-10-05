@@ -13,7 +13,7 @@ function sameSlot(a: Slot | null, b: Slot): boolean {
   return !!a && JSON.stringify(a) === JSON.stringify(b);
 }
 
-export function DeviceView() {
+export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
@@ -21,12 +21,12 @@ export function DeviceView() {
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
   for (const c of p.chords) if (c.global || c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
-  const selection = selectedSlot.value;
+  const selection = readOnly ? null : selectedSlot.value;
   const selectedChord = selection?.kind === 'chord'
     ? p.chords.find((c) => matchesChord(c, selection) && (c.global || c.layer === li))
     : undefined;
 
-  const select = (slot: Slot) => { selectedSlot.value = sameSlot(selectedSlot.value, slot) ? null : slot; };
+  const select = (slot: Slot) => { selectedSlot.value = sameSlot(selection, slot) ? null : slot; };
   const dragStart = (event: DragEvent, slot: Slot) => {
     setRoundedDragImage(event);
     endShortcutDrag();
@@ -147,21 +147,23 @@ export function DeviceView() {
     const problem = actionProblem(action, { layerCount, rotation: false });
     const color = paletteHex(layer.leds[index]!);
     const off = layer.leds[index] === 15;
-    const dragged = draggedSlot.value;
+    const dragged = readOnly ? null : draggedSlot.value;
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
-    const intent = slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
+    const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
       <button
         key={index}
-        data-clipboard-target
-        class={`keycap ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
+        data-clipboard-target={!readOnly || undefined}
+        class={`keycap ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-glow:${off ? 'transparent' : color}`}
-        onClick={() => select(slot)}
-        draggable
-        onDragStart={(event) => dragStart(event, slot)}
-        onDragEnd={dragEnd}
-        onDragOver={(event) => dragOver(event, slot, 'horizontal')}
-        onDrop={(event) => drop(event, slot, 'horizontal')}
+        onClick={readOnly ? undefined : () => select(slot)}
+        draggable={!readOnly}
+        tabIndex={readOnly ? -1 : undefined}
+        aria-disabled={readOnly || undefined}
+        onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)}
+        onDragEnd={readOnly ? undefined : dragEnd}
+        onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'horizontal')}
+        onDrop={readOnly ? undefined : (event) => drop(event, slot, 'horizontal')}
         aria-label={`Key ${index + 1}: ${summarize(action)}`}
       >
         <span class="keycap-led" aria-hidden="true" />
@@ -176,11 +178,11 @@ export function DeviceView() {
   const renderEncoderPart = ({ slot, label, icon }: { slot: Slot; label: string; icon?: preact.ComponentChildren }) => {
     const action = slot.kind === 'encoderButton' ? layer.encoderButton : slot.kind === 'clockwise' ? layer.clockwise : layer.counterclockwise;
     const problem = actionProblem(action, { layerCount, rotation: slot.kind !== 'encoderButton' });
-    const dragged = draggedSlot.value;
+    const dragged = readOnly ? null : draggedSlot.value;
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
-    const intent = slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
+    const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
-      <button data-clipboard-target class={`enc-part ${sameSlot(selectedSlot.value, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={() => select(slot)} draggable onDragStart={(event) => dragStart(event, slot)} onDragEnd={dragEnd} onDragOver={(event) => dragOver(event, slot, 'vertical')} onDrop={(event) => drop(event, slot, 'vertical')}>
+      <button data-clipboard-target={!readOnly || undefined} class={`enc-part ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
         <span class="enc-part-label">{icon}{label}</span>
         <span class="enc-part-value"><ActionLabel action={action} /></span>
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
@@ -189,14 +191,14 @@ export function DeviceView() {
   };
 
   return (
-    <div class={`device device-${keys}`}>
+    <div class={`device device-${keys} ${readOnly ? "device-readonly" : ""}`}>
       <div class="device-body">
-        <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={gridDragOver} onDrop={gridDrop}>
+        <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={readOnly ? undefined : gridDragOver} onDrop={readOnly ? undefined : gridDrop}>
           {Array.from({ length: keys }, (_, i) => renderKeyCap(i))}
         </div>
         <div class="encoder">
           <div class="knob" aria-hidden="true"><div class="knob-mark" /></div>
-          <div class="enc-parts" onDragOver={encoderGapDragOver} onDrop={encoderGapDrop}>
+          <div class="enc-parts" onDragOver={readOnly ? undefined : encoderGapDragOver} onDrop={readOnly ? undefined : encoderGapDrop}>
             {renderEncoderPart({ slot: { kind: 'clockwise', layer: li }, label: 'Turn left', icon: <IconRotate /> })}
             {renderEncoderPart({ slot: { kind: 'encoderButton', layer: li }, label: 'Press' })}
             {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn right', icon: <IconRotate ccw /> })}

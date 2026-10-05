@@ -35,6 +35,8 @@ export type ConnectionState =
   | { kind: 'connected'; connection: Connection };
 
 export const connection = signal<ConnectionState>({ kind: 'disconnected' });
+/** Read-only route: load hardware bindings without restoring or clearing editor drafts. */
+export const viewerMode = signal(false);
 export const hidSupported = webHidSupported();
 
 /** Raw flash bytes from the last read, kept for diagnostics/export even when undecodable. */
@@ -715,7 +717,7 @@ async function attach(transport: Transport, label: string): Promise<void> {
       throw new ProtocolError(`Firmware speaks transport v${info.transportVersion} / format v${info.formatVersion}; this app supports format ${FORMAT_VERSION} over transport v${TRANSPORT_VERSION}.`);
     }
     const status = await client.getStatus();
-    const previewSupported = await client.detectPreviewSupport();
+    const previewSupported = viewerMode.peek() ? null : await client.detectPreviewSupport();
     const conn: Connection = { transport, client, info, status, previewSupported };
     transport.onDisconnect(() => handleDisconnect(conn));
     connection.value = { kind: 'connected', connection: conn };
@@ -799,6 +801,18 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     deviceFlash.value = flash;
     const decoded = decodeImage(flash, info.variant);
     deviceDecode.value = decoded;
+
+    if (viewerMode.value) {
+      clearHistory();
+      profile.value = decoded.ok && status.flashValid ? decoded.profile : null;
+      baseline.value = profile.value ? cloneProfile(profile.value) : null;
+      meta.value = {};
+      freshStart.value = null;
+      selectedSlot.value = null;
+      if (profile.value) selectedLayer.value = status.currentLayer < profile.value.layers.length ? status.currentLayer : profile.value.startupLayer;
+      else notify('error', 'The device has no valid saved profile to display. Open the configurator to repair it.', 12000);
+      return;
+    }
 
     let fromDevice: Profile;
     if (decoded.ok) {
@@ -1037,6 +1051,7 @@ function importProfileText(text: string, source: string): void {
 
 let draftTimer: ReturnType<typeof setTimeout> | undefined;
 effect(() => {
+  if (viewerMode.value) { clearTimeout(draftTimer); return; }
   const p = profile.value;
   const m = meta.value;
   const isDirty = dirty.value;

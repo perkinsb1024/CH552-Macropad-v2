@@ -2,6 +2,10 @@
 // Both directories are one level below the site's root, including Pages project paths.
 const entryUrl = import.meta.url;
 
+export function isProfileViewerPath(path: string): boolean {
+  return /\/viewProfile(?:\/index\.html|\/)?$/.test(path);
+}
+
 export function siteUrl(path: string, moduleUrl = entryUrl): string {
   return new URL(path, new URL('../', moduleUrl)).href;
 }

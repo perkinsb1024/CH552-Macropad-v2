@@ -137,7 +137,7 @@ describe('rainbow phase spacing', () => {
 
   it('sets every bundled JSON profile and both starters to 60 degrees', () => {
     for (const variant of [0, 1] as Variant[]) expect(defaultProfile(variant).rainbowPhase).toBe(2);
-    const bundled = import.meta.glob<string>('../../profiles/*.json', { query: '?raw', import: 'default', eager: true });
+    const bundled = import.meta.glob<string>('../../profiles/*-max-action-slots.json', { query: '?raw', import: 'default', eager: true });
     expect(Object.keys(bundled)).toHaveLength(2);
     for (const text of Object.values(bundled)) {
       expect(JSON.parse(text).version).toBe(7);

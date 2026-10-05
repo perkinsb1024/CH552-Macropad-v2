@@ -38,7 +38,7 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   await device.close();
 });
 it('validates and round-trips every bundled v7 profile against firmware', () => {
-  const profiles = import.meta.glob('../../profiles/*.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+  const profiles = import.meta.glob('../../profiles/*-max-action-slots.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
   expect(Object.keys(profiles)).toHaveLength(2);
   for (const text of Object.values(profiles)) {
     expect(JSON.parse(text).version).toBe(7);

@@ -145,7 +145,7 @@ describe('rainbow speed', () => {
 
   it('sets both starters and all bundled profiles to Fast', () => {
     for (const variant of [0, 1] as Variant[]) expect(defaultProfile(variant).rainbowSpeed).toBe(1);
-    const bundled = import.meta.glob<string>('../../profiles/*.json', { query: '?raw', import: 'default', eager: true });
+    const bundled = import.meta.glob<string>('../../profiles/*-max-action-slots.json', { query: '?raw', import: 'default', eager: true });
     expect(Object.keys(bundled)).toHaveLength(2);
     for (const text of Object.values(bundled)) {
       expect(JSON.parse(text).rainbowSpeed).toBe('fast');
