@@ -86,6 +86,16 @@ static void testQueue(void) {
     USB_EP1_IN();
     USB_reportPoll(4);
     assert(Ep1Buffer[65] == 0 && Ep1Buffer[66] == 0 && Ep1Buffer[68] == 0);
+    USB_EP1_IN();
+    assert(USB_queueMouse(0x85, 0, 0, -1));
+    USB_reportPoll(5);
+    assert(UEP1_T_LEN == 5 && Ep1Buffer[65] == 0xc5 && Ep1Buffer[68] == 0);
+    USB_EP1_IN();
+    assert(USB_queueMouse(0x85, 0, 0, 1));
+    USB_reportPoll(6);
+    assert(Ep1Buffer[65] == 0x45 && Ep1Buffer[68] == 0);
+    uint8_t state[9];
+    assert(USB_getReport(2, 0, state) == 5 && state[1] == 5 && state[4] == 0);
 }
 
 static void testControlReports(void) {
@@ -204,7 +214,43 @@ static void testStandardRequests(void) {
     assert(UsbConfig == 0 && resets == 2 && !USB_reportsPending());
 }
 
+static void testHorizontalDescriptor(void) {
+    uint8_t id = 0, size = 0, count = 0;
+    uint16_t bits = 0;
+    uint32_t usage = 0;
+    int32_t minimum = 0, maximum = 0;
+    uint8_t pans = 0;
+    for (uint16_t i = 0; i < sizeof(ReportDescriptor);) {
+        uint8_t prefix = ReportDescriptor[i++];
+        uint8_t length = prefix & 3;
+        if (length == 3) length = 4;
+        uint32_t value = 0;
+        for (uint8_t j = 0; j < length; j++) value |= (uint32_t)ReportDescriptor[i++] << (8 * j);
+        switch (prefix & 0xfc) {
+            case 0x84: id = value; break;
+            case 0x74: size = value; break;
+            case 0x94: count = value; break;
+            case 0x14: minimum = length == 1 ? (int8_t)value : (int32_t)value; break;
+            case 0x24: maximum = value; break;
+            case 0x08: usage = value; break;
+            case 0x80:
+                if (id == 2) {
+                    if (usage == 0x000c0238) {
+                        assert(bits == 6 && size == 2 && count == 1);
+                        assert(minimum == -1 && maximum == 1 && value == 6);
+                        pans++;
+                    }
+                    bits += size * count;
+                }
+                usage = 0;
+                break;
+        }
+    }
+    assert(pans == 1 && bits == 32);
+}
+
 int main(void) {
+    testHorizontalDescriptor();
     testQueue();
     testControlReports();
     testGetReportAndIdle();

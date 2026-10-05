@@ -287,13 +287,18 @@ static FW_BIT queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
-  mouseState = buttons;
+  mouseState = buttons & 7;
+  // AC Pan uses two formerly-padding bits. Scroll playback emits unit steps.
+  if (buttons & 0x80) {
+    buttons = mouseState | ((uint8_t)wheel << 6);
+    wheel = 0;
+  }
   __xdata uint8_t *report = reportQueue[reportHead];
-  *report++ = 2;
-  *report++ = buttons;
-  *report++ = x;
-  *report++ = y;
-  *report++ = wheel;
+  report[0] = 2;
+  report[1] = buttons;
+  report[2] = x;
+  report[3] = y;
+  report[4] = wheel;
   return queueReport(5);
 }
 
@@ -307,9 +312,9 @@ static FW_BIT queueConsumer(uint16_t usage) {
   }
   consumerState = usage;
   __xdata uint8_t *report = reportQueue[reportHead];
-  *report++ = 5;
-  *report++ = usage;
-  *report++ = usage >> 8;
+  report[0] = 5;
+  report[1] = usage;
+  report[2] = usage >> 8;
   return queueReport(3);
 }
 

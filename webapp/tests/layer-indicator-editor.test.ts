@@ -6,7 +6,7 @@ import { Inspector } from '../src/ui/components/Inspector';
 import { profile, selectedSlot } from '../src/ui/store';
 
 // Inspect the component's controls without mounting a browser DOM.
-vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
+vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 
 type Element = { type: unknown; props: Record<string, unknown> };
 function elements(node: unknown): Element[] {

@@ -25,6 +25,7 @@ void USB_discardReports(void) USB_CRITICAL;
 uint8_t USB_reportGeneration(void);
 
 FW_BIT USB_queueKeyboard(const __xdata uint8_t *keys) USB_CRITICAL;
+// Internal button bit 7 routes wheel to horizontal AC Pan; it is never sent as a button.
 FW_BIT USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) USB_CRITICAL;
 FW_BIT USB_queueConsumer(uint16_t usage) USB_CRITICAL;
 FW_BIT USB_reportsPending(void);

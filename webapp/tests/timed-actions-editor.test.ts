@@ -5,7 +5,7 @@ import { defaultProfile } from '../src/model/defaults';
 import { computeCapacity } from '../src/model/capacity';
 import { profile, selectedSlot, getAction, setAction, updateProfile, undo, redo, insertLayer, removeLayer, copySelectedConfiguration, pasteSelectedConfiguration } from '../src/ui/store';
 import { storeDraft, loadDraft } from '../src/io/drafts';
-vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
+vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 type Node = { type: unknown; props: Record<string, unknown>; ref?: unknown };
 function nodes(value: unknown): Node[] {
   if (Array.isArray(value)) return value.flatMap(nodes);

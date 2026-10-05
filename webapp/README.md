@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 **Universal Macropad**. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v8.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v9.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -97,7 +97,7 @@ when webapp changes are pushed to `main`, or when run manually. In the repositor
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
 
-The active format 8 editor is served at the project site's root. Frozen
+The active format 9 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -110,9 +110,10 @@ is rebuilt from dependencies in CI.
 - `versions/format-v4/` serves the frozen v4 editor from the revision recorded in its manifest.
 - `versions/format-v5/` serves the frozen v5 editor from the revision recorded in its manifest.
 - `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
+- `versions/format-v8/` serves the frozen published-v8 editor and live view, with provenance in its manifest.
 - `versions/format-v7/` serves the frozen v7 editor and live view from commit `196e81e`.
 
-The footer links to the archive list. Detecting format 2–7 firmware presents a
+The footer links to the archive list. Detecting format 2–8 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -120,13 +121,13 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5/v6/v7 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6/v7/v8 drafts without overwriting or clearing the archived namespace.
 
-Version 2–7 binary profiles, version 1–7 JSON files, and older drafts can still be
-migrated into the active format 8 editor after a firmware upgrade. Bindings and
+Version 2–8 binary profiles, version 1–8 JSON files, and older drafts can still be
+migrated into the active format 9 editor after a firmware upgrade. Bindings and
 colors are preserved; **Blink once** becomes the timed indication and transparency
 defaults to off. **Rainbow phase spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to store v8. Older stored profiles remain readable but inactive until saved as v8.
+through the active editor to store v9. Older stored profiles remain readable but inactive until saved as v9.
 
 **LED control** bindings expose existing LED commands plus **Set all LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
@@ -166,16 +167,16 @@ No dedicated reminder layer is required. JSON uses optional `brightness: "dim"`
 for effects; omission defaults to **Bright**, preserving existing profiles.
 
 Persistent and one-shot **Switch to layer** selectors offer **Previous layer**, represented
-by `layer: 255` in v7/v8 JSON and `0xFF` in the two-byte action record. The target is
+by `layer: 255` in v7 and later JSON and `0xFF` in the two-byte action record. The target is
 preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
 **Previous layer** remembers persistent base selections, ignoring momentary/one-shot
 visits. Repeating a persistent **Previous layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
-The protocol simulator accepts only valid v8 profiles and round-trips the new
+The protocol simulator accepts only valid v9 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Hardware testing remains necessary for those effects. Bundled `../profiles/*.json`
-files use v7 JSON and are migrated to v8, then checked against the firmware parser in the regression suite.
+files use v7 JSON and are migrated to v9, then checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
 
@@ -195,7 +196,7 @@ and media controls. Acceleration is not part of this merged build.
 v8 writes **Type Text** with first byte `0x10`; old type-9 text is decoded according
 to its source version before re-encoding. **None** remains `00 00`. Binary, JSON,
 draft and raw-device migration cover every binding location, including timers.
-Legacy firmware connects through its frozen editor, while old flash on v8 can
+Legacy firmware connects through its frozen editor, while old flash on v9 can
 be read and migrated without being automatically overwritten.
 
 ## Mouse Clicks (v8+)
@@ -226,5 +227,27 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-Checked-in releases and the bundled uploader still carry v7 firmware. Testing
-this branch requires an ordinary source build/upload; no v8 release was generated.
+Checked-in releases and the bundled uploader carry published v8 firmware. Testing
+this branch requires an ordinary source build/upload; no v9 release was generated.
+
+## Horizontal Scrolling (v9)
+
+**Scroll axis** selects **Vertical** or **Horizontal** while preserving step and
+**Tap**/**Hold** behavior. **Scroll direction** shows **Up**/**Down** or
+**Left**/**Right** accordingly. Auxiliary bit 3 selects horizontal; bit 2 still
+selects hold. Both axes use the same 100 ms hold delay. JSON version 9 stores
+optional boolean `horizontal`; older imports retain vertical scrolling.
+
+Under **Scroll direction**, an inversion hint names the selected axis and offers
+**Click here** to open **Scroll & click test**. Its test area starts centered with
+room to scroll vertically and horizontally. **Click count** tracks **Left**,
+**Middle** and **Right** clicks inside the area; double clicks count twice.
+**Reset counts** clears all counters. Unsaved edits show a warning above the
+area because the hardware continues to use its saved configuration. The modal
+uses native dialog focus handling and closes with **Close** or Escape.
+
+**Mouse click**, **Mouse hold** and **Mouse toggle** also offer **Click here** to
+open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**
+next to its click counter, so held and toggled outputs can be checked. Releases
+outside the test area are tracked; leaving the browser clears the display until
+another mouse event reports its current button state.

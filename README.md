@@ -60,6 +60,7 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
+| [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
 | [v8](protocol/config-v8.md) | - Maximum **Timed action** error is improved from ~131s to 512ms<br> - **Media / system hold** keeps a consumer control held until release (useful for brightness and volume)<br> - **Scroll** gains **Hold**, with 100ms between repeated step groups<br> - **Mouse click** supports 1–16 clicks through **Single / Double / Custom**, replacing the separate **Mouse double-click** action. |
 | [v7](protocol/config-v7.md) | - Up to four **Timed actions**, repeating or restarted by input, with optional **On next input** actions and **Consume this input**<br> - **Set all LEDs** adds temporary bright/dim colors or rainbow, always on or blinking 1–8 times<br> - **Previous layer** becomes a target for persistent and one-shot layer switching. |
 | [v6](protocol/config-v6.md) | - **LED control** actions adjust brightness, rainbow spacing and speed during use, with relative steps, common brightness presets, **Toggle preset on/off**, and configured restores<br> - **Variable — Scattered colors** adds independently drifting rainbow colors. |
@@ -70,7 +71,7 @@ Below are the the primary firmware features added with each version
 | v1 (initial prototype) | - Browser configuration over WebHID, with profiles saved on the device<br> - Up to four layers<br> - Independent key, wheel-button and wheel-direction bindings<br> - Two-key chords<br> - Keyboard, mouse, media and **Type text** actions<br> - Per-key colors and layer indications, including **Rainbow** lighting. |
 
 Older firmware uses its matching [archived configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/).
-The current editor can import older profiles and migrate them before saving v8.
+The current editor can import older profiles and migrate them before saving v9.
 
 ## How to Compile the Firmware
 
@@ -79,7 +80,7 @@ The current editor can import older profiles and migrate them before saving v8.
 >
 > Pre-built v8 firmware files are available for [three-key](releases/ch552-macropad-3-key-b5053698.hex) and [six-key](releases/ch552-macropad-6-key-b5053698.hex) macropads, built from source revision `b5053698`. This version improves **Timed actions** accuracy, adds **Media / system hold** and held **Scroll**, and supports 1–16 clicks with **Mouse click**. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the current v8 configurator with these releases. Back up your profile before
+Use the frozen [v8 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v8/) with these releases. The current source and latest editor use v9 and require a source build for testing. Back up your profile before
 updating; v8 leaves old flash intact, but inputs stay inactive until the editor
 migrates and saves the profile as v8.
 
@@ -140,11 +141,11 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current v8 source builds, in bytes:
+Memory in the current v9 source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 15 | 11 |
+| Flash remaining | 10 | 6 |
 | External RAM allocated (XSEG) | 517 | 526 |
 | Stack available (linker reserve) | 114 | 111 |
 
@@ -227,7 +228,9 @@ No local web app installation is needed. Open the [Macropad Configurator](https:
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-Configuration format 8 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. Each timer has its own phase: clock quantization is less than 512ms early, with possible additional playback/USB delay. Configuration records remain five bytes.
+**Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100 ms interval. Horizontal scrolling requires v9 firmware.
+
+Configuration format 9 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. Each timer has its own phase: clock quantization is less than 512ms early, with possible additional playback/USB delay. Configuration records remain five bytes.
 
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
@@ -253,11 +256,11 @@ use independent handling. Legacy double-click bindings (v7 and earlier) migrate 
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor reads binary formats 2–8, JSON versions 1–8, and older drafts while
-preserving bindings and metadata. Old **Type Text** records become v8 text records,
-never **Consumer Hold**. Firmware accepts only v8; read/import the old profile and
-explicitly save it to reactivate inputs. Older firmware uses frozen format 2–7
-editors under `versions/format-vN/`. See [configuration format 8](protocol/config-v8.md).
+The editor reads binary formats 2–9, JSON versions 1–9, and older drafts while
+preserving bindings and metadata. Old **Type Text** records become v9 text records,
+never **Consumer Hold**. Firmware accepts only v9; read/import the old profile and
+explicitly save it to reactivate inputs. Older firmware uses frozen format 2–8
+editors under `versions/format-vN/`. See [configuration format 9](protocol/config-v9.md).
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -305,5 +308,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v8.md)
+- [Configuration format](protocol/config-v9.md)
 - [USB configuration protocol](protocol/hid-v1.md)

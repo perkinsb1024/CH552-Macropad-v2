@@ -15,7 +15,7 @@ describe('JSON import/export', () => {
       delete legacy.transparentBlack;
       expect(importProfile(JSON.stringify(legacy)).profile).toEqual({ ...profile, transparentBlack: false });
     }
-    expect(() => importProfile(text.replace('"version": 8', '"version": 9'))).toThrow(ImportError);
+    expect(() => importProfile(text.replace('"version": 9', '"version": 10'))).toThrow(ImportError);
     expect(() => importProfile(text.replace('"transparentBlack": true', '"transparentBlack": 1'))).toThrow(ImportError);
   });
   it('preserves pointer hold and accepts older pointer actions without the option', () => {

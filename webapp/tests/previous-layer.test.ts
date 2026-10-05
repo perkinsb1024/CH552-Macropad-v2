@@ -21,7 +21,7 @@ import {
   profile, redo, removeLayer, selectedLayer, selectedSlot, setAction, swapLayers, undo,
 } from '../src/ui/store';
 
-vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
+vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 let validator: ReturnType<typeof createFirmwareValidator>;
 beforeAll(() => { validator = createFirmwareValidator(); });
 afterAll(() => validator.close());

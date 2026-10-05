@@ -37,7 +37,7 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
     case 'mouseToggle':
       return [code, action.buttons & 7];
     case 'scroll':
-      return [code | (action.hold ? 0x40 : 0), action.delta & 0xff];
+      return [code | (action.hold ? 0x40 : 0) | (action.horizontal ? 0x80 : 0), action.delta & 0xff];
     case 'mouseX':
     case 'mouseY':
       return [code | (action.hold ? 0x10 : 0), action.delta & 0xff];

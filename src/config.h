@@ -6,7 +6,7 @@
 
 #define CONFIG_SIZE 128
 // v8: Type Text shares type 0; type 9 is Consumer Hold. Timers stay five bytes.
-#define CONFIG_VERSION 8
+#define CONFIG_VERSION 9
 #define CONFIG_TIMED_CONSUME 0x40
 #define CONFIG_LAYER_PREVIOUS 0xFF
 #ifndef CONFIG_TIMED_MAX
@@ -47,6 +47,7 @@
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x6
 #define CONFIG_ACTION_SCROLL           0x7
 #define CONFIG_SCROLL_HOLD             0x40
+#define CONFIG_SCROLL_HORIZONTAL       0x80
 #define CONFIG_SCROLL_MODE_MASK        0x30
 #ifndef CONFIG_SCROLL_HOLD_SUPPORT
 #define CONFIG_SCROLL_HOLD_SUPPORT 1

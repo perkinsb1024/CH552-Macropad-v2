@@ -1,7 +1,7 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 8;
+export const FORMAT_VERSION = 9;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
@@ -58,7 +58,7 @@ export const enum ActionCode {
   KeyTap = 0x1,
   KeyHold = 0x2,
   MouseClick = 0x3,
-  LegacyMouseDouble = 0x4, // Formats 2–7 only; reserved in v8.
+  LegacyMouseDouble = 0x4, // Formats 2–7 only; reserved in v8 and later.
   MouseHold = 0x5,
   MouseToggle = 0x6,
   Scroll = 0x7,

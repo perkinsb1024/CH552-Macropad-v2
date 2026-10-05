@@ -35,7 +35,7 @@
 <div class="stat"><span>Last press duration</span><strong id="press-length">—</strong></div>
 </div>
 <p class="note">A 3–16 click action should produce exactly that many complete press/release cycles with Left only. Press duration is at least <strong>8 ms</strong>; the next press follows release by at least <strong>200 ms</strong> (roughly 208 ms or longer from press to press). The log also includes browser <code>click</code>, <code>auxclick</code> and <code>dblclick</code> notifications; these do not increase the cycle count. Manual mouse clicks in the area also count, so clear the log before testing.</p>
-<p class="note">Expected for a single held key at step 1: approximately <strong>100–108 ms</strong> between events (about 10 per second), with possible extra USB or browser delay. Larger configured steps emit several individual wheel reports in a batch, so use step 1 for this check.</p>
+<p class="note">Expected for a single held key at step 1: approximately <strong>100–108 ms</strong> between events on either axis (about 10 per second), with possible extra USB or browser delay. Larger configured steps emit several individual wheel reports in a batch, so use step 1 for this check.</p>
 </div>
 <div class="card">
 <h2 style="font-size:18px;margin-top:0">Event log <small style="font-weight:400;color:#536078">· newest 200 displayed · last 2,000 retained for CSV</small></h2>
@@ -105,7 +105,7 @@ function record(event) {
     deltaX: isWheel ? event.deltaX : null, deltaY: isWheel ? event.deltaY : null, deltaZ: isWheel ? event.deltaZ : null, deltaMode: isWheel ? event.deltaMode : null,
     trusted: event.isTrusted, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey };
   events.push(entry); if (events.length > limit) events.shift(); previousByType.set(key, entry);
-  $('latest').textContent = isWheel ? `ΔY ${event.deltaY} ${units[event.deltaMode] ?? ''} · ${ms(eventGap)} since previous wheel event · burst ${burst}` : `${kind} ${buttons[button] ?? button} · ${ms(eventGap)} since previous ${kind} · ${cycles} complete cycles`;
+  $('latest').textContent = isWheel ? `ΔX ${event.deltaX} · ΔY ${event.deltaY} ${units[event.deltaMode] ?? ''} · ${ms(eventGap)} since previous wheel event · burst ${burst}` : `${kind} ${buttons[button] ?? button} · ${ms(eventGap)} since previous ${kind} · ${cycles} complete cycles`;
   // Keep DOM work out of the event handler and limit its cost during fast input.
   if (renderTimer === null) renderTimer = setTimeout(render, 100);
 }

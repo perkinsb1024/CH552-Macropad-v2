@@ -28,7 +28,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
     const key = draftKey(variant);
     const keys = [key];
     if (!localStorage.getItem(`${key}:cleared`)) {
-      for (const version of [7, 6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
+      for (const version of [8, 7, 6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
       keys.push(legacyDraftKey(variant));
     }
     for (const source of keys) {
@@ -36,7 +36,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         const raw = localStorage.getItem(source);
         if (!raw) continue;
         const parsed = JSON.parse(raw) as Draft;
-        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
+        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, 8, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
         if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) continue;
         parsed.profile = migrateLegacyProfile(parsed.profile);
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action),
@@ -45,6 +45,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         if ((parsed.formatVersion ?? 2) < 7 && (parsed.profile.timedActions?.length || actions.some(a => a.type === 'ledControl' && a.command.startsWith('effect')))) continue;
         if ((parsed.formatVersion ?? 2) < 7 && actions.some(isPreviousLayer)) continue;
         if ((parsed.formatVersion ?? 2) < 8 && actions.some(a => a.type === 'consumerHold' || (a.type === 'scroll' && a.hold))) continue;
+        if ((parsed.formatVersion ?? 2) < 9 && actions.some(a => a.type === 'scroll' && a.horizontal)) continue;
         if (validateProfile(parsed.profile).length) continue;
         parsed.formatVersion = FORMAT_VERSION;
         return parsed;

@@ -45,6 +45,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'scroll':
     case 'mouseX':
     case 'mouseY':
+      if (action.type === 'scroll' && action.horizontal !== undefined && typeof action.horizontal !== 'boolean') return 'Horizontal must be on or off.';
       if (action.hold !== undefined && typeof action.hold !== 'boolean') return 'Hold must be on or off.';
       if (action.type === 'scroll' && 'acceleration' in action && action.acceleration !== undefined && action.acceleration !== 'off') return 'Scroll acceleration is unavailable in this firmware.';
       if (!Number.isInteger(action.delta) || action.delta < -127 || action.delta > 127) return 'Delta must be a whole number from -127 to 127.';

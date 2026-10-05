@@ -26,7 +26,7 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'mouseClick', code: ActionCode.MouseClick, label: 'Mouse click', group: 'Mouse', needsRelease: false, hint: 'Click one or more mouse buttons.' },
   { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
   { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
-  { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical wheel step, or repeat while held.' },
+  { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical or horizontal wheel step, or repeat while held.' },
   { type: 'mouseX', code: ActionCode.MouseX, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
   { type: 'mouseY', code: ActionCode.MouseY, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
   { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
@@ -129,7 +129,7 @@ export function summarize(action: Action): string {
     case 'mouseToggle':
       return `Toggle ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'scroll':
-      return `${action.delta < 0 ? `Scroll up ${-action.delta}` : `Scroll down ${action.delta}`}${action.hold ? ' (hold)' : ''}`;
+      return `${action.delta < 0 ? `Scroll ${action.horizontal ? 'left' : 'up'} ${-action.delta}` : `Scroll ${action.horizontal ? 'right' : 'down'} ${action.delta}`}${action.hold ? ' (hold)' : ''}`;
     case 'mouseX':
       return `Mouse ${action.delta < 0 ? 'left' : 'right'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
     case 'mouseY':

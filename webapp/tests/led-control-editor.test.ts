@@ -4,7 +4,7 @@ import { profile, selectedSlot } from '../src/ui/store';
 import { defaultProfile } from '../src/model/defaults';
 import { LED_COMMANDS, isLedEffect, ledProblem, ledValueOptions } from '../src/model/ledControl';
 import { encodeAction } from '../src/codec/encode';
-vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
+vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 type Node = { type: unknown; props: Record<string, unknown> };
 function nodes(value: unknown): Node[] {
   if (Array.isArray(value)) return value.flatMap(nodes);

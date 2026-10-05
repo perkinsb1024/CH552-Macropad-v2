@@ -1,11 +1,11 @@
-# Macropad configuration image, version 8
+# Macropad configuration image, version 9
 
 | Image property | Value |
 | --- | --- |
 | Size | 128 bytes |
 | Unused bytes | `0` |
 | Multibyte values | Little endian |
-| Byte offsets and action codes | Fixed for format version 8 |
+| Byte offsets and action codes | Fixed for format version 9 |
 | Header size | 9 bytes |
 | Layer count | 1–5 for six keys; 1–7 for three keys |
 | Action record size | 2 bytes |
@@ -19,33 +19,33 @@ and CRC before using an image. Ignored reserved bits and trailing unused bytes
 are not checked for zero in firmware; the configurator still requires canonical
 zero values for those fields. CRC covers them regardless.
 
-Version 8 adds **Consumer Hold**, held scrolling and 1–16 mouse clicks, moves Type
-Text to Action `0x0` with auxiliary bit 0 set, reserves the old double-click
-type `0x4`, and improves timed-action precision. The 128-byte image, layer geometry,
-palette, header, CRC, chord identifiers and five-byte timer layout are unchanged
-from [format v7](config-v7.md). This document specifies the complete v8 format.
+Version 9 adds horizontal scrolling using auxiliary bit 3 of **Scroll**. Vertical
+scrolling, **Hold**, 1–16 mouse clicks, consumer holds, timer accuracy, all LED
+features and every other v8 action remain available. The 128-byte image, header,
+palette, CRC, layer geometry, chords and five-byte timers are unchanged from
+[format v8](config-v8.md). This document specifies the complete v9 format.
 
 ## Version and migration
 
-Header byte 2 is `8`. GET_INFO advertises configuration format 8; HID transport
-remains version 1. Firmware accepts only v8. It leaves older DataFlash readable
-and unchanged, but physical inputs and timers remain inactive until a valid v8
+Header byte 2 is `9`. GET_INFO advertises configuration format 9; HID transport
+remains version 1. Firmware accepts only v9. It leaves older DataFlash readable
+and unchanged, but physical inputs and timers remain inactive until a valid v9
 profile is saved. A firmware update alone does not migrate or erase a profile.
 
-The current configurator reads binary formats 2–8, JSON versions 1–8 and older
-drafts, then writes v8. It decodes each legacy action using its source version;
+The current configurator reads binary formats 2–9, JSON versions 1–9 and older
+drafts, then writes v9. It decodes each legacy action using its source version;
 in particular, old type-9 records remain **Type Text**, never **Consumer Hold**.
 Keys, encoder bindings, chords and both timer slots are migrated. Legacy
 double-click bindings become **Mouse click** with a count of two. Existing media
-actions remain taps; existing scroll actions remain taps with their signed step
-unchanged. Strings, timer intervals/flags, layer settings and editor metadata are
-preserved. The v8 draft namespace can recover v7 drafts without overwriting them.
+actions remain taps; existing scroll actions remain vertical with their signed step and **Tap**/**Hold**
+behavior unchanged. Strings, timer intervals/flags, layer settings and editor metadata are
+preserved. The v9 draft namespace can recover v8 and older drafts without overwriting them.
 
-Use the frozen format-v7 editor for v7 firmware. The active editor closes
+Use the frozen format-v8 editor for v8 firmware (or the matching older editor). The active editor closes
 connections to legacy firmware and offers its matching frozen editor rather
-than attempting a v8 write. Before updating hardware, export a JSON/raw backup;
+than attempting a v9 write. Before updating hardware, export a JSON/raw backup;
 after updating, import or read the old profile and explicitly **Save to device**.
-The simulator models v8-only validation and the same inactive legacy-flash state.
+The simulator models v9-only validation and the same inactive legacy-flash state.
 
 ## Header and rainbow settings
 
@@ -54,7 +54,7 @@ The nine-byte header is:
 | Byte | Field | Encoding |
 | --- | --- | --- |
 | 0–1 | Marker | ASCII `MP` |
-| 2 | Format version | `8` |
+| 2 | Format version | `9` |
 | 3 | Layers, startup layer, timer count | Bits 0–2: layer count minus one<br>Bits 3–5: startup layer<br>Bits 6–7: low two bits of timer count |
 | 4 | **String**-pool length and timer count | Bits 0–6: used pool bytes<br>Bit 7: high bit of timer count |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
@@ -65,7 +65,7 @@ Timer count is `(byte3 >> 6) | ((byte4 >> 7) << 2)` and must be 0–4.
 Layer and startup-layer indices are zero-based. The startup layer must exist.
 The chord window is 0–75 ms in 5 ms units; zero disables chord recognition.
 A second press must arrive strictly before the window expires to activate a
-mapped chord. The old auto-sleep experiment is not part of v8.
+mapped chord. The old auto-sleep experiment is not part of v9.
 
 **Rainbow** phase settings use hue increments `0`, `21`, `42`, and `109` in a
 256-step cycle. Three-key positions are `0, 1, 2`; six-key positions are
@@ -103,7 +103,7 @@ indications. Solid colors and pressed-key overrides retain their existing behavi
 Hardware color previews use the saved profile's phase spacing and speed; save an edited
 setting before previewing it. Bits 0–3 still control chords independently.
 
-Version 8 JSON exports use `rainbowPhaseDegrees` with values `0`, `30`, `60`, or
+Version 9 JSON exports use `rainbowPhaseDegrees` with values `0`, `30`, `60`, or
 `150`; this field is required in JSON versions 5–8. The starter profile and bundled
 JSON profiles default to `60`. Imports accept the previous `120` value as an alias
 for `150`, preserving the fourth spacing preset. Existing binary profiles retain
@@ -207,7 +207,7 @@ The action types are:
 | 4 | Reserved | Rejected | Rejected |
 | 5 | **Mouse hold** | `0` | Button mask 1–7 |
 | 6 | **Mouse toggle** | `0` | Button mask 1–7 |
-| 7 | **Scroll Tap** / **Scroll Hold** | `0` for tap; `4` for hold | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
+| 7 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
 | 8 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
 | 9 | **Consumer hold** | High four bits of the usage | Low eight bits of the usage; button release ends the hold |
 | A | **Set layer** | `0` for persistent; `1` for one-shot | Layer index, or `0xFF` for previous persistent layer |
@@ -217,7 +217,7 @@ The action types are:
 | E | **Mouse Y movement** | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
 | F | **LED control** | Value or signed step (see below) | Full command byte (see below) |
 
-Keyboard modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = Alt, and `8` = **GUI**;
+Keyboard modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**, and `8` = **GUI**;
 combine them with bitwise OR. Mouse button bits are `1` = **Left**, `2` = **Right**,
 and `4` = **Middle**; any nonzero combination up to `7` is valid. Consumer actions
 accept nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Type Text** must
@@ -227,7 +227,7 @@ empty text. Type 0 auxiliary values other than 0 and 1 reject.
 For action A and C, auxiliary value `0` changes the selected base layer
 persistently. Auxiliary value `1` makes that layer active for the next input
 action, then returns to the previously selected base layer. Other auxiliary
-values are invalid. These meanings are preserved when migrating old A/D records to v8 A/C.
+values are invalid. These meanings are preserved when migrating old A/D records to v9 A/C.
 
 **Set layer** parameter `0xFF` (255) selects the previous persistent base layer.
 Both persistent and one-shot forms support this target; **Momentary layer**
@@ -348,7 +348,7 @@ There is no remembered toggle state. Other LED commands can establish or replace
 the matching pair. Preset 0 is invalid for toggle because both endpoints would be
 configured. The editor defaults this command to preset 3 (**Layers off, keys dim**).
 
-Command `0D` is part of v8. It was introduced as a v6 extension; earlier v6
+Command `0D` is part of v9. It was introduced as a v6 extension; earlier v6
 firmware rejects images containing it during validation.
 
 Indicator overrides retain the saved color and visibility mode. **Off** removes
@@ -406,7 +406,7 @@ profile has a 40 ms chord window, **60°** rainbow spacing, **Fast** rainbow spe
 `((clicks - 1) << 4) | 0x03`; the second byte is the mouse button mask.
 For example, `[0x03, 0x01]` is one left click, `[0x13, 0x01]` is two left clicks,
 and `[0xF3, 0x01]` is sixteen left clicks. Counts 1–16 require no additional
-configuration bytes. Type `0x4` is reserved and rejects in v8 images.
+configuration bytes. Type `0x4` is reserved and rejects in v9 images.
 
 The configurator offers **Single / Double / Custom** under **Mouse click**.
 **Single** selects one click; **Double** selects two; **Custom** shows a 3–16 click-count
@@ -433,7 +433,7 @@ left click. The optional `clicks` field is an integer from 1 to 16; omission mea
 one click. The editor omits the field for **Single**. Legacy JSON and draft
 `mouseDouble` actions migrate to `mouseClick` with `clicks: 2`, including in timer
 slots. Binary formats 2–7 migrate type `0x4` the same way; their type `0x3` still
-requires auxiliary zero. V8 binary images reject type `0x4`, including images
+requires auxiliary zero. V8 and v9 binary images reject type `0x4`, including images
 from earlier v8 prototypes; their JSON exports or drafts can be imported and
 saved with the new encoding.
 
@@ -447,7 +447,9 @@ saved with the new encoding.
 | **Consumer Tap** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
 | **Consumer Hold** | `0x09 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
 | **Scroll Tap** | `0x07` | Signed wheel step, -127–127 |
-| **Scroll Hold** | `0x47` | Signed wheel step, -127–127 |
+| **Scroll Hold** | `0x47` | Signed vertical wheel step, -127–127 |
+| **Scroll Tap**, **Horizontal** | `0x87` | Signed horizontal step, -127–127 |
+| **Scroll Hold**, **Horizontal** | `0xC7` | Signed horizontal step, -127–127 |
 
 **Type Text** shares low-nibble type 0 with **Nothing**: auxiliary 0 is **Nothing** and must
 have parameter 0; auxiliary 1 is **Type Text**. Other auxiliary values reject. Empty
@@ -458,8 +460,8 @@ Both retain nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Hold** 
 allowed on keys, encoder press and chords, but rejects on wheel rotation and on
 both timer action slots. It adds no configuration bytes.
 
-**Scroll Hold** uses auxiliary bit 2 (`0x40` in the first byte). Only auxiliary values
-0 and 4 are accepted in the v8 firmware. Acceleration bits remain reserved
+**Scroll Hold** uses auxiliary bit 2 (`0x40` in the first byte). Auxiliary bit 3 (`0x80` in the first byte) selects
+horizontal scrolling. Only auxiliary values 0, 4, 8 and 12 are accepted. Acceleration bits remain reserved
 and reject. **Hold** rejects on rotation and both timer action slots. -128 rejects;
 zero is a firmware no-op, although the editor asks for a nonzero step.
 
@@ -484,6 +486,40 @@ releases retry until accepted. Configuration clearing releases consumer output.
 USB report-generation changes reassert the winning hold. Sustained usages use
 host/application repeat behavior; firmware does not synthesize repeated taps.
 
+## Scroll axis and HID reports
+
+The **Scroll axis** control offers **Vertical** and **Horizontal**. A clear
+auxiliary bit 3 selects vertical; a set bit selects horizontal. **Scroll direction**
+offers **Up**/**Down** for vertical or **Left**/**Right** for horizontal. The signed
+parameter keeps its magnitude (1–127 in the editor); horizontal negative is left
+and positive is right. Horizontal HID AC Pan retains the configured sign.
+Host settings and applications can change the visible
+scrolling direction or ignore horizontal input. Both axes support **Tap** on any
+binding, including encoder rotation and timed actions, and **Hold** on keys,
+encoder press and chords. Changing axes does not change step size or hold mode.
+
+The direction hint explains that some computers invert these settings.
+**Click here** opens **Scroll & click test**, with a scrollable area on both axes
+and separate **Left**, **Middle**, and **Right** click counters. It warns about
+unsaved edits before testing; the device continues to use its saved profile.
+
+Mouse report ID 2 remains five USB bytes including the report ID:
+
+| Payload byte | Field |
+| --- | --- |
+| 0, bits 0–2 | Mouse buttons 1–3 |
+| 0, bits 3–5 | Zero padding |
+| 0, bits 6–7 | Signed two-bit horizontal AC Pan, -1, 0 or +1 |
+| 1 | Signed 8-bit pointer X |
+| 2 | Signed 8-bit pointer Y |
+| 3 | Signed 8-bit vertical wheel |
+
+Horizontal playback sends one-count Consumer Page AC Pan reports instead of
+vertical wheel counts; the other scroll axis is zero. The descriptor declares
+AC Pan with logical range -1 to +1, preserving the report's existing size.
+GET_REPORT and idle reports contain the held mouse buttons with both scroll
+axes and pointer movement zero, so polling cannot repeat a scroll.
+
 ## Held scrolling
 
 Initial press sends one configured step. Holding a key, chord or encoder button
@@ -498,7 +534,7 @@ for a catch-up burst.
 Release stops future repeats; already accepted steps finish. Multiple eligible
 held scroll bindings are visited in input-index order, matching pointer holds.
 Bindings survive layer changes until release. **Scroll** acceleration was investigated,
-but ultimately too large to fit in v8.
+but ultimately too large to fit in v8 and remains disabled in v9.
 
 ## Timed actions
 
@@ -517,7 +553,7 @@ One interval tick is 131.072 seconds; 1–64 ticks gives a maximum duration of
 8,388.608 seconds (2 h 19 min 48.608 s). The UI shows “× 131 seconds” and whole
 minutes/seconds, using the precise value internally and rounding only for
 display. The duration summary shows the approximate interval without a tooltip;
-the v8 timing precision is described below.
+the v9 timing precision is described below.
 
 Key presses, encoder button presses, and completed detents trigger input handling;
 releases, held repeats, partial encoder motion, and timer-generated actions do not.
@@ -539,7 +575,7 @@ outputs to be dropped under the same policy as other actions; timers do not
 accumulate an unbounded backlog. Four timers use four coarse-age bytes in paged
 RAM and four fractional-age bytes; flags remain embedded in their existing records.
 
-JSON v8 `timedActions` entries contain `ticks`, boolean `resetOnInput`, boolean
+JSON v9 `timedActions` entries contain `ticks`, boolean `resetOnInput`, boolean
 `consumeInput`, `action`, and `resumeAction`. The list is optional; absence means
 no timers. JSON import rejects invalid ranges/types; UI edits clamp to 1–64.
 
@@ -631,9 +667,9 @@ bindings. All 128 bytes remain available; trailing bytes are CRC-covered.
 
 ## HID configuration protocol
 
-The v8 configuration uses the following transport-v1 protocol. The shared
+The v9 configuration uses the following transport-v1 protocol. The shared
 [HID transport reference](hid-v1.md) also contains historical format notes;
-the v8 version and validation rules in this document apply to v8 firmware.
+the v9 version and validation rules in this document apply to v9 firmware.
 
 The USB device retains VID `0x1209` and PID `0xC55D`. Its product string is
 `Universal Macropad`. Keyboard and mouse reports use IDs 1 and 2; consumer
@@ -663,7 +699,7 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
-GET_INFO advertises configuration format 8, palette version 3, and
+GET_INFO advertises configuration format 9, palette version 3, and
 action mask `0xFFEF` (type `0x4` excluded). The maximum layer count is 5 for six keys and 7 for three
 keys; image capacity is 128 bytes. The format version identifies the action map:
 the mask alone cannot distinguish **Type Text** from **Consumer Hold** or determine
@@ -683,11 +719,11 @@ hold-mode support. Transport version remains 1.
 
 GET_INFO returns 14 data bytes (offsets below are relative to reply data):
 
-| Data byte | Field | V8 value |
+| Data byte | Field | V9 value |
 | --- | --- | --- |
 | 0–3 | Application identity | ASCII `UMAC` |
 | 4 | Transport version | `1` |
-| 5 | Configuration format | `8` |
+| 5 | Configuration format | `9` |
 | 6 | Physical variant | `0` = six keys, `1` = three keys |
 | 7 | Key count | `6` or `3` |
 | 8 | LED count | `6` or `3` |
@@ -768,18 +804,22 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 ## Builds and measurements
 
-Six-key flash: 14,325 / 14,336 bytes (11 free), three-key:
-14,321 / 14,336 bytes (15 free). Both builds include 1–16 clicks and the
-100 ms held-scroll interval. Timed precision uses four fractional timer bytes,
-**Consumer Hold** uses three state bytes, and held scrolling adds one completion-time
-byte. Multi-click playback counts down in its action copy, removing the former
-click-counter byte. The unsigned mouse-button range check and this counter
-change recover 40 flash bytes without reducing features. See
-[experiment measurements](v8-experiment-results.md).
+Six-key flash: 14,330 / 14,336 bytes (6 free); three-key:
+14,326 / 14,336 bytes (10 free). Both builds retain every v8 feature and the
+100 ms held-scroll interval on both axes. External RAM allocation remains
+526 bytes for six keys and 517 for three; linker stack reserve remains 111 and
+114 bytes respectively. Horizontal scroll uses two formerly unused mouse-report
+bits, so queue and report sizes do not grow. Validator and report-packing
+optimizations recover the additional code space. See
+[v9 implementation measurements](v9-horizontal-scroll-results.md).
 
-The isolated `experiment/v8-scroll-acceleration` branch includes **Off**/**Slow**/**Fast** and
-held scrolling but omits color preview and rainbow animation. It remains a v7
-experimental extension and must use its own configurator. Its accelerated
-profiles reject in the merged v8 firmware. See [test instructions](v8-scroll-experiment.md).
-Published v8 release firmware is available in `releases/`, built from revision
-`b5053698`. Use the frozen format-v8 editor with these releases.
+Checked-in releases and the bundled uploader carry published v8 firmware.
+Testing v9 requires an ordinary source build/upload and the latest v9 editor.
+The frozen format-v8 editor remains available for released firmware. No v9
+release has been generated.
+
+**Mouse click**, **Mouse hold** and **Mouse toggle** also offer **Click here** to
+open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**
+next to its click counter, so held and toggled outputs can be checked. Releases
+outside the test area are tracked; leaving the browser clears the display until
+another mouse event reports its current button state.

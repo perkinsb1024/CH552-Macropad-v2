@@ -29,10 +29,11 @@ uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
     }
     assert(count < 64);
     reports[count][0] = 2;
-    reports[count][1] = buttons;
+    reports[count][1] = buttons & 7;
     reports[count][2] = x;
     reports[count][3] = y;
-    reports[count][4] = wheel;
+    reports[count][4] = buttons & 0x80 ? 0 : wheel;
+    reports[count][5] = buttons & 0x80 ? wheel : 0;
     reportTimes[count] = reportNow;
     count++;
     return 1;
@@ -345,9 +346,9 @@ static void testScrollReportSpacing(void) {
     // Exercise every low-byte start phase across full millisecond wrap, with
     // uneven loop polling and a blocked USB queue. Assert actual wheel-report
     // acceptance times, rather than only the number of reports produced.
-    for (uint16_t phase = 0; phase < 256; phase++) {
+    for (uint16_t phase = 0; phase < 512; phase++) {
         reset();
-        activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+        activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL | (phase & 256 ? CONFIG_SCROLL_HORIZONTAL : 0);
         activeConfig[10] = phase & 1 ? (uint8_t)-1 : 1;
         uint16_t start = (uint16_t)(65500 + phase);
         actionsPress(0, start);
@@ -358,7 +359,8 @@ static void testScrollReportSpacing(void) {
         }
         assert(count >= 6 && count <= 11);
         for (uint8_t i = 0; i < count; i++) {
-            assert(reports[i][0] == 2 && reports[i][4] == activeConfig[10]);
+            assert(reports[i][0] == 2 && reports[i][phase & 256 ? 5 : 4] == activeConfig[10]);
+            assert(reports[i][phase & 256 ? 4 : 5] == 0);
             if (i) assert((uint16_t)(reportTimes[i] - reportTimes[i - 1]) >= 100);
         }
         actionsRelease(0);

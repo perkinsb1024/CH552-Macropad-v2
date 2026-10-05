@@ -2102,3 +2102,134 @@ output {
   .viewer-binding-list > li { flex-wrap: wrap; }
   .footer { flex-wrap: wrap; height: auto; min-height: var(--footer-height); max-height: none; }
 }
+
+.inline-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.scroll-test-dialog {
+  margin: auto;
+  width: min(680px, calc(100% - 40px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+.scroll-test-dialog::backdrop {
+  background: rgb(8 10 16 / 0.45);
+  backdrop-filter: blur(3px);
+}
+.scroll-test-dialog .notice {
+  margin-top: 14px;
+}
+.scroll-test-area {
+  height: clamp(140px, 35dvh, 320px);
+  margin-top: 16px;
+  overflow: scroll;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.scroll-test-grid {
+  width: 1400px;
+  height: 1200px;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.scroll-test-grid > div {
+  display: grid;
+  place-items: center;
+  color: var(--fg-muted);
+}
+.scroll-test-counts {
+  margin-top: 16px;
+  container-type: inline-size;
+}
+.scroll-test-counts h3 {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.scroll-test-counts > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mouse-button-column {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 172px;
+}
+.mouse-button-column:nth-child(2) {
+  justify-content: center;
+}
+.mouse-button-column:last-child {
+  justify-content: flex-end;
+}
+.mouse-button-column > span:last-child {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+.mouse-button-column output {
+  min-width: 2ch;
+  text-align: right;
+}
+.mouse-button-state {
+  display: inline-block;
+  width: 72px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--fg-muted);
+  background: var(--bg);
+  font-size: 11px;
+}
+.mouse-button-state.is-held {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elev));
+}
+
+@container (max-width: 564px) {
+  .scroll-test-counts > div {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .mouse-button-column {
+    width: calc((100% - 16px) / 3);
+    gap: 4px;
+    font-size: 12px;
+  }
+  .mouse-button-state {
+    width: 64px;
+    padding-inline: 4px;
+    font-size: 10px;
+  }
+}
+@container (max-width: 360px) {
+  .scroll-test-counts > div {
+    gap: 6px;
+  }
+  .mouse-button-column {
+    width: calc((100% - 12px) / 3);
+    font-size: 10px;
+  }
+  .mouse-button-state {
+    width: 52px;
+    padding-inline: 3px;
+    font-size: 9px;
+  }
+}

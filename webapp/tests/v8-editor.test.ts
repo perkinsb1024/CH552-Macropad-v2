@@ -4,7 +4,7 @@ import { profile, selectedSlot, getAction, setAction, canSwapSlots } from '../sr
 import { defaultProfile } from '../src/model/defaults';
 import { actionNeedsRelease } from '../src/model/actions';
 import type { Action, Slot } from '../src/model/types';
-vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory() }));
+vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 type Node = { type: unknown; props: Record<string, unknown> };
 function nodes(value: unknown): Node[] {
   if (Array.isArray(value)) return value.flatMap(nodes);

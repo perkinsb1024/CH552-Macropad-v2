@@ -486,6 +486,31 @@ static void testScrollHoldValidation(void) {
     }
 }
 
+static void testScrollAxisValidation(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            for (uint8_t rotation = 0; rotation < 2; rotation++) {
+                testLoadStarterProfile(variant);
+                uint8_t offset = rotation ? 9 + 2 * ((variant ? 3 : 6) + 1) : 9;
+                activeConfig[offset] = CONFIG_ACTION_SCROLL | (aux << 4);
+                activeConfig[offset + 1] = 1;
+                seal();
+                assert(!!configValid(activeConfig, variant) == (!(aux & 3) && !(rotation && (aux & 4))));
+            }
+        }
+        testLoadStarterProfile(variant);
+        activeConfig[3] |= 0x40;
+        uint8_t timer = configTimedOffset();
+        activeConfig[timer + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HORIZONTAL;
+        activeConfig[timer + 2] = -127;
+        seal(); assert(configValid(activeConfig, variant));
+        activeConfig[timer + 1] |= CONFIG_SCROLL_HOLD;
+        seal(); assert(!configValid(activeConfig, variant));
+        testLoadStarterProfile(variant); activeConfig[2] = 8;
+        seal(); assert(!configValid(activeConfig, variant));
+    }
+}
+
 int main(void) {
     testConsumerHoldEncoding();
     testScrollHoldValidation();
@@ -559,5 +584,6 @@ int main(void) {
     testMouseButtonMasks();
     testMultiClick();
     testActions();
+    testScrollAxisValidation();
     return 0;
 }

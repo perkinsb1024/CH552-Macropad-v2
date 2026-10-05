@@ -1,5 +1,5 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
-import { useMemo } from 'preact/hooks';
+import { useMemo, useState } from 'preact/hooks';
 import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
@@ -11,6 +11,7 @@ import { getAction, layerName, profile, rememberedAction, rememberedCustomClickC
 import { ColorPreview } from './ColorPreview';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
+import { ScrollTest } from './ScrollTest';
 
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control'] as const;
 
@@ -35,7 +36,7 @@ function MouseButtons({ value, onChange }: { value: number; onChange(v: number):
   );
 }
 
-function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange }: {
+function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest }: {
   label: string;
   directionLabel: string;
   negativeLabel: string;
@@ -43,6 +44,7 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
   hint: string;
   value: number;
   onChange(v: number): void;
+  onTest?(): void;
 }) {
   const magnitude = Math.max(1, Math.min(127, Math.abs(value)));
   const negative = value < 0;
@@ -59,12 +61,14 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
           <button type="button" class={negative ? 'is-selected' : ''} aria-pressed={negative} onClick={() => setDirection(true)}>{negativeLabel}</button>
           <button type="button" class={!negative ? 'is-selected' : ''} aria-pressed={!negative} onClick={() => setDirection(false)}>{positiveLabel}</button>
         </div>
+        {onTest && <span class="hint">Some computers may invert these settings, in which case you will need to swap {negativeLabel.toLowerCase()} and {positiveLabel.toLowerCase()}. <button type="button" class="inline-link" onClick={onTest}>Click here</button> to test the scrolling behavior.</span>}
       </div>
     </div>
   );
 }
 
 export function Inspector() {
+  const [showScrollTest, setShowScrollTest] = useState(false);
   const p = profile.value;
   const slot = selectedSlot.value;
   const action = p && slot ? getAction(p, slot) : undefined;
@@ -256,8 +260,19 @@ export function Inspector() {
         </div>
       )}
 
+      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle') && (
+        <p class="hint"><button type="button" class="inline-link" onClick={() => setShowScrollTest(true)}>Click here</button> to test your configured mouse events.</p>
+      )}
+
       {action.type === 'scroll' && (
-        <DirectionalStep label="Wheel step" directionLabel="Scroll direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+        <div class="field">
+          <span class="field-label">Scroll axis</span>
+          <div class="segmented" role="group" aria-label="Scroll axis">
+            <button type="button" class={!action.horizontal ? 'is-selected' : ''} aria-pressed={!action.horizontal} onClick={() => update({ ...action, horizontal: false })}>Vertical</button>
+            <button type="button" class={action.horizontal ? 'is-selected' : ''} aria-pressed={!!action.horizontal} onClick={() => update({ ...action, horizontal: true })}>Horizontal</button>
+          </div>
+          <DirectionalStep onTest={() => setShowScrollTest(true)} label="Wheel step" directionLabel="Scroll direction" negativeLabel={action.horizontal ? 'Left' : 'Up'} positiveLabel={action.horizontal ? 'Right' : 'Down'} hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+        </div>
       )}
       {action.type === 'mouseX' && (
         <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
@@ -386,6 +401,7 @@ export function Inspector() {
           <ColorPreview color={layer.leds[keyIndex]!} />
         </div>
       )}
+      {showScrollTest && <ScrollTest onClose={() => setShowScrollTest(false)} />}
     </section>
   );
 }

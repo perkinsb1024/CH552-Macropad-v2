@@ -1,0 +1,20 @@
+{
+  "formatVersion": 8,
+  "sourceCommit": "5fba5f113e3e1fa30a3ccba9d38c9fcd3906f0ff",
+  "changes": [
+    "HTML archive banner and latest-editor link; v8 drafts and live view retained",
+    "Relative uploader link forwards to the shared uploader; bundled releases use v8"
+  ],
+  "validation": "TypeScript check and Vite production build passed.",
+  "sha256": {
+    "assets/configurator-XZ5RmcZQ.js.map": "7d686c9b564baab14a8d7c73678103f1ef6123631d1774795f02d13a353d5904",
+    "assets/main-DeixJ9VD.js": "f3219a01b29ccf96c38aaa0477806377c573a9c80d02ba54658be77fe4fbefd1",
+    "assets/main-DeixJ9VD.js.map": "1ad78d4185783d5473d745c786e1c23a7e4ef85a647a11420cab946255f6df56",
+    "assets/main-_UXswFbI.css": "563abc6d8a070908063aff10aa546717d34d440eab83df4a987a53018189e13c",
+    "assets/viewer-XZ5RmcZQ.js.map": "48279e08f75abea287f2a0adacb2c51a803310d3083d0160a0e5cda1cda7b4e6",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "a35ce2549f3b0151b254998cda093d7efd0b1124c993c088600d222044d38c99",
+    "liveView/index.html": "7f75eeca10f17b6762e92af01d4767f5621468603f8732f89da9a4e8f99f531c",
+    "webUploader/index.html": "5f15e10c245201ab4027c90539851c3196b2c9972d20f69a04aa88812c13668f"
+  }
+}

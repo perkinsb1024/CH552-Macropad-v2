@@ -667,7 +667,7 @@ void actionsPoll(uint16_t now) {
       if ((uint8_t)(buttonFirst[i] - (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X)) <= 1) {
         movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
 #if CONFIG_SCROLL_HOLD_SUPPORT
-      } else if (buttonFirst[i] == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL) &&
+      } else if ((uint8_t)(buttonFirst[i] & (uint8_t)~CONFIG_SCROLL_HORIZONTAL) == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL) &&
                  (uint8_t)((uint8_t)now - scrollRepeated) >= 100) {
         queueAction(buttonFirst[i], buttonSecond[i], 0);
 #endif
@@ -697,7 +697,7 @@ void actionsPoll(uint16_t now) {
       int8_t delta = currentSecond;
       if (!delta) {
         currentFirst = 0;
-      } else if (USB_queueMouse(mouseButtons(), 0, 0, delta < 0 ? -1 : 1)) {
+      } else if (USB_queueMouse(mouseButtons() | (currentFirst & CONFIG_SCROLL_HORIZONTAL), 0, 0, delta < 0 ? -1 : 1)) {
         currentSecond = delta < 0 ? delta + 1 : delta - 1;
         if (!currentSecond) {
           scrollRepeated = now; // Wait after the whole step, including large deltas.

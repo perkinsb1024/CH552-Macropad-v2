@@ -121,7 +121,7 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 | **Mouse click** | Clicks your selected mouse button or buttons 1–16 times: choose **Single**, **Double**, or **Custom** |
 | **Mouse hold** | Keeps the selected mouse buttons down while you hold the macropad button; useful for dragging |
 | **Mouse toggle** | Press once to keep the selected mouse buttons down; activate the same input again to release them. Changing layers also clears toggled mouse buttons |
-| **Scroll** | Sends a vertical scroll step. Choose **Up** or **Down** and a **Wheel step** from 1–127 |
+| **Scroll** | Sends a scroll step. Choose **Vertical** with **Up**/**Down**, or **Horizontal** with **Left**/**Right**, and a **Wheel step** from 1–127 (horizontal requires v9 firmware) |
 | **Move pointer X** | Moves left or right by the selected amount, from 1–127 |
 | **Move pointer Y** | Moves up or down by the selected amount, from 1–127 |
 
@@ -134,6 +134,12 @@ Each press lasts at least 8 ms, with a 200 ms pause between clicks; USB delays c
 extend the sequence. Subsequent queued actions wait for it to finish, while holds,
 media controls and layer/LED actions use independent handling. Your computer
 decides whether the sequence is recognized as a double-click or another gesture.
+
+Some computers invert scroll directions. If the selected direction behaves
+backwards, swap **Up**/**Down** or **Left**/**Right**. Under **Scroll direction**,
+**Click here** opens **Scroll & click test** with a scrollable area on both axes
+and click counters for each mouse button. Save edits to the macropad before
+testing; the modal warns if you have unsaved changes.
 
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held
@@ -630,3 +636,9 @@ The same cancellation can happen when the unconsumed input's normal binding chan
 </details>
 
 [Back to index](#index)
+
+**Mouse click**, **Mouse hold** and **Mouse toggle** also offer **Click here** to
+open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**
+next to its click counter, so held and toggled outputs can be checked. Releases
+outside the test area are tracked; leaving the browser clears the display until
+another mouse event reports its current button state.

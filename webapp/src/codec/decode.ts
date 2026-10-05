@@ -83,9 +83,9 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (nonZeroAux || b1 < 1 || b1 > 7) return 'Invalid mouse button mask';
       return { type: type === ActionCode.MouseHold ? 'mouseHold' : 'mouseToggle', buttons: b1 };
     case ActionCode.Scroll:
-      if ((version < 8 ? nonZeroAux : aux !== 0 && aux !== 4) || b1 === 0x80) return 'Invalid scroll settings';
-      if (rotation && aux) return 'Scroll hold bound to rotation';
-      return { type: 'scroll', delta: toSigned(b1), ...(aux ? { hold: true } : {}) };
+      if ((version < 8 ? nonZeroAux : version === 8 ? aux !== 0 && aux !== 4 : !!(aux & 3)) || b1 === 0x80) return 'Invalid scroll settings';
+      if (rotation && (aux & 4)) return 'Scroll hold bound to rotation';
+      return { type: 'scroll', delta: toSigned(b1), ...(aux & 4 ? { hold: true } : {}), ...(aux & 8 ? { horizontal: true } : {}) };
     case ActionCode.MouseX:
     case ActionCode.MouseY: {
       if (aux > 1 || b1 === 0x80) return 'Invalid relative delta';
@@ -124,7 +124,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
