@@ -6,7 +6,8 @@ import { ArchivedFirmwareNotice } from './ArchivedFirmwareNotice';
 import { DeviceView } from './DeviceView';
 import { TopBar } from './TopBar';
 import { Toasts } from './Toasts';
-import { approximateDuration } from './TimedActionsPanel';
+import { TIMED_TICK_SECONDS } from '../../model/constants';
+import { duration } from './TimedActionsPanel';
 
 export function ViewerChords() {
   const p = profile.value!;
@@ -33,7 +34,7 @@ export function ViewerTimers() {
     <ul class="viewer-binding-list viewer-timers">
       {timers.map((timer, index) => <li key={index}>
         <div><strong>Timer {index + 1}</strong><span class="muted">
-          {timer.resetOnInput ? 'After inactivity · ' : 'Repeats every '}{approximateDuration(timer.ticks)}
+          {timer.resetOnInput ? 'After ' : 'Repeats every '}{duration(timer.ticks * TIMED_TICK_SECONDS)}{timer.resetOnInput ? ' of inactivity' : ''}
         </span></div>
         <div><span class="muted">When fired</span><ActionLabel action={timer.action} /></div>
         {(timer.resumeAction.type !== 'none' || timer.consumeInput) && <div>

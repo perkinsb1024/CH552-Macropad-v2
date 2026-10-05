@@ -153,6 +153,27 @@ export function summarize(action: Action): string {
   }
 }
 
+/** Full action description for trigger tooltips, without key-cap truncation. */
+export function actionTooltip(action: Action): string {
+  const label = descriptor(action.type).label;
+  switch (action.type) {
+    case 'none': return label;
+    case 'keyTap':
+    case 'keyHold': {
+      const parts = modifierNames(action.modifiers);
+      if (action.usage) parts.push(keyName(action.usage));
+      return `${label}: ${parts.join(' + ') || 'No key'}`;
+    }
+    case 'string': return `${label}: ${action.text.length ? `“${action.text}”` : 'Empty text'}`;
+    case 'mouseHold':
+    case 'mouseToggle': return `${label}: ${mouseButtonNames(action.buttons).join(' + ') || '?'}`;
+    case 'consumerHold': return `${label}: ${consumerName(action.usage)}`;
+    case 'relativeLayer':
+    case 'oneShotRelativeLayer': return `${label}: ${action.offset > 0 ? '+' : ''}${action.offset}`;
+    default: return `${label}: ${summarize(action)}`;
+  }
+}
+
 export function actionsEqual(a: Action, b: Action): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }

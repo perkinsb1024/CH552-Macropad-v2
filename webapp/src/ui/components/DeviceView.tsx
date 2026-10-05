@@ -1,6 +1,6 @@
 import { keyCount, LayerIndicatorBehavior } from '../../model/constants';
-import { PALETTE, paletteHex } from '../../model/palette';
-import { summarize } from '../../model/actions';
+import { paletteHex } from '../../model/palette';
+import { actionTooltip, summarize } from '../../model/actions';
 import { matchesChord } from '../../model/chords';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
@@ -20,7 +20,6 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const indicatorOn = layer.indicatorBehavior !== LayerIndicatorBehavior.None;
   const indicatorRainbow = layer.indicatorColor === 15;
   const indicatorColor = layer.indicatorColor === 14 ? '#B8BEC8' : paletteHex(layer.indicatorColor);
-  const indicatorName = indicatorOn ? `${indicatorRainbow ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name} (${layer.indicatorFullBrightness ? 'bright' : 'dim'})` : 'Off';
   const keys = keyCount(p.variant);
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
@@ -157,6 +156,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     return (
       <button
         key={index}
+        title={actionTooltip(action)}
         data-clipboard-target={!readOnly || undefined}
         class={`keycap ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-glow:${off ? 'transparent' : color}`}
@@ -172,7 +172,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
       >
         <span class="keycap-led" aria-hidden="true" />
         <span class="keycap-index">{index + 1}</span>
-        <span class="keycap-label"><ActionLabel action={action} /></span>
+        <span class="keycap-label"><ActionLabel action={action} showTooltip={false} /></span>
         {chordKeys.has(index) && <span class={`keycap-chord ${selectedChord && (selectedChord.keyA === index || selectedChord.keyB === index) ? 'is-selected' : ''}`} title="Part of a chord on this layer">chord</span>}
         {intent === 'before' || intent === 'after' ? <span class={`drop-line ${slotDrop.value?.rowBoundary ? 'drop-line-row' : `drop-line-${intent}`}`} aria-hidden="true" /> : null}
       </button>
@@ -186,9 +186,9 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
     const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
-      <button data-clipboard-target={!readOnly || undefined} class={`enc-part ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
+      <button title={actionTooltip(action)} data-clipboard-target={!readOnly || undefined} class={`enc-part ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
         <span class="enc-part-label">{icon}{label}</span>
-        <span class="enc-part-value"><ActionLabel action={action} /></span>
+        <span class="enc-part-value"><ActionLabel action={action} showTooltip={false} /></span>
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>
     );
@@ -197,8 +197,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   return (
     <div class={`device device-${keys} ${readOnly ? "device-readonly" : ""}`}>
       <div class={`device-shell ${indicatorOn ? 'indicator-glow' : ''} ${indicatorRainbow ? 'indicator-rainbow' : ''}`}
-        style={`--indicator-color:${indicatorColor}; --indicator-opacity:${layer.indicatorFullBrightness ? 1 : 0.65}`}
-        title={`Layer indicator: ${indicatorName}`}>
+        style={`--indicator-color:${indicatorColor}; --indicator-opacity:${layer.indicatorFullBrightness ? 1 : 0.65}`}>
       <div class="device-body">
         <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={readOnly ? undefined : gridDragOver} onDrop={readOnly ? undefined : gridDrop}>
           {Array.from({ length: keys }, (_, i) => renderKeyCap(i))}
