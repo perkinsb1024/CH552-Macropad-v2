@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { isProfileViewerPath } from '../src/site';
+import { isLiveViewPath } from '../src/site';
 import { defaultProfile } from '../src/model/defaults';
 import { encodeProfile } from '../src/codec/encode';
 import { SimulatedDevice } from '../src/protocol/simulator';
@@ -56,10 +56,10 @@ async function connect(blank = false) {
   return c.connection;
 }
 it('supports direct viewer URLs including project prefixes and static entry pages', () => {
-  for (const path of ['/viewProfile', '/viewProfile/', '/viewProfile/index.html', '/macropad/viewProfile/']) {
-    expect(isProfileViewerPath(path)).toBe(true);
+  for (const path of ['/liveView', '/liveView/', '/liveView/index.html', '/macropad/liveView/']) {
+    expect(isLiveViewPath(path)).toBe(true);
   }
-  for (const path of ['/', '/viewProfileOther', '/versions/']) expect(isProfileViewerPath(path)).toBe(false);
+  for (const path of ['/', '/liveViewOther', '/versions/']) expect(isLiveViewPath(path)).toBe(false);
 });
 it('loads hardware bindings without restoring or clearing an existing editor draft', async () => {
   const draft = defaultProfile(0);

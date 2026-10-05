@@ -158,6 +158,8 @@ button, input, select, textarea {
    Controls
    --------------------------------------------------------------------- */
 .btn {
+  text-decoration: none;
+  color: var(--fg);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1104,12 +1106,42 @@ output {
 .device {
   display: flex;
   justify-content: center;
+  padding-top: 8px;
+  container-type: inline-size;
+  width: 100%;
+}
+.device-shell {
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 16px;
+  max-width: 100%;
+}
+.device-shell.indicator-glow::before,
+.device-shell.indicator-glow::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: calc(var(--device-radius, 22px) + 7px);
+  background: var(--indicator-color);
+  opacity: var(--indicator-opacity);
+  filter: blur(8px);
+  pointer-events: none;
+  z-index: -1;
+}
+.device-shell.indicator-glow::after {
+  inset: -3px;
+  border-radius: calc(var(--device-radius, 22px) + 3px);
+  filter: blur(1px);
+}
+.device-shell.indicator-rainbow::before,
+.device-shell.indicator-rainbow::after {
+  background: conic-gradient(from 45deg, #ff0000, #ffb400, #00ff00, #00ffff, #0040ff, #8000ff, #ff00ff, #ff0000);
 }
 .device-body {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 28px;
-  margin-bottom: 16px;
   padding: 26px 30px;
   border-radius: 22px;
   background: var(--device-body);
@@ -1117,6 +1149,9 @@ output {
 }
 .device-3 .device-body {
   padding: 26px 30px;
+}
+.device-shell.indicator-glow .device-body {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 .keygrid {
   display: grid;
@@ -1976,6 +2011,7 @@ output {
   padding: 18px 20px 28px;
 }
 .viewer-workspace .tabs { margin-bottom: 10px; }
+.viewer-workspace .device { padding-top: 18px; }
 .viewer-layer-status { margin: 0 0 16px; }
 .viewer-layer-status .notice { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .viewer-layer-status .btn { margin-left: auto; }
@@ -1989,3 +2025,44 @@ output {
 .device-readonly .keycap, .device-readonly .enc-part { cursor: default; }
 .device-readonly .keycap:active { transform: none; box-shadow: 0 4px 0 var(--key-lip), 0 6px 14px -6px rgb(0 0 0 / 0.5), 0 0 22px -4px var(--led-glow); }
 .device-readonly .enc-part:hover { border-color: var(--line); }
+
+/* Size against the available preview width, including narrow editor columns. */
+@container (max-width: 660px) {
+  .device-shell { width: 100%; max-width: 580px; --device-radius: 18px; }
+  .device-body, .device-3 .device-body { width: 100%; padding: 18px 16px; gap: 16px; border-radius: 18px; }
+  .keygrid { flex: 1; min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .keycap { min-width: 0; min-height: 100px; padding: 32px 7px 9px; }
+  .keycap-label { display: block; overflow-wrap: anywhere; }
+  .keycap-chord { font-size: 8px; padding: 1px 3px; right: 4px; }
+  .keycap-index { left: 7px; top: 11px; }
+  .encoder { flex: 0 0 120px; gap: 10px; }
+  .enc-parts { width: 100%; }
+  .enc-part { min-width: 0; padding: 7px; }
+  .enc-part-value { overflow-wrap: anywhere; }
+  .knob { width: 56px; height: 56px; }
+  .knob-mark { height: 11px; top: 6px; }
+  .shortcut-pill { font-size: 11px; padding: 1px 4px; }
+}
+@container (max-width: 440px) {
+  .device-body, .device-3 .device-body { padding: 16px 12px; gap: 12px; }
+  .encoder { flex-basis: 106px; }
+  .enc-part-label { font-size: 9px; letter-spacing: 0.02em; gap: 3px; }
+  .enc-part-value, .keycap-label { font-size: 11.5px; }
+  .keygrid { gap: 8px; }
+}
+@container (max-width: 340px) {
+  .device-body, .device-3 .device-body { flex-direction: column; }
+  .keygrid { width: 100%; }
+  .encoder { flex-basis: auto; width: 100%; flex-direction: row; }
+  .knob { flex-shrink: 0; width: 42px; height: 42px; }
+  .enc-parts { min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .topbar { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+  .topbar .actions { justify-content: flex-start; flex-wrap: wrap; }
+  .workspace, .viewer-workspace { padding: 12px; }
+  .card-device { padding: 12px; }
+  .viewer-layer-status .btn { margin-left: 0; }
+  .viewer-binding-list > li { flex-wrap: wrap; }
+  .footer { flex-wrap: wrap; height: auto; min-height: var(--footer-height); max-height: none; }
+}

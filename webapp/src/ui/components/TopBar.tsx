@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ask, canRedo, canSave, canUndo, closeDialog, connectHid, connectSimulator, connection, dirty, disconnect, hidSupported, loadFromDevice, profile, redo, save, saveState, undo } from '../store';
-import { IconCheck, IconChevron, IconClose, IconReadDevice, IconRefresh, IconSave, IconConnect, IconWarning } from './Icons';
+import { IconCheck, IconChevron, IconClose, IconReadDevice, IconRefresh, IconSave, IconConnect, IconWarning, IconEye } from './Icons';
 import { FORMAT_VERSION, variantName } from '../../model/constants';
 import { UnsavedChanges } from './UnsavedChanges';
 import { siteUrl } from '../../site';
@@ -112,7 +112,7 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
         </div>
         <div>
           <h1>Universal Macropad</h1>
-          <div class="brand-sub">{readOnly ? 'Profile viewer' : 'Configurator'}</div>
+          <div class="brand-sub">{readOnly ? 'Live View' : 'Configurator'}</div>
         </div>
       </div>
 
@@ -133,7 +133,7 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
       </div>
 
       <div class="actions">
-        <a class="btn" href={siteUrl(readOnly ? './' : 'viewProfile/')} target="_blank" rel="noreferrer">{readOnly ? 'Configurator' : 'View profile'}</a>
+        <a class="btn" href={siteUrl(readOnly ? './' : 'liveView/')} target="_blank" rel="noreferrer">{!readOnly && <IconEye />}{readOnly ? 'Configurator' : 'Live View'}</a>
         {!readOnly && profile.value && <>
           <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo"><IconRefresh mirrored /> Undo</button>
           <button class="btn" onClick={redo} disabled={!canRedo.value} title="Redo (⌘⇧Z / Ctrl+Shift+Z)" aria-label="Redo"><IconRefresh /> Redo</button>

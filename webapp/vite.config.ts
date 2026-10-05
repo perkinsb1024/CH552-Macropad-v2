@@ -11,7 +11,7 @@ export default defineConfig({
     target: 'es2022', sourcemap: true,
     rollupOptions: { input: {
       configurator: 'index.html',
-      viewer: 'viewProfile/index.html',
+      viewer: 'liveView/index.html',
     } },
   },
   test: { environment: 'node', include: ['tests/**/*.test.{ts,mjs}'] },

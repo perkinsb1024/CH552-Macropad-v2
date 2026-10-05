@@ -74,12 +74,12 @@ export function ProfileViewer() {
               {deviceLayer === i && <span class="tab-badge">device</span>}
             </button>)}
           </div>
-          <div class="viewer-layer-status" aria-live="polite">
+          {(mismatch || !knownLayer) && <div class="viewer-layer-status" aria-live="polite">
             {mismatch ? <div class="notice notice-warn" role="status">
               Viewing {layerName(selectedLayer.value)}. Your macropad is on {layerName(deviceLayer!)}.
               <button class="btn" onClick={() => { selectedLayer.value = deviceLayer!; }}>Follow device</button>
-            </div> : <p class="muted">{knownLayer ? `Following device · ${layerName(deviceLayer!)}` : 'Device disconnected or layer unavailable · showing the last loaded profile'}</p>}
-          </div>
+            </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
+          </div>}
           <DeviceView readOnly />
         </section>
         <div class="viewer-extras"><ViewerChords /><ViewerTimers /></div>

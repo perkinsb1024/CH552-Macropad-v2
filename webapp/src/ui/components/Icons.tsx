@@ -42,6 +42,9 @@ export const IconArrow = ({ up = false }: { up?: boolean }) => (
 export const IconSearch = () => (
   <svg {...base}><circle cx="10.5" cy="10.5" r="6.5" /><path d="M16 16l5 5" /></svg>
 );
+export const IconEye = () => (
+  <svg {...base}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>
+);
 export const IconWarning = () => (
   <svg {...base}><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
 );

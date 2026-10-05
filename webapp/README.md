@@ -36,11 +36,11 @@ protocol handler as the firmware, including invalid-flash and failed-commit path
 which is useful for demo links and screenshots. "Edit offline" on the welcome
 screen edits a profile for either variant without any device.
 
-## Read-only profile viewer
+## Live View
 
-Open `/viewProfile` (or `viewProfile/` beneath the deployed site's project prefix)
+Open `/liveView` (or `liveView/` beneath the deployed site's project prefix)
 to keep a compact shortcut reference beside your work. The configurator's
-**View profile** link opens it in another tab. Connect the macropad in the viewer
+**Live View** link opens it in another tab. Connect the macropad in the viewer
 to read its saved profile; editor drafts are neither restored nor cleared.
 
 The viewer shows the same macropad preview, layer tabs, applicable local/global
@@ -52,9 +52,9 @@ layer change selects the device layer again. **Follow device** also resynchroniz
 immediately. On disconnect, the last loaded profile remains available with a
 disconnected notice. Blank/invalid device profiles do not display starter bindings.
 
-`/viewProfile/?sim=six` and `?sim=three` provide hardware-free previews. Like the
+`/liveView/?sim=six` and `?sim=three` provide hardware-free previews. Like the
 configurator, the simulator models configuration transport rather than physical
-key presses. The build includes a standalone `viewProfile/index.html` entry so
+key presses. The build includes a standalone `liveView/index.html` entry so
 direct viewer links work on static hosting without SPA rewrites.
 
 ## Layout

@@ -1,5 +1,5 @@
-import { keyCount } from '../../model/constants';
-import { paletteHex } from '../../model/palette';
+import { keyCount, LayerIndicatorBehavior } from '../../model/constants';
+import { PALETTE, paletteHex } from '../../model/palette';
 import { summarize } from '../../model/actions';
 import { matchesChord } from '../../model/chords';
 import type { Slot } from '../../model/types';
@@ -17,6 +17,10 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
+  const indicatorOn = layer.indicatorBehavior !== LayerIndicatorBehavior.None;
+  const indicatorRainbow = layer.indicatorColor === 15;
+  const indicatorColor = layer.indicatorColor === 14 ? '#B8BEC8' : paletteHex(layer.indicatorColor);
+  const indicatorName = indicatorOn ? `${indicatorRainbow ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name} (${layer.indicatorFullBrightness ? 'bright' : 'dim'})` : 'Off';
   const keys = keyCount(p.variant);
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
@@ -192,6 +196,9 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
 
   return (
     <div class={`device device-${keys} ${readOnly ? "device-readonly" : ""}`}>
+      <div class={`device-shell ${indicatorOn ? 'indicator-glow' : ''} ${indicatorRainbow ? 'indicator-rainbow' : ''}`}
+        style={`--indicator-color:${indicatorColor}; --indicator-opacity:${layer.indicatorFullBrightness ? 1 : 0.65}`}
+        title={`Layer indicator: ${indicatorName}`}>
       <div class="device-body">
         <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={readOnly ? undefined : gridDragOver} onDrop={readOnly ? undefined : gridDrop}>
           {Array.from({ length: keys }, (_, i) => renderKeyCap(i))}
@@ -204,6 +211,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
             {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn right', icon: <IconRotate ccw /> })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
