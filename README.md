@@ -59,14 +59,11 @@ To use this configuration as a starting point, copy the contents of either the [
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v7 firmware files are available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. This version adds **Timed actions**, action-based **LED control** (including dimming and effects), and the ability to jump to the previous layer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v8 firmware files are available for [three-key](releases/ch552-macropad-3-key-b5053698.hex) and [six-key](releases/ch552-macropad-6-key-b5053698.hex) macropads, built from source revision `b5053698`. This version improves **Timed actions** accuracy, adds **Media / system hold** and held **Scroll**, and supports 1–16 clicks with **Mouse click**. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-This experiment branch builds v8 with more accurate timers, held media controls,
-held scrolling, and 1–16 mouse clicks. Build its source to try these features; the
-checked-in release
-files and bundled browser uploader still contain v7 firmware. Use the frozen v7
-configurator with those releases. Back up your profile before updating; v8 leaves
-old flash intact but inputs stay inactive until the editor migrates and saves it.
+Use the current v8 configurator with these releases. Back up your profile before
+updating; v8 leaves old flash intact, but inputs stay inactive until the editor
+migrates and saves the profile as v8.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
