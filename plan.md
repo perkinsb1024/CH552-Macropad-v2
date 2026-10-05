@@ -15,7 +15,7 @@ This plan covers firmware and a browser configurator for the existing CH552 macr
 - Store sparse chord bindings after the configured layers, then strings in the remaining space; share identical strings across bindings and layers.
 - Read existing configuration into the editor and verify saves by reading actual DataFlash back.
 - Use one persistent configuration image. An interrupted save may invalidate it; the user can reconnect and save again.
-- Keep VID 0x1209 and PID 0xC55D. Advertise the USB product name as Universal Macropad.
+- Keep VID 0x1209 and PID 0xC55D. Advertise the USB product name as **Universal Macropad**.
 - Use WebHID from a static web app. No account, server-side device service, or continuously running host application is required.
 
 Physical pin assignments, encoder electrical decoding parameters, and button debounce timing remain board/firmware definitions. Header information such as variant, layer count, startup layer, and chord window describes the whole profile; action and LED settings belong to individual layers.
@@ -51,7 +51,7 @@ The six-key variant uses a 22-byte layer record; the three-key variant uses a 15
 | Clockwise encoder binding | 14–15 / 2 bytes | 8–9 / 2 bytes |
 | Counterclockwise encoder binding | 16–17 / 2 bytes | 10–11 / 2 bytes |
 | LED palette indices | 18–20 / 3 bytes | 12–13 / 2 bytes |
-| Layer options | 21 / 1 byte | 14 / 1 byte |
+| **Layer options** | 21 / 1 byte | 14 / 1 byte |
 
 Each binding occupies two bytes. Pack two LED palette indices per byte, with the even-numbered LED in the low nibble and the odd-numbered LED in the high nibble. The unused high nibble of the three-key variant's second LED byte must be zero.
 
@@ -61,30 +61,30 @@ For the encoder-button hold gesture, capture the originating layer's bootloader-
 
 ### Sparse two-key chord table
 
-The chord table begins immediately after the final layer and has the count encoded in header byte 5. Each configured chord uses three bytes: one key-pair/layer identifier followed by a normal two-byte action record. Unlisted pairs retain their separate single-key bindings. A six-key layer has 15 possible pairs; a three-key layer has three. Chords do not include the encoder button or rotation.
+The chord table begins immediately after the final layer and has the count encoded in header byte 5. Each configured chord uses three bytes: one key-pair/layer identifier followed by a normal two-byte action record. Unlisted pairs retain their separate single-key bindings. A six-key layer has 15 possible pairs; a three-key layer has three. **Chords** do not include the encoder button or rotation.
 
 In the identifier, bits 0–3 encode the unordered physical-key pair in lexicographic order (for six keys: (0,1), (0,2), ... (4,5)); bits 4–5 encode the layer index; bits 6–7 must be zero. For three keys only pair indices 0–2 are valid. Store entries in ascending identifier order, with no duplicate pair on a layer. Validate that all layer and pair indices exist, the table fits before the string pool, and each action is legal for a button press.
 
 ### Two-byte action record
 
-Byte 0 holds the action type in its low nibble and auxiliary data in its high nibble. Byte 1 holds the parameter. For keyboard actions, auxiliary bits represent Ctrl, Shift, Alt, and GUI, in that order. There is one modifier category per key; independent left/right modifier selection is outside version 1.
+Byte 0 holds the action type in its low nibble and auxiliary data in its high nibble. Byte 1 holds the parameter. For keyboard actions, auxiliary bits represent **Ctrl**, **Shift**, Alt, and **GUI**, in that order. There is one modifier category per key; independent left/right modifier selection is outside version 1.
 
 | Type | Action | Parameter and auxiliary data |
 | --- | --- | --- |
-| 0x0 | None | Both parameter and auxiliary data zero |
-| 0x1 | Keyboard tap | One raw keyboard HID usage plus modifier mask; press then release |
-| 0x2 | Keyboard hold | Same encoding; release when the physical button is released |
-| 0x3 | Mouse click | Left/right/middle button mask; auxiliary data zero |
-| 0x4 | Mouse double-click | Mouse button mask; auxiliary data zero |
-| 0x5 | Mouse hold | Mouse button mask; release with physical button |
-| 0x6 | Mouse toggle | Mouse button mask; alternate latched press/release |
-| 0x7 | Scroll step | Signed 8-bit vertical wheel-count magnitude; firmware emits one-count reports; auxiliary data zero |
+| 0x0 | **None** | Both parameter and auxiliary data zero |
+| 0x1 | **Keyboard tap** | One raw keyboard HID usage plus modifier mask; press then release |
+| 0x2 | **Keyboard hold** | Same encoding; release when the physical button is released |
+| 0x3 | **Mouse click** | **Left**/right/middle button mask; auxiliary data zero |
+| 0x4 | **Mouse double-click** | Mouse button mask; auxiliary data zero |
+| 0x5 | **Mouse hold** | Mouse button mask; release with physical button |
+| 0x6 | **Mouse toggle** | Mouse button mask; alternate latched press/release |
+| 0x7 | **Scroll step** | Signed 8-bit vertical wheel-count magnitude; firmware emits one-count reports; auxiliary data zero |
 | 0x8 | Consumer-control tap | 12-bit usage: auxiliary nibble is high four bits, parameter is low eight bits |
-| 0x9 | String | Offset relative to string-pool start; auxiliary data zero |
-| 0xA | Set layer | Destination layer index; auxiliary 0 persistent, 1 one-shot |
-| 0xB | Momentary layer | Destination layer while the physical button is held |
+| 0x9 | **String** | Offset relative to string-pool start; auxiliary data zero |
+| 0xA | **Set layer** | Destination layer index; auxiliary 0 persistent, 1 one-shot |
+| 0xB | **Momentary layer** | Destination layer while the physical button is held |
 | 0xC | Reserved | Rejected by current firmware; no action assigned |
-| 0xD | Relative layer | Auxiliary 0 persistent, 1 one-shot; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
+| 0xD | **Relative layer** | Auxiliary 0 persistent, 1 one-shot; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
 | 0xE | Mouse X step | Signed 8-bit relative X delta; auxiliary data zero |
 | 0xF | Mouse Y step | Signed 8-bit relative Y delta; auxiliary data zero |
 
@@ -155,7 +155,7 @@ Applying a new configuration, entering the bootloader, or resetting clears all o
 
 ### USB descriptors and report handlers
 
-Retain the existing VID/PID and rename the product descriptor to Universal Macropad, updating its length. Keep keyboard report ID 1 and mouse report ID 2. Add a vendor-defined top-level Application collection on usage page 0xFF00, usage 0x0001, for configuration. Keep it outside the protected keyboard and mouse collections.
+Retain the existing VID/PID and rename the product descriptor to **Universal Macropad**, updating its length. Keep keyboard report ID 1 and mouse report ID 2. Add a vendor-defined top-level Application collection on usage page 0xFF00, usage 0x0001, for configuration. Keep it outside the protected keyboard and mouse collections.
 
 Proposed report IDs:
 
@@ -200,7 +200,7 @@ The host uses one outstanding request at a time. Replies echo opcode and sequenc
 | READ_FLASH | Read a bounded slice directly from DataFlash, including invalid images for diagnosis |
 | READ_ACTIVE | Read the active RAM image; invalid flash means no active profile |
 | BEGIN_WRITE | Start an exact 128-byte upload with expected image CRC |
-| WRITE_CHUNK | Copy a validated, bounded chunk into the upload buffer |
+| WRITE_CHUNK | **Copy** a validated, bounded chunk into the upload buffer |
 | COMMIT_WRITE | Validate the complete staged profile, persist, verify, activate, then reply |
 | ABORT_WRITE | Discard staging without modifying active settings or flash |
 
@@ -222,17 +222,17 @@ Read the full flash image and decode it only after validation. If flash is inval
 
 Provide layer tabs, a one-to-four layer count, startup-layer selection, a chord-window setting in 5 ms steps from 0 to 75 ms, and a layout matching the connected variant: three or six keys with their LEDs, plus the encoder button and both rotation directions. Offer optional actions for pairs of physical keys on each layer and explain the delay applied to keys used in chords; zero disables chord recognition. Encode the corresponding variant-specific layer size; reject a profile whose variant does not match the device.
 
-Selecting a control opens an action editor with the applicable fields. Provide explicit key selection and optional shortcut capture using physical KeyboardEvent.code mappings; some OS/browser shortcuts cannot be captured, so selection must always remain available. Display Ctrl/Shift/Alt/GUI clearly and explain the supported string keyboard layout.
+Selecting a control opens an action editor with the applicable fields. Provide explicit key selection and optional shortcut capture using physical KeyboardEvent.code mappings; some OS/browser shortcuts cannot be captured, so selection must always remain available. Display **Ctrl**/**Shift**/Alt/**GUI** clearly and explain the supported string keyboard layout.
 
 Provide per-layer palette selectors and scroll/bootloader options. Represent layer destinations explicitly. When removing layers, require dangling layer actions and startup-layer references to be corrected. Changing the layer count must rebuild the string pool and offsets.
 
-Show a live storage meter: variant-specific layer bytes, chord-table bytes, string bytes including terminators, and remaining bytes. Deduplicate identical strings during encoding. Disable Save with a precise capacity or validation explanation when the profile is too large. Adding a layer must never silently delete or truncate chords or strings.
+Show a live storage meter: variant-specific layer bytes, chord-table bytes, string bytes including terminators, and remaining bytes. Deduplicate identical strings during encoding. Disable Save with a precise capacity or validation explanation when the profile is too large. Adding a layer must never silently **delete** or truncate chords or strings.
 
 Keep layer names and other optional editor annotations in browser storage or exported JSON; they do not consume device storage. Label such annotations as local metadata if introduced.
 
 ### Save, verify, and backups
 
-Serialize and validate a canonical image, upload it sequentially, then commit. Show separate uploading, saving, and verifying states. After firmware success, independently READ_FLASH all 128 bytes and compare them byte-for-byte with the uploaded image. Only then show Saved and replace the editor's last-saved baseline.
+Serialize and validate a canonical image, upload it sequentially, then commit. Show separate uploading, saving, and verifying states. After firmware success, independently READ_FLASH all 128 bytes and compare them byte-for-byte with the uploaded image. Only then show **Saved** and replace the editor's last-saved baseline.
 
 Keep unsaved changes on disconnect or save failure. Reconnecting must not automatically overwrite either the local draft or device configuration; offer Reload from device or retain the draft. Persist drafts locally, keyed by the app/device context, without assuming VID/PID uniquely identifies one physical unit.
 
@@ -248,12 +248,12 @@ Support versioned JSON import/export with readable action names and strings, plu
 
 ## 7. Implementation sequence and acceptance checks
 
-1. **Freeze format and prove resource fit.** Implement the 128-byte codec/validator, compile the firmware, and record memory headroom. Establish golden fixtures for every action type, both board variants, sparse chords, and one through four layers.
-2. **Prove browser transport.** Add the vendor collection and GET_INFO/read commands. Confirm discovery, access, descriptor correctness, and continued keyboard/mouse use on the target desktop operating systems.
-3. **Implement runtime configuration and actions.** Add raw keyboard and consumer reports, encoder actions, layers, ownership tracking, and the bounded scheduler. Use a RAM-loaded test image before enabling flash writes.
-4. **Implement persistence.** Add staged upload, validation, explicit commit, readback, inactive behavior on invalid flash, and host retry handling.
-5. **Build the editor.** Add connection/loading, layer and action controls, LED palette, string allocation, import/export, and Save with readback comparison.
-6. **Run focused integration checks and document the result.** Confirm the following behaviors on hardware, then finish the user/build documentation.
+1. Freeze format and prove resource fit. Implement the 128-byte codec/validator, compile the firmware, and record memory headroom. Establish golden fixtures for every action type, both board variants, sparse chords, and one through four layers.
+2. Prove browser transport. Add the vendor collection and GET_INFO/read commands. Confirm discovery, access, descriptor correctness, and continued keyboard/mouse use on the target desktop operating systems.
+3. Implement runtime configuration and actions. Add raw keyboard and consumer reports, encoder actions, layers, ownership tracking, and the bounded scheduler. Use a RAM-loaded test image before enabling flash writes.
+4. Implement persistence. Add staged upload, validation, explicit commit, readback, inactive behavior on invalid flash, and host retry handling.
+5. Build the editor. Add connection/loading, layer and action controls, LED palette, string allocation, import/export, and Save with readback comparison.
+6. Run focused integration checks and document the result. Confirm the following behaviors on hardware, then finish the user/build documentation.
 
 Required checks:
 
@@ -263,7 +263,7 @@ Required checks:
 - Chord tests cover mapped and unmapped pairs, both press orders, a brief single-key tap, threshold boundaries, hold release by either key, a third pressed key, layer changes while a key is pending, and invalid or duplicate pair identifiers.
 - Corrupt headers, unsupported versions, bad CRCs, invalid action parameters, and malformed HID packets never cause out-of-bounds reads or writes.
 - A click after scrolling produces no additional scroll; mouse movement is not replayed by later clicks or media events.
-- Fast rotation, strings, double-clicks, and configuration traffic do not leave keys/buttons pressed. Test overlapping modifiers, rollover, momentary-layer release order, latched toggles, and layer changes while buttons are held.
+- **Fast** rotation, strings, double-clicks, and configuration traffic do not leave keys/buttons pressed. Test overlapping modifiers, rollover, momentary-layer release order, latched toggles, and layer changes while buttons are held.
 - Volume/brightness emit the intended consumer usages. Record observed host behavior separately from firmware report correctness.
 - Save, unplug, reconnect, and edit reproduces the same configuration. Verification reads physical DataFlash, not the active RAM image.
 - An interrupted upload preserves flash; an interrupted save is detected on restart and leaves device inputs inactive until a profile is uploaded. Retrying a completed save does not rewrite unchanged data.

@@ -102,3 +102,25 @@ it.each([3, 4, 5, 6, 7])('recovers v%s drafts without clearing them or resurrect
   storeDraft(old, {});
   expect(loadDraft(1)?.profile).toEqual(old);
 });
+
+it.each([7, 8])('recovers version %s double-click drafts in keys, chords and both timer slots', formatVersion => {
+  const raw = JSON.parse(JSON.stringify(defaultProfile(0)));
+  const legacy = { type: 'mouseDouble', buttons: 5 };
+  raw.layers[0].keys[0] = legacy;
+  raw.layers[0].encoderButton = legacy;
+  raw.layers[0].clockwise = legacy;
+  raw.layers[0].counterclockwise = legacy;
+  raw.chords = [{ layer: 0, keyA: 0, keyB: 1, action: legacy }];
+  raw.timedActions = [{ ticks: 1, resetOnInput: true, consumeInput: false, action: legacy, resumeAction: legacy }];
+  const original = JSON.stringify({ formatVersion, profile: raw, meta: { profileName: 'Clicks' }, savedAt: 'old' });
+  const key = `universal-macropad:format-v${formatVersion}:draft:six-key`;
+  const storage = new Map([[key, original]]);
+  vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null });
+  const draft = loadDraft(0)!;
+  expect(draft.meta.profileName).toBe('Clicks');
+  const layer = draft.profile.layers[0]!;
+  for (const action of [layer.keys[0], layer.encoderButton, layer.clockwise, layer.counterclockwise, draft.profile.chords[0]!.action, draft.profile.timedActions![0]!.action, draft.profile.timedActions![0]!.resumeAction]) {
+    expect(action).toEqual({ type: 'mouseClick', buttons: 5, clicks: 2 });
+  }
+  expect(storage.get(key)).toBe(original);
+});

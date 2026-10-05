@@ -28,7 +28,11 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
-The format-7 action mask reports all sixteen action types, including LED control
+Format 8 reports action mask `0xFFEF`: mouse clicks use type 3 with auxiliary
+count minus one, and type 4 is reserved. Its configuration version identifies
+the full action map; see [config-v8.md](config-v8.md).
+
+The format-7 action mask reports all sixteen action types, including **LED control**
 at F. Use GET_INFO format version 7 to identify its action map and LED support;
 older versions also reported mask 0xFFFF, so the mask alone is insufficient.
 The GET_INFO layout and transport version remain unchanged. Chord recognition uses the
@@ -49,8 +53,8 @@ before the window expires to activate a mapped chord.
 
 PREVIEW_COLOR uses the offset byte as compact LED options: bits 4–7 are the
 palette index, bit 0 selects full brightness, bit 2 enables preview, and bit 3
-allows Rainbow at index 15. Bit 1 must be zero. Any nonzero options byte must
-have bit 2 set. Index 15 is Off when bit 3 is clear. Dimming and rainbow timing
+allows **Rainbow** at index 15. Bit 1 must be zero. Any nonzero options byte must
+have bit 2 set. Index 15 is **Off** when bit 3 is clear. Dimming and rainbow timing
 match the always-on layer indicator. Preview works even without a valid saved
 profile and changes neither the active image nor flash. It remains active until
 explicit cancellation or any debounced button edge / encoder state transition,
@@ -103,5 +107,6 @@ all three idle rates. Idle rates use the standard four millisecond units, and
 the scheduler sends unchanged reports when their configured interval expires.
 
 Format 7 adds timer records and temporary LED-control commands without changing
-transport v1. See [config-v7.md](config-v7.md). Format 6 images remain accepted
-by current firmware and can be read/migrated in the browser before saving v7.
+transport v1. See [config-v7.md](config-v7.md). V7 firmware accepts format 6 images, which its editor can migrate before saving
+v7. Current v8 firmware accepts only format 8; the current editor migrates older
+profiles before saving v8.

@@ -32,7 +32,7 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
     case 'keyHold':
       return [code | ((action.modifiers & 15) << 4), action.usage & 0xff];
     case 'mouseClick':
-    case 'mouseDouble':
+      return [code | (((action.clicks ?? 1) - 1) << 4), action.buttons & 7];
     case 'mouseHold':
     case 'mouseToggle':
       return [code, action.buttons & 7];

@@ -493,7 +493,7 @@ export function swapLayers(source: number, target: number): void {
 }
 
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';
-type ActionMemory = Record<string, Partial<Record<Action['type'], Action>>>;
+type ActionMemory = Record<string, Partial<Record<Action['type'], Action>> & { customClickCount?: number }>;
 function slotMemoryKey(slot: Slot): string { return JSON.stringify(slot); }
 function readActionMemory(): ActionMemory {
   try { return JSON.parse(localStorage.getItem(ACTION_MEMORY_KEY) ?? '{}') as ActionMemory; }
@@ -502,12 +502,19 @@ function readActionMemory(): ActionMemory {
 function rememberAction(slot: Slot, action: Action): void {
   try {
     const memory = readActionMemory();
-    memory[slotMemoryKey(slot)] = { ...memory[slotMemoryKey(slot)], [action.type]: action };
+    memory[slotMemoryKey(slot)] = {
+      ...memory[slotMemoryKey(slot)], [action.type]: action,
+      ...(action.type === 'mouseClick' && (action.clicks ?? 1) >= 3 ? { customClickCount: action.clicks } : {}),
+    };
     localStorage.setItem(ACTION_MEMORY_KEY, JSON.stringify(memory));
   } catch { /* Browser storage is optional. */ }
 }
 export function rememberedAction(slot: Slot, type: Action['type']): Action | undefined {
   return readActionMemory()[slotMemoryKey(slot)]?.[type] as Action | undefined;
+}
+export function rememberedCustomClickCount(slot: Slot): number {
+  const count = readActionMemory()[slotMemoryKey(slot)]?.customClickCount;
+  return typeof count === 'number' && Number.isInteger(count) && count >= 3 && count <= 16 ? count : 3;
 }
 
 export function addChord(layer: number, keyA: number, keyB: number): void {

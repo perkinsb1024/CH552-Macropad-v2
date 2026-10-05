@@ -1,6 +1,6 @@
 # Conditional indicator brightness preset: reimplementation guide
 
-Status: deferred after a firmware size experiment. This feature is **not** in the
+Status: deferred after a firmware size experiment. This feature is not in the
 working firmware or editor. The accompanying
 [prototype patch](conditional-indicator-preset.patch) preserves the exact firmware
 changes measured in the experiment; it is a starting point, not a tested feature.
@@ -11,12 +11,12 @@ Add one common brightness preset with these policies:
 
 | Configured layer indicator mode | Indicator behavior while preset is active |
 | --- | --- |
-| Timed on | Dim during the configured indication, then off |
-| Blink by layer | Dim during lit phases; dark phases remain black |
-| Always on | Off; no idle layer background |
-| None | Remains off |
+| **Timed on** | **Dim** during the configured indication, then off |
+| **Blink** by layer | **Dim** during lit phases; dark phases remain black |
+| **Always on** | **Off**; no idle layer background |
+| **None** | Remains off |
 
-Key brightness stays **As configured**, currently Bright. Existing indication
+Key brightness stays **As configured**, currently **Bright**. Existing indication
 priority still applies: timed/blink feedback can temporarily obscure key feedback,
 including blink dark phases. This preset does not change that priority, colors,
 visibility modes, durations, rainbow phase, or rainbow speed.
@@ -26,13 +26,13 @@ including when changing layers. It changes no saved profile bytes. Existing rese
 events restore configured policies, and hardware color preview bypasses the policy.
 
 Expose it through all three existing common-preset commands: Set, Relative, and
-Toggle preset on/off. No new command or action-record bytes are needed.
+**Toggle preset on/off**. No new command or action-record bytes are needed.
 
 ## Measured flash and RAM
 
 These measurements use the working preset-toggle implementation as the baseline,
 CH55xDuino 0.0.25, SDCC build.13407_4, `--opt-code-size`, preview enabled, and the
-normal **14,336-byte** linker limit. Outputs were temporary; releases were preserved.
+normal 14,336-byte linker limit. Outputs were temporary; releases were preserved.
 
 | Variant | Baseline flash | Prototype flash | Added bytes | Over limit | xRAM used / available | Stack region |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -51,11 +51,11 @@ Persistent xRAM usage did not increase.
 ## Firmware changes
 
 1. In `CH552_Universal_Macropad.ino`, extend the internal indicator policy byte:
-   Off=0, Dim=1, Bright=2, Configured=3, conditional Dim/Off=4. Keep the key policy
+   **Off**=0, **Dim**=1, **Bright**=2, Configured=3, conditional **Dim**/**Off**=4. Keep the key policy
    at 0..3 and keep the four-byte `ledSettings` array. Do not expose policy 4 as an
    ordinary absolute brightness wire value: it is selected only by this preset.
 
-2. Widen **internal** policy-pair packing from two to three indicator bits:
+2. Widen internal policy-pair packing from two to three indicator bits:
 
    ```c
    pair = indicatorPolicy | (keyPolicy << 3);
@@ -67,7 +67,7 @@ Persistent xRAM usage did not increase.
    configured-pair sentinel from 15 to 27 (`3 | (3 << 3)`). This is separate from
    the absolute wire sentinel `0xF`, which stays unchanged.
 
-3. Append wire preset **5**, preserving existing indices 0..4. Replace the table:
+3. Append wire preset 5, preserving existing indices 0..4. Replace the table:
 
    ```c
    __code uint8_t ledPresets[6] = {27, 25, 9, 8, 0, 28};
@@ -76,14 +76,14 @@ Persistent xRAM usage did not increase.
    | Wire preset | Indicator policy | Key policy | Internal packed pair |
    | --- | --- | --- | ---: |
    | 0 | Configured | Configured | 27 |
-   | 1 | Dim | Configured | 25 |
-   | 2 | Dim | Dim | 9 |
-   | 3 | Off | Dim | 8 |
-   | 4 | Off | Off | 0 |
-   | 5 | Conditional Dim/Off | Configured | 28 |
+   | 1 | **Dim** | Configured | 25 |
+   | 2 | **Dim** | **Dim** | 9 |
+   | 3 | **Off** | **Dim** | 8 |
+   | 4 | **Off** | **Off** | 0 |
+   | 5 | Conditional **Dim**/**Off** | Configured | 28 |
 
-4. In `indicatorBrightness(options)`, resolve policy 4 to zero for Always on and
-   one otherwise. The existing renderer suppresses mode None and suppresses
+4. In `indicatorBrightness(options)`, resolve policy 4 to zero for **Always on** and
+   one otherwise. The existing renderer suppresses mode **None** and suppresses
    indications whose resolved brightness is zero:
 
    ```c
@@ -103,9 +103,9 @@ Persistent xRAM usage did not increase.
    is no longer strictly darkest-first: preset 5 restores bright key feedback.
 
 6. Before relative individual/both brightness stepping, resolve policies
-   **greater than or equal to 3**, instead of only policy 3. The existing
+   greater than or equal to 3, instead of only policy 3. The existing
    `indicatorBrightness` call then resolves conditional policy 4 from the active
-   layer to Off or Dim before ordinary Off/Dim/Bright cycling. Otherwise the new
+   layer to **Off** or **Dim** before ordinary **Off**/**Dim**/**Bright** cycling. Otherwise the new
    policy would be fed incorrectly into the three-state cycle. Key policy 4 must
    remain unreachable.
 
@@ -129,7 +129,7 @@ Persistent xRAM usage did not increase.
   cycling through presets and wrapping to configured instead.
 - Update `protocol/config-v6.md`: accepted values, the six-entry preset table,
   wraparound and unmatched-entry rules, conditional resolution, and compatibility.
-  The valid LED payload count becomes **118** (116 plus new Set and Toggle values).
+  The valid LED payload count becomes 118 (116 plus new Set and Toggle values).
 - The prototype retained v6, consistent with the accepted toggle extension.
   Earlier v6 firmware rejects profiles using preset 5 before writing flash; it
   does not silently reinterpret them. Old profiles remain valid on new firmware.
@@ -147,18 +147,18 @@ these checks when implementing it:
 - `tests/led_input_cases.h`: change internal pair shifts to 3, configured pairs
   to 27, preset loop bounds/counts to 6, and unmatched-cycle expectations to modulo
   6. Include indicator policies 0..4 and key policies 0..3; never generate key
-  policy 4. Conditional indicator stepping resolves to 0 on Always on and 1 on
+  policy 4. Conditional indicator stepping resolves to 0 on **Always on** and 1 on
   other modes before applying the signed step.
 - Extend renderer cases to include the conditional policy for every visibility
   mode, saved brightness, held-key state, and blink phase. Verify dim timed/blink
   output, dark phases, no always-on idle background, and configured bright key
   feedback whenever indicator priority permits it.
-- Exercise layer changes between blink/timed, always-on, and None while the
+- Exercise layer changes between blink/timed, always-on, and **None** while the
   preset remains active. Confirm actual-policy matching makes Toggle restore
   configured brightness on a second invocation even after a layer change.
 - Confirm other LED commands replace the conditional policy normally, configured
   restores remove it, phase/speed are preserved, active-image bytes are unchanged,
-  and color preview bypasses it on an Always on layer.
+  and color preview bypasses it on an **Always on** layer.
 - Browser tests: include preset 5 in editor options, validate the default remains
   legal, test Set/Toggle binary and JSON round trips, and update the exhaustive
   payload count. Then run the complete host/browser suites and production build.

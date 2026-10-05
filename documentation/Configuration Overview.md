@@ -14,10 +14,10 @@ This guide covers the current configurator and its supported three-key and six-k
 4. [Triggers: What Starts an Action](#triggers-what-starts-an-action)
 5. [Available Actions](#available-actions)
 6. [Layers: Several Sets of Controls](#layers-several-sets-of-controls)
-7. [Chords: Two Keys Together](#chords-two-keys-together)
+7. [**Chords**: Two Keys Together](#chords-two-keys-together)
 8. [Timed Actions and Reminders](#timed-actions-and-reminders)
 9. [LED Colors and Effects](#led-colors-and-effects)
-10. [Shortcuts, Copy and Paste, and Drag and Drop](#shortcuts-copy-and-paste-and-drag-and-drop)
+10. [**Shortcuts**, **Copy** and **Paste**, and Drag and Drop](#shortcuts-copy-and-paste-and-drag-and-drop)
 11. [The 128-Byte Configuration Size Limit](#the-128-byte-configuration-size-limit)
 12. [Save, Back Up, and Restore](#save-back-up-and-restore)
 13. [Example Configurations](#example-configurations)
@@ -28,7 +28,7 @@ This guide covers the current configurator and its supported three-key and six-k
 
 ### Connect Your Own Device
 
-1. Open the [Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) in desktop **Chrome** or **Edge**
+1. Open the [Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) in desktop Chrome or Edge
 2. Plug in your macropad with a USB data cable
 3. Click **Connect macropad**. Choose **Universal Macropad** in the browser's device chooser and connect
 4. The configurator loads the saved profile from your device. If the macropad has no valid profile, the configurator defaults to a starter profile instead
@@ -53,8 +53,8 @@ For editing without a connection, choose **edit offline** for a three-key or six
 | Area | What it does |
 | --- | --- |
 | Top bar | Connect, undo or redo edits, read saved settings, and save to the device |
-| **Profile** | Choose the startup layer and chord timing. Rainbow settings and the meaning of an “Off” key LED appear when relevant. These settings apply across layers |
-| Layer tabs | Choose which layer you are **editing**, add a layer, or rearrange layers |
+| **Profile** | Choose the startup layer and chord timing. **Rainbow** settings and the meaning of an “**Off**” key LED appear when relevant. These settings apply across layers |
+| Layer tabs | Choose which layer you are editing, add a layer, or rearrange layers |
 | Macropad layout | Click a numbered key, **Turn left**, **Press**, or **Turn right** to select its action |
 | **Action editor** | Choose what the selected control does and adjust its settings. For a numbered key, you can also pick its key-press color here |
 | **Chords** | Assign actions to two-key combinations |
@@ -86,7 +86,7 @@ For a quicker option, expand the **Shortcuts** section, choose **Mac** or **Wind
 
 ## Triggers: What Starts an Action
 
-An **action** is what the macropad does. A **trigger** is what makes it happen.
+An action is what the macropad does. A trigger is what makes it happen.
 
 | Trigger | How it works |
 | --- | --- |
@@ -107,10 +107,10 @@ Actions that need a button release—**Key hold**, **Mouse hold**, **Layer while
 
 | Action | What it does | Example |
 | --- | --- | --- |
-| **Key tap** | Presses and releases one key, optionally with modifiers. Holding the macropad key does not turn this into a hold action | Ctrl+C, Command+V, Enter, or F5 |
-| **Key hold** | Keeps the chosen key and modifiers held until you release the macropad button. The application may repeat a held key as it would on a normal keyboard | Hold Shift, an arrow key, or a game movement key |
+| **Key tap** | Presses and releases one key, optionally with modifiers. Holding the macropad key does not turn this into a hold action | **Ctrl+C**, **Command+V**, **Enter**, or F5 |
+| **Key hold** | Keeps the chosen key and modifiers held until you release the macropad button. The application may repeat a held key as it would on a normal keyboard | Hold **Shift**, an arrow key, or a game movement key |
 
-Choose one main key plus any combination of **Ctrl**, **Shift**, **Alt / Option**, and **GUI (Win / Cmd)**. “GUI” means the Windows key on Windows and Command on Mac. Choose **No key (modifiers only)** to use a modifier by itself.
+Choose one main key plus any combination of **Ctrl**, **Shift**, **Alt / Option**, and **GUI (Win / Cmd)**. “**GUI**” means the Windows key on Windows and Command on Mac. Choose **No key (modifiers only)** to use a modifier by itself.
 
 The key list includes letters, numbers, punctuation, function keys, navigation keys, editing keys, numpad keys, and other standard keyboard keys. A shortcut's result depends on the application and operating system receiving it. The macropad sends the key or key combination exactly how an ordinary keyboard would.
 
@@ -118,8 +118,7 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 
 | Action | What it does |
 | --- | --- |
-| **Mouse click** | Clicks your selected mouse button or buttons once |
-| **Mouse double-click** | Sends two clicks |
+| **Mouse click** | Clicks your selected mouse button or buttons 1–16 times: choose **Single**, **Double**, or **Custom** |
 | **Mouse hold** | Keeps the selected mouse buttons down while you hold the macropad button; useful for dragging |
 | **Mouse toggle** | Press once to keep the selected mouse buttons down; activate the same input again to release them. Changing layers also clears toggled mouse buttons |
 | **Scroll** | Sends a vertical scroll step. Choose **Up** or **Down** and a **Wheel step** from 1–127 |
@@ -128,9 +127,18 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 
 Mouse button actions offer **Left**, **Middle**, and **Right**. You can select more than one (though that's not typically useful... How often do you press more than one mouse button at once?)
 
+**Custom** shows a 3–16 click-count slider. Its last count is remembered per action
+slot when you switch to **Single** or **Double** and back. The duration hint is rounded
+to one decimal: about 0.4 seconds for three clicks and 3.1 seconds for sixteen.
+Each press lasts at least 8 ms, with a 200 ms pause between clicks; USB delays can
+extend the sequence. Subsequent queued actions wait for it to finish, while holds,
+media controls and layer/LED actions use independent handling. Your computer
+decides whether the sequence is recognized as a double-click or another gesture.
+
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held
-scrolling repeats after the previous step and USB output finish; release stops
+scrolling waits at least 100 ms after the complete previous step and repeats when
+playback and USB output are idle (about ten steps per second at step 1); release stops
 new repeats, while an accepted step finishes. Wheel rotation and timers send one
 step each time they run. Pointer speed and scroll distance can vary with your
 computer's settings and the application.
@@ -141,16 +149,16 @@ Choose **Media / system**, then a named **Control**:
 
 | Group | Available named controls |
 | --- | --- |
-| Volume | Volume up, Volume down, Mute |
-| Playback | Play / pause, Play, Pause, Stop, Next track, Previous track, Fast forward, Rewind, Eject |
-| Display and system | Brightness up, Brightness down, Power, Sleep |
-| Launch | Calculator, File browser, Email, Media player |
-| Browser | Web search, Browser home, Browser back, Browser forward, Browser stop, Browser refresh, Bookmarks |
+| Volume | **Volume up**, **Volume down**, **Mute** |
+| Playback | **Play / pause**, **Play**, **Pause**, **Stop**, **Next track**, **Previous track**, **Fast forward**, **Rewind**, **Eject** |
+| Display and system | **Brightness up**, **Brightness down**, **Power**, **Sleep** |
+| Launch | **Calculator**, **File browser**, **Email**, **Media player** |
+| Browser | **Web search**, **Browser home**, **Browser back**, **Browser forward**, **Browser stop**, **Browser refresh**, **Bookmarks** |
 
 Your computer, application, or display must support the selected control. For example, a brightness action may have no effect on an external monitor (though if you're on MacOS, I recommend checking out [Lunar](https://lunar.fyi/), which allows these keys to control many external monitors). The **Custom usage...** entry is an advanced option; use the named choices for ordinary configuration.
 
 **Media / system** sends a tap. Choose **Media / system hold** to keep the control
-held until release; the selected Control is preserved when switching between
+held until release; the selected **Control** is preserved when switching between
 these actions. The host decides whether a sustained control repeats. Holds are
 available on keys, chords and the wheel button, but not wheel turns or timers.
 The newest media action wins, including a tap interrupting a hold. Releasing it
@@ -164,12 +172,12 @@ either key of a chord ends its hold.
 
 Supported text includes ordinary English letters, numbers, spaces, standard punctuation, tabs, and line breaks. Accented letters, emoji, smart quotes, and other special characters are not supported. Replace curly quotes with straight quotes if needed.
 
-Text is typed using the US keyboard layout. A different keyboard layout on your computer may produce different characters. Line breaks act like Enter and tabs act like Tab, so be careful when using them. They may submit a form or move to another field depending on where you type.
+Text is typed using the US keyboard layout. A different keyboard layout on your computer may produce different characters. Line breaks act like **Enter** and tabs act like Tab, so be careful when using them. They may submit a form or move to another field depending on where you type.
 
 The **Text** field shows its storage cost. **Reuse an existing string…** lets you select text already used elsewhere in your profile. Identical text does not use additional storage, even when several controls use it. See [the storage limit](#the-128-byte-limit) before adding long phrases.
 
 > [!WARNING]
-> While it is *technically* possible to use the **Type text** feature to save and enter your password, you should **never** do this. This device does not feature any encryption or protection. Anyone with access to this device would have access to your password. This is the job of a password manager.
+> While it is technically possible to use the **Type text** feature to save and enter your password, you should *never* do this. This device does not feature any encryption or protection. Anyone with access to this device would have access to your password. This is the job of a password manager.
 
 ### Leaving an Input Empty
 
@@ -177,20 +185,20 @@ Choose **Nothing** to leave an input unassigned. A numbered key can still have a
 
 ## Layers: Several Sets of Controls
 
-Think of a layer as another page of buttons on the same macropad. Layer 1 might contain editing shortcuts, while Layer 2 controls music. The same key can copy on one layer and mute on another. The most common example of keyboard layers is the Shift or Caps Lock key. Think of the lowercase letters and numbers as one layer, while pressing shift or caps lock activates a second layer containing the uppercase letters and punctuation. Shift is a momentary layer change, while caps lock is persistent. Both types of layer changes ([and more!](#choose-how-to-switch-layers)) are supported by this macropad.
+Think of a layer as another page of buttons on the same macropad. **Layer 1** might contain editing shortcuts, while **Layer 2** controls music. The same key can copy on one layer and mute on another. The most common example of keyboard layers is the **Shift** or Caps Lock key. Think of the lowercase letters and numbers as one layer, while pressing shift or caps lock activates a second layer containing the uppercase letters and punctuation. **Shift** is a momentary layer change, while caps lock is persistent. Both types of layer changes ([and more!](#choose-how-to-switch-layers)) are supported by this macropad.
 
-A layer contains all numbered-key actions and key-press colors, the wheel button and both turn actions, and its layer options. Chords can belong to a layer or apply globally to all layers. Timers are always global.
+A layer contains all numbered-key actions and key-press colors, the wheel button and both turn actions, and its layer options. **Chords** can belong to a layer or apply globally to all layers. Timers are always global.
 
-You can have up to **seven layers on a three-key macropad**, or **five on a six-key macropad**, unless you are using optional features like chords and text strings, which will reduce the available space for layers.
+You can have up to seven layers on a three-key macropad, or five on a six-key macropad, unless you are using optional features like chords and text strings, which will reduce the available space for layers.
 
 ### Add, Edit, and Remove Layers
 
 ![Layer 2 selected for editing while Layer 1 remains the startup layer](../images/configuration-overview/06-layers.png)
 
 - Click a layer tab to edit it
-- **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). Global chords and timers are already shared
+- **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). **Global** chords and timers are already shared
 - Choose the **Startup layer** in **Profile**. This is the layer used when the device starts and after a configuration save
-- The trash button beside the layer tabs removes the selected layer, its bindings, and its local chords after confirmation. Global chords are preserved. At least one layer must remain. If you remove the startup layer, Layer 1 becomes the startup layer
+- The trash button beside the layer tabs removes the selected layer, its bindings, and its local chords after confirmation. **Global** chords are preserved. At least one layer must remain. If you remove the startup layer, **Layer 1** becomes the startup layer
 - After removing a layer, review all layer-switch actions. A target may become unavailable or now refer to another layer at that number
 
 ### Choose How to Switch Layers
@@ -200,16 +208,16 @@ You can have up to **seven layers on a three-key macropad**, or **five on a six-
 | **Switch to layer** | Changes to your chosen layer and stays there until another layer action changes it (like the caps lock key in the earlier example) |
 | **Switch to layer (one-shot)** | Visits your chosen layer for the next action, then returns. You do not need to keep the switching button held |
 | **Layer while held** | Uses the chosen layer while the switching button or chord is held, then returns when released (like the shift key in the earlier example) |
-| **Relative layer** | Moves forward or backward by your chosen number of layers. **+1** means next; **−1** means previous in numerical order. It wraps around at either end |
+| **Relative layer** | Moves forward or backward by your chosen number of layers. +1 means next; −1 means previous in numerical order. It wraps around at either end |
 | **Relative layer (one-shot)** | Visits a layer at the chosen offset for the next action, then returns |
 
-For **Switch to layer** and its one-shot version, the target list also includes **Previous layer**. This means the previously selected layer on the device, rather than simply the next lower layer number. Repeating a Previous layer action swaps between those two layers. Temporary one-shot and held visits do not affect the previous layer history.
+For **Switch to layer** and its one-shot version, the target list also includes **Previous layer**. This means the previously selected layer on the device, rather than simply the next lower layer number. Repeating a **Previous layer** action swaps between those two layers. Temporary one-shot and held visits do not affect the previous layer history.
 
-An offset of **0** stays on the current layer and will replay its layer indicator. This is useful with **Blink by layer number** when you want a “which layer am I on?” button. With no indicator, or an always-on indicator, it has no effect.
+An offset of 0 stays on the current layer and will replay its layer indicator. This is useful with **Blink by layer number** when you want a “which layer am I on?” button. With no indicator, or an always-on indicator, it has no effect.
 
-**Give yourself a route back.** Add a layer-switch button on every layer, or make a global chord that cycles layers. Clicking layer tabs in the configurator does not change the selected layer on your macropad. Review any **Layer reachability** warnings before saving.
+*Give yourself a route back.* Add a layer-switch button on every layer, or make a global chord that cycles layers. Clicking layer tabs in the configurator does not change the selected layer on your macropad. Review any **Layer reachability** warnings before saving.
 
-The reachability check tracks persistent layer history and pending one-shot returns. It warns when a reachable layer cannot return to startup, including when only some histories leave you trapped. **Previous layer** is one remembered layer, not a stack: with Layer 1 → Layer 2 → Layer 5, Previous on Layer 5 returns to Layer 2; another Previous returns to Layer 5, not Layer 1. A direct jump from Layer 1 to Layer 5 can still return to Layer 1, so the warning for Layer 5 depends on history. A simple two-layer Previous toggle with a reliable route back does not need a warning.
+The reachability check tracks persistent layer history and pending one-shot returns. It warns when a reachable layer cannot return to startup, including when only some histories leave you trapped. **Previous layer** is one remembered layer, not a stack: with **Layer 1** → **Layer 2** → **Layer 5**, Previous on **Layer 5** returns to **Layer 2**; another Previous returns to **Layer 5**, not **Layer 1**. A direct jump from **Layer 1** to **Layer 5** can still return to **Layer 1**, so the warning for **Layer 5** depends on history. A simple two-layer Previous toggle with a reliable route back does not need a warning.
 
 This is a route check, not a complete simulation of physical inputs: timer actions are treated as possible transitions without enforcing their timing, order or input consumption, and multiple held-layer inputs are approximated. Having no reachability warnings does not guarantee that every input sequence is safe.
 
@@ -221,35 +229,35 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 
 1. Select the layer where you want the chord
 2. In **Chords**, choose a **Key pair** and click **Add chord**
-3. Click the chord row and choose its action in the Action editor
+3. Click the chord row and choose its action in the **Action editor**
 4. Leave it local to that layer, or click its **globe** button to make it global
 5. Save the profile, then press the two keys together to try it. Make sure you press the two keys nearly simutaneously. By default the **Chord window** (the time duration you get to press both keys) is just 40 milliseconds
 
 **Local** chords apply only on their layer. **Global** chords appear across layers and use the same action everywhere. A local chord for the same key pair takes priority on its layer. Only one global chord can use a given pair. The editor prevents conflicting choices.
 
-Chords use exactly **two numbered keys**. The wheel button and wheel turns are not chord members. A three-key pad has three possible pairs; a six-key pad has fifteen, although storage limits how many you can assign.
+**Chords** use exactly two numbered keys. The wheel button and wheel turns are not chord members. A three-key pad has three possible pairs; a six-key pad has fifteen, although storage limits how many you can assign.
 
 ### Chord Timing
 
-The **Chord window** in **Profile** is how long the first key waits for its partner. It ranges from **5–75 milliseconds**, in steps of 5; the starter setting is **40 ms**, or four one-hundredths of a second.
+The **Chord window** in **Profile** is how long the first key waits for its partner. It ranges from 5–75 milliseconds, in steps of 5; the starter setting is 40 ms, or four one-hundredths of a second.
 
 - A larger window makes chords easier to press but adds a small delay to individual keys that belong to a chord
 - A smaller window makes those individual keys respond sooner, but requires more nearly simultaneous presses
 - Keys that do not belong to a chord on the selected layer have no delay
 - **Off** disables chord recognition without deleting your saved chords. Keys then act immediately
 
-A recognized chord runs its action instead of the two individual actions. For a hold action, releasing either chord key ends the hold. Release **both** keys before attempting the same chord again. If you miss the timing window, the keys act individually.
+A recognized chord runs its action instead of the two individual actions. For a hold action, releasing either chord key ends the hold. Release both keys before attempting the same chord again. If you miss the timing window, the keys act individually.
 
 ## Timed Actions and Reminders
 
-You can add up to **four timed actions**, depending on remaining configuration storage space. They operate across all layers and repeat automatically.
+You can add up to four timed actions, depending on remaining configuration storage space. They operate across all layers and repeat automatically.
 
 ![A repeating amber lighting reminder with a roughly twenty-minute interval and a next-input action that clears it](../images/configuration-overview/08-timed-actions.png)
 
 1. Click **Add timed action**
 2. Move the **Interval** slider to the approximate duration you want
 3. Choose whether to enable **Restart on key / encoder input**
-4. Click **When timer fires**, then choose its action in the Action editor
+4. Click **When timer fires**, then choose its action in the **Action editor**
 5. Optionally expand **On next input** and configure a follow-up action and **Consume this input**
 6. Save to the device
 
@@ -260,12 +268,12 @@ You can add up to **four timed actions**, depending on remaining configuration s
 | **Restart on key / encoder input** off | Repeats at the selected interval, even while you use the macropad |
 | **Restart on key / encoder input** on | Resets the timer whenever you press a macropad key, press the wheel button, or turn the wheel. Useful for actions based on inactivity |
 
-“Input” means activity **on the macropad**. Using your computer's regular keyboard or mouse does not restart these timers. Keeping a button held only resets the timer when you first press the button.
+“Input” means activity on the macropad. Using your computer's regular keyboard or mouse does not restart these timers. Keeping a button held only resets the timer when you first press the button.
 
 The interval uses steps of 131.072 seconds, up to 2 hours 19 minutes 48.608 seconds.
-The configurator shows the approximate time next to the slider and a more precise
-range on hover. In v8, each timer measures from its own last start or restart,
-with **less than 512 ms of clock quantization** instead of up to 131 seconds.
+The configurator shows the approximate time next to the slider. In v8, each timer
+measures from its own last start or restart,
+with less than 512 ms of clock quantization instead of up to 131 seconds.
 A one-step interval becomes due about 130.560–131.072 seconds after its reset.
 Polling, queued output and the device clock can add timing error; these remain
 reminders rather than an exact host countdown. The five-byte storage cost is unchanged.
@@ -286,13 +294,13 @@ For interactions between multiple timers and layer changes, see [Gotchas and thi
 
 ## LED Colors and Effects
 
-There are three main ways to use lighting: a color when a key is pressed, a layer indicator, and an LED control action that changes lighting during use.
+There are three main ways to use lighting: a color when a key is pressed, a layer indicator, and an **LED control** action that changes lighting during use.
 
-The fixed color palette offers **Red, Coral, Orange, Amber, Yellow, Green, Leaf, Teal, Cyan, Azure, Blue, Violet, Magenta, Rose, and White**. The final swatch is **Off** for key key-press colors, or **Rainbow** for layer indicators and temporary effects. Custom colors are not available.
+The fixed color palette offers **Red**, **Coral**, **Orange**, **Amber**, **Yellow**, **Green**, **Leaf**, **Teal**, **Cyan**, **Azure**, **Blue**, **Violet**, **Magenta**, **Rose**, and **White**. The final swatch is **Off** for key key-press colors, or **Rainbow** for layer indicators and temporary effects. Custom colors are not available.
 
 ### Key Key-Press Colors
 
-Select a numbered key, then choose **LED color on key press** in the Action editor. **Apply to layer** copies that color to every numbered key on the current layer; it leaves their actions unchanged. key-press colors always use full brightness (unless altered by an [LED Control command](#led-control-actions-during-use)).
+Select a numbered key, then choose **LED color on key press** in the **Action editor**. **Apply to layer** copies that color to every numbered key on the current layer; it leaves their actions unchanged. key-press colors always use full brightness (unless altered by an [**LED Control** command](#led-control-actions-during-use)).
 
 **Preview color** temporarily shows the selected color on the connected device without saving your profile. **Cancel preview** returns to its usual lighting. A preview is not a saved setting. If preview is unavailable on your device, use its saved settings to test the result.
 
@@ -304,7 +312,7 @@ In **Layer options**, set **Layer selection LEDs**:
 | --- | --- |
 | **Do not indicate** | No layer indication; key key-press colors can still work |
 | **On for 1.5 seconds** | Shows the chosen layer color or rainbow briefly when selecting the layer |
-| **Blink by layer number** | Blinks once for Layer 1, twice for Layer 2, and so on. Each blink is a quarter-second on and a quarter-second off |
+| **Blink by layer number** | Blinks once for **Layer 1**, twice for **Layer 2**, and so on. Each blink is a quarter-second on and a quarter-second off |
 | **Always on** | Idle keys show the layer color or rainbow; pressed keys show their individual key-press colors |
 
 Choose the **Layer indicator color** and **Full Brightness** or **Dim**. The timed and blinking indications temporarily cover key key-press colors. The always-on background allows key key-press colors to show over it.
@@ -313,18 +321,18 @@ Choose the **Layer indicator color** and **Full Brightness** or **Dim**. The tim
 
 When a layer uses a rainbow indicator, **Profile** shows settings to adjust the rainbow (applies to all layers):
 
-| Rainbow phase spacing | Appearance |
+| **Rainbow phase spacing** | Appearance |
 | --- | --- |
 | **0° — All LEDs together** | All LEDs cycle through the same color at the same time |
 | **30° — Gentle color wave** | Neighboring LEDs have similar colors |
 | **60° — Rainbow sweep** | A wider spread of colors across the keys |
 | **Variable — Scattered colors** | A more scattered spread of colors |
 
-**Rainbow speed** offers **Extra fast**, **Fast**, **Slow**, and **Extra slow**. These settings apply across layers. Save changes before expecting device color previews to use the new speed or spacing. An [LED control action](#led-control-actions-during-use) can also change them during use.
+**Rainbow speed** offers **Extra fast**, **Fast**, **Slow**, and **Extra slow**. These settings apply across layers. Save changes before expecting device color previews to use the new speed or spacing. An [**LED control** action](#led-control-actions-during-use) can also change them during use.
 
 If you combine an **Always on** layer indicator with an **Off** key key-press color, **Profile** offers **For key LEDs, “Off” means**:
 
-- **Transparent:** pressing an Off-colored key leaves the idle background visible
+- **Transparent:** pressing an **Off**-colored key leaves the idle background visible
 - **Black:** pressing it makes that key go dark over the always-on background
 
 This setting applies across layers. Timed and blinking layer indications still cover the key colors while their indication runs.
@@ -351,7 +359,7 @@ Choose **LED control** as an input's action, then select an **LED command**. The
 | **Set all LEDs** | Starts or clears a temporary color or rainbow effect; see below |
 | **Restore all configured LED settings** | Restores configured lighting, including brightness, rainbow settings, and temporary effects |
 
-The **common brightness presets** are:
+The common brightness presets are:
 
 1. **Both as configured**
 2. **Layers dim, keys bright**
@@ -359,9 +367,9 @@ The **common brightness presets** are:
 4. **Layers off, keys dim**
 5. **Both off**
 
-Relative settings use a **Relative step** to choose direction and, for rainbow controls, whether to skip a choice. The editor shows the cycle order. **Relative both brightnesses** resolves each current brightness, starts from the brighter one, and applies the step once through Off → Dim → Bright → Off (backwards for a negative step). It sets both brightnesses to that same result.
+Relative settings use a **Relative step** to choose direction and, for rainbow controls, whether to skip a choice. The editor shows the cycle order. **Relative both brightnesses** resolves each current brightness, starts from the brighter one, and applies the step once through **Off** → **Dim** → **Bright** → **Off** (backwards for a negative step). It sets both brightnesses to that same result.
 
-For example, Dim indicator + Bright key feedback becomes both Off with +1, or both Dim with −1. **As configured** resolves to the current layer's saved indicator brightness and Bright key feedback before comparing. This uses the brightness settings, regardless of whether an indicator or key is currently lit.
+For example, **Dim** indicator + **Bright** key feedback becomes both **Off** with +1, or both **Dim** with −1. **As configured** resolves to the current layer's saved indicator brightness and **Bright** key feedback before comparing. This uses the brightness settings, regardless of whether an indicator or key is currently lit.
 
 Earlier firmware advanced both brightnesses independently; update the firmware to get synchronized stepping. Existing profiles need no conversion.
 
@@ -377,9 +385,9 @@ With **LED command → Set all LEDs**, choose:
 | --- | --- |
 | **As configured** | Clears the temporary effect and returns to normal lighting |
 | **Always on** | Shows the chosen color or rainbow until another effect replaces it, you restore lighting, or the layer changes. Key feedback can appear over it |
-| **Blink** | Blinks the chosen color or rainbow **1–8 times**, then returns to normal lighting. It covers key feedback during the effect |
+| **Blink** | Blinks the chosen color or rainbow 1–8 times, then returns to normal lighting. It covers key feedback during the effect |
 
-Choose a color or **Rainbow**, plus **Full Brightness** or **Dim**, for Always on and Blink effects. These do not replace the layer's saved color settings.
+Choose a color or **Rainbow**, plus **Full Brightness** or **Dim**, for **Always on** and **Blink** effects. These do not replace the layer's saved color settings.
 
 Finishing or clearing an effect returns to normal lighting without replaying the layer's timed or blinking selection indication. Existing brightness overrides remain active when you clear an effect with **As configured**. Use **Restore all configured LED settings** to clear those overrides too.
 
@@ -391,9 +399,9 @@ Expand **Shortcuts**, select **Mac** or **Windows**, and search for an action na
 
 ![Shortcut library filtered to copy actions, with Mac and Windows choices and matching presets](../images/configuration-overview/05-shortcuts.png)
 
-Drag a shortcut onto a numbered key, wheel input, chord, or timer action to **replace that input's action**. Clicking a shortcut does not apply it. Dragging from the library copies the preset; it does not remove it from the library or change the key's key-press color.
+Drag a shortcut onto a numbered key, wheel input, chord, or timer action to replace that input's action. Clicking a shortcut does not apply it. Dragging from the library copies the preset; it does not remove it from the library or change the key's key-press color.
 
-Check the Action editor afterward to see the assigned combination or text. Application shortcuts depend on the application, its mode, and your computer's settings. Text snippets insert literal text; they do not automatically wrap a selection or move the cursor into a template.
+Check the **Action editor** afterward to see the assigned combination or text. Application shortcuts depend on the application, its mode, and your computer's settings. Text snippets insert literal text; they do not automatically wrap a selection or move the cursor into a template.
 
 ### Copy or Move an Existing Action
 
@@ -404,18 +412,18 @@ Check the Action editor afterward to see the assigned combination or text. Appli
 
 | Edit | Windows | Mac |
 | --- | --- | --- |
-| Copy selected input | Ctrl+C | Command+C |
-| Cut selected input | Ctrl+X | Command+X |
-| Paste onto selected input | Ctrl+V | Command+V |
-| Undo an editor change | Ctrl+Z | Command+Z |
-| Redo an editor change | Ctrl+Shift+Z or Ctrl+Y | Command+Shift+Z |
+| **Copy** selected input | **Ctrl+C** | **Command+C** |
+| **Cut** selected input | **Ctrl+X** | **Command+X** |
+| **Paste** onto selected input | **Ctrl+V** | **Command+V** |
+| **Undo** an editor change | **Ctrl+Z** | **Command+Z** |
+| **Redo** an editor change | **Ctrl+Shift+Z** or **Ctrl+Y** | **Command+Shift+Z** |
 | Clear selected action | Delete or Backspace | Delete or Backspace |
 
-Copy, cut and paste act on the **highlighted input**, even after you click another control such as its LED color. If you are typing in a text box or have ordinary page text selected, the shortcuts work on that text instead. Clicking anywhere clears existing page-text selection; dragging to select new text still lets you copy that text. A toast confirms the action and the trigger it was copied or cut from, or pasted to. Copying one action is different from **Export to Clipboard**, which copies the entire profile for backup.
+**Copy**, cut and paste act on the highlighted input, even after you click another control such as its LED color. If you are typing in a text box or have ordinary page text selected, the shortcuts work on that text instead. Clicking anywhere clears existing page-text selection; dragging to select new text still lets you copy that text. A toast confirms the action and the trigger it was copied or cut from, or pasted to. Copying one action is different from **Export to Clipboard**, which copies the entire profile for backup.
 
-Copying or cutting a numbered key also includes its key-press color. Pasting it onto another numbered key transfers that color; pasting onto a wheel input, chord, or timer transfers only the action. Cutting clears the original action and turns its key key-press color Off.
+Copying or cutting a numbered key also includes its key-press color. Pasting it onto another numbered key transfers that color; pasting onto a wheel input, chord, or timer transfers only the action. Cutting clears the original action and turns its key key-press color **Off**.
 
-Delete or Backspace first changes the selected action to **Nothing**. On a numbered key whose action is already **Nothing**, another press turns its key-press color Off. Clearing a chord action does not delete the chord; use its trash button to remove the chord and reclaim its storage.
+Delete or Backspace first changes the selected action to **Nothing**. On a numbered key whose action is already **Nothing**, another press turns its key-press color **Off**. Clearing a chord action does not **delete** the chord; use its trash button to remove the chord and reclaim its storage.
 
 Use the top-bar **Undo** and **Redo** buttons if you prefer clicking. They undo editor changes; use **Save to device** to apply the resulting profile to hardware. While editing text, keyboard undo normally applies to the text field instead.
 
@@ -425,24 +433,24 @@ Use the top-bar **Undo** and **Redo** buttons if you prefer clicking. They undo 
 
 | Where you drop | Result |
 | --- | --- |
-| Center of another input | **Swaps** the two actions. The destination's old action moves to the source |
-| Edge of an input, or gap between inputs | **Inserts and reorders** within a supported group. Other actions shift along. A line marks the insertion point |
+| Center of another input | Swaps the two actions. The destination's old action moves to the source |
+| Edge of an input, or gap between inputs | Inserts and reorders within a supported group. Other actions shift along. A line marks the insertion point |
 | Center of a layer tab | Swaps the two entire layers |
 | Edge of a layer tab, or gap between tabs | Moves the entire layer into that position |
 
 Numbered keys reorder within their layer, wheel inputs within their list, and chords within their displayed list. Reordering chord actions changes which key pair runs each action; it does not change the pair labels.
 
-Key-to-key swaps and key reordering carry key-press colors along with the actions. Swapping between different kinds of input transfers actions only. Timer action slots support **swapping**, rather than edge insertion; dragging their actions does not move the timer's interval or checkboxes.
+Key-to-key swaps and key reordering carry key-press colors along with the actions. Swapping between different kinds of input transfers actions only. Timer action slots support swapping, rather than edge insertion; dragging their actions does not move the timer's interval or checkboxes.
 
 Layer moves carry their bindings, colors, options, and attached chords. The configurator updates explicit layer targets and the startup layer to follow the moved layers. Relative switches still follow numerical order, so review them after rearranging layers.
 
-An invalid destination is not accepted. In particular, a swap must leave **both** inputs with allowed actions: you cannot swap a hold action into a timer or wheel-turn input. Use copy and paste when you want a duplicate rather than a swap.
+An invalid destination is not accepted. In particular, a swap must leave both inputs with allowed actions: you cannot swap a hold action into a timer or wheel-turn input. Use copy and paste when you want a duplicate rather than a swap.
 
 ## The 128-Byte Configuration Size Limit
 
 The microchip this macropad is based on has only 128 bytes of space that can be used to save your entire device profile.
 
-To put that into perspective, “The quick brown fox jumps over the lazy dog” takes up 43 bytes. That one short sentence uses *over a third* of the macropad's entire configuration space, even before accounting for your layers and other settings!
+To put that into perspective, “The quick brown fox jumps over the lazy dog” takes up 43 bytes. That one short sentence uses over a third of the macropad's entire configuration space, even before accounting for your layers and other settings!
 
 While space is limited, the configuration format is extremely efficient and can support dozens of unique actions. When building your configuration profile, you do not have to manually keep track of used and available space. **Device storage** adds it up as you edit, shows the free space, and reports when you go over the limit. Its “Header” line simply means the space reserved for basic profile settings.
 
@@ -457,9 +465,9 @@ While space is limited, the configuration format is extremely efficient and can 
 | Each timed action | 5 bytes, including its interval, options, and both action assignments |
 | Each different text phrase | One byte per character, plus one extra byte |
 
-Ordinary actions fit into the space already reserved for their layer, chord, or timer. For example, changing a key from **Nothing** to a keyboard shortcut, mouse action, or LED control does not need extra space. **Type text** adds the phrase's storage cost.
+Ordinary actions fit into the space already reserved for their layer, chord, or timer. For example, changing a key from **Nothing** to a keyboard shortcut, mouse action, or **LED control** does not need extra space. **Type text** adds the phrase's storage cost.
 
-The starter two-layer profile uses **39 bytes on a three-key pad** or **53 bytes on a six-key pad**, leaving **89** or **75 bytes** respectively for all additional layers, chords, timers, or saved text.
+The starter two-layer profile uses 39 bytes on a three-key pad or 53 bytes on a six-key pad, leaving 89 or 75 bytes respectively for all additional layers, chords, timers, or saved text.
 
 ### Make the Most of the Space
 
@@ -502,7 +510,7 @@ Save an export somewhere you can find it again. A device save and a backup serve
 - **Read from device** replaces the editor profile with the device's saved settings and clears undo history. The confirmation warns that unsaved edits will be lost
 - **Reset to starter profile** replaces the editor settings with the starter configuration after confirmation. It does not immediately reset the device
 
-**Importing or resetting does not change your macropad until you save.** Import a profile for the correct three-key or six-key model. Export your current work first if you want to keep both versions.
+*Importing or resetting does not change your macropad until you save.* **Import** a profile for the correct three-key or six-key model. Export your current work first if you want to keep both versions.
 
 The browser also keeps a local draft. On reconnect, it may ask whether to use the draft or load from the device. Choose the draft to continue browser edits, or the device copy to start from what is already saved on hardware. Browser drafts can disappear when browser data is cleared and are separate from the device's saved profile; keep an exported backup for anything you want to preserve.
 
@@ -516,9 +524,9 @@ This option is for updating the device software, not editing a profile. It can i
 
 ### Everyday Editing with a Useful Wheel
 
-- Assign **Key tap** shortcuts for Copy, Paste, and Undo. Use Ctrl on Windows or Command on Mac
-  - On a six-key macropad, consider adding Cut, Save and Redo
-- Set **Turn left** to **Scroll → Up**, and **Turn right** to **Scroll → Down**, with a small Wheel step such as 2
+- Assign **Key tap** shortcuts for **Copy**, **Paste**, and **Undo**. Use **Ctrl** on Windows or Command on Mac
+  - On a six-key macropad, consider adding **Cut**, Save and **Redo**
+- Set **Turn left** to **Scroll → Up**, and **Turn right** to **Scroll → Down**, with a small **Wheel step** such as 2
 - Give the keys different key-press colors to help identify them
 - Save, then test in a document with some text selected
 
@@ -528,21 +536,21 @@ This option is for updating the device software, not editing a profile. It can i
 2. Click **Add layer** to copy it, then replace the new layer's keys with **Play / pause**, **Next track**, and **Mute**
 3. On the music layer, use **Volume down** and **Volume up** for the wheel turns
 4. Give each layer an **Always on** indicator in a different color
-5. Add a **Keys 1 + 2** chord with **Relative layer → +1**, then click its globe to make it apply to all layers
+5. Add a **Keys 1 + 2** chord with **Relative layer → +1**, then click its **globe** to make it apply to all layers
 6. Save. Press Keys 1 and 2 together to cycle between the two layers
 
 If you start from the two-layer starter, customize its existing layers instead of adding a third one. Check that local chords do not override your global switching pair.
 
 ### Create a Reminder to Take a Break
 
-1. Click **Add timed action**. Choose an interval of **28 × 131 seconds**, roughly one hour
+1. Click **Add timed action**. Choose an interval of 28 × 131 seconds, roughly one hour
 2. Leave **Restart on key / encoder input** off for an hourly reminder. Turn it on if you want the reminder only after and hour of macropad inactivity
 3. Select **When timer fires → LED control → Set all LEDs → Always on**. Choose **Amber** and **Full Brightness**
 4. Expand **On next input**, select its action, and choose **LED control → Set all LEDs → As configured**
 5. Enable **Consume this input** if you want the next device interaction after the alert to only dismiss the reminder instead of firing its usual action
 6. Save. The reminder turns the LEDs amber; your next macropad input clears the effect
 
-The first reminder may arrive about two minutes early because of the timer's shared clock. If you prefer an alert that clears itself, choose **Blink** and a blink count instead of Always on. A layer change also clears an always-on temporary effect.
+The first reminder may arrive about two minutes early because of the timer's shared clock. If you prefer an alert that clears itself, choose **Blink** and a blink count instead of **Always on**. A layer change also clears an always-on temporary effect.
 
 ## Troubleshooting
 
@@ -550,21 +558,21 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | --- | --- |
 | Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable (you'll need a dongle on Macs), and a macropad running this project's firmware. Reconnect after installing firmware. These boards will not power on with a USB-C to USB-C cable. Linux users may need the [device access setup](../webapp/README.md#linux-device-access) |
 | One red LED blinks and controls do nothing | Connect and save a valid profile |
-| All LEDs are red and controls do nothing | Device is in bootloader mode (firmware update mode). Unplug and replug the device *without* holding the wheel button |
-| My edits have no effect | Click **Save to device** and wait for Saved. Check that you are connected to hardware, rather than a simulator |
+| All LEDs are red and controls do nothing | Device is in bootloader mode (firmware update mode). Unplug and replug the device without holding the wheel button |
+| My edits have no effect | Click **Save to device** and wait for **Saved**. Check that you are connected to hardware, rather than a simulator |
 | Clicking a layer tab does not update the device | Tabs only affect what you're currently edit. Use a saved layer-switch action on the macropad |
 | I cannot get back to my usual layer | Configure a return action or a global layer-cycle chord. Reconnecting starts on the saved startup layer |
 | Save is disabled | Check the connection, key count, storage meter, and **Fix before saving** error. Follow any compatibility notice for older firmware |
-| A chord runs two ordinary actions | Increase the chord window slightly, check that it is not Off, press the pair nearly simultaneously, and release both keys before trying again. Check the chord's layer or global setting |
-| Copy or paste acts on text instead of a binding | Select the key, wheel input, chord row, or timer action. Deselect any text editor and clear page-text selection; highlighted input will become the clipboard target |
+| A chord runs two ordinary actions | Increase the chord window slightly, check that it is not **Off**, press the pair nearly simultaneously, and release both keys before trying again. Check the chord's layer or global setting |
+| **Copy** or paste acts on text instead of a binding | Select the key, wheel input, chord row, or timer action. Deselect any text editor and clear page-text selection; highlighted input will become the clipboard target |
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
 | A reminder fires earlier than expected | v8 clock quantization is less than 512 ms early. Older v7 firmware could fire up to 131 seconds early; use matching v8 firmware for improved precision |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
-| My first press after a **Timed action** does nothing | **Consume this input** may be enabled. That input dismisses the **Timed action**; the next one runs normally |
+| My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |
-| The mouse seems stuck dragging | Activate the same Mouse toggle input again, or change layers to clear toggled buttons |
+| The mouse seems stuck dragging | Activate the same **Mouse toggle** input again, or change layers to clear toggled buttons |
 | LEDs do not look like the editor | Check layer indicators, key colors, temporary effects, and brightness overrides. Use **Restore all configured LED settings** to restore saved behavior |
 | LEDs do not light up at all | The absolute cheapest versions of these macropads do not include LEDs. Someone skilled with a soldering iron can add them, but it's probably easier to buy a macropad that already includes them |
 | My device has older firmware | Follow the configurator's compatibility notice or use **Older firmware configurators**. Older editors may have fewer features than this guide |
@@ -574,41 +582,41 @@ The first reminder may arrive about two minutes early because of the timer's sha
 <details>
 <summary><strong>Advanced: Gotchas and things to watch out for with Timed Actions</strong></summary>
 
-Timed actions and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that all layer changes cancel pending actions.
+**Timed actions** and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that all layer changes cancel pending actions.
 
 ### How Multiple Pending Follow-Ups Run
 
-When several timers have fired, the same next macropad input processes **all** their pending **On next input** actions, in timer-list order: Timer 1, Timer 2, and so on. The order follows their positions in the configuration, regardless of which timer fired first. Each follow-up runs once; repeated timer firings before the next input do not accumulate extra copies of that timer's follow-up.
+When several timers have fired, the same next macropad input processes all their pending **On next input** actions, in timer-list order: **Timer 1**, **Timer 2**, and so on. The order follows their positions in the configuration, regardless of which timer fired first. Each follow-up runs once; repeated timer firings before the next input do not accumulate extra copies of that timer's follow-up.
 
-If **any pending timer** has **Consume this input** enabled, all pending follow-ups still run, but the input's normal binding is skipped. Several consuming timers consume just that one press or completed wheel turn, rather than several future inputs. Consumption works even with the follow-up set to **Nothing**; a timer that has not fired does not consume the input.
+If any pending timer has **Consume this input** enabled, all pending follow-ups still run, but the input's normal binding is skipped. Several consuming timers consume just that one press or completed wheel turn, rather than several future inputs. Consumption works even with the follow-up set to **Nothing**; a timer that has not fired does not consume the input.
 
 ### One-Shot Layer Returns Can Be Overwritten
 
-There is only one stored destination for one-shot layer changes, shared by both ordinary inputs and timers. Multiple one-shot selections will overwrite the previous destination layer. For example, starting on Layer 1, suppose two pending follow-ups select Layer 2 one-shot and then Layer 3 one-shot:
+There is only one stored destination for one-shot layer changes, shared by both ordinary inputs and timers. Multiple one-shot selections will overwrite the previous destination layer. For example, starting on **Layer 1**, suppose two pending follow-ups select **Layer 2** one-shot and then **Layer 3** one-shot:
 
-1. The follow-ups leave the device on Layer 3, with Layer 2 as the return destination
-2. The next normal input uses Layer 3's binding and returns to Layer 2
-3. Later inputs use Layer 2. There is no automatic return to Layer 1, because that destination was overwritten
+1. The follow-ups leave the device on **Layer 3**, with **Layer 2** as the return destination
+2. The next normal input uses **Layer 3**'s binding and returns to **Layer 2**
+3. Later inputs use **Layer 2**. There is no automatic return to **Layer 1**, because that destination was overwritten
 
-This example assumes the input that runs the follow-ups is consumed. If it is not consumed, that same input uses the Layer 3 binding and consumes the one-shot immediately. An input's own layer-switch action can also change the result.
+This example assumes the input that runs the follow-ups is consumed. If it is not consumed, that same input uses the **Layer 3** binding and consumes the one-shot immediately. An input's own layer-switch action can also change the result.
 
-A **persistent timed layer selection does not clear an already-pending one-shot return**. For example, starting on Layer 1, a follow-up selects Layer 2 one-shot and another selects Layer 3 persistently. With the waking input consumed, Layer 3 remains active until the next normal input; that input uses Layer 3's binding and returns to Layer 1, unless its own action selects another layer. The pending return can also come from an ordinary one-shot input used before the timer fired.
+A *persistent timed layer selection does not clear an already-pending one-shot return*. For example, starting on **Layer 1**, a follow-up selects **Layer 2** one-shot and another selects **Layer 3** persistently. With the waking input consumed, **Layer 3** remains active until the next normal input; that input uses **Layer 3**'s binding and returns to **Layer 1**, unless its own action selects another layer. The pending return can also come from an ordinary one-shot input used before the timer fired.
 
 Review overlapping timers together, and avoid combining one-shot and persistent selections if you expect the persistent selection to cancel the return.
 
 ### Layer Changes Can Cancel Queued Actions
 
-Keyboard taps, text, mouse clicks, scrolling, and pointer steps wait in a playback queue. **A change to the effective layer clears queued playback and interrupts playback already in progress.** Processing a follow-up therefore does not guarantee that all of its output reaches the computer. Media actions share a separate newest-wins output lane; layer changes cancel pending media taps, while keyboard and media holds continue until release. Reports already accepted by USB keep their order.
+Keyboard taps, text, mouse clicks, scrolling, and pointer steps wait in a playback queue. *A change to the effective layer clears queued playback and interrupts playback already in progress.* Processing a follow-up therefore does not guarantee that all of its output reaches the computer. Media actions share a separate newest-wins output lane; layer changes cancel pending media taps, while keyboard and media holds continue until release. Reports already accepted by USB keep their order.
 
-For example, if Timer 1's follow-up sends a keyboard shortcut and Timer 2's follow-up changes layers, the shortcut can be cancelled before it is sent. Reversing those assignments lets the layer change happen before the shortcut is queued. Selecting the already-active layer does not clear playback.
+For example, if **Timer 1**'s follow-up sends a keyboard shortcut and **Timer 2**'s follow-up changes layers, the shortcut can be cancelled before it is sent. Reversing those assignments lets the layer change happen before the shortcut is queued. Selecting the already-active layer does not clear playback.
 
-The same cancellation can happen when the **unconsumed input's normal binding** changes layers after the follow-ups. For a follow-up that both needs to send output and runs alongside a layer change, put the layer change first and review the waking input's binding too.
+The same cancellation can happen when the unconsumed input's normal binding changes layers after the follow-ups. For a follow-up that both needs to send output and runs alongside a layer change, put the layer change first and review the waking input's binding too.
 
 ### Other Interactions to Watch For
 
 | Configuration | What happens |
 | --- | --- |
-| Multiple persistent **Switch to layer** follow-ups | The last selection in timer-list order wins. Timer 1 selecting Layer 1 followed by Timer 2 selecting Layer 2 leaves the persistent selection on Layer 2 |
+| Multiple persistent **Switch to layer** follow-ups | The last selection in timer-list order wins. **Timer 1** selecting **Layer 1** followed by **Timer 2** selecting **Layer 2** leaves the persistent selection on **Layer 2** |
 | Layer-changing follow-ups with **Consume this input** off | The normal input's binding is looked up on the resulting active layer. It can run a different action than expected, or change the layer again |
 | Two **Previous layer** follow-ups | Each sees the history left by the earlier selection. They can switch away and then back again, rather than both restoring the layer you used before the reminders. Previous-layer history holds one entry |
 | Multiple **Relative layer** follow-ups | Their changes accumulate sequentially and wrap around. Two +1 selections normally advance two layers |

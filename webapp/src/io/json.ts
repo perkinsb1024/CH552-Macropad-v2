@@ -89,6 +89,7 @@ function bool(v: unknown, what: string): boolean {
 }
 
 function action(v: unknown, what: string): Action {
+  if (isRecord(v) && v.type === 'mouseDouble') return { type: 'mouseClick', buttons: int(v.buttons, `${what} buttons`), clicks: 2 };
   if (isRecord(v) && v.type === 'nextLayer') return { type: 'relativeLayer', offset: 0 };
   if (!isRecord(v) || typeof v.type !== 'string' || !TYPES.has(v.type as Action['type'])) throw new ImportError(`${what}: unknown action.`);
   const type = v.type as Action['type'];
@@ -108,8 +109,10 @@ function action(v: unknown, what: string): Action {
     case 'keyTap':
     case 'keyHold':
       return { type, usage: int(v.usage ?? 0, `${what} usage`), modifiers: int(v.modifiers ?? 0, `${what} modifiers`) };
-    case 'mouseClick':
-    case 'mouseDouble':
+    case 'mouseClick': {
+      const clicks = v.clicks === undefined ? 1 : int(v.clicks, `${what} clicks`);
+      return { type, buttons: int(v.buttons, `${what} buttons`), ...(clicks !== 1 ? { clicks } : {}) };
+    }
     case 'mouseHold':
     case 'mouseToggle':
       return { type, buttons: int(v.buttons, `${what} buttons`) };

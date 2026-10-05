@@ -1,6 +1,6 @@
 # Universal Macropad Configurator
 
-Browser-based editor for the CH552 Universal Macropad. It talks to the device over
+Browser-based editor for the CH552 **Universal Macropad**. It talks to the device over
 WebHID, edits the 128-byte configuration image defined in `protocol/config-v8.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
@@ -33,7 +33,7 @@ after an explicit connection attempt.
 The connect button's dropdown offers a simulated macropad that implements the same
 protocol handler as the firmware, including invalid-flash and failed-commit paths.
 `?sim=six`, `?sim=three`, or `?sim=blank` in the URL auto-connects the simulator,
-which is useful for demo links and screenshots. "Edit offline" on the welcome
+which is useful for demo links and screenshots. "**Edit offline**" on the welcome
 screen edits a profile for either variant without any device.
 
 ## Live View
@@ -81,7 +81,7 @@ simulator, and the tests.
 3. `COMMIT_WRITE`. The firmware validates, writes changed DataFlash bytes, and
    verifies them itself.
 4. The app independently reads all 128 flash bytes back with `READ_FLASH` and compares
-   them byte for byte before showing "Saved". A lost commit reply is tolerated because
+   them byte for byte before showing "**Saved**". A lost commit reply is tolerated because
    verification decides the outcome.
 
 Unsaved edits are kept in the editor on disconnect or failure and persisted as a draft
@@ -124,11 +124,11 @@ and can recover v2/v3/v4/v5/v6/v7 drafts without overwriting or clearing the arc
 
 Version 2–7 binary profiles, version 1–7 JSON files, and older drafts can still be
 migrated into the active format 8 editor after a firmware upgrade. Bindings and
-colors are preserved; Blink once becomes the timed indication and transparency
-defaults to off. Rainbow phase spacing defaults to 60° on both variants. Firmware does not migrate flash itself: save the migrated profile
+colors are preserved; **Blink once** becomes the timed indication and transparency
+defaults to off. **Rainbow phase spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
 through the active editor to store v8. Older stored profiles remain readable but inactive until saved as v8.
 
-LED control bindings expose existing LED commands plus Set all LEDs, relative steps of -1 or +1,
+**LED control** bindings expose existing LED commands plus **Set all LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
 Relative rainbow phase and speed also offer -2 and +2 to toggle between settings
 two positions apart in their four-setting cycles.
@@ -136,40 +136,40 @@ Existing profiles with larger relative LED steps remain compatible; the editor
 shows their current value but only offers the steps above when changing it.
 Saved layer colors/visibility and global rainbow defaults remain independent.
 Runtime overrides reset on configuration save or USB reset and bypass preview.
-Formats before v5 receive Fast speed and 60° spacing; v5 rainbow settings survive
+Formats before v5 receive **Fast** speed and **60°** spacing; v5 rainbow settings survive
 migration unchanged. JSON and drafts retain semantic action names as action codes shift.
 
-## Timed Actions and Temporary LED Effects (v7)
+## Timed Actions and Temporary LED Effects (v8)
 
 Four timers share the profile's storage budget, at five bytes each. Intervals
-are clamped to 1–64 ticks of 131.072 seconds. The editor displays “131 seconds”,
-whole-minute/second durations, and a first-firing range on hover. Restart on input
+are clamped to 1–64 ticks of 131.072 seconds. The editor displays “131 seconds”
+and approximate whole-minute/second durations. Restart on input
 is enabled by default; consume wake input is disabled by default. Optional
 next-input actions run once after firing; consuming suppresses the physical
 binding even with no next-input action. Held actions cannot be assigned to timers.
 
 In v8, timers retain five-byte records and the same maximum interval but gain
 independent 512 ms fractional phases. Clock quantization is less than 512 ms early;
-the hover range reflects that, with queued-output latency called out separately.
+the panel explains this precision and possible queued-output latency.
 
 Interval editing uses a full-width 1–64 slider. Both timer action slots accept
 dragged shortcuts and swap actions with keys, encoder inputs, chords and other
 timers; timer interval/flags and per-key LED colors stay attached to their inputs.
 Actions requiring a release are rejected on either timer slot.
 
-Set all LEDs is a single LED-command choice with an effect selector (As configured,
-Always on, Blink), a 1–8 blink-count slider shown only for Blink, and color swatches
-including Rainbow with a Full Brightness / Dim control. As configured hides these
+**Set all LEDs** is a single LED-command choice with an effect selector (**As configured**,
+**Always on**, **Blink**), a 1–8 blink-count slider shown only for **Blink**, and color swatches
+including **Rainbow** with a **Full Brightness / Dim** control. **As configured** hides these
 controls. Always-on permits pressed-key feedback; blinking covers it. Clearing or
 finishing an effect does not replay the layer's blink/timed indication.
 No dedicated reminder layer is required. JSON uses optional `brightness: "dim"`
-for effects; omission defaults to Bright, preserving existing profiles.
+for effects; omission defaults to **Bright**, preserving existing profiles.
 
-Persistent and one-shot Switch to layer selectors offer Previous layer, represented
+Persistent and one-shot **Switch to layer** selectors offer **Previous layer**, represented
 by `layer: 255` in v7/v8 JSON and `0xFF` in the two-byte action record. The target is
 preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
-Previous layer remembers persistent base selections, ignoring momentary/one-shot
-visits. Repeating a persistent Previous layer action swaps between two layers.
+**Previous layer** remembers persistent base selections, ignoring momentary/one-shot
+visits. Repeating a persistent **Previous layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
 The protocol simulator accepts only valid v8 profiles and round-trips the new
@@ -184,17 +184,47 @@ between them preserves the selected 12-bit Control. Repetition depends on the
 host; the newest media action wins without restoring previous holds. Keyboard
 and consumer holds retain their original binding across layers until release.
 
-Scroll offers **Tap/Hold** on keys, chords and the encoder button. It repeats the
+**Scroll** offers **Tap/Hold** on keys, chords and the encoder button. It repeats the
 configured step when playback and transport are idle; release stops new repeats.
+Repeats wait at least 100 ms after the previous complete step, giving about ten
+steps per second at wheel step 1. Pointer holds retain their 8 ms interval.
 Both hold features reject rotation and timed-action slots, including drag/drop
 and clipboard operations. Preview/live-view summaries identify held scrolling
 and media controls. Acceleration is not part of this merged build.
 
-v8 writes Type Text with first byte `0x10`; old type-9 text is decoded according
-to its source version before re-encoding. None remains `00 00`. Binary, JSON,
+v8 writes **Type Text** with first byte `0x10`; old type-9 text is decoded according
+to its source version before re-encoding. **None** remains `00 00`. Binary, JSON,
 draft and raw-device migration cover every binding location, including timers.
 Legacy firmware connects through its frozen editor, while old flash on v8 can
 be read and migrated without being automatically overwritten.
+
+## Mouse Clicks (v8+)
+
+**Mouse click** offers **Single / Double / Custom**, with a 3–16 slider for **Custom**.
+The last custom count is remembered per slot in local settings when switching
+modes. **Custom** displays an estimated duration to one decimal, based on 8 ms per
+press plus 200 ms between clicks. Later queued actions wait for the sequence;
+held outputs, consumer controls and layer/LED actions use independent handling.
+USB backpressure can lengthen playback. The optional JSON `clicks` field defaults
+to one; legacy `mouseDouble` actions migrate to `mouseClick` with `clicks: 2`.
+Binary type 3 stores count minus one in its auxiliary nibble; v8 rejects type 4.
+
+## Advanced: Input Capture Diagnostic
+
+Open `/wheel-debug.html` beneath the site's project prefix (locally,
+`http://localhost:4173/wheel-debug.html` when using the preview server). Hover over
+the blue area, clear the log, and use a macropad key. For held scrolling, use one
+key at wheel step 1 and compare intervals against roughly 100–108 ms. For
+multi-click testing, select **Left** only and compare complete press/release cycles
+against the configured count. Browser click/double-click notifications are logged
+separately without increasing that count. The page reports press duration and
+event/receipt intervals and exports CSV. It records browser events after OS
+processing, so it cannot identify the device or guarantee one event per USB report.
+
+The desktop sidebar shows arrows and inset edge shadows when more content is
+available. At each endpoint, the fading shadow clips to the card's rounded corners.
+
+## Release Firmware Status
 
 Checked-in releases and the bundled uploader still carry v7 firmware. Testing
 this branch requires an ordinary source build/upload; no v8 release was generated.

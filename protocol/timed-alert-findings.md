@@ -74,11 +74,11 @@ performed.
 | Consume only: 128 ticks | 14,355 | 19 over | 14,351 | 15 over |
 | Initial combined: 64 ticks | 14,547 | 211 over | 14,545 | 209 over |
 | Initial combined: 128 ticks | 14,569 | 233 over | 14,567 | 231 over |
-| **Final combined: 64 ticks** | **14,173** | **163 free** | **14,169** | **167 free** |
-| **Final combined: 128 ticks** | **14,191** | **145 free** | **14,187** | **149 free** |
+| Final combined: 64 ticks | 14,173 | 163 free | 14,169 | 167 free |
+| Final combined: 128 ticks | 14,191 | 145 free | 14,187 | 149 free |
 
-The selected 128-tick result leaves **40 more flash bytes free than the original
-baseline**, while adding both features. The 64-tick alternative saves another
+The selected 128-tick result leaves 40 more flash bytes free than the original
+baseline, while adding both features. The 64-tick alternative saves another
 18 flash bytes and avoids reserving a profile byte.
 
 | Memory | Baseline six / three | Final 64-tick six / three | Final 128-tick six / three |
@@ -109,7 +109,7 @@ Incremental six-key measurements with the 64-tick encoding:
 | Cache UI-preview identity in a native bit | 14,459 | 24 |
 | Native bits for config-valid/flash-valid/reset-pending flags | 14,401 | 58 |
 | Native bit returns for boolean helpers | 14,173 | 228 |
-| **Total** | | **374** |
+| Total | | 374 |
 
 `src/firmware_types.h` defines `FW_BIT` as SDCC `__bit`, with a byte fallback for
 host tests. Boolean APIs and their declarations consistently use that type:
@@ -150,12 +150,12 @@ one-shot layer through the skipped physical binding.
 Both alternatives retain four timers and five bytes per timer, with the existing
 action/resume pairs:
 
-- **Selected: 128 ticks, experimental v9.** Interval byte retains bits 0–6 as
+- Selected: 128 ticks, experimental v9. Interval byte retains bits 0–6 as
   `ticks - 1` and bit 7 as reset-on-input. Byte 127 stores consume flags for
   timer slots 0–3 in bits 0–3; bits 4–7 must be zero. Layer/chord/timer/string
   records must end at or before byte 126. Consume bits for unused timer slots
-  are harmless and ignored. This reserves **one byte total**, not one per timer.
-- **Alternative: 64 ticks, experimental v8.** Bits 0–5 store `ticks - 1`, bit 6
+  are harmless and ignored. This reserves one byte total, not one per timer.
+- Alternative: 64 ticks, experimental v8. Bits 0–5 store `ticks - 1`, bit 6
   means consume wake input, and bit 7 means reset-on-input. All 128 profile bytes
   remain available to the ordinary records and string pool.
 
@@ -172,14 +172,14 @@ expiry remain unchanged.
 
 ## Temporary LED effect behavior and encoding
 
-The normal LED Control action remains two bytes. Its low action nibble is `0xF`,
+The normal **LED Control** action remains two bytes. Its low action nibble is `0xF`,
 its upper nibble selects palette index 0–15, and its second byte is:
 
-| LED command | Behavior | Palette nibble |
+| **LED command** | Behavior | Palette nibble |
 | --- | --- | --- |
-| `0x80` | Clear temporary effect / As configured | Must be 0 |
-| `0x81` | Bright always-on effect | 0–14: swatches; 15: rainbow |
-| `0x82–0x89` | Bright blink 1–8 times | 0–14: swatches; 15: rainbow |
+| `0x80` | Clear temporary effect / **As configured** | Must be 0 |
+| `0x81` | **Bright** always-on effect | 0–14: swatches; 15: rainbow |
+| `0x82–0x89` | **Bright** blink 1–8 times | 0–14: swatches; 15: rainbow |
 
 These commands can be bound to ordinary inputs, chords, encoder rotations,
 timer expiry, and timer resume. No layer is allocated or selected by the effect.
@@ -187,14 +187,14 @@ The entire palette/mode space is covered by validator and rendering tests.
 
 The existing alternate indicator option byte is shared with UI color preview.
 Bit 1 marks a persistent effect; its mode/color/brightness reuse the layer option
-layout. Blink effects reuse the existing phase counter and 250ms deadline.
-Rainbow animation activates even when the actual layer has no rainbow indicator.
+layout. **Blink** effects reuse the existing phase counter and 250ms deadline.
+**Rainbow** animation activates even when the actual layer has no rainbow indicator.
 Effects use current rainbow speed/phase settings and force their selected
 brightness even if the underlying indicator brightness policy is off/dim.
-Existing commands use Bright; firmware now also supports Dim using command bit
-`0x10` (`91`–`99`). The editor exposes Full Brightness / Dim and a single Blink
+Existing commands use **Bright**; firmware now also supports **Dim** using command bit
+`0x10` (`91`–`99`). The editor exposes **Full Brightness / Dim** and a single **Blink**
 choice with a 1–8 count slider. JSON stores optional `brightness: "dim"`, with
-Bright as the default when omitted. Both brightnesses
+**Bright** as the default when omitted. Both brightnesses
 reuse the existing effect-state byte and color renderer.
 
 - Always-on survives ordinary key/encoder activity until replaced, explicitly
@@ -206,7 +206,7 @@ reuse the existing effect-state byte and color renderer.
   without restarting the layer's configured blink/timed indication.
 - Pressed-key feedback overrides always-on effects, but blink phases take
   precedence, matching existing layer-indicator behavior.
-- As configured removes the overlay and reveals the existing underlying runtime
+- **As configured** removes the overlay and reveals the existing underlying runtime
   brightness policies; it does not overwrite saved configuration or reset other
   LED overrides. Existing brightness/phase/speed commands continue to modify
   those underlying policies.

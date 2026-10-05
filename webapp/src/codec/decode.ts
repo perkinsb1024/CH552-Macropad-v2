@@ -71,14 +71,17 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (!isSupportedUsage(b1)) return `Unsupported key usage 0x${b1.toString(16)}`;
       return { type: type === ActionCode.KeyTap ? 'keyTap' : 'keyHold', usage: b1, modifiers: aux };
     case ActionCode.MouseClick:
-    case ActionCode.MouseDouble:
+      if ((version < 8 && nonZeroAux) || b1 < 1 || b1 > 7) return 'Invalid mouse click settings';
+      return { type: 'mouseClick', buttons: b1, ...(aux ? { clicks: aux + 1 } : {}) };
+    case ActionCode.LegacyMouseDouble:
+      if (version >= 8) return 'Reserved action type 4';
+      if (nonZeroAux || b1 < 1 || b1 > 7) return 'Invalid mouse button mask';
+      return { type: 'mouseClick', buttons: b1, clicks: 2 };
     case ActionCode.MouseHold:
-    case ActionCode.MouseToggle: {
+    case ActionCode.MouseToggle:
       if (rotation && type === ActionCode.MouseHold) return 'Mouse hold bound to rotation';
       if (nonZeroAux || b1 < 1 || b1 > 7) return 'Invalid mouse button mask';
-      const t = (['mouseClick', 'mouseDouble', 'mouseHold', 'mouseToggle'] as const)[type - ActionCode.MouseClick]!;
-      return { type: t, buttons: b1 };
-    }
+      return { type: type === ActionCode.MouseHold ? 'mouseHold' : 'mouseToggle', buttons: b1 };
     case ActionCode.Scroll:
       if ((version < 8 ? nonZeroAux : aux !== 0 && aux !== 4) || b1 === 0x80) return 'Invalid scroll settings';
       if (rotation && aux) return 'Scroll hold bound to rotation';

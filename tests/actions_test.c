@@ -6,6 +6,7 @@
 #include "../src/config.h"
 
 static uint8_t reports[64][9];
+static uint16_t reportNow, reportTimes[64];
 static uint8_t count;
 static uint8_t blocked;
 static uint8_t reportLimit;
@@ -32,6 +33,7 @@ uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
     reports[count][2] = x;
     reports[count][3] = y;
     reports[count][4] = wheel;
+    reportTimes[count] = reportNow;
     count++;
     return 1;
 }
@@ -337,6 +339,30 @@ static void testScrollHold(void) {
     blocked = 0; actionsPoll(1); assert(count == 1 && reports[0][4] == 1);
     actionsPoll(100); assert(count == 1); actionsClear();
     before = count; actionsPoll(200); assert(count == before);
+}
+
+static void testScrollReportSpacing(void) {
+    // Exercise every low-byte start phase across full millisecond wrap, with
+    // uneven loop polling and a blocked USB queue. Assert actual wheel-report
+    // acceptance times, rather than only the number of reports produced.
+    for (uint16_t phase = 0; phase < 256; phase++) {
+        reset();
+        activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+        activeConfig[10] = phase & 1 ? (uint8_t)-1 : 1;
+        uint16_t start = (uint16_t)(65500 + phase);
+        actionsPress(0, start);
+        for (uint16_t elapsed = 0; elapsed < 1100; elapsed += 1 + phase % 13) {
+            blocked = elapsed >= 150 && elapsed < 270;
+            reportNow = (uint16_t)(start + elapsed);
+            actionsPoll(reportNow);
+        }
+        assert(count >= 6 && count <= 11);
+        for (uint8_t i = 0; i < count; i++) {
+            assert(reports[i][0] == 2 && reports[i][4] == activeConfig[10]);
+            if (i) assert((uint16_t)(reportTimes[i] - reportTimes[i - 1]) >= 100);
+        }
+        actionsRelease(0);
+    }
 }
 
 // Drive the real CCW binding path, preserving ordinary one-shot consumption.
@@ -1360,6 +1386,7 @@ int main(void) {
     testScrollAcceleration();
 #endif
     testScrollHold();
+    testScrollReportSpacing();
     testConsumeWake();
     reset();
     uint8_t timer = configTimedOffset();

@@ -6,8 +6,7 @@ export type Action =
   | { type: 'none' }
   | { type: 'keyTap'; usage: number; modifiers: number }
   | { type: 'keyHold'; usage: number; modifiers: number }
-  | { type: 'mouseClick'; buttons: number }
-  | { type: 'mouseDouble'; buttons: number }
+  | { type: 'mouseClick'; buttons: number; clicks?: number }
   | { type: 'mouseHold'; buttons: number }
   | { type: 'mouseToggle'; buttons: number }
   | { type: 'scroll'; delta: number; hold?: boolean }

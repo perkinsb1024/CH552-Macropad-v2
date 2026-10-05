@@ -52,3 +52,38 @@ it.each([{ kind: 'clockwise', layer: 0 }, { kind: 'timed', layer: 0, index: 0, r
   expect(nodes(Inspector()).some(n => n.props['aria-label'] === 'Scroll behavior')).toBe(false);
   expect(canSwapSlots({ kind: 'key', layer: 0, index: 0 }, slot)).toBe(false);
 });
+
+it('edits Single, Double and Custom clicks with a 3–16 slider and preserves mouse buttons', () => {
+  const storage = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+  });
+  start({ type: 'mouseClick', buttons: 5 });
+  const modes = () => nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Click behavior')!).filter(n => n.type === 'button');
+  const slider = () => nodes(Inspector()).find(n => n.props['aria-label'] === 'Click count');
+  expect(modes().map(n => n.props.children)).toEqual(['Single', 'Double', 'Custom']);
+  expect(modes().map(n => n.props['aria-pressed'])).toEqual([true, false, false]);
+  expect(slider()).toBeUndefined();
+  expect(nodes(selects()[0]!.props.children).some(n => n.props.value === 'mouseDouble')).toBe(false);
+  (modes()[1]!.props.onClick as () => void)();
+  expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'mouseClick', buttons: 5, clicks: 2 });
+  expect(slider()).toBeUndefined();
+  (modes()[2]!.props.onClick as () => void)();
+  expect(slider()?.props).toMatchObject({ min: 3, max: 16, step: 1, value: 3 });
+  (slider()!.props.onInput as (event: unknown) => void)({ target: { value: '16' } });
+  expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'mouseClick', buttons: 5, clicks: 16 });
+  expect(modes().map(n => n.props['aria-pressed'])).toEqual([false, false, true]);
+  (modes()[2]!.props.onClick as () => void)();
+  expect(slider()?.props.value).toBe(16);
+  (modes()[0]!.props.onClick as () => void)();
+  expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'mouseClick', buttons: 5 });
+  expect(slider()).toBeUndefined();
+  (modes()[2]!.props.onClick as () => void)();
+  expect(slider()?.props.value).toBe(16);
+  (modes()[1]!.props.onClick as () => void)();
+  expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'mouseClick', buttons: 5, clicks: 2 });
+  (modes()[2]!.props.onClick as () => void)();
+  expect(slider()?.props.value).toBe(16);
+  vi.unstubAllGlobals();
+});

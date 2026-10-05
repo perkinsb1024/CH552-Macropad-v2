@@ -18,14 +18,14 @@ the working preset-toggle firmware. Retain its source in commit 2709c23.
 - Timers are global, not duplicated per layer. Resolve layer-changing actions
   against the active layer at execution time. Store action bytes with each timer.
 - Interval byte encodes `(ticks - 1)` in bits 0–6; bit 7 enables input reset.
-  Thus 128 is representable. Six bits can represent **1–64**, not 1–65.
+  Thus 128 is representable. Six bits can represent 1–64, not 1–65.
 - Independent periodic timers need independent phase/counters if reset flags
   differ. Up to four independent timers costs four counter bytes plus one shared
   clock-phase byte. A shared inactivity age can support multiple inactivity
   thresholds, but independent repeated intervals still need per-record state or
   more expensive modulo logic; measure before assuming RAM is the bottleneck.
 - A generic LED-off action persists after firing. Add an optional explicit
-  **resume action** per timer, dispatched once on the first physical input after
+  resume action per timer, dispatched once on the first physical input after
   that timer fired. This permits brightness preset → configured restoration,
   without hidden global restoration of unrelated settings. Run resume actions
   before the input's binding so the user's explicit action wins.
@@ -47,7 +47,7 @@ the working preset-toggle firmware. Retain its source in commit 2709c23.
 
 ## Encoding proposal for the first probe
 
-Use format **7** for the structural extension; support reading existing v6 images
+Use format 7 for the structural extension; support reading existing v6 images
 in updated firmware. Old firmware must reject v7 rather than reinterpret records.
 Keep the image at 128 bytes and preserve existing layer/chord/action encodings.
 
@@ -55,9 +55,9 @@ Use header byte 3 bits 6–7 for timer-count low bits and header byte 4 bit 7 fo
 timer-count high bit. Mask byte 4 to seven bits for string-pool length (the whole
 image is only 128 bytes). Count 0–4 is legal in the initial probe. Reserved counts
 5–7 fail validation. Timers follow layers and chords, before strings. Each record
-contains interval/flags, a two-byte action, and a two-byte resume action (None is
+contains interval/flags, a two-byte action, and a two-byte resume action (**None** is
 encoded as zero). Cost: five configuration bytes per timer, no runtime copy of
-action records. String offsets must account for the timer region.
+action records. **String** offsets must account for the timer region.
 
 ## Work sequence
 
@@ -80,7 +80,7 @@ action records. String offsets must account for the timer region.
    that evidence and outstanding “any action”/UI work rather than build a polished
    editor for an unflashable design. If it fits or looks credibly close, implement
    full release lifecycles and editor/model/binary/JSON/capacity/migration support.
-8. For a viable design, add a Timed actions list with interval, reset-on-input,
+8. For a viable design, add a **Timed actions** list with interval, reset-on-input,
    action inspector and optional resume action. Display approximate duration and
    image capacity, keep detailed options collapsed. Preserve old draft/profile
    defaults and version archives. Run browser tests/build and firmware suites.

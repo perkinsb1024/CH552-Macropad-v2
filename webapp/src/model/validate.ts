@@ -37,9 +37,9 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (action.usage === 0 && action.modifiers === 0) return 'Choose a key or at least one modifier.';
       return null;
     case 'mouseClick':
-    case 'mouseDouble':
     case 'mouseHold':
     case 'mouseToggle':
+      if (action.type === 'mouseClick' && (!Number.isInteger(action.clicks ?? 1) || (action.clicks ?? 1) < 1 || (action.clicks ?? 1) > 16)) return 'Click count must be a whole number from 1 to 16.';
       if (!Number.isInteger(action.buttons) || action.buttons < 1 || action.buttons > 7) return 'Choose at least one mouse button.';
       return null;
     case 'scroll':

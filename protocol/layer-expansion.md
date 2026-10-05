@@ -5,7 +5,7 @@ The same 128-byte saved image and 9-byte header remain in use. Each six-key laye
 costs 22 bytes; each three-key layer costs 15 bytes. At the maximum layer count,
 9 bytes or 14 bytes remain respectively for chords (3 bytes each) and strings
 (including terminators). Layer count and startup layer use three bits each in
-header byte 3. Chords use bits 4–6 for their layer, preserving bit 7 for global
+header byte 3. **Chords** use bits 4–6 for their layer, preserving bit 7 for global
 scope. Absolute layer actions already had eight-bit target parameters.
 
 Relative offsets expand to -6..+6. The previous arithmetic added 12 before

@@ -82,7 +82,7 @@ describe('every action type round-trips', () => {
     { type: 'keyTap', usage: 0, modifiers: 15 },
     { type: 'keyHold', usage: 0x73, modifiers: 9 },
     { type: 'mouseClick', buttons: 1 },
-    { type: 'mouseDouble', buttons: 7 },
+    { type: 'mouseClick', buttons: 7, clicks: 2 },
     { type: 'mouseHold', buttons: 4 },
     { type: 'mouseToggle', buttons: 2 },
     { type: 'scroll', delta: -127 },

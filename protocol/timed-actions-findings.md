@@ -9,7 +9,7 @@
 
 The scheduler, optional reset-on-input, and explicit resume actions work in host
 tests, but this implementation is substantially over the firmware limit. The
-retained four-timer prototype uses **15,139 bytes on six-key boards: 803 bytes over**
+retained four-timer prototype uses 15,139 bytes on six-key boards: 803 bytes over
 the normal 14,336-byte limit. This already excludes release-dependent timer actions
 and editor support. No existing release features were removed to make room.
 
@@ -20,19 +20,19 @@ release-generation command was used, and `releases/` was preserved.
 
 The plan was saved in [timed-actions-plan.md](timed-actions-plan.md) before firmware
 implementation. Code, measurements, tests and reproduction instructions are
-retained so this is not merely a speculative estimate. This is **not** a complete
+retained so this is not merely a speculative estimate. This is not a complete
 or flashable implementation of the requested feature.
 
 ## Implemented trigger and resume behavior
 
-- Profile-wide independent timers, four by default. An interval byte represents
+- **Profile**-wide independent timers, four by default. An interval byte represents
   1–128 ticks of 65.536 seconds; bit 7 requests reset on physical input.
 - Periodic firing every interval. Timers with reset enabled restart on debounced
   button presses (including the encoder pushbutton) and completed detents in
   either direction. No-op bindings count. Releases, partial detents and USB
   traffic do not reset them.
 - Each timer has an ordinary action and an optional resume action, represented
-  as None when unused. The resume action runs once on the first physical input
+  as **None** when unused. The resume action runs once on the first physical input
   after that timer fired, before the physical input's own binding. This works
   independently of whether its interval resets on input.
 - Timers due on a frame execute before scanning physical inputs, so a coincident
@@ -66,7 +66,7 @@ applies the dark preset; the next physical input restores configured brightness.
 If that key itself sets brightness, its action takes precedence over restoration.
 Real renderer host tests cover this ordering on both physical variants.
 
-This does **not** exactly reproduce always-on-only auto-sleep: a generic preset
+This does not exactly reproduce always-on-only auto-sleep: a generic preset
 also changes blink/timed indicator brightness. Nor does it remember arbitrary
 prior brightness overrides; resume runs the specifically configured action.
 Exact previous-state restoration or always-on-only suppression would require
@@ -82,7 +82,7 @@ No physical mouse movement or host keep-awake behavior was tested.
 
 ## Configuration prototype
 
-Structural changes use **format 7**, with existing format 6 still accepted by
+Structural changes use format 7, with existing format 6 still accepted by
 the updated firmware. Older firmware rejects format 7 instead of interpreting
 timer records as chords/strings. Existing action and layer encodings remain.
 
@@ -91,7 +91,7 @@ timer records as chords/strings. Existing action and layer encodings remain.
 | Header byte 3 bits 0–5 | Existing layer count/startup layer |
 | Header byte 3 bits 6–7 | Timer-count low two bits |
 | Header byte 4 bit 7 | Timer-count high bit |
-| Header byte 4 bits 0–6 | String-pool length |
+| Header byte 4 bits 0–6 | **String**-pool length |
 | Timer position | After layers and chords, before strings |
 | Timer record byte 0 | `(ticks - 1)`, bits 0–6; input-reset flag, bit 7 |
 | Timer record bytes 1–2 | Existing two-byte action |
@@ -99,13 +99,13 @@ timer records as chords/strings. Existing action and layer encodings remain.
 
 Each retained timer costs five profile bytes, so four use twenty of the fixed
 128-byte image. This reduces the remaining space for layers/chords/strings only
-when timers are present. String bounds/offsets include the timer region. Invalid
+when timers are present. **String** bounds/offsets include the timer region. Invalid
 counts, oversized images, malformed actions and release-dependent bindings are
 rejected. Format 6 reserved bits do not become timer counts.
 
 The seven-timer variant uses all representable counts but is not an unlimited
 design; the image's capacity is still the ultimate constraint. The no-resume
-variant uses three-byte records. These are **experimental layouts**, not mutually
+variant uses three-byte records. These are experimental layouts, not mutually
 interchangeable despite sharing provisional format number 7. A shipping format
 would require selecting one stable layout and updating its versioned editor.
 
@@ -120,14 +120,14 @@ they were corrected before the measurements below.
 | --- | ---: | ---: | ---: | ---: |
 | Working toggle, six-key baseline | 14,325 | Fits, 11 free | 628 | 125 |
 | Committed LED sleep, six-key | 14,377 | 41 | 628 | 124 |
-| Retained timed actions, six-key | 15,139 | **803** | 642 | 128 |
-| Retained timed actions, three-key | 15,135 | **799** | 633 | 131 |
+| Retained timed actions, six-key | 15,139 | 803 | 642 | 128 |
+| Retained timed actions, three-key | 15,135 | 799 | 633 | 131 |
 | All timers reset on input, six-key | 15,121 | 785 | 642 | 128 |
 | All reset + 1–64 ticks, six-key | 15,133 | 797 | 642 | 128 |
 | All reset + 1–64, no resume action, six-key | 14,989 | 653 | 642 | 128 |
 | Seven timers, full flags/resume, six-key | 15,139 | 803 | 648 | 128 |
 
-Six bits represent **1–64**, not 1–65. Narrowing the range did not save a counter
+Six bits represent 1–64, not 1–65. Narrowing the range did not save a counter
 byte; stricter rejection of bit 6 added 12 flash bytes. Removing per-timer reset
 choice saved 18 bytes. Removing resume actions saved 144 bytes compared with the
 compact variant, but loses automatic LED wake restoration. A cap of four instead
@@ -153,7 +153,7 @@ runtime RAM. Four extra mouse-toggle latch slots preserve independent ownership.
 The total measured xRAM increase over working toggle is fourteen bytes, including
 compiler temporaries and state moved out of scarce direct RAM.
 
-Retained changes reuse action validation, HID playback, LED control, and layer
+Retained changes reuse action validation, HID playback, **LED control**, and layer
 dispatch. `consumerReleasePending`, `layerSelectionPending`, `clicksLeft`, timer
 offset temporaries, and a string argument were placed in xRAM to resolve direct
 RAM/overlay allocation pressure. All original physical action regressions pass.
@@ -168,8 +168,8 @@ was disabled to fit a variant.
 
 The probe supports rotation-compatible timer actions: key taps, mouse
 click/double-click/toggle, scrolling, non-held pointer steps, consumer/string
-actions, layer selection/relative selection, LED controls, and None. **Key holds,
-mouse holds, held pointer movement and momentary layers are rejected for timers**,
+actions, layer selection/relative selection, LED controls, and **None**. Key holds,
+mouse holds, held pointer movement and momentary layers are rejected for timers,
 while remaining fully supported on physical bindings. Supporting them honestly
 requires virtual input/release lifecycles; silently treating holds as taps would
 not satisfy “any action.” This probe's substantial overflow precedes that work.
@@ -214,7 +214,7 @@ the code limit, generate releases, or upload hardware.
 
 | Variant | Additional flags |
 | --- | --- |
-| Retained | None |
+| Retained | **None** |
 | All reset | `-DCONFIG_TIMED_ALL_RESET=1` |
 | Compact | Previous flag plus `-DCONFIG_TIMED_INTERVAL_MASK=63` |
 | No resume | Compact flags plus `-DCONFIG_TIMED_RESUME=0` |

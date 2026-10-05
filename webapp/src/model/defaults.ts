@@ -72,8 +72,12 @@ export function migrateLegacyProfile(profile: Profile): Profile {
   profile.transparentBlack ??= false;
   profile.rainbowPhase ??= DEFAULT_RAINBOW_PHASE;
   profile.rainbowSpeed ??= DEFAULT_RAINBOW_SPEED;
-  const migrateAction = (action: Action): Action =>
-    (action as { type: string }).type === 'nextLayer' ? { type: 'relativeLayer', offset: 0 } : action;
+  const migrateAction = (action: Action): Action => {
+    const legacy = action as { type: string; buttons?: number };
+    if (legacy.type === 'nextLayer') return { type: 'relativeLayer', offset: 0 };
+    if (legacy.type === 'mouseDouble') return { type: 'mouseClick', buttons: legacy.buttons!, clicks: 2 };
+    return action;
+  };
   for (const layer of profile.layers) {
     layer.indicatorBehavior ??= 0;
     layer.indicatorColor ??= 0;
@@ -90,5 +94,9 @@ export function migrateLegacyProfile(profile: Profile): Profile {
     delete legacy.invertScroll;
   }
   for (const chord of profile.chords) chord.action = migrateAction(chord.action);
+  for (const timer of profile.timedActions ?? []) {
+    timer.action = migrateAction(timer.action);
+    timer.resumeAction = migrateAction(timer.resumeAction);
+  }
   return profile;
 }

@@ -1,7 +1,7 @@
 # CH552 Macropad v2
 
 > [!NOTE]
-> **A Note on LLM Usage:**
+> A Note on LLM Usage:
 >
 > This project was built with significant help from an LLM (`codex`).
 >
@@ -22,15 +22,15 @@ Compared to the previous version, this project adds:
 - Custom encoder wheel actions
 - Layers
    - Including support for LED layer indicators (blink, 1.5 seconds, or always-on)
-- Chords (multi-key inputs)
-- Timed actions, with optional inactivity reset and "wake input" blocking
-- Both configuration and run-time LED control options
+- **Chords** (multi-key inputs)
+- **Timed actions**, with optional inactivity reset and "wake input" blocking
+- Both configuration and run-time **LED control** options
 - Mouse-move and click actions
-- Rainbow RGB effects (come on, what good is a keyboard without them?)
+- **Rainbow** RGB effects (come on, what good is a keyboard without them?)
 
 Profiles are saved on the macropad; the configurator does not need to stay open during normal use.
 
-**[Open the Macropad Configurator in GitHub Pages](https://perkinsb1024.github.io/CH552-Macropad-v2/)** (this only works once your macropad is running this project's firmware)
+[Open the Macropad Configurator in GitHub Pages](https://perkinsb1024.github.io/CH552-Macropad-v2/) (this only works once your macropad is running this project's firmware)
 
 ## Supported Macropads
 
@@ -44,7 +44,7 @@ You can configure:
 - Key LED colors, layer indicators, and temporary bright or dim color/rainbow effects
 - Up to four repeating or inactivity timers with optional next-input actions
 
-Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign *almost* as many distinct actions as the 6-key variant. With no timers and one global chord reserved for switching layers, the maximum remaining physical-input action slots for each model are:
+Remarkably, due to having a smaller fixed-layer byte size (and therefore more possible layers), the 3-key macropad can assign almost as many distinct actions as the 6-key variant. With no timers and one global chord reserved for switching layers, the maximum remaining physical-input action slots for each model are:
 
 | 3-Key Macropad | 6-Key Macropad |
 | --- | --- |
@@ -52,22 +52,23 @@ Remarkably, due to having a smaller fixed-layer byte size (and therefore more po
 
 *See the full calculations in [Action Capacity](documentation/Action%20Capacity.md)*
 
-To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click "Import from Clipboard" in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
+To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click **Import from Clipboard** in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
 
 ## How to Compile the Firmware
 
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v7 firmware files are available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. This version adds **Timed actions**, action-based LED control (including dimming and effects), and the ability to jump to the previous layer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v7 firmware files are available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. This version adds **Timed actions**, action-based **LED control** (including dimming and effects), and the ability to jump to the previous layer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-This experiment branch builds **v8** with more accurate timers, held media controls
-and held scrolling. Build its source to try these features; the checked-in release
+This experiment branch builds v8 with more accurate timers, held media controls,
+held scrolling, and 1–16 mouse clicks. Build its source to try these features; the
+checked-in release
 files and bundled browser uploader still contain v7 firmware. Use the frozen v7
 configurator with those releases. Back up your profile before updating; v8 leaves
 old flash intact but inputs stay inactive until the editor migrates and saves it.
 
-The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
+The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
 A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
 
@@ -81,7 +82,7 @@ A [beta browser firmware installer](webUploader/README.md) is also available as 
    https://raw.githubusercontent.com/DeqingSun/ch55xduino/ch55xduino/package_ch55xduino_mcs51_index.json
    ```
 
-4. Open **Boards Manager**, search for **CH55xDuino**, and install version **0.0.25**. The build expects this version and its bundled tools. See the [CH55xDuino installation instructions](https://github.com/DeqingSun/ch55xduino/#installation) for more help.
+4. Open **Boards Manager**, search for **CH55xDuino**, and install version 0.0.25. The build expects this version and its bundled tools. See the [CH55xDuino installation instructions](https://github.com/DeqingSun/ch55xduino/#installation) for more help.
 
 Arduino IDE supplies the board package; compile and upload this project using PlatformIO.
 
@@ -120,19 +121,19 @@ pio run -t clean
 pio run
 ```
 
-A successful build creates `.pio/build/ch552/firmware.hex`. Clean and rebuild whenever you switch hardware variants or change firmware source files.
+A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds track firmware source and hardware-variant changes. The pre-build hook selects the repository's builder even if PlatformIO has an older cached copy of the local platform, preventing stale HEX files after source edits. A clean build is available when troubleshooting.
 
 ### Available Memory
 
-Remaining space in the current source builds, in bytes:
+Memory in the current v8 source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash | 77 | 73 |
-| Contiguous external RAM | 231 | 222 |
-| Stack capacity | 123 | 120 |
+| Flash remaining | 15 | 11 |
+| External RAM allocated (XSEG) | 517 | 526 |
+| Stack available (linker reserve) | 114 | 111 |
 
-Hardware validation under heavy workloads recorded a peak stack usage of only 36 bytes (which occurred during boot, USB set up and initialization).
+Hardware validation under heavy workloads (using firmware v7) recorded a peak stack usage of only 36 bytes (which occurred during boot, USB set up and initialization).
 The [stack validation instructions and diagnostic code](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v7/Stack%20Test/README.md) are available on the `validation/stack-usage-test-v7` branch.
 
 ### Build Release HEX Files for Both Variants
@@ -163,7 +164,7 @@ The following instructions and photo apply to the CH552G board shown in the orig
 
 1. Unplug the macropad from USB
 2. Remove the bottom screws and acrylic plates to expose the CH552G chip
-3. Locate **USB D+ (pin 12)** and **3.3 V (pin 16)**. On the pictured board, with the USB-C port toward the top, these are the fifth pin from the left and the leftmost pin on the top row, respectively.
+3. Locate USB D+ (pin 12) and 3.3 V (pin 16). On the pictured board, with the USB-C port toward the top, these are the fifth pin from the left and the leftmost pin on the top row, respectively.
 4. Prepare a temporary connection between these pins. You can solder in a simple button (as shown in the photo below), or a pair of small jumper wires. You can also (carefully) bridge the pins with a pair of fine-tipped metal tweezers.
 5. Start the upload command:
 
@@ -171,7 +172,7 @@ The following instructions and photo apply to the CH552G board shown in the orig
    pio run -t upload
    ```
 
-6. When the uploader says it is waiting for the bootloader, connect D+ to 3.3 V while the macropad is unplugged, plug it into USB, then release the connection. Do this within the uploader's **ten-second** waiting period.
+6. When the uploader says it is waiting for the bootloader, connect D+ to 3.3 V while the macropad is unplugged, plug it into USB, then release the connection. Do this within the uploader's ten-second waiting period.
 7. Wait for the upload to finish. If it times out, unplug the macropad and repeat the upload and bootloader-entry steps.
 8. Unplug the macropad before removing any temporary wiring or reassembling it, then reconnect it for configuration
 
@@ -180,14 +181,14 @@ The following instructions and photo apply to the CH552G board shown in the orig
 _An example of using a temporary button to enter the bootloader before uploading firmware_
 
 > [!CAUTION]
-> **Warning:** Avoid bridging adjacent pins, especially ground (pin 14). Shorting a supply to ground can damage the board or USB port
+> Warning: Avoid bridging adjacent pins, especially ground (pin 14). Shorting a supply to ground can damage the board or USB port
 
 ### Later Uploads: Use the Encoder Button
 
 After installing this firmware, start `pio run -t upload` and enter the bootloader when the uploader begins waiting:
 
-- **At power-up:** Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
-- **During use:** Hold the encoder button for three seconds. This requires the active layer's **Allow bootloader entry by long-pressing the encoder button** option to be enabled in a saved profile.
+- At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
+- During use: **Hold** the encoder button for three seconds. This requires the active layer's **Allow bootloader entry by long-pressing the encoder button** option to be enabled in a saved profile.
 
 If the device cannot run the firmware, use the hardware method above to recover it.
 
@@ -201,7 +202,7 @@ For a complete guide to actions, layers, chords, timed reminders, lighting, and 
 
 _The Configurator Web App_
 
-No local web app installation is needed. Open the **[Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)** in desktop Chrome, Edge, or another browser with WebHID support.
+No local web app installation is needed. Open the [Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) in desktop Chrome, Edge, or another browser with WebHID support.
 
 1. Plug the macropad into the computer running the browser. It must be running this firmware, rather than sitting in bootloader mode.
 2. Click **Connect macropad** and select **Universal Macropad** in the browser's device chooser
@@ -216,26 +217,36 @@ Configuration format 8 supports five six-key layers or seven three-key layers in
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
 holds are not restored. Keyboard and consumer holds continue across layer changes
-until their physical input releases. **Scroll** offers Tap/Hold on keys, chords and
+until their physical input releases. **Scroll** offers **Tap/Hold** on keys, chords and
 the wheel button; rotation and timers remain single steps. Release stops new
-scroll repeats while already accepted steps finish. Acceleration is available
+scroll repeats while already accepted steps finish. Held scrolling waits at
+least 100 ms after each complete step, giving about ten steps per second at
+step 1; pointer holds retain their 8 ms interval. Acceleration is available
 only on its [separate experiment branch](protocol/v8-scroll-experiment.md).
+
+**Mouse click** offers **Single / Double / Custom**. **Custom** shows a slider for
+3–16 clicks. The selected mouse buttons are pressed and released for each click,
+with a 200 ms pause between clicks. **Custom** remembers its last count per action
+slot when switching modes and shows an estimated duration rounded to one decimal.
+The sequence delays subsequent queued actions; holds, media and layer/LED actions
+use independent handling. Legacy double-click bindings (v7 and earlier) migrate to
+**Mouse click** with a count of two.
 
 **LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
 
-**Relative both brightnesses** starts from the brighter current indicator/key brightness, applies the signed step once through Off → Dim → Bright → Off, and sets both to the result. Configured policies resolve to the current layer's saved indicator brightness and Bright key feedback first. Earlier firmware stepped each brightness independently; synchronized stepping requires updated firmware, with no profile conversion.
+**Relative both brightnesses** starts from the brighter current indicator/key brightness, applies the signed step once through **Off** → **Dim** → **Bright** → **Off**, and sets both to the result. Configured policies resolve to the current layer's saved indicator brightness and **Bright** key feedback first. Earlier firmware stepped each brightness independently; synchronized stepping requires updated firmware, with no profile conversion.
 
-**Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating Previous layer swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot Previous layer option visits the remembered layer for one action, then returns. Timed actions can use either variant.
+**Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor migrates binary formats 2–7, JSON versions 1–7, and older drafts while
-preserving bindings and metadata. Old Type Text records become v8 text records,
-never Consumer Hold. Firmware accepts only v8; read/import the old profile and
+The editor reads binary formats 2–8, JSON versions 1–8, and older drafts while
+preserving bindings and metadata. Old **Type Text** records become v8 text records,
+never **Consumer Hold**. Firmware accepts only v8; read/import the old profile and
 explicitly save it to reactivate inputs. Older firmware uses frozen format 2–7
 editors under `versions/format-vN/`. See [configuration format 8](protocol/config-v8.md).
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
-You can also edit offline or try a simulated macropad from the welcome screen. Browsers without WebHID, including Safari and Firefox, can edit and export profiles but cannot save them directly to hardware.
+You can also **edit offline** or try a simulated macropad from the welcome screen. Browsers without WebHID, including Safari and Firefox, can edit and export profiles but cannot save them directly to hardware.
 
 ### Run the Web App Locally
 
@@ -247,7 +258,7 @@ npm ci
 npm run dev
 ```
 
-Open the localhost URL printed in the terminal, normally **http://localhost:5173**. Keep the terminal running while using the app; press **Ctrl+C** to stop it.
+Open the localhost URL printed in the terminal, normally http://localhost:5173. Keep the terminal running while using the app; press **Ctrl+C** to stop it.
 
 To open the editor on another device on the same Wi-Fi, start it with:
 
@@ -268,11 +279,11 @@ The production files are written to `webapp/dist/`. This repository's [GitHub Ac
 
 ## Troubleshooting
 
-- **Missing CH55xDuino component:** Install board package version 0.0.25 and check `CH55XDUINO_PACKAGE_DIR` if you use a custom location
-- **Upload cannot find the device:** Use a USB-A to USB-C cable with data pins (this cheap board omits the necessary 5.1k pulldown resistors for USB-C cables to supply power), wait for the upload prompt, and enter the bootloader within ten seconds. Factory firmware generally needs the hardware method.
-- **Macropad does not appear in the browser:** Use a supported desktop browser, HTTPS or localhost, and this firmware. Reconnect USB after uploading.
-- **One red LED blinks and inputs do nothing:** Connect the configurator and save a valid profile
-- **The wrong keys respond:** Check the physical variant in `platformio.ini`, clean the build, and upload again
+- Missing CH55xDuino component: Install board package version 0.0.25 and check `CH55XDUINO_PACKAGE_DIR` if you use a custom location
+- Upload cannot find the device: Use a USB-A to USB-C cable with data pins (this cheap board omits the necessary 5.1k pulldown resistors for USB-C cables to supply power), wait for the upload prompt, and enter the bootloader within ten seconds. Factory firmware generally needs the hardware method.
+- Macropad does not appear in the browser: Use a supported desktop browser, HTTPS or localhost, and this firmware. Reconnect USB after uploading.
+- One red LED blinks and inputs do nothing: Connect the configurator and save a valid profile
+- The wrong keys respond: Check the physical variant in `platformio.ini`, clean the build, and upload again
 
 For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-device-access). The firmware build and upload scripts currently target macOS.
 

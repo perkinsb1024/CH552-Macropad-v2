@@ -3,19 +3,29 @@
 ## Combined implementation
 
 Branch: `experiment/v8-merged`. This build enables timed-action precision,
-Consumer Hold and held scrolling. Acceleration is disabled in this branch. Color
+**Consumer Hold**, held scrolling and 1–16 mouse clicks. Acceleration is disabled in this branch. Color
 preview and all existing lighting behavior are preserved.
 
 | Build | Six-key flash | Three-key flash | Free (6/3 key) |
 | --- | ---: | ---: | ---: |
 | Initial combined implementation, acceleration on | 14,879 | 14,875 | -543 / -539 |
 | Optimized combined implementation, acceleration on | 14,667 | 14,665 | -331 / -329 |
-| Optimized combined implementation, acceleration off (default) | 14,325 | 14,323 | 11 / 13 |
+| Original optimized combined implementation, acceleration off | 14,325 | 14,323 | 11 / 13 |
+| Multi-click and 100 ms held scrolling, before final optimization | 14,365 | 14,361 | -29 / -25 |
+| Multi-click and 100 ms held scrolling, optimized (current default) | 14,325 | 14,321 | 11 / 15 |
 
-The default build adds seven persistent RAM bytes (four timer fractions and
+The original combined build adds seven persistent RAM bytes (four timer fractions and
 three consumer state bytes). RAM areas are PSEG 108, XSEG 526 / 517, DSEG 127,
 ISEG 16 / 13, BSEG 26 bits, stack reserve 112 / 115 bytes. Acceleration adds
 six more persistent bytes; its linked ISEG is 23 / 20 and stack reserve 106 / 109.
+
+The current default counts remaining clicks in the auxiliary nibble of the
+playback action copy, saving 26 flash bytes and removing the dedicated click
+counter. Replacing mouse-button checks with `(uint8_t)(param - 1) < 7` saves
+another 14 bytes with the same accepted masks. A separate one-byte internal-RAM
+clock gives held scrolling 100 ms between complete steps; pointer repeats retain
+8 ms. Current PSEG is 107 bytes, and stack reserve is 111 / 114 bytes. Both
+hardware builds and host suites pass.
 
 Optimizations keep action types and stream contexts eight-bit, narrow consumer
 ownership comparisons, assemble consumer usages without an intermediate
@@ -29,7 +39,7 @@ Standalone milestone costs remain recorded below and in the consumer/scroll
 experiment reports. Combined costs are not additive because compiler allocation
 and shared optimizations change when features are linked together. The combined
 build uses its v8 configurator, including binary/JSON/draft migration, Consumer
-Hold and held-scroll controls, and updated timer ranges. Frozen format-v7 editor
+**Hold** and held-scroll controls, and updated timer ranges. Frozen format-v7 editor
 and live-view pages remain available for v7 firmware.
 Acceleration testing is isolated to its own experiment branch; that branch's
 flashable test build uses 14,235 / 14,231 bytes, with color preview and rainbow

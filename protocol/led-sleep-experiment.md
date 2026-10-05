@@ -1,6 +1,6 @@
 # Always-on indicator inactivity sleep experiment
 
-Status: implemented in the working tree, **over the flash limit**, not released
+Status: implemented in the working tree, over the flash limit, not released
 or flashed. The initial six-key result exceeded the user's 16-byte over-limit
 cutoff. A subsequently authorized reuse/optimization pass reduced the excess to
 41 bytes, so the feature still cannot fit. There is no editor control or browser
@@ -13,14 +13,14 @@ Clear means disabled. Layer count and startup-layer bits are unchanged. Header
 bit 7 remains reserved. No new action or configuration version is introduced.
 
 When enabled, approximately 69–70 minutes without a debounced button press or
-completed encoder detent suppresses **only always-on layer indication**. A key
+completed encoder detent suppresses only always-on layer indication. A key
 press, encoder pushbutton press, or complete detent in either direction restarts
 the timeout and redraws normal lighting. No-op bindings count as activity.
 Releases and partial detents do not reset it; holding a button does not keep
 resetting it. USB traffic alone is not activity.
 
-Blink/timed layer indications, bright key overlays, error feedback, and hardware
-color preview retain their behavior. Sleep is a renderer condition; it does not
+**Blink**/timed layer indications, bright key overlays, error feedback, and hardware
+color preview retain their behavior. **Sleep** is a renderer condition; it does not
 change saved layer settings or runtime LED brightness policies. Thus waking
 preserves an explicitly selected brightness preset. Changing/restoring LED
 settings through physical bindings also wakes because those inputs are activity.
@@ -77,7 +77,7 @@ used, and checked-in release files were preserved.
 ## Reuse and optimization measurements
 
 The retained implementation shares the renderer's existing indicator-suppression
-branch, rather than replacing the brightness policy through an LED command.
+branch, rather than replacing the brightness policy through an **LED command**.
 That preserves timed/blink indications and the currently selected LED preset.
 Button events share their redraw path; completed encoder detents share reset and
 redraw handling in both directions. The clock-phase comparison explicitly narrows

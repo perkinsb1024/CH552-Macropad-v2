@@ -4,9 +4,9 @@ Baseline: `7a7d066`, finalized local v7 with four timed actions and temporary LE
 effects. Preserve it on `experiment/timed-alerts-v7-64`; use a separate
 `experiment/previous-layer` branch for the prototype and measurements.
 
-1. Reuse Set layer (action A) parameter `0xFF`, outside both variants' real indices.
+1. Reuse **Set layer** (action A) parameter `0xFF`, outside both variants' real indices.
    Keep auxiliary 0 persistent and auxiliary 1 one-shot. Reject all other invalid
-   indices and keep Momentary layer limited to actual layers. No new action or
+   indices and keep **Momentary layer** limited to actual layers. No new action or
    record bytes, timer bytes, or configuration version are required.
 2. Remember the preceding persistent base layer in one internal RAM byte; compare indirect and direct allocation. Initialize it to startup layer, so previous at startup is harmless.
    Real persistent absolute/relative changes update history; selecting the same

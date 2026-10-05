@@ -12,17 +12,17 @@ Action F uses its auxiliary nibble for the value/signed step and its full parame
 byte for the command. All 13 commands and all 112 valid payloads are implemented:
 absolute/relative rainbow phase and speed, indicator/key/both brightness, restore
 all, and absolute/relative common presets. Every relative command accepts -7..-1
-and +1..+7. Absolute brightness uses Off=0, Dim=1, Bright=2, Configured=F.
-Phase options show 0°, 30°, 60°, and Variable; the profile selector labels the
-fourth option “Variable — Scattered colors.”
+and +1..+7. Absolute brightness uses **Off**=0, **Dim**=1, **Bright**=2, Configured=F.
+Phase options show **0°**, **30°**, **60°**, and **Variable**; the profile selector labels the
+fourth option “**Variable — Scattered colors**.”
 
-The five common presets include Both as configured. Their relative position follows
+The five common presets include **Both as configured**. Their relative position follows
 the actual policy pair, including matching results from other brightness commands.
 Current firmware makes both-relative step once from the brighter resolved policy
 and assigns the result to both targets. This supersedes the original independent
 advancement; the encoding remains unchanged. Indicator brightness retains the
-saved visibility mode; indicator Off releases animation priority; key Off reveals
-idle background. Both Off suppresses ordinary lighting. Preview and bootloader/error
+saved visibility mode; indicator **Off** releases animation priority; key **Off** reveals
+idle background. Both **Off** suppresses ordinary lighting. Preview and bootloader/error
 feedback remain visible. Runtime changes never alter the active image or DataFlash.
 
 The browser writes binary/JSON v6, migrates binary 2–5 and JSON 1–5, preserves v5
@@ -61,7 +61,7 @@ These replace the prior checked-in release pair in the reviewable diff.
 
 ## Scattered-colors drift experiment
 
-The fourth spacing preset shows “Variable — Scattered colors” and uses the tuned
+The fourth spacing preset shows “**Variable — Scattered colors**” and uses the tuned
 starting increment of 109 hue steps. JSON continues to encode this preset as 150°. Each LED gains an extra hue step at a different rate
 (once every 4–128 rainbow frames), changing relative phases without abrupt color
 jumps. `RAINBOW_DRIFT_MASK` controls the first interval: 3 means four frames;
@@ -95,9 +95,9 @@ Build outputs are temporary; checked-in release artifacts were preserved.
 ### Stack usage hardware validation
 
 Hardware validation is complete: the user measured a peak observed stack usage
-of **36 bytes**, even under heavy workloads. Against the current documented
+of 36 bytes, even under heavy workloads. Against the current documented
 120-byte six-key and 123-byte three-key linker capacities, this leaves
-**84–87 bytes** of headroom. The earlier capacity figures in this document are
+84–87 bytes of headroom. The earlier capacity figures in this document are
 historical build measurements; the hardware result is a subsequent validation.
 
 The 36-byte result is the peak observed under the tested workloads. Linker
@@ -133,7 +133,7 @@ ASCII table trimming was measured and discarded because it increased final code 
 
 - `python3 tests/run_host_tests.py`: configuration, action, protocol/storage, USB,
   and physical-input/renderer suites pass (input suite runs both variants).
-- Firmware and browser independently test all 4,096 LED command/value payloads on
+- Firmware and browser independently test all 4,096 **LED command**/value payloads on
   both variants and agree on the 112 accepted combinations. Unknown commands,
   invalid absolute values, relative zero/-8, and nonzero restore-all values fail.
 - Renderer tests cover visibility, every brightness policy pair, held keys, blink
@@ -167,8 +167,8 @@ There are no such production callers. Future callers must preserve this precondi
 ## Preset / configured toggle extension
 
 Added command `0D` (`commonPresetToggle`), accepting preset indices 1..4. The
-editor adds “Toggle preset on/off” and reuses the setting dropdown under
-“Preset,” defaulting to Layers off, keys dim. Configured itself is excluded.
+editor adds “**Toggle preset on/off**” and reuses the setting dropdown under
+“Preset,” defaulting to **Layers off, keys dim**. Configured itself is excluded.
 Matching the current brightness policy pair restores both configured policies;
 any other pair applies the selected preset. Phase and speed are preserved, with
 no remembered toggle state or additional persistent RAM.
@@ -232,10 +232,10 @@ changed and no hardware was flashed for this experiment.
 ## Synchronized relative-both brightness
 
 Current firmware resolves the indicator and key brightness policies, selects the
-brighter value, applies the signed step once through Off / Dim / Bright, and stores
+brighter value, applies the signed step once through **Off** / **Dim** / **Bright**, and stores
 the same concrete result for both targets. Configured indicator brightness comes
 from the current layer's saved brightness bit, regardless of visibility mode;
-configured key brightness resolves to Bright. Individual relative controls and
+configured key brightness resolves to **Bright**. Individual relative controls and
 common-preset cycling retain their existing behavior. The command remains `09`
 with the same signed nibble; existing profiles require no conversion, but earlier
 firmware must be updated to obtain the synchronized behavior.

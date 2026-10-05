@@ -24,7 +24,6 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
   { type: 'keyHold', code: ActionCode.KeyHold, label: 'Key hold', group: 'Keyboard', needsRelease: true, hint: 'Hold a key combination while the button is held.' },
   { type: 'mouseClick', code: ActionCode.MouseClick, label: 'Mouse click', group: 'Mouse', needsRelease: false, hint: 'Click one or more mouse buttons.' },
-  { type: 'mouseDouble', code: ActionCode.MouseDouble, label: 'Mouse double-click', group: 'Mouse', needsRelease: false, hint: 'Double-click one or more mouse buttons.' },
   { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
   { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
   { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical wheel step, or repeat while held.' },
@@ -74,7 +73,6 @@ export function blankAction(type: ActionType): Action {
     case 'keyHold':
       return { type, usage: 0x04, modifiers: 0 };
     case 'mouseClick':
-    case 'mouseDouble':
     case 'mouseHold':
     case 'mouseToggle':
       return { type, buttons: MOUSE_LEFT };
@@ -125,9 +123,7 @@ export function summarize(action: Action): string {
       return action.type === 'keyHold' ? `Hold ${combo}` : combo;
     }
     case 'mouseClick':
-      return `Click ${mouseButtonNames(action.buttons).join('+') || '?'}`;
-    case 'mouseDouble':
-      return `Double ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
       return `Hold ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseToggle':

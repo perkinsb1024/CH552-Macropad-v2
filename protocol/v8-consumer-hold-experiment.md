@@ -12,10 +12,10 @@ build and v8 configurator/migration are now on `experiment/v8-merged`; see
 | v8-only validation/accessors | 14,281 | 14,279 | 55 / 57 |
 | Including USB reset reassertion | 14,307 | 14,305 | 29 / 31 |
 
-Final net flash cost: **44 / 46 bytes**, including the action-map change,
+Final net flash cost: 44 / 46 bytes, including the action-map change,
 validation, arbitration, release handling, and USB reset support. Dropping legacy
 firmware format checks saves 74 bytes; firmware accepts only v8 to prevent old
-Type Text records being interpreted as Consumer Hold. Legacy migration must
+**Type Text** records being interpreted as **Consumer Hold**. Legacy migration must
 happen in the configurator, not flash storage. This optimization preserves v8
 validation and never skips CRC/bounds checks.
 
@@ -25,13 +25,13 @@ adds three persistent indirect-RAM bytes. A poll-loop index also moves from a
 register/direct spill to indirect RAM. Page-zero external RAM remains full but
 does not grow. These are linked allocation figures, not runtime stack profiling.
 
-Encoding: Type Text is first byte `0x10` with its original string-pool offset;
-None stays `00 00`; Consumer Tap is type `0x8`; Consumer Hold type `0x9`.
-Both consumers retain the full nonzero 12-bit usage range. Reserved None auxiliary
+Encoding: **Type Text** is first byte `0x10` with its original string-pool offset;
+**None** stays `00 00`; **Consumer Tap** is type `0x8`; **Consumer Hold** type `0x9`.
+Both consumers retain the full nonzero 12-bit usage range. Reserved **None** auxiliary
 values reject, as do Consumer Holds on rotation or either timed-action binding.
 
 Selected authorized compact behavior: most recent consumer action wins and
-previous holds are **not restored**, consistently for both hold-over-hold and
+previous holds are *not restored*, consistently for both hold-over-hold and
 tap-over-hold. Consumers use a shared pending-output lane so older queued taps
 cannot later override a newer hold. A tap interrupts an active hold with a
 release/press edge, and releases afterward. Already accepted USB reports preserve
@@ -44,7 +44,7 @@ the current hold; configuration clearing releases all consumer output. Host
 repeat behavior is not replaced by firmware tap repetition.
 
 Validation: all host firmware suites pass for both hardware geometries. Added
-tests cover all 4,095 usages, rotation/timer rejection, reserved None auxiliary
+tests cover all 4,095 usages, rotation/timer rejection, reserved **None** auxiliary
 values, legacy version rejection, short presses, backpressure, same-usage taps,
 overlap/release ownership, no restoration, chords, layers, reset, and USB
 generation changes. Both SDCC builds pass memory-layout checks.

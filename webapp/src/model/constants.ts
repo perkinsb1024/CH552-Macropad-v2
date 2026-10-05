@@ -58,7 +58,7 @@ export const enum ActionCode {
   KeyTap = 0x1,
   KeyHold = 0x2,
   MouseClick = 0x3,
-  MouseDouble = 0x4,
+  LegacyMouseDouble = 0x4, // Formats 2–7 only; reserved in v8.
   MouseHold = 0x5,
   MouseToggle = 0x6,
   Scroll = 0x7,

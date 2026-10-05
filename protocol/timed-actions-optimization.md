@@ -3,7 +3,7 @@
 Baseline: checkpoint `0961153`, six-key 15,139 bytes (803 over), three-key
 15,135 bytes, SDCC build.13407_4. Preserve released features and retain full
 seven-bit intervals, optional input reset and resume actions where possible.
-Timed actions may use the existing tap/encoder-compatible action subset; held
+**Timed actions** may use the existing tap/encoder-compatible action subset; held
 actions are outside this pass. No release generation, upload or push.
 
 ## Plan
@@ -29,9 +29,9 @@ actions are outside this pass. No release generation, upload or push.
 
 ## Result
 
-**Fits without removing an existing feature or narrowing the timer design.**
-The retained six-key firmware is **14,255 / 14,336 bytes**, leaving **81 bytes**.
-Three-key is **14,251 bytes**, leaving **85 bytes**. This saves **884 bytes**
+Fits without removing an existing feature or narrowing the timer design.
+The retained six-key firmware is 14,255 / 14,336 bytes, leaving 81 bytes.
+Three-key is 14,251 bytes, leaving 85 bytes. This saves 884 bytes
 against checkpoint `0961153` on both boards. These are ordinary temporary builds;
 no release artifacts were generated and no hardware was flashed.
 
@@ -41,7 +41,7 @@ resume action on the next input, independent mouse-toggle ownership, and all
 existing physical-input/LED/USB capabilities. The separate auto-sleep experiment
 was already absent from the checkpoint, so it contributed no new savings here.
 
-Timed actions still use the encoder-compatible subset: complete key taps and
+**Timed actions** still use the encoder-compatible subset: complete key taps and
 other actions that do not require a held/released input lifecycle. A tap includes
 both key down and key up; physical key-down activity resets an opted-in timer even
 when that key has no binding. Timed holds remain outside this pass, as requested.
@@ -82,7 +82,7 @@ The rows are incremental builds in this order, using the same six-key geometry,
 | Share timer traversal/dispatch between ticks and input events | 82 | 14,327 | 9 free |
 | Move four LED setting bytes to `__pdata` | 36 | 14,291 | 45 free |
 | Let startup clearing initialize two USB zero-valued globals | 2 | 14,289 | 47 free |
-| Omit unused XINIT copying while explicitly retaining XRAM clearing | 34 | **14,255** | **81 free** |
+| Omit unused XINIT copying while explicitly retaining XRAM clearing | 34 | 14,255 | 81 free |
 
 ### Paged runtime state
 
@@ -92,9 +92,9 @@ selected private variables now use one-byte paged addresses and `MOVX @R0/@R1`.
 `nextKeyboard` remains `__xdata` because the USB API takes an xdata pointer.
 No public pointer ABI changed in this pass. LED settings share the same page.
 
-On both boards, PSEG is **0x0094–0x00F9 (102 bytes)**, above the reserved USB DMA
+On both boards, PSEG is 0x0094–0x00F9 (102 bytes), above the reserved USB DMA
 region and wholly inside page zero. Six bytes remain in this page. The linked
-startup clear routine explicitly selects **P2=0**, and the linked application,
+startup clear routine explicitly selects P2=0, and the linked application,
 USB and timer code do not change P2. The unused generic digital-I/O core object
 contains P2 access but is not linked into this firmware. The normal build now
 checks page bounds, USB/PSEG/XSEG overlap, physical xRAM limits and required
@@ -121,7 +121,7 @@ mutate the timer configuration or reenter the timer service.
 
 ### Startup optimization and rejected unsafe variant
 
-Simply enabling `--no-xinit-opt` measured 14,219 bytes, but was **rejected**:
+Simply enabling `--no-xinit-opt` measured 14,219 bytes, but was rejected:
 it removes both the XINIT copier and implicit external-RAM zeroing, including
 P2 selection. Host tests alone cannot catch this target-startup error.
 
@@ -191,8 +191,8 @@ Fresh before/after temporary builds at the normal 14,336-byte limit measured:
 
 | Hardware | Before flash | After flash | Saved | After free | Stack before / after |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Six-key | 14,255 | 14,231 | **24** | **105** | 122 / 122 |
-| Three-key | 14,251 | 14,227 | **24** | **109** | 125 / 125 |
+| Six-key | 14,255 | 14,231 | 24 | 105 | 122 / 122 |
+| Three-key | 14,251 | 14,227 | 24 | 109 | 125 / 125 |
 
 PSEG increases from 102 to 108 bytes. Ordinary XSEG decreases by six bytes
 (538 → 532 on six-key, 529 → 523 on three-key), leaving the final RAM address

@@ -7,12 +7,12 @@ Only the action is copied into a profile. Library tags and notes do not consume 
 ## Context and supported actions
 
 - Keyboard presets send one physical US-layout key with modifiers. Host/app versions, customized bindings, keyboard layouts, and focused controls can change their behavior. Word presets use the current Microsoft 365 bindings; older releases have different subscript bindings.
-- macOS space navigation requires those shortcuts to be enabled in Keyboard > Keyboard Shortcuts > Mission Control.
-- macOS screenshot presets cover selection/full screen, save/clipboard, and the capture/recording toolbar. After invoking a selection capture, press Space on the host keyboard to switch to window capture. The toolbar also provides window capture. The firmware cannot combine the capture shortcut and a subsequent Space into a single preset.
+- macOS space navigation requires those shortcuts to be enabled in Keyboard > **Keyboard Shortcuts** > **Mission Control**.
+- macOS screenshot presets cover selection/full screen, save/clipboard, and the capture/recording toolbar. After invoking a selection capture, press **Space** on the host keyboard to switch to window capture. The toolbar also provides window capture. The firmware cannot combine the capture shortcut and a subsequent **Space** into a single preset.
 - Siri window/selection presets require macOS 27+ with Siri AI enabled. Classic Siri's double-Command/Fn triggers cannot be represented as a single firmware action. Spotlight can also start Siri conversations on supported systems.
-- Sleep, power, brightness, and other consumer media actions are host/hardware-dependent. The Sleep media key is not the same as Apple's power-button sleep shortcut. Apple Fn/Globe, Power, and modified Eject shortcuts are not supported by this firmware's keyboard action format.
+- **Sleep**, power, brightness, and other consumer media actions are host/hardware-dependent. The **Sleep** media key is not the same as Apple's power-button sleep shortcut. Apple Fn/Globe, **Power**, and modified **Eject** shortcuts are not supported by this firmware's keyboard action format.
 - Markdown presets insert literal markers/templates; they do not wrap selected text or place the cursor inside the inserted snippet. GFM marks GitHub Flavored Markdown extensions.
-- Vim text presets start in Normal mode. Ex commands include a final Enter. Use the separate Escape preset to leave Insert mode first; strings cannot contain Escape. The library does not emulate arbitrary sequences of modified key combinations.
+- Vim text presets start in **Normal** mode. Ex commands include a final **Enter**. Use the separate **Escape** preset to leave **Insert** mode first; strings cannot contain **Escape**. The library does not emulate arbitrary sequences of modified key combinations.
 - Typed snippets share the firmware's existing string pool and storage limits. Adding many snippets to keys may fill the device's 128-byte configuration; the existing storage meter and validation still apply.
 
 ## Official references

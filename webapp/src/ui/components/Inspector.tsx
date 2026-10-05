@@ -7,7 +7,7 @@ import { PALETTE } from '../../model/palette';
 import { normalizeText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
 import { actionProblem, slotLabel } from '../../model/validate';
-import { getAction, layerName, profile, rememberedAction, removeChord, selectedSlot, setAction, updateProfile } from '../store';
+import { getAction, layerName, profile, rememberedAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
 import { ColorPreview } from './ColorPreview';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
@@ -236,8 +236,24 @@ export function Inspector() {
         <KeyPicker usage={action.usage} modifiers={action.modifiers} onChange={(usage, modifiers) => update({ ...action, usage, modifiers })} />
       )}
 
-      {(action.type === 'mouseClick' || action.type === 'mouseDouble' || action.type === 'mouseHold' || action.type === 'mouseToggle') && (
+      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle') && (
         <MouseButtons value={action.buttons} onChange={(buttons) => update({ ...action, buttons })} />
+      )}
+
+      {action.type === 'mouseClick' && (
+        <div class="field">
+          <span class="field-label">Clicks</span>
+          <div class="segmented" role="group" aria-label="Click behavior">
+            <button type="button" class={(action.clicks ?? 1) === 1 ? 'is-selected' : ''} aria-pressed={(action.clicks ?? 1) === 1} onClick={() => update({ type: 'mouseClick', buttons: action.buttons })}>Single</button>
+            <button type="button" class={action.clicks === 2 ? 'is-selected' : ''} aria-pressed={action.clicks === 2} onClick={() => update({ ...action, clicks: 2 })}>Double</button>
+            <button type="button" class={(action.clicks ?? 1) >= 3 ? 'is-selected' : ''} aria-pressed={(action.clicks ?? 1) >= 3} onClick={() => update({ ...action, clicks: (action.clicks ?? 1) >= 3 ? action.clicks : rememberedCustomClickCount(slot) })}>Custom</button>
+          </div>
+          {(action.clicks ?? 1) >= 3 && <label class="field click-count-field">
+            <span class="field-label">Click count <output>{action.clicks}</output></span>
+            <input type="range" min={3} max={16} step={1} value={action.clicks} aria-label="Click count" onInput={(e) => update({ ...action, clicks: Math.max(3, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value)))) })} />
+            <span class="hint">This click action will take about {(((action.clicks ?? 1) * 8 + ((action.clicks ?? 1) - 1) * 200) / 1000).toFixed(1)} seconds, delaying subsequent queued actions.</span>
+          </label>}
+        </div>
       )}
 
       {action.type === 'scroll' && (
@@ -259,7 +275,7 @@ export function Inspector() {
               <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
             </div>
           </>}
-          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
+          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100 ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
         </div>
       )}
 

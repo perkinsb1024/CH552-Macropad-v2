@@ -54,3 +54,28 @@ describe('JSON import/export', () => {
     expect(importProfile(text).profile.layers[0]!.keys[0]).toEqual({ type: 'relativeLayer', offset: 0 });
   });
 });
+
+it.each([7, 8])('migrates legacy mouseDouble JSON in all slots from version %s', version => {
+  const p = defaultProfile(0);
+  p.timedActions = [{ ticks: 1, resetOnInput: true, consumeInput: false, action: { type: 'none' }, resumeAction: { type: 'none' } }];
+  const raw = JSON.parse(exportProfile(p)); raw.version = version;
+  const double = { type: 'mouseDouble', buttons: 3 };
+  raw.layers[0].keys[0] = double;
+  raw.layers[0].encoderButton = double;
+  raw.layers[0].clockwise = double;
+  raw.layers[0].counterclockwise = double;
+  raw.chords = [{ layer: 0, keys: [0, 1], action: double }];
+  raw.timedActions[0].action = double;
+  raw.timedActions[0].resumeAction = double;
+  const profile = importProfile(JSON.stringify(raw)).profile;
+  const layer = profile.layers[0]!;
+  const actions = [layer.keys[0], layer.encoderButton, layer.clockwise, layer.counterclockwise, profile.chords[0]!.action, profile.timedActions![0]!.action, profile.timedActions![0]!.resumeAction];
+  for (const action of actions) expect(action).toEqual({ type: 'mouseClick', buttons: 3, clicks: 2 });
+  expect(exportProfile(profile)).not.toContain('mouseDouble');
+});
+
+it.each([0, 17, -1, 1.5, '2', null])('rejects invalid JSON click count %s', clicks => {
+  const raw = JSON.parse(exportProfile(defaultProfile(0)));
+  raw.layers[0].keys[0] = { type: 'mouseClick', buttons: 1, clicks };
+  expect(() => importProfile(JSON.stringify(raw))).toThrow(ImportError);
+});

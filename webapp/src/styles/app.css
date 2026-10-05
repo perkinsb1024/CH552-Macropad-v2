@@ -293,6 +293,9 @@ output {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.click-count-field {
+  margin-top: 8px;
+}
 .field-wide {
   grid-column: 1 / -1;
 }
@@ -868,6 +871,39 @@ output {
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
+  .column-side::before,
+  .column-side::after {
+    content: '';
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    height: 16px;
+    background: linear-gradient(to bottom, rgb(23 32 51 / 24%), rgb(23 32 51 / 8%) 45%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 7px, black calc(100% - 5px), transparent);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .column-side::before {
+    top: 0;
+    border-radius: 0 0 8px 8px;
+  }
+  .column-side::after {
+    bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(to top, rgb(23 32 51 / 24%), rgb(23 32 51 / 8%) 45%, transparent);
+  }
+  .column-side[data-more-above="false"]::before {
+    clip-path: inset(0 round var(--radius) var(--radius) 0 0);
+  }
+  .column-side[data-more-below="false"]::after {
+    clip-path: inset(0 round 0 0 var(--radius) var(--radius));
+  }
+  .column-side[data-more-above="true"]::before,
+  .column-side[data-more-below="true"]::after {
+    opacity: 1;
+  }
   .sidebar-scroll-arrow {
     display: grid;
     place-items: center;
@@ -881,7 +917,7 @@ output {
     border-radius: 50%;
     background: var(--bg-elev);
     color: var(--accent);
-    z-index: 1;
+    z-index: 2;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
