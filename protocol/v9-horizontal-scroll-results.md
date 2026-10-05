@@ -39,8 +39,10 @@ The latest editor writes binary and JSON version 9. It imports older profiles
 and recovers v8 drafts without changing their source. Existing v8 scroll records
 remain vertical, including hold mode; multi-click counts remain unchanged.
 Firmware preserves old flash but leaves inputs inactive until the migrated
-profile is explicitly saved. Released v8 firmware uses the frozen v8 editor;
-checked-in HEX files and the bundled uploader retain published v8 builds.
+profile is explicitly saved. Devices running v8 firmware use the frozen v8 editor. The checked-in HEX files
+and bundled uploader now carry v9 builds from revision `8339b59a`:
+[three-key](../releases/ch552-macropad-3-key-8339b59a.hex) and
+[six-key](../releases/ch552-macropad-6-key-8339b59a.hex), for use with the latest editor.
 
 Host regressions check all auxiliary nibbles, signed endpoints, both hardware
 layouts, rotation/hold restrictions, chords, timer slots, binary/JSON migration,

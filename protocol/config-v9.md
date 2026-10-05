@@ -813,10 +813,11 @@ bits, so queue and report sizes do not grow. Validator and report-packing
 optimizations recover the additional code space. See
 [v9 implementation measurements](v9-horizontal-scroll-results.md).
 
-Checked-in releases and the bundled uploader carry published v8 firmware.
-Testing v9 requires an ordinary source build/upload and the latest v9 editor.
-The frozen format-v8 editor remains available for released firmware. No v9
-release has been generated.
+Checked-in releases and the bundled uploader carry v9 firmware from revision
+`8339b59a`: [three-key](../releases/ch552-macropad-3-key-8339b59a.hex) and
+[six-key](../releases/ch552-macropad-6-key-8339b59a.hex). Use the latest v9 editor
+with these releases. The frozen format-v8 editor remains available for devices
+running v8 firmware.
 
 **Mouse click**, **Mouse hold** and **Mouse toggle** also offer **Click here** to
 open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**

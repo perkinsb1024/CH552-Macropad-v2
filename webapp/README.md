@@ -227,8 +227,12 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-Checked-in releases and the bundled uploader carry published v8 firmware. Testing
-this branch requires an ordinary source build/upload; no v9 release was generated.
+Checked-in releases and the bundled uploader carry v9 firmware from revision
+`8339b59a`: [three-key](../releases/ch552-macropad-3-key-8339b59a.hex) and
+[six-key](../releases/ch552-macropad-6-key-8339b59a.hex). Use the latest editor
+with these releases. The frozen format-v8 editor remains available for devices
+running v8 firmware. Back up older profiles before updating, then load and save
+them with the latest editor to migrate to v9.
 
 ## Horizontal Scrolling (v9)
 

@@ -781,5 +781,6 @@ The isolated `experiment/v8-scroll-acceleration` branch includes **Off**/**Slow*
 held scrolling but omits color preview and rainbow animation. It remains a v7
 experimental extension and must use its own configurator. Its accelerated
 profiles reject in the merged v8 firmware. See [test instructions](v8-scroll-experiment.md).
-Published v8 release firmware is available in `releases/`, built from revision
-`b5053698`. Use the frozen format-v8 editor with these releases.
+The previous v8 release was built from revision `b5053698`; use the frozen
+format-v8 editor with devices running that firmware. The current `releases/`
+files use v9 and require the latest editor; see [configuration format 9](config-v9.md).

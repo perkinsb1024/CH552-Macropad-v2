@@ -51,7 +51,7 @@ export function Welcome() {
             <li>Plug the macropad in with a USB-A to USB-C cable. The default, factory firmware usually types "C" for each key press</li>
             <li>
               Your macropad must be running this <a href="https://github.com/perkinsb1024/CH552-Macropad-v2#how-to-upload-the-firmware" target="_blank">custom firmware</a>. Any other firmware, including factory firmware is not editable with this tool.
-              The beta <a href="webUploader/">firmware upload</a> tool contains released v8 firmware for its archived editor. This v9 experiment requires building and uploading the branch's firmware.
+              The beta <a href="webUploader/">firmware upload</a> tool contains released v9 firmware compatible with this editor. Back up your profile before updating, then load and save it with this editor to migrate older profiles.
             </li>
             <li>On Linux, add a udev rule granting access to VID <code>1209</code> PID <code>c55d</code>, for example: <code>KERNEL=="hidraw*", ATTRS{'{'}idVendor{'}'}=="1209", ATTRS{'{'}idProduct{'}'}=="c55d", MODE="0666"</code>, then replug</li>
           </ul>

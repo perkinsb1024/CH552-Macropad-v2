@@ -78,11 +78,11 @@ The current editor can import older profiles and migrate them before saving v9.
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v8 firmware files are available for [three-key](releases/ch552-macropad-3-key-b5053698.hex) and [six-key](releases/ch552-macropad-6-key-b5053698.hex) macropads, built from source revision `b5053698`. This version improves **Timed actions** accuracy, adds **Media / system hold** and held **Scroll**, and supports 1–16 clicks with **Mouse click**. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v9 firmware files are available for [three-key](releases/ch552-macropad-3-key-8339b59a.hex) and [six-key](releases/ch552-macropad-6-key-8339b59a.hex) macropads, built from source revision `8339b59a`. This version adds **Horizontal** scrolling for taps and holds while retaining the v8 features: improved **Timed actions** accuracy, **Media / system hold**, held **Scroll**, and 1–16 clicks with **Mouse click**. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the frozen [v8 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v8/) with these releases. The current source and latest editor use v9 and require a source build for testing. Back up your profile before
-updating; v8 leaves old flash intact, but inputs stay inactive until the editor
-migrates and saves the profile as v8.
+Use the [latest configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v9 releases. The frozen [v8 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v8/) remains available for devices running v8 firmware. Back up your profile before
+updating; v9 leaves old flash intact, but inputs stay inactive until the editor
+migrates and saves the profile as v9.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
