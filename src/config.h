@@ -5,8 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// In-progress v7: six interval bits, consume bit 6, restart bit 7.
-#define CONFIG_VERSION 7
+// v8: Type Text shares type 0; type 9 is Consumer Hold. Timers stay five bytes.
+#define CONFIG_VERSION 8
 #define CONFIG_TIMED_CONSUME 0x40
 #define CONFIG_LAYER_PREVIOUS 0xFF
 #ifndef CONFIG_TIMED_MAX
@@ -47,7 +47,9 @@
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x6
 #define CONFIG_ACTION_SCROLL           0x7
 #define CONFIG_ACTION_CONSUMER         0x8
-#define CONFIG_ACTION_STRING           0x9
+#define CONFIG_ACTION_CONSUMER_HOLD    0x9
+// Full first byte: type None with auxiliary value 1.
+#define CONFIG_ACTION_STRING           0x10
 #define CONFIG_ACTION_SET_LAYER        0xA
 #define CONFIG_ACTION_MOMENTARY_LAYER  0xB
 #define CONFIG_ACTION_RELATIVE_LAYER   0xC
