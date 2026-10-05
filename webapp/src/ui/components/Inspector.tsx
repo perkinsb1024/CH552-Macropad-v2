@@ -73,7 +73,7 @@ export function Inspector() {
   const layerCount = p?.layers.length ?? 0;
   const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed }) : null;
   const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
-  const custom = useMemo(() => action?.type === 'consumer' && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
+  const custom = useMemo(() => (action?.type === 'consumer' || action?.type === 'consumerHold') && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
   const savedStrings = useMemo(() => {
     if (!p) return [];
     const strings = new Set<string>();
@@ -112,10 +112,11 @@ export function Inspector() {
     const next = blankAction(type);
     // Carry over compatible fields so switching Tap ↔ Hold keeps the key.
     if ('usage' in next && 'usage' in action && 'modifiers' in next && 'modifiers' in action) update({ ...next, usage: action.usage, modifiers: action.modifiers });
+    else if ((next.type === 'consumer' || next.type === 'consumerHold') && (action.type === 'consumer' || action.type === 'consumerHold')) update({ ...next, usage: action.usage });
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
     else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta,
-      ...((next.type === 'mouseX' || next.type === 'mouseY') && (action.type === 'mouseX' || action.type === 'mouseY') && action.hold ? { hold: true } : {}) });
+      ...('hold' in action && action.hold && !rotation ? { hold: true } : {}) });
     else if ('offset' in next && 'offset' in action) update({ ...next, offset: action.offset });
     else update(next);
   };
@@ -240,7 +241,7 @@ export function Inspector() {
       )}
 
       {action.type === 'scroll' && (
-        <DirectionalStep label="Wheel step" directionLabel="Scroll direction" negativeLabel="Up" positiveLabel="Down" hint="Wheel counts per press or encoder detent." value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+        <DirectionalStep label="Wheel step" directionLabel="Scroll direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
       {action.type === 'mouseX' && (
         <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
@@ -249,20 +250,20 @@ export function Inspector() {
         <DirectionalStep label="Vertical move" directionLabel="Pointer direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
 
-      {(action.type === 'mouseX' || action.type === 'mouseY') && (
+      {(action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY') && (
         <div class="field">
           {!rotation && <>
-            <span class="field-label">Movement behavior</span>
-            <div class="segmented" role="group" aria-label="Movement behavior">
+            <span class="field-label">{action.type === 'scroll' ? 'Scroll behavior' : 'Movement behavior'}</span>
+            <div class="segmented" role="group" aria-label={action.type === 'scroll' ? 'Scroll behavior' : 'Movement behavior'}>
               <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
               <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
             </div>
           </>}
-          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
+          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
         </div>
       )}
 
-      {action.type === 'consumer' && (
+      {(action.type === 'consumer' || action.type === 'consumerHold') && (
         <div class="field">
           <span class="field-label">Control</span>
           <select value={custom ? 'custom' : action.usage} onChange={(e) => {
@@ -287,6 +288,7 @@ export function Inspector() {
             </div>
           )}
           <span class="hint">Brightness controls are honored by some hosts and monitors only.</span>
+          {action.type === 'consumerHold' && <span class="hint">The host decides whether a held control repeats. The newest media action wins; previous holds are not restored. Holds continue across layer changes until release.</span>}
         </div>
       )}
 

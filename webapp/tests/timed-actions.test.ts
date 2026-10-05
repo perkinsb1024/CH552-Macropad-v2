@@ -22,13 +22,13 @@ function firmwareAccepts(image: Uint8Array, variant: number) {
   return validator.accepts(image, variant);
 }
 
-describe('v7 timed-action images', () => {
+describe('v8 timed-action images', () => {
   it.each([0, 1] as const)('matches firmware for all four counts, endpoints and flag combinations on variant %s', (variant) => {
     for (let count = 0; count <= 4; count++) {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[2]).toBe(7);
+      expect(image[2]).toBe(8);
       expect((image[3]! >> 6) | ((image[4]! >> 7) << 2)).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
@@ -41,7 +41,7 @@ describe('v7 timed-action images', () => {
     p.timedActions = [{ ...timer(64, true), action: { type: 'string', text: 'abc' }, resumeAction: { type: 'string', text: 'abc' } }];
     const image = encodeProfile(p);
     const offset = 9 + 44 + 3;
-    expect([...image.slice(offset, offset + 5)]).toEqual([191, 9, 0, 9, 0]);
+    expect([...image.slice(offset, offset + 5)]).toEqual([191, 16, 0, 16, 0]);
     expect([...image.slice(offset + 5, offset + 9)]).toEqual([97, 98, 99, 0]);
     expect(computeCapacity(p)).toMatchObject({ chords: 3, timedActions: 5, strings: 4, used: 65 });
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });

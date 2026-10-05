@@ -128,7 +128,12 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 
 Mouse button actions offer **Left**, **Middle**, and **Right**. You can select more than one (though that's not typically useful... How often do you press more than one mouse button at once?)
 
-For pointer movement on a button or chord, choose **Tap** for one step or **Hold** for repeated movement until release. Hold movement repeats very quickly; start with a small amount. Wheel rotation and timers send one step each time they run. Pointer speed and scroll distance can vary with your computer's settings and the application.
+For scrolling or pointer movement on a button or chord, choose **Tap** for one step
+or **Hold** for repeated movement until release. Start with a small amount. Held
+scrolling repeats after the previous step and USB output finish; release stops
+new repeats, while an accepted step finishes. Wheel rotation and timers send one
+step each time they run. Pointer speed and scroll distance can vary with your
+computer's settings and the application.
 
 ### Media and System
 
@@ -142,7 +147,16 @@ Choose **Media / system**, then a named **Control**:
 | Launch | Calculator, File browser, Email, Media player |
 | Browser | Web search, Browser home, Browser back, Browser forward, Browser stop, Browser refresh, Bookmarks |
 
-Your computer, application, or display must support the selected control. For example, a brightness action may have no effect on an external monitor (though if you're on MacOS, I recommend checking out [Lunar](https://lunar.fyi/), which allows these keys to control many external monitors). These are individual activations, rather than held media controls. The **Custom usage...** entry is an advanced option; use the named choices for ordinary configuration.
+Your computer, application, or display must support the selected control. For example, a brightness action may have no effect on an external monitor (though if you're on MacOS, I recommend checking out [Lunar](https://lunar.fyi/), which allows these keys to control many external monitors). The **Custom usage...** entry is an advanced option; use the named choices for ordinary configuration.
+
+**Media / system** sends a tap. Choose **Media / system hold** to keep the control
+held until release; the selected Control is preserved when switching between
+these actions. The host decides whether a sustained control repeats. Holds are
+available on keys, chords and the wheel button, but not wheel turns or timers.
+The newest media action wins, including a tap interrupting a hold. Releasing it
+does not restore a previous still-held control. Keyboard and media holds retain
+their original binding across layer changes until physical release. Releasing
+either key of a chord ends its hold.
 
 ### Type Text
 
@@ -248,7 +262,13 @@ You can add up to **four timed actions**, depending on remaining configuration s
 
 “Input” means activity **on the macropad**. Using your computer's regular keyboard or mouse does not restart these timers. Keeping a button held only resets the timer when you first press the button.
 
-The interval uses steps of *roughly* 2 minutes, up to about 2 hours. The configurator shows the approximate time next to the slider. Timing follows a shared clock: the **first firing after starting or restarting can be up to about 131 seconds early**. Later repetitions without a restart use the full interval. A one-step interval can therefore fire almost immediately. Use these for approximate reminders, rather than an exact countdown.
+The interval uses steps of 131.072 seconds, up to 2 hours 19 minutes 48.608 seconds.
+The configurator shows the approximate time next to the slider and a more precise
+range on hover. In v8, each timer measures from its own last start or restart,
+with **less than 512 ms of clock quantization** instead of up to 131 seconds.
+A one-step interval becomes due about 130.560–131.072 seconds after its reset.
+Polling, queued output and the device clock can add timing error; these remain
+reminders rather than an exact host countdown. The five-byte storage cost is unchanged.
 
 ### On Next Input
 
@@ -540,7 +560,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | The first firing after a start or timer reset can be up to 131 seconds early. Choose a longer interval if needed |
+| A reminder fires earlier than expected | v8 clock quantization is less than 512 ms early. Older v7 firmware could fire up to 131 seconds early; use matching v8 firmware for improved precision |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a **Timed action** does nothing | **Consume this input** may be enabled. That input dismisses the **Timed action**; the next one runs normally |
 | Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |
@@ -578,7 +598,7 @@ Review overlapping timers together, and avoid combining one-shot and persistent 
 
 ### Layer Changes Can Cancel Queued Actions
 
-Keyboard taps, text, media controls, mouse clicks, scrolling, and pointer steps wait in a playback queue. **A change to the effective layer clears queued playback and interrupts playback already in progress.** Processing a follow-up therefore does not guarantee that all of its output reaches the computer.
+Keyboard taps, text, mouse clicks, scrolling, and pointer steps wait in a playback queue. **A change to the effective layer clears queued playback and interrupts playback already in progress.** Processing a follow-up therefore does not guarantee that all of its output reaches the computer. Media actions share a separate newest-wins output lane; layer changes cancel pending media taps, while keyboard and media holds continue until release. Reports already accepted by USB keep their order.
 
 For example, if Timer 1's follow-up sends a keyboard shortcut and Timer 2's follow-up changes layers, the shortcut can be cancelled before it is sent. Reversing those assignments lets the layer change happen before the shortcut is queued. Selecting the already-active layer does not clear playback.
 

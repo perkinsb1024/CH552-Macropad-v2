@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 7;
+export const JSON_VERSION = 8;
 const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
@@ -114,11 +114,13 @@ function action(v: unknown, what: string): Action {
     case 'mouseToggle':
       return { type, buttons: int(v.buttons, `${what} buttons`) };
     case 'scroll':
-      return { type, delta: int(v.delta, `${what} delta`) };
+      if (v.acceleration !== undefined && v.acceleration !== 'off') throw new ImportError(`${what}: scroll acceleration is unavailable in this firmware.`);
+      return { type, delta: int(v.delta, `${what} delta`), ...(bool(v.hold, `${what} hold`) ? { hold: true } : {}) };
     case 'mouseX':
     case 'mouseY':
       return { type, delta: int(v.delta, `${what} delta`), ...(bool(v.hold, `${what} hold`) ? { hold: true } : {}) };
     case 'consumer':
+    case 'consumerHold':
       return { type, usage: int(v.usage, `${what} usage`) };
     case 'string':
       if (typeof v.text !== 'string') throw new ImportError(`${what}: text must be a string.`);
@@ -151,7 +153,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (raw.version !== 1 && raw.version !== 2 && raw.version !== 3 && raw.version !== 4 && raw.version !== 5 && raw.version !== 6 && raw.version !== JSON_VERSION) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (![1, 2, 3, 4, 5, 6, 7, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -195,7 +197,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   if (rainbowSpeed < 0) throw new ImportError('rainbowSpeed must be extra fast, fast, slow or extra slow.');
   const profile: Profile = { rainbowSpeed, rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
   if (raw.timedActions !== undefined) {
-    if (raw.version !== JSON_VERSION || !Array.isArray(raw.timedActions)) throw new ImportError('Timed actions require a version 7 list.');
+    if (Number(raw.version) < 7 || !Array.isArray(raw.timedActions)) throw new ImportError('Timed actions require a version 7 or newer list.');
     profile.timedActions = raw.timedActions.map((timer, i) => {
       if (!isRecord(timer)) throw new ImportError(`Timed action ${i + 1} is malformed.`);
       if (typeof timer.resetOnInput !== 'boolean') throw new ImportError('Reset on input must be true or false.');
@@ -206,6 +208,9 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(a => a.type === 'ledControl' && a.command.startsWith('effect'))) throw new ImportError('Temporary LED effects require profile version 7.');
   if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(isPreviousLayer)) throw new ImportError('Previous layer requires profile version 7.');
+  const allActions = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action),
+    ...(profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction])];
+  if (Number(raw.version) < 8 && allActions.some(a => a.type === 'consumerHold' || (a.type === 'scroll' && a.hold))) throw new ImportError('Consumer Hold and held scrolling require profile version 8.');
   migrateLegacyProfile(profile);
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
   const issues = validateProfile(profile);

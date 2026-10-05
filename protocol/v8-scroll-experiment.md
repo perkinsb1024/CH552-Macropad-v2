@@ -1,5 +1,40 @@
 # Held scrolling and acceleration experiment
 
+## Flashable standalone test build
+
+The branch now builds with `ENABLE_COLOR_PREVIEW=0` and
+`ENABLE_RAINBOW_ANIMATION=0` in `platformio.ini`. Normal layer colors, key LEDs,
+layer indication timing/blinks, temporary LED effects and invalid-config error
+blinking remain. Rainbow colors render at a static phase. Disabling error
+blinking was tried and discarded; it was not needed for the final fit.
+
+With shared eight-bit arithmetic/repeat optimizations the six-key image uses
+**14,235 bytes** (101 free), and the three-key image **14,231 bytes** (105 free).
+RAM: PSEG 108, XSEG 526 / 517, DSEG 127, ISEG 15 / 12, BSEG 31 bits,
+stack reserve 114 / 117. These builds include held scrolling and acceleration,
+but neither Consumer Hold nor the timer precision experiment.
+
+To test, use this branch's configurator (`cd webapp`, `npm run build`) and ordinary
+firmware build/upload workflow. No firmware has been uploaded by this work.
+Select a Scroll action and choose Off, Slow or Fast from **Scroll acceleration
+(experiment)**. Keys/chords/encoder press also offer Tap/Hold. Try a base step of
+1 first; reverse direction, pause longer than 200 ms and trigger another action
+to compare resets. Start with a fresh profile or an original v7 backup: this
+branch's configurator does not import v8 backups with Consumer Hold. Keep steps
+small while judging feel because each computed
+step plays as unit wheel reports before the next queued action.
+
+This isolated branch still uses the experimental extension of the v7 encoding;
+its configurator understands those auxiliary bits. Ordinary v7 firmware and the
+v8 merged firmware reject acceleration settings. Export a backup before testing;
+do not transfer accelerated profiles between these branches. The merged branch
+has its own v8 migration and retains color preview/rainbow animation.
+
+Temporary flashable images/maps: `/private/tmp/macropad-v8-builds/scroll-test-budget/`.
+Validation includes firmware host suites with the actual lighting flags, both
+hardware builds at the real 14,336-byte limit, web codec/JSON/release restrictions,
+the full web suite and production web build. Hardware feel remains untested.
+
 Branch: `experiment/v8-scroll-acceleration`, independently based on `196e81e`.
 Firmware milestone measurements; final format/migration will be v8 on the merged
 branch. The standalone experiment retains the baseline version stamp until the

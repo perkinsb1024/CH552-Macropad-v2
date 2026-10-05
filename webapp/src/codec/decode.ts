@@ -36,6 +36,11 @@ function stringAt(pool: PoolView, offset: number): string | null {
   return text;
 }
 
+function decodeText(pool: PoolView, offset: number): Action | string {
+  const text = stringAt(pool, offset);
+  return text === null ? `String offset ${offset} does not start a string` : { type: 'string', text };
+}
+
 function decodeAction(b0: number, b1: number, layers: number, rotation: boolean, pool: PoolView, version: number): Action | string {
   let type = b0 & 15;
   if (version < 6) {
@@ -54,6 +59,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
         ...(b1 >= 0x91 && b1 <= 0x99 ? { brightness: 'dim' as const } : {}) };
     }
     case ActionCode.None:
+      if (version >= 8 && aux === 1) return decodeText(pool, b1);
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
     case ActionCode.RelativeLayer: {
       const offset = toSigned(b1);
@@ -74,8 +80,9 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       return { type: t, buttons: b1 };
     }
     case ActionCode.Scroll:
-      if (nonZeroAux || b1 === 0x80) return 'Invalid relative delta';
-      return { type: 'scroll', delta: toSigned(b1) };
+      if ((version < 8 ? nonZeroAux : aux !== 0 && aux !== 4) || b1 === 0x80) return 'Invalid scroll settings';
+      if (rotation && aux) return 'Scroll hold bound to rotation';
+      return { type: 'scroll', delta: toSigned(b1), ...(aux ? { hold: true } : {}) };
     case ActionCode.MouseX:
     case ActionCode.MouseY: {
       if (aux > 1 || b1 === 0x80) return 'Invalid relative delta';
@@ -84,14 +91,13 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       return { type: t, delta: toSigned(b1), ...(aux ? { hold: true } : {}) };
     }
     case ActionCode.Consumer:
+    case ActionCode.ConsumerHold:
+      if (type === ActionCode.ConsumerHold && version < 8) {
+        return nonZeroAux ? 'String action has non-zero auxiliary data' : decodeText(pool, b1);
+      }
+      if (rotation && type === ActionCode.ConsumerHold) return 'Consumer hold bound to rotation';
       if (!nonZeroAux && !b1) return 'Consumer usage is zero';
-      return { type: 'consumer', usage: (aux << 8) | b1 };
-    case ActionCode.String: {
-      if (nonZeroAux) return 'String action has non-zero auxiliary data';
-      const text = stringAt(pool, b1);
-      if (text === null) return `String offset ${b1} does not start a string`;
-      return { type: 'string', text };
-    }
+      return { type: type === ActionCode.ConsumerHold ? 'consumerHold' : 'consumer', usage: (aux << 8) | b1 };
     case ActionCode.SetLayer:
     case ActionCode.MomentaryLayer: {
       const previous = version >= 7 && type === ActionCode.SetLayer && b1 === PREVIOUS_LAYER;
@@ -115,7 +121,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2, 3, 4, 5, 6 or ${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
@@ -134,9 +140,9 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const keys = keyCount(variant);
   const size = layerSize(variant);
   const chordCount = (image[5]! >> 1) & 63;
-  const timerCount = image[2] === 7 ? (image[3]! >> 6) | ((image[4]! >> 7) << 2) : 0;
+  const timerCount = image[2]! >= 7 ? (image[3]! >> 6) | ((image[4]! >> 7) << 2) : 0;
   if (timerCount > MAX_TIMED_ACTIONS) return fail('malformed', 'Too many timed actions.');
-  const poolUsed = image[2] === 7 ? image[4]! & 127 : image[4]!;
+  const poolUsed = image[2]! >= 7 ? image[4]! & 127 : image[4]!;
   const poolStart = HEADER_SIZE + size * layerCount + CHORD_ENTRY_SIZE * chordCount + TIMED_ENTRY_SIZE * timerCount;
   const end = poolStart + poolUsed;
   if (end > IMAGE_SIZE) return fail('malformed', `Declared content ends at byte ${end}, beyond the 128-byte image.`);

@@ -1,4 +1,4 @@
-import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
+import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS, TIMED_QUANTIZATION_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
 import { canSwapSlots, capacity, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
 import { canApplyShortcut, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
@@ -53,7 +53,8 @@ export function approximateDuration(ticks: number): string {
   return `≈ ${duration(ticks * TIMED_TICK_SECONDS)}`;
 }
 export function firingRange(ticks: number): string {
-  return `${duration((ticks - 1) * TIMED_TICK_SECONDS)} – ${duration(ticks * TIMED_TICK_SECONDS)}`;
+  const seconds = ticks * TIMED_TICK_SECONDS;
+  return `${(seconds - TIMED_QUANTIZATION_SECONDS).toFixed(3)} – ${seconds.toFixed(3)} seconds after start or restart; queued output may be later.`;
 }
 export function clampTicks(value: string): number {
   const number = Number(value);
@@ -127,6 +128,6 @@ export function TimedActionsPanel() {
     </div>
     <button class="btn" disabled={!!unavailable} title={unavailable || 'Add a timed action'} onClick={add}><IconPlus /> Add timed action</button>
     {unavailable && <p class="hint">{unavailable}</p>}
-    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Intervals use a shared clock; the first firing can be up to 131 seconds early. Held actions are unavailable.</p>
+    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Each timer measures from its own start or restart, with less than 512 ms of clock quantization. Queued output may run later. Held actions are unavailable.</p>
   </details>;
 }

@@ -111,8 +111,8 @@ it('clamps edits and provides whole-number durations and first-firing ranges', (
   }
   expect(clampTicks('Infinity')).toBe(64);
   expect(approximateDuration(64)).toBe('≈ 139 minutes 49 seconds');
-  expect(firingRange(1)).toBe('0 seconds – 2 minutes 11 seconds');
-  expect(firingRange(3)).toBe('4 minutes 22 seconds – 6 minutes 33 seconds');
+  expect(firingRange(1)).toBe('130.560 – 131.072 seconds after start or restart; queued output may be later.');
+  expect(firingRange(3)).toBe('392.704 – 393.216 seconds after start or restart; queued output may be later.');
   expect(nodes(TimedActionsPanel()).find(n => n.type === 'output')?.props.title).toBe(firingRange(1));
 });
 it('edits consume independently from restart, and undo restores it', () => {

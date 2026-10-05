@@ -37,11 +37,12 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>)
     case 'mouseToggle':
       return [code, action.buttons & 7];
     case 'scroll':
-      return [code, action.delta & 0xff];
+      return [code | (action.hold ? 0x40 : 0), action.delta & 0xff];
     case 'mouseX':
     case 'mouseY':
       return [code | (action.hold ? 0x10 : 0), action.delta & 0xff];
     case 'consumer':
+    case 'consumerHold':
       return [code | (((action.usage >> 8) & 15) << 4), action.usage & 0xff];
     case 'string': {
       const offset = stringOffsets.get(action.text);

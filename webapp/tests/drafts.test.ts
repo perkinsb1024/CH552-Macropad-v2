@@ -5,7 +5,7 @@ import { defaultProfile } from '../src/model/defaults';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('versioned drafts', () => {
-  it('isolates v7 drafts from the v2 archive while recovering the old shared key', () => {
+  it('isolates v8 drafts from the v2 archive while recovering the old shared key', () => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,
@@ -17,7 +17,7 @@ describe('versioned drafts', () => {
     const archivedKey = 'universal-macropad:format-v2:draft:six-key';
     storage.set(archivedKey, 'archived draft');
     expect(loadDraft(0)?.profile).toEqual(legacy);
-    expect(draftKey(0)).toBe('universal-macropad:format-v7:draft:six-key');
+    expect(draftKey(0)).toBe('universal-macropad:format-v8:draft:six-key');
     const current = defaultProfile(0);
     current.transparentBlack = true;
     storeDraft(current, {});
@@ -45,7 +45,7 @@ describe('versioned drafts', () => {
     draft.profile.layers[0].keys[0] = { type: 'nextLayer' };
     storage.set(draftKey(0), JSON.stringify(draft));
     const migrated = loadDraft(0)!;
-    expect(migrated.formatVersion).toBe(7);
+    expect(migrated.formatVersion).toBe(8);
     expect(migrated.profile.transparentBlack).toBe(false);
     expect(migrated.profile.layers[0]!.indicatorBehavior).toBe(1);
     expect(migrated.profile.layers[0]!.clockwise).toEqual({ type: 'scroll', delta: 2 });
@@ -54,13 +54,32 @@ describe('versioned drafts', () => {
     delete draft.formatVersion;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toEqual(migrated);
-    draft.formatVersion = 8;
+    draft.formatVersion = 9;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toBeNull();
   });
 });
 
-it.each([3, 4, 5, 6])('recovers v%s drafts without clearing them or resurrecting them after clearing v7', (version) => {
+it('recovers a complete v7 draft with timers, text and annotations without rewriting it', () => {
+  const storage = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+  });
+  const p = defaultProfile(0);
+  p.layers[0]!.keys[0] = { type: 'string', text: 'Work\n' };
+  p.timedActions = [{ ticks: 64, resetOnInput: true, consumeInput: true,
+    action: { type: 'string', text: 'Work\n' }, resumeAction: { type: 'consumer', usage: 0xfff } }];
+  const meta = { profileName: 'Work', layerNames: ['Tools', 'Media'] };
+  const key = 'universal-macropad:format-v7:draft:six-key';
+  const raw = JSON.stringify({ formatVersion: 7, profile: p, meta, savedAt: 'old' });
+  storage.set(key, raw);
+  expect(loadDraft(0)).toEqual({ formatVersion: 8, profile: p, meta, savedAt: 'old' });
+  expect(storage.get(key)).toBe(raw);
+  expect(storage.has(draftKey(0))).toBe(false);
+});
+
+it.each([3, 4, 5, 6, 7])('recovers v%s drafts without clearing them or resurrecting them after clearing v8', (version) => {
   const storage = new Map<string, string>();
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => storage.get(key) ?? null,
@@ -76,7 +95,7 @@ it.each([3, 4, 5, 6])('recovers v%s drafts without clearing them or resurrecting
   const archived = JSON.stringify({ formatVersion: version, profile: legacy, meta: {}, savedAt: 'v3' });
   storage.set(archivedKey, archived);
   expect(loadDraft(1)?.profile).toEqual(old);
-  expect(loadDraft(1)?.formatVersion).toBe(7);
+  expect(loadDraft(1)?.formatVersion).toBe(8);
   clearDraft(1);
   expect(storage.get(archivedKey)).toBe(archived);
   expect(loadDraft(1)).toBeNull();

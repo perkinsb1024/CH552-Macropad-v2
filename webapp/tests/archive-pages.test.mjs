@@ -16,7 +16,7 @@ describe('archived pages in development', () => {
   });
   afterAll(async () => { await server?.close(); });
 
-  it.each([2, 3, 4, 5, 6])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
+  it.each([2, 3, 4, 5, 6, 7])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
     const frozen = await readFile(new URL(`../public/versions/format-v${version}/index.html`, import.meta.url), 'utf8');
     for (const path of [`/versions/format-v${version}/`, `/versions/format-v${version}/?sim=six`, `/versions/format-v${version}/index.html`]) {
       const response = await fetch(origin + path);
@@ -34,6 +34,16 @@ describe('archived pages in development', () => {
     const redirect = await fetch(origin + '/versions/format-v2?sim=six', { redirect: 'manual' });
     expect(redirect.status).toBe(302);
     expect(redirect.headers.get('location')).toBe('/versions/format-v2/?sim=six');
+  });
+
+  it('serves the frozen v7 live view with its own relative assets', async () => {
+    const path = '/versions/format-v7/liveView/index.html';
+    const frozen = await readFile(new URL('../public/versions/format-v7/liveView/index.html', import.meta.url), 'utf8');
+    const response = await fetch(origin + path);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe(frozen);
+    const asset = frozen.match(/src="(.+?)"/)[1];
+    expect((await fetch(new URL(asset, origin + path))).status).toBe(200);
   });
 
   it('does not serve the current editor for nonexistent archive paths', async () => {

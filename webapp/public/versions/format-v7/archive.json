@@ -1,0 +1,18 @@
+{
+  "formatVersion": 7,
+  "sourceCommit": "196e81e3db64596a9728ac2c2394f4ef03655b05",
+  "changes": [
+    "HTML archive banner and latest-editor link; v7 drafts and live view retained"
+  ],
+  "validation": "All 324 source-revision tests, TypeScript check and Vite production editor build passed. No uploader or firmware release generation.",
+  "sha256": {
+    "assets/configurator-DKUYsLzA.js.map": "aae3763fb0f70693cf8745a7354aa67a03b543f7950b21bf9e1db4248fadfc26",
+    "assets/main-CTYYUymr.css": "26cbe25792318edd262dcad6cfdf1113e104af0c2ff6c099967a28882bd2f761",
+    "assets/main-z9DCjm7C.js": "23dd7eb60cb4bd01c75ec9b6995394cf664c502e8a765536d69dc28c76c09479",
+    "assets/main-z9DCjm7C.js.map": "46a1d2824c1b2e4816717640b2718f05ba67e74bb22382f27273dbbac5c2c01c",
+    "assets/viewer-DKUYsLzA.js.map": "ad05b7d44304cbb39b946855891136d92f912eeb95bda0e3704084d9b0f723cf",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "5541b33a6b714ca81be15a1997a2161f27b3014fd3dd62fd6446a325f3d442b3",
+    "liveView/index.html": "69522558480c4d59ed42ea045ebf2567dac7f09e1f01e12302ba02ec387349f2"
+  }
+}

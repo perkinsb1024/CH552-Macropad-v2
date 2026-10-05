@@ -11,6 +11,8 @@ export interface SimulatorOptions {
   variant: Variant;
   /** Start with empty flash so the "no saved profile" path is exercised. */
   blankFlash?: boolean;
+  /** Raw stored image, including legacy/invalid profiles for migration tests. */
+  initialImage?: Uint8Array;
   /** Artificial per-request latency in ms. */
   latency?: number;
   /** Fail flash verification on the next commit (for testing error handling). */
@@ -41,7 +43,8 @@ export class SimulatedDevice implements Transport {
 
   constructor(readonly options: SimulatorOptions) {
     const defaults = encodeProfile(defaultProfile(options.variant));
-    if (!options.blankFlash) this.flash.set(defaults);
+    if (options.initialImage) this.flash.set(options.initialImage);
+    else if (!options.blankFlash) this.flash.set(defaults);
     this.boot();
   }
 
@@ -50,7 +53,7 @@ export class SimulatedDevice implements Transport {
   }
 
   private boot(): void {
-    this.flashValid = [6, FORMAT_VERSION].includes(this.flash[2]!) && decodeImage(this.flash, this.options.variant).ok;
+    this.flashValid = this.flash[2] === FORMAT_VERSION && decodeImage(this.flash, this.options.variant).ok;
     this.activeValid = this.flashValid;
     this.active.set(this.flash);
     this.uploadState = 0;
@@ -146,7 +149,7 @@ export class SimulatedDevice implements Transport {
         if (this.uploadState !== 1 || this.uploadNext !== IMAGE_SIZE) return Status.Incomplete;
         const crc = imageCrc(this.staging);
         if (crc !== this.uploadCrc || this.staging[6] !== (crc & 0xff) || this.staging[7] !== crc >> 8) return Status.BadCrc;
-        if (![6, FORMAT_VERSION].includes(this.staging[2]!) || !decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
+        if (this.staging[2] !== FORMAT_VERSION || !decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
         if (this.options.failNextCommit) {
           this.options.failNextCommit = false;
           this.flash[0] = 0; // invalidated magic, as after an interrupted save

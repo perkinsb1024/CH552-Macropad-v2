@@ -27,10 +27,14 @@ rules, and deriving report lengths saved RAM but no flash.
 
 Standalone milestone costs remain recorded below and in the consumer/scroll
 experiment reports. Combined costs are not additive because compiler allocation
-and shared optimizations change when features are linked together. The default
-combined build is not compatible with the unchanged v7 configurator; v8 UI and
-migration are the next implementation step. Acceleration testing is isolated to
-its own experiment branch.
+and shared optimizations change when features are linked together. The combined
+build uses its v8 configurator, including binary/JSON/draft migration, Consumer
+Hold and held-scroll controls, and updated timer ranges. Frozen format-v7 editor
+and live-view pages remain available for v7 firmware.
+Acceleration testing is isolated to its own experiment branch; that branch's
+flashable test build uses 14,235 / 14,231 bytes, with color preview and rainbow
+animation disabled. Invalid-config and layer blinking remain. See the
+[scroll experiment instructions](v8-scroll-experiment.md).
 
 Baseline: `196e81e`. Flash capacity: 14,336 bytes. Measurements use ordinary
 temporary builds of both fixed hardware geometries, never release generation.

@@ -10,8 +10,9 @@ export type Action =
   | { type: 'mouseDouble'; buttons: number }
   | { type: 'mouseHold'; buttons: number }
   | { type: 'mouseToggle'; buttons: number }
-  | { type: 'scroll'; delta: number }
+  | { type: 'scroll'; delta: number; hold?: boolean }
   | { type: 'consumer'; usage: number }
+  | { type: 'consumerHold'; usage: number }
   | { type: 'string'; text: string }
   | { type: 'setLayer'; layer: number }
   | { type: 'oneShotSetLayer'; layer: number }

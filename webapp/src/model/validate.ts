@@ -20,7 +20,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
   const actionDescriptor = ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   if (!actionDescriptor) return 'This action type is no longer supported. Choose another action.';
   if ((ctx.rotation || ctx.timed) && actionNeedsRelease(action)) {
-    const label = action.type === 'mouseX' || action.type === 'mouseY' ? 'Pointer hold' : actionDescriptor.label;
+    const label = action.type === 'scroll' ? 'Scroll hold' : action.type === 'mouseX' || action.type === 'mouseY' ? 'Pointer hold' : actionDescriptor.label;
     return `${label} needs a release and cannot be bound to ${ctx.timed ? 'a timed action' : 'rotation'}.`;
   }
   switch (action.type) {
@@ -45,13 +45,13 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'scroll':
     case 'mouseX':
     case 'mouseY':
-      if (action.type !== 'scroll') {
-        if (action.hold !== undefined && typeof action.hold !== 'boolean') return 'Pointer hold must be on or off.';
-      }
+      if (action.hold !== undefined && typeof action.hold !== 'boolean') return 'Hold must be on or off.';
+      if (action.type === 'scroll' && 'acceleration' in action && action.acceleration !== undefined && action.acceleration !== 'off') return 'Scroll acceleration is unavailable in this firmware.';
       if (!Number.isInteger(action.delta) || action.delta < -127 || action.delta > 127) return 'Delta must be a whole number from -127 to 127.';
       if (action.delta === 0) return 'A zero step does nothing; choose a non-zero value.';
       return null;
     case 'consumer':
+    case 'consumerHold':
       if (!Number.isInteger(action.usage) || action.usage < 1 || action.usage > 0xfff) return 'Consumer usage must be 0x001–0xFFF.';
       return null;
     case 'string': {

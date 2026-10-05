@@ -13,7 +13,7 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
-  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 7', (variant) => {
+  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 8', (variant) => {
     const profile = defaultProfile(variant);
     profile.layers[0]!.indicatorBehavior = 1;
     profile.layers[0]!.indicatorColor = 8;
@@ -28,7 +28,7 @@ describe('default profile image headers', () => {
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[2]).toBe(7);
+    expect(upgraded[2]).toBe(8);
     expect(upgraded[8]).toBe(legacy[8]! | 0x60);
     expect([...upgraded.subarray(9)]).toEqual([...encodeProfile(profile).subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
@@ -45,12 +45,12 @@ describe('default profile image headers', () => {
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 07 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 08 01 00 00');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 07 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 08 01 00 01');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -89,6 +89,9 @@ describe('every action type round-trips', () => {
     { type: 'scroll', delta: 127 },
     { type: 'consumer', usage: 0xe9 },
     { type: 'consumer', usage: 0xfff },
+    { type: 'consumerHold', usage: 0xe9 },
+    { type: 'consumerHold', usage: 0xfff },
+    { type: 'scroll', delta: 1, hold: true },
     { type: 'ledControl', command: 'commonPresetRelative', value: 1 },
     { type: 'string', text: 'hello\tworld\n' },
     { type: 'string', text: '' },
@@ -107,16 +110,18 @@ describe('every action type round-trips', () => {
     for (const d of ACTION_DESCRIPTORS) expect(types.has(d.type)).toBe(true);
   });
   it('round-trips as key bindings', () => {
-    const profile = defaultProfile(VARIANT_SIX_KEYS);
-    profile.layers = [0, 1, 2, 3].map(() => emptyLayer(VARIANT_SIX_KEYS));
-    // 4 layers × 6 keys = 24 slots; distribute samples.
-    samples.forEach((a, i) => {
-      profile.layers[Math.floor(i / 6)]!.keys[i % 6] = a;
-    });
-    expect(validateProfile(profile)).toEqual([]);
-    const decoded = decodeImage(encodeProfile(profile));
-    expect(decoded.ok).toBe(true);
-    if (decoded.ok) expect(decoded.profile).toEqual(profile);
+    // Keep each batch within 128 bytes, including the shared text pool.
+    for (let start = 0; start < samples.length; start += 24) {
+      const profile = defaultProfile(VARIANT_SIX_KEYS);
+      profile.layers = [0, 1, 2, 3].map(() => emptyLayer(VARIANT_SIX_KEYS));
+      samples.slice(start, start + 24).forEach((a, i) => {
+        profile.layers[Math.floor(i / 6)]!.keys[i % 6] = a;
+      });
+      expect(validateProfile(profile)).toEqual([]);
+      const decoded = decodeImage(encodeProfile(profile));
+      expect(decoded.ok).toBe(true);
+      if (decoded.ok) expect(decoded.profile).toEqual(profile);
+    }
   });
   it('blank actions are valid for buttons', () => {
     for (const d of ACTION_DESCRIPTORS) {
@@ -136,7 +141,7 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x1d, 0xff]);
-    expect(image[2]).toBe(7);
+    expect(image[2]).toBe(8);
     image[9] = 0x2d;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -307,7 +312,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 8;
+    image[2] = 9;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });

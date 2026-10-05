@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v7 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v8 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -43,3 +43,11 @@ The production build and v6 archive checksum/serving tests passed.
 including its v6 draft namespace, with an HTML banner and latest-editor link.
 TypeScript, the Vite editor build, and all 234 tests passed at that revision.
 Only the editor assets are archived; uploader generation is unrelated.
+
+`../public/versions/format-v7/` preserves the v7 editor and live view from commit
+`196e81e3db64596a9728ac2c2394f4ef03655b05`, including its v7 draft namespace.
+All 324 source-revision tests, TypeScript checking and the Vite build passed.
+The only hosting adjustment is an HTML banner/link on both entry points.
+Assets/source maps, favicon and both HTML pages are covered by the manifest.
+The snapshot was extracted into a temporary tree and built using the installed
+dependencies matching its unchanged lockfile; no firmware/uploader release was generated.

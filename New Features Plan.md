@@ -2,7 +2,13 @@
 
 ## Consumer Hold
 
-Status: investigated and agreed encoding proposal; not implemented.
+Status: implemented on `experiment/v8-consumer-hold` and combined into
+`experiment/v8-merged`, including v8 configurator/migration. The selected compact
+policy is newest-wins with no restoration; keyboard and consumer holds both
+survive layer changes until release. Standalone net flash cost: 44 / 46 bytes,
+three persistent RAM bytes. See [final format](protocol/config-v8.md) and
+[measurements](protocol/v8-experiment-results.md). The original investigation
+follows; the implementation documents record the selected behavior.
 
 ### Goal
 
@@ -161,7 +167,15 @@ Relevant code: `src/config.h`, `src/config.c`, `src/actions.c`,
 
 ## Scroll Acceleration
 
-Status: investigated; proposed design and open choices below. Not implemented.
+Status: held scrolling is implemented and retained in `experiment/v8-merged`.
+Acceleration is implemented and independently testable on
+`experiment/v8-scroll-acceleration`, with Off/Slow/Fast configurator controls.
+That isolated build disables color preview and rainbow animation, retains error
+and layer blinking, and fits with 101 / 105 flash bytes free. Acceleration does
+not fit in the merged build with all existing lighting preserved and is disabled
+there. Slow is +1 every two subsequent inputs, Fast +1 every input; timeout 200 ms,
+maximum 127. See [test build and policies](protocol/v8-scroll-experiment.md).
+The original investigation follows, including alternatives not selected.
 
 ### Goal and requested behavior
 
@@ -403,7 +417,12 @@ and action editor components.
 
 ## Timed Action Precision
 
-Status: investigated; proposed improvement, not implemented.
+Status: implemented on `experiment/v8-timed-action-accuracy` and retained in
+`experiment/v8-merged`. Independent 512 ms fractional phases add four persistent
+RAM bytes and 60 standalone flash bytes, preserving five-byte records and the
+same >2-hour maximum. Both hardware variants and host precision/lifecycle tests
+pass. Configurator timing descriptions and hover ranges reflect the new precision.
+See [final format](protocol/config-v8.md) and [measurements](protocol/v8-experiment-results.md).
 
 ### Goal and findings
 

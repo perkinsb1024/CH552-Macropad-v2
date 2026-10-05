@@ -1,8 +1,9 @@
 # Consumer Hold experiment
 
 Branch: `experiment/v8-consumer-hold`, independently based on `196e81e`.
-Firmware implementation only; configurator/migration follow if the combined
-firmware fits. Existing checked-in releases are untouched.
+The standalone milestone records firmware implementation. The final combined
+build and v8 configurator/migration are now on `experiment/v8-merged`; see
+[format v8](config-v8.md). Existing checked-in releases are untouched.
 
 | Build | Six-key flash | Three-key flash | Free (6/3 key) |
 | --- | ---: | ---: | ---: |

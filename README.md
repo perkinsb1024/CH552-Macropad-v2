@@ -61,6 +61,12 @@ To use this configuration as a starting point, copy the contents of either the [
 >
 > Pre-built v7 firmware files are available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. This version adds **Timed actions**, action-based LED control (including dimming and effects), and the ability to jump to the previous layer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
+This experiment branch builds **v8** with more accurate timers, held media controls
+and held scrolling. Build its source to try these features; the checked-in release
+files and bundled browser uploader still contain v7 firmware. Use the frozen v7
+configurator with those releases. Back up your profile before updating; v8 leaves
+old flash intact but inputs stay inactive until the editor migrates and saves it.
+
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
 A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
@@ -205,7 +211,15 @@ No local web app installation is needed. Open the **[Macropad Configurator](http
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-Configuration format 7 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. The first firing can be up to 131 seconds early; later repetitions use the full interval.
+Configuration format 8 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. Each timer has its own phase: clock quantization is less than 512 ms early, with possible additional playback/USB delay. Configuration records remain five bytes.
+
+**Media / system hold** holds a consumer control until release. Host/application
+support determines whether it repeats. The newest media action wins; previous
+holds are not restored. Keyboard and consumer holds continue across layer changes
+until their physical input releases. **Scroll** offers Tap/Hold on keys, chords and
+the wheel button; rotation and timers remain single steps. Release stops new
+scroll repeats while already accepted steps finish. Acceleration is available
+only on its [separate experiment branch](protocol/v8-scroll-experiment.md).
 
 **LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
 
@@ -213,7 +227,11 @@ Configuration format 7 supports five six-key layers or seven three-key layers in
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating Previous layer swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot Previous layer option visits the remembered layer for one action, then returns. Timed actions can use either variant.
 
-The editor migrates binary formats 2–6, JSON versions 1–6, and older drafts while preserving bindings and metadata. Existing v6 profiles continue working on v7 firmware without erasing configuration; saving from the current editor upgrades them to v7. Older firmware uses frozen format 2–6 editors under `versions/format-vN/`. See [configuration format 7](protocol/config-v7.md).
+The editor migrates binary formats 2–7, JSON versions 1–7, and older drafts while
+preserving bindings and metadata. Old Type Text records become v8 text records,
+never Consumer Hold. Firmware accepts only v8; read/import the old profile and
+explicitly save it to reactivate inputs. Older firmware uses frozen format 2–7
+editors under `versions/format-vN/`. See [configuration format 8](protocol/config-v8.md).
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -261,5 +279,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v7.md)
+- [Configuration format](protocol/config-v8.md)
 - [USB configuration protocol](protocol/hid-v1.md)

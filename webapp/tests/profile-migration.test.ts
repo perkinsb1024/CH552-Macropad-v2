@@ -1,4 +1,4 @@
-import { legacyActionCodes } from './legacy-image';
+import { legacyActionCodes, legacyTextCodes } from './legacy-image';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { siteUrl } from '../src/site';
 import { encodeProfile } from '../src/codec/encode';
@@ -21,8 +21,9 @@ function legacyImage() {
 }
 
 describe('device profile migration', () => {
-  it.each([2, 3, 4, 5, 6])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
-    const legacy = version === 6 ? encodeProfile(defaultProfile(0)) : legacyImage();
+  it.each([2, 3, 4, 5, 6, 7])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
+    const legacy = version >= 6 ? encodeProfile(defaultProfile(0)) : legacyImage();
+    if (version >= 6) legacyTextCodes(legacy);
     legacy[2] = version;
     if (version === 5) legacy[8] = 0x68;
     sealImage(legacy);
@@ -32,8 +33,7 @@ describe('device profile migration', () => {
       if (!seeded && payload[3] === Opcode.GetInfo) {
         seeded = true;
         this.flash.set(legacy);
-        this.flashValid = version === 6;
-        if (version === 6) this.active.set(legacy);
+        this.flashValid = false;
       }
       return originalSend.call(this, payload);
     });
@@ -45,11 +45,11 @@ describe('device profile migration', () => {
     expect(device.flash).toEqual(legacy);
     expect(canSave.value).toBe(true);
     await save();
-    expect(device.flash[2]).toBe(7);
+    expect(device.flash[2]).toBe(8);
     expect(device.flashValid).toBe(true);
   });
 
-  it.each([2, 3, 4, 5, 6])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
+  it.each([2, 3, 4, 5, 6, 7])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
     const originalGetInfo = ConfigClient.prototype.getInfo;
     vi.spyOn(ConfigClient.prototype, 'getInfo').mockImplementation(async function (this: ConfigClient) {
       return { ...await originalGetInfo.call(this), formatVersion: version };

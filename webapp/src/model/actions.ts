@@ -27,10 +27,11 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'mouseDouble', code: ActionCode.MouseDouble, label: 'Mouse double-click', group: 'Mouse', needsRelease: false, hint: 'Double-click one or more mouse buttons.' },
   { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
   { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
-  { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical wheel step.' },
+  { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical wheel step, or repeat while held.' },
   { type: 'mouseX', code: ActionCode.MouseX, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
   { type: 'mouseY', code: ActionCode.MouseY, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
   { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
+  { type: 'consumerHold', code: ActionCode.ConsumerHold, label: 'Media / system hold', group: 'Media', needsRelease: true, hint: 'Hold a media or system control until release. Repetition depends on the host.' },
   { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
   { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
   { type: 'oneShotSetLayer', code: ActionCode.SetLayer, label: 'Switch to layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use a layer for the next action, then return to the previous layer.' },
@@ -49,7 +50,7 @@ export function descriptor(type: ActionType): ActionDescriptor {
 /** Includes actions whose release requirement depends on their settings. */
 export function actionNeedsRelease(action: Action): boolean {
   return descriptor(action.type).needsRelease ||
-    ((action.type === 'mouseX' || action.type === 'mouseY') && !!action.hold);
+    ((action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY') && !!action.hold);
 }
 
 export function descriptorForCode(code: number): ActionDescriptor | undefined {
@@ -82,6 +83,7 @@ export function blankAction(type: ActionType): Action {
     case 'mouseY':
       return { type, delta: type === 'scroll' ? 1 : 10 };
     case 'consumer':
+    case 'consumerHold':
       return { type, usage: 0xe9 };
     case 'string':
       return { type, text: '' };
@@ -131,13 +133,15 @@ export function summarize(action: Action): string {
     case 'mouseToggle':
       return `Toggle ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'scroll':
-      return action.delta < 0 ? `Scroll up ${-action.delta}` : `Scroll down ${action.delta}`;
+      return `${action.delta < 0 ? `Scroll up ${-action.delta}` : `Scroll down ${action.delta}`}${action.hold ? ' (hold)' : ''}`;
     case 'mouseX':
       return `Mouse ${action.delta < 0 ? 'left' : 'right'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
     case 'mouseY':
       return `Mouse ${action.delta < 0 ? 'up' : 'down'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
     case 'consumer':
       return consumerName(action.usage);
+    case 'consumerHold':
+      return `Hold ${consumerName(action.usage)}`;
     case 'string':
       return action.text.length ? `“${action.text.length > 14 ? action.text.slice(0, 13) + '…' : action.text}”` : 'Empty text';
     case 'setLayer':

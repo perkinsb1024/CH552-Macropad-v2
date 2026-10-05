@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 Universal Macropad. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v7.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v8.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -97,7 +97,7 @@ when webapp changes are pushed to `main`, or when run manually. In the repositor
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
 
-The active format 7 editor is served at the project site's root. Frozen
+The active format 8 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -110,8 +110,9 @@ is rebuilt from dependencies in CI.
 - `versions/format-v4/` serves the frozen v4 editor from the revision recorded in its manifest.
 - `versions/format-v5/` serves the frozen v5 editor from the revision recorded in its manifest.
 - `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
+- `versions/format-v7/` serves the frozen v7 editor and live view from commit `196e81e`.
 
-The footer links to the archive list. Detecting format 2, 3, 4, 5 or 6 firmware presents a
+The footer links to the archive list. Detecting format 2–7 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -119,13 +120,13 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5/v6 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6/v7 drafts without overwriting or clearing the archived namespace.
 
-Version 2/3/4/5/6 binary profiles, version 1–6 JSON files, and older drafts can still be
-migrated into the active format 7 editor after a firmware upgrade. Bindings and
+Version 2–7 binary profiles, version 1–7 JSON files, and older drafts can still be
+migrated into the active format 8 editor after a firmware upgrade. Bindings and
 colors are preserved; Blink once becomes the timed indication and transparency
 defaults to off. Rainbow phase spacing defaults to 60° on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to store v7. Existing v6 profiles continue running before migration.
+through the active editor to store v8. Older stored profiles remain readable but inactive until saved as v8.
 
 LED control bindings expose existing LED commands plus Set all LEDs, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
@@ -147,6 +148,10 @@ is enabled by default; consume wake input is disabled by default. Optional
 next-input actions run once after firing; consuming suppresses the physical
 binding even with no next-input action. Held actions cannot be assigned to timers.
 
+In v8, timers retain five-byte records and the same maximum interval but gain
+independent 512 ms fractional phases. Clock quantization is less than 512 ms early;
+the hover range reflects that, with queued-output latency called out separately.
+
 Interval editing uses a full-width 1–64 slider. Both timer action slots accept
 dragged shortcuts and swap actions with keys, encoder inputs, chords and other
 timers; timer interval/flags and per-key LED colors stay attached to their inputs.
@@ -161,13 +166,35 @@ No dedicated reminder layer is required. JSON uses optional `brightness: "dim"`
 for effects; omission defaults to Bright, preserving existing profiles.
 
 Persistent and one-shot Switch to layer selectors offer Previous layer, represented
-by `layer: 255` in v7 JSON and `0xFF` in the two-byte action record. The target is
+by `layer: 255` in v7/v8 JSON and `0xFF` in the two-byte action record. The target is
 preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
 Previous layer remembers persistent base selections, ignoring momentary/one-shot
 visits. Repeating a persistent Previous layer action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
-The protocol simulator accepts valid v6 and v7 profiles and round-trips the new
+The protocol simulator accepts only valid v8 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Hardware testing remains necessary for those effects. Bundled `../profiles/*.json`
-files use v7 and are checked against the firmware parser in the regression suite.
+files use v7 JSON and are migrated to v8, then checked against the firmware parser in the regression suite.
+
+## Consumer Hold and Held Scrolling (v8)
+
+**Media / system hold** appears directly after **Media / system**. Switching
+between them preserves the selected 12-bit Control. Repetition depends on the
+host; the newest media action wins without restoring previous holds. Keyboard
+and consumer holds retain their original binding across layers until release.
+
+Scroll offers **Tap/Hold** on keys, chords and the encoder button. It repeats the
+configured step when playback and transport are idle; release stops new repeats.
+Both hold features reject rotation and timed-action slots, including drag/drop
+and clipboard operations. Preview/live-view summaries identify held scrolling
+and media controls. Acceleration is not part of this merged build.
+
+v8 writes Type Text with first byte `0x10`; old type-9 text is decoded according
+to its source version before re-encoding. None remains `00 00`. Binary, JSON,
+draft and raw-device migration cover every binding location, including timers.
+Legacy firmware connects through its frozen editor, while old flash on v8 can
+be read and migrated without being automatically overwritten.
+
+Checked-in releases and the bundled uploader still carry v7 firmware. Testing
+this branch requires an ordinary source build/upload; no v8 release was generated.

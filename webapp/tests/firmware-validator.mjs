@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 
 /** Compile the actual firmware parser once, so codec tests have an independent oracle. */
 export function createFirmwareValidator() {
-  const directory = mkdtempSync(join(tmpdir(), 'macropad-v7-codec-'));
+  const directory = mkdtempSync(join(tmpdir(), 'macropad-v8-codec-'));
   const binary = join(directory, 'validate');
   const source = join(directory, 'validate.c');
   const firmware = fileURLToPath(new URL('../../src/', import.meta.url));
