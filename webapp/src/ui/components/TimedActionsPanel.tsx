@@ -1,4 +1,4 @@
-import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS, TIMED_QUANTIZATION_SECONDS } from '../../model/constants';
+import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
 import { canSwapSlots, capacity, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
 import { canApplyShortcut, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
@@ -52,10 +52,6 @@ export function duration(seconds: number): string {
 export function approximateDuration(ticks: number): string {
   return `≈ ${duration(ticks * TIMED_TICK_SECONDS)}`;
 }
-export function firingRange(ticks: number): string {
-  const seconds = ticks * TIMED_TICK_SECONDS;
-  return `${(seconds - TIMED_QUANTIZATION_SECONDS).toFixed(3)} – ${seconds.toFixed(3)} seconds after start or restart; queued output may be later.`;
-}
 export function clampTicks(value: string): number {
   const number = Number(value);
   return Math.max(1, Math.min(MAX_TIMED_TICKS, Number.isNaN(number) ? 1 : Math.round(number)));
@@ -88,7 +84,7 @@ export function TimedActionsPanel() {
               if (slot?.kind === 'timed') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
             }}><IconTrash /></button>
           </header>
-          <label class="field"><span class="field-label">Interval <output title={firingRange(timer.ticks)}>{approximateDuration(timer.ticks)}</output></span>
+          <label class="field"><span class="field-label">Interval <output>{approximateDuration(timer.ticks)}</output></span>
             <input type="range" min={1} max={MAX_TIMED_TICKS} step={1} value={timer.ticks} aria-label={`Timer ${index + 1} interval ticks`} onInput={(event) => {
               const input = event.target as HTMLInputElement;
               const ticks = clampTicks(input.value);

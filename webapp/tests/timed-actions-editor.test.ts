@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { TimedActionsPanel, approximateDuration, firingRange, clampTicks } from '../src/ui/components/TimedActionsPanel';
+import { TimedActionsPanel, approximateDuration, clampTicks } from '../src/ui/components/TimedActionsPanel';
 import { Inspector } from '../src/ui/components/Inspector';
 import { defaultProfile } from '../src/model/defaults';
 import { computeCapacity } from '../src/model/capacity';
@@ -100,7 +100,7 @@ it('round-trips timer drafts and clipboard actions while rejecting pasted holds'
   expect(loadDraft(0)?.profile).toEqual(profile.value);
 });
 
-it('clamps edits and provides whole-number durations and first-firing ranges', () => {
+it('clamps edits and provides whole-number durations', () => {
   start(); add();
   for (const [value, ticks] of [['444',64], ['0',1], ['-5',1], ['1.5',2], ['',1]] as const) {
     const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
@@ -111,9 +111,7 @@ it('clamps edits and provides whole-number durations and first-firing ranges', (
   }
   expect(clampTicks('Infinity')).toBe(64);
   expect(approximateDuration(64)).toBe('≈ 139 minutes 49 seconds');
-  expect(firingRange(1)).toBe('130.560 – 131.072 seconds after start or restart; queued output may be later.');
-  expect(firingRange(3)).toBe('392.704 – 393.216 seconds after start or restart; queued output may be later.');
-  expect(nodes(TimedActionsPanel()).find(n => n.type === 'output')?.props.title).toBe(firingRange(1));
+  expect(nodes(TimedActionsPanel()).find(n => n.type === 'output')?.props.title).toBeUndefined();
 });
 it('edits consume independently from restart, and undo restores it', () => {
   start(); add();

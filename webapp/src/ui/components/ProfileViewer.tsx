@@ -6,7 +6,7 @@ import { ArchivedFirmwareNotice } from './ArchivedFirmwareNotice';
 import { DeviceView } from './DeviceView';
 import { TopBar } from './TopBar';
 import { Toasts } from './Toasts';
-import { approximateDuration, firingRange } from './TimedActionsPanel';
+import { approximateDuration } from './TimedActionsPanel';
 
 export function ViewerChords() {
   const p = profile.value!;
@@ -32,7 +32,7 @@ export function ViewerTimers() {
     <header class="card-head"><h2>Timed actions</h2><span class="muted">Across all layers</span></header>
     <ul class="viewer-binding-list viewer-timers">
       {timers.map((timer, index) => <li key={index}>
-        <div><strong>Timer {index + 1}</strong><span class="muted" title={`First firing: ${firingRange(timer.ticks)}`}>
+        <div><strong>Timer {index + 1}</strong><span class="muted">
           {timer.resetOnInput ? 'After inactivity · ' : 'Repeats every '}{approximateDuration(timer.ticks)}
         </span></div>
         <div><span class="muted">When fired</span><ActionLabel action={timer.action} /></div>

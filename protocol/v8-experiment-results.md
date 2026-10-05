@@ -2,8 +2,8 @@
 
 ## Combined implementation
 
-Branch: `experiment/v8-merged`. The normal build enables timed-action precision,
-Consumer Hold and held scrolling. Acceleration is disabled by default. Color
+Branch: `experiment/v8-merged`. This build enables timed-action precision,
+Consumer Hold and held scrolling. Acceleration is disabled in this branch. Color
 preview and all existing lighting behavior are preserved.
 
 | Build | Six-key flash | Three-key flash | Free (6/3 key) |
