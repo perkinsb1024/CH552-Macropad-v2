@@ -274,28 +274,69 @@ static void testScrollHold(void) {
     activeConfig[10] = (uint8_t)-2;
     actionsPress(0, 0); actionsPoll(0); actionsPoll(1);
     assert(count == 2 && reports[0][4] == 255 && reports[1][4] == 255);
-    actionsPoll(7); assert(count == 2);
-    actionsPoll(8); actionsPoll(9); assert(count == 4);
-    actionsRelease(0); actionsPoll(16); assert(count == 4);
-    actionsPress(0, 17); actionsRelease(0); actionsPoll(17); actionsPoll(18);
-    assert(count == 6); actionsPoll(30); assert(count == 6);
+    for (uint16_t now = 2; now <= 100; now++) actionsPoll(now);
+    assert(count == 2); // Delay starts after the complete two-report step.
+    for (uint16_t now = 101; now <= 110; now++) actionsPoll(now);
+    assert(count == 4);
+    actionsRelease(0); actionsPoll(220); assert(count == 4);
+    actionsPress(0, 221); actionsRelease(0); actionsPoll(221); actionsPoll(222);
+    assert(count == 6); actionsPoll(330); assert(count == 6);
 
     // A chord scroll holds until either member releases.
     reset(); activeConfig[5] = 2;
     activeConfig[31] = 0; activeConfig[32] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
     activeConfig[33] = 1;
     actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
-    assert(count == 1); actionsPoll(8); assert(count == 2);
-    actionsRelease(1); actionsPoll(16); assert(count == 2);
+    for (uint16_t now = 2; now <= 100; now++) actionsPoll(now);
+    assert(count == 1);
+    for (uint16_t now = 101; now <= 110; now++) actionsPoll(now);
+    assert(count == 2);
+    actionsRelease(1); actionsPoll(220); assert(count == 2);
 
-    // Repeat scheduling retries after transport pressure; configuration clear
-    // stops future repeats. Initial queued step survives a short release.
+    // A one-second hold produces about ten steps, without changing tap behavior.
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = 1;
+    actionsPress(0, 0);
+    for (uint16_t now = 0; now < 1000; now++) actionsPoll(now);
+    assert(count == 10);
+    actionsRelease(0); actionsPoll(1100); assert(count == 10);
+
+    // Completion times survive low-byte and 16-bit millisecond wrap.
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = 1;
+    actionsPress(0, 65520); actionsPoll(65520);
+    for (uint16_t elapsed = 1; elapsed < 100; elapsed++) actionsPoll((uint16_t)(65520 + elapsed));
+    assert(count == 1);
+    for (uint16_t elapsed = 100; elapsed <= 110; elapsed++) actionsPoll((uint16_t)(65520 + elapsed));
+    assert(count == 2);
+
+    // Pointer movement still repeats on its original 8 ms clock.
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = 1; activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X;
+    activeConfig[12] = 1; activeConfig[8] &= 0xF0; // No chord window.
+    actionsPress(0, 0); actionsPress(1, 0);
+    for (uint16_t now = 0; now <= 9; now++) actionsPoll(now);
+    assert(count == 3 && reports[0][4] == 1 && reports[1][2] == 1 && reports[2][2] == 1);
+
+    // No catch-up burst after USB backpressure: one step, then a new delay.
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = 1;
+    actionsPress(0, 0); actionsPoll(0); assert(count == 1);
+    blocked = 1;
+    for (uint16_t now = 1; now < 500; now++) actionsPoll(now);
+    assert(count == 1);
+    blocked = 0; actionsPoll(500); assert(count == 2);
+    for (uint16_t now = 501; now < 600; now++) actionsPoll(now);
+    assert(count == 2);
+    actionsClear(); uint8_t before = count; actionsPoll(700); assert(count == before);
+
+    // Initial queued step survives a short release under transport pressure.
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
     activeConfig[10] = 1; blocked = 1;
     actionsPress(0, 0); actionsRelease(0); actionsPoll(0); assert(!count);
     blocked = 0; actionsPoll(1); assert(count == 1 && reports[0][4] == 1);
     actionsPoll(100); assert(count == 1); actionsClear();
-    uint8_t before = count; actionsPoll(200); assert(count == before);
+    before = count; actionsPoll(200); assert(count == before);
 }
 
 // Drive the real CCW binding path, preserving ordinary one-shot consumption.
@@ -805,6 +846,28 @@ static void testLayerCancelsConsumer(void) {
     assert(reports[count - 1][0] == 5 && reports[count - 1][1] == 0);
 }
 
+static void testMultiClickPlayback(void) {
+    for (uint8_t clicks = 1; clicks <= 16; clicks++) {
+        for (uint8_t pressure = 0; pressure < 2; pressure++) {
+            reset();
+            activeConfig[9] = ((clicks - 1) << 4) | CONFIG_ACTION_MOUSE_CLICK;
+            activeConfig[10] = 7;
+            actionsPress(0, 0);
+            actionsRelease(0); // Playback completes even after a brief physical press.
+            for (uint16_t now = 0; now < 5000; now++) {
+                blocked = pressure && now % 300 < 25;
+                actionsPoll(now);
+            }
+            assert(count == clicks * 2);
+            for (uint8_t i = 0; i < count; i++) {
+                assert(reports[i][0] == 2);
+                assert(reports[i][1] == (i % 2 ? 0 : 7));
+                assert(reports[i][2] == 0 && reports[i][3] == 0 && reports[i][4] == 0);
+            }
+        }
+    }
+}
+
 static void testMouseAndLayerOrder(void) {
     reset();
     activeConfig[9] = CONFIG_ACTION_MOUSE_HOLD;
@@ -823,7 +886,7 @@ static void testMouseAndLayerOrder(void) {
     assert(reports[count - 1][1] == 0);
 
     reset();
-    activeConfig[9] = CONFIG_ACTION_MOUSE_DOUBLE;
+    activeConfig[9] = 0x10 | CONFIG_ACTION_MOUSE_CLICK;
     activeConfig[10] = 1;
     actionsPress(0, 0);
     actionsPoll(0);
@@ -1417,6 +1480,7 @@ int main(void) {
     testRolloverAndSequence();
     testRotationOptions();
     testLayerCancelsConsumer();
+    testMultiClickPlayback();
     testMouseAndLayerOrder();
     return 0;
 }

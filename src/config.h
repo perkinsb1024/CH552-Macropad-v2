@@ -42,7 +42,7 @@
 #define CONFIG_ACTION_KEY_TAP          0x1
 #define CONFIG_ACTION_KEY_HOLD         0x2
 #define CONFIG_ACTION_MOUSE_CLICK      0x3
-#define CONFIG_ACTION_MOUSE_DOUBLE     0x4
+// Type 0x4 is reserved; Mouse click auxiliary encodes click count minus one.
 #define CONFIG_ACTION_MOUSE_HOLD       0x5
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x6
 #define CONFIG_ACTION_SCROLL           0x7

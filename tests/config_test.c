@@ -181,6 +181,53 @@ static void testChords(void) {
     assert(!configValid(activeConfig, CONFIG_THREE_KEYS));
 }
 
+static void testMouseButtonMasks(void) {
+    const uint8_t types[] = {CONFIG_ACTION_MOUSE_CLICK, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_MOUSE_TOGGLE};
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        for (uint8_t action = 0; action < sizeof(types); action++) {
+            for (uint16_t buttons = 0; buttons < 256; buttons++) {
+                testLoadStarterProfile(variant);
+                activeConfig[9] = types[action];
+                activeConfig[10] = buttons;
+                seal();
+                assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
+            }
+        }
+    }
+}
+
+static void testMultiClick(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        uint8_t rotation = 9 + (variant ? 8 : 14);
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            for (uint8_t buttons = 0; buttons < 9; buttons++) {
+                // Key, encoder rotation, chord, expiry and next-input slots.
+                for (uint8_t slot = 0; slot < 5; slot++) {
+                    testLoadStarterProfile(variant);
+                    uint8_t offset = 9;
+                    if (slot == 1) offset = rotation;
+                    if (slot == 2) {
+                        activeConfig[5] |= 2;
+                        offset = configTimedOffset() - 2;
+                        activeConfig[offset - 1] = 0;
+                    }
+                    if (slot >= 3) {
+                        activeConfig[3] |= 1 << 6;
+                        offset = configTimedOffset() + (slot == 3 ? 1 : 3);
+                    }
+                    activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_CLICK;
+                    activeConfig[offset + 1] = buttons;
+                    seal();
+                    assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
+                    activeConfig[offset] = (aux << 4) | 0x4;
+                    seal();
+                    assert(!configValid(activeConfig, variant));
+                }
+            }
+        }
+    }
+}
+
 static void testActions(void) {
     uint8_t type;
     uint8_t param;
@@ -222,7 +269,7 @@ static void testActions(void) {
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();
-        assert(configValid(activeConfig, CONFIG_SIX_KEYS));
+        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != 0x4));
     }
         testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;
@@ -509,6 +556,8 @@ int main(void) {
     testCapacityAndStrings(CONFIG_THREE_KEYS);
     testStringBoundaries();
     testChords();
+    testMouseButtonMasks();
+    testMultiClick();
     testActions();
     return 0;
 }

@@ -105,11 +105,11 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
                    keyboardUsageValid(param);
         case CONFIG_ACTION_MOUSE_CLICK:
-        case CONFIG_ACTION_MOUSE_DOUBLE:
+            return (uint8_t)(param - 1) < 7; // Auxiliary 0–15 means 1–16 clicks.
         case CONFIG_ACTION_MOUSE_HOLD:
         case CONFIG_ACTION_MOUSE_TOGGLE:
             return (!rotation || type != CONFIG_ACTION_MOUSE_HOLD) &&
-                   aux == 0 && param > 0 && param <= 7;
+                   aux == 0 && (uint8_t)(param - 1) < 7;
         case CONFIG_ACTION_SCROLL:
 #if CONFIG_SCROLL_ACCELERATION
             return aux < 7 && (aux & 3) != 3 &&

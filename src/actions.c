@@ -45,7 +45,6 @@ __pdata uint8_t tempSecond;
 __pdata uint8_t tempMouse;
 __data uint8_t tempOn;
 __pdata uint8_t tempReady;
-__pdata uint8_t clicksLeft;
 __pdata uint8_t stringIndex;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 __idata uint8_t timedFraction[CONFIG_TIMED_MAX];
@@ -57,6 +56,7 @@ __idata uint8_t consumerSecond;
 __idata uint8_t consumerOwner; // Winning held input plus one; zero for a tap.
 __pdata uint16_t deadline;
 __pdata uint8_t pointerRepeated;
+__idata uint8_t scrollRepeated; // Low-byte completion time; held steps wait 100 ms.
 #if CONFIG_SCROLL_ACCELERATION
 #define SCROLL_SIMPLE_GROWTH (CONFIG_SCROLL_SLOW_X == 1 && CONFIG_SCROLL_FAST_X == 1 && CONFIG_SCROLL_SLOW_Y == 2 && CONFIG_SCROLL_FAST_Y == 1)
 #define SCROLL_FRACTIONAL (CONFIG_SCROLL_SLOW_Y > 1 || CONFIG_SCROLL_FAST_Y > 1)
@@ -371,6 +371,7 @@ void actionsInit(void) {
   consumerFirst = 0;
   consumerOwner = 0;
   pointerRepeated = 0;
+  scrollRepeated = 0;
 #if CONFIG_SCROLL_ACCELERATION
   scrollFirst = 0;
 #endif
@@ -662,11 +663,12 @@ void actionsPoll(uint16_t now) {
       }
       buttonPressed[i] = 0;
     } else if (c && buttonPressed[i]) {
-      // Pointer hold encodings are adjacent; share repeat eligibility with scroll.
+      // Pointer holds keep their 8 ms cadence; scroll holds have a slower clock.
       if ((uint8_t)(buttonFirst[i] - (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X)) <= 1) {
         movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
 #if CONFIG_SCROLL_HOLD_SUPPORT
-      } else if ((uint8_t)(buttonFirst[i] & ~CONFIG_SCROLL_MODE_MASK) == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL)) {
+      } else if (buttonFirst[i] == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL) &&
+                 (uint8_t)((uint8_t)now - scrollRepeated) >= 100) {
         queueAction(buttonFirst[i], buttonSecond[i], 0);
 #endif
       }
@@ -682,7 +684,6 @@ void actionsPoll(uint16_t now) {
     eventUsed--;
     phase = 0;
     stringIndex = 0;
-    clicksLeft = actionType(currentFirst) == CONFIG_ACTION_MOUSE_DOUBLE ? 2 : 1;
   }
   if (!currentFirst) {
     return;
@@ -699,6 +700,7 @@ void actionsPoll(uint16_t now) {
       } else if (USB_queueMouse(mouseButtons(), 0, 0, delta < 0 ? -1 : 1)) {
         currentSecond = delta < 0 ? delta + 1 : delta - 1;
         if (!currentSecond) {
+          scrollRepeated = now; // Wait after the whole step, including large deltas.
           currentFirst = 0;
         }
       }
@@ -721,8 +723,7 @@ void actionsPoll(uint16_t now) {
         usage = USB_asciiUsage(c);
         tempFirst = CONFIG_ACTION_KEY_TAP | ((usage & 0x80) ? 0x20 : 0);
         tempSecond = usage & 0x7F;
-      } else if (type == CONFIG_ACTION_MOUSE_CLICK ||
-                 type == CONFIG_ACTION_MOUSE_DOUBLE) {
+      } else if (type == CONFIG_ACTION_MOUSE_CLICK) {
         tempMouse = currentSecond;
       }
       tempOn = 1;
@@ -746,7 +747,8 @@ void actionsPoll(uint16_t now) {
     if (type == CONFIG_ACTION_NONE) {
       stringIndex++;
       phase = 0;
-    } else if (--clicksLeft) {
+    } else if (type == CONFIG_ACTION_MOUSE_CLICK && (currentFirst & 0xF0)) {
+      currentFirst -= 0x10; // Count remaining clicks in this playback copy only.
       deadline = now + 200;
       phase = 3;
     } else {
