@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { KEYS, KEY_GROUPS, keyForCode } from '../../keys/keyboard';
 import { ShortcutPills } from './ActionLabel';
 import { MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT } from '../../model/constants';
@@ -18,8 +18,11 @@ const MODS = [
 
 export function KeyPicker({ usage, modifiers, onChange }: Props) {
   const [capturing, setCapturing] = useState(false);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  useEffect(() => {
+  // Keep the listener attached while modifier updates rerender the editor.
+  useLayoutEffect(() => {
     if (!capturing) return;
     const onKey = (e: KeyboardEvent) => {
       e.preventDefault();
@@ -28,10 +31,11 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
       const key = keyForCode(e.code);
       const isModifierOnly = ['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'].includes(e.code);
       if (isModifierOnly) {
-        onChange(0, mods); // keep listening for a main key; releasing leaves modifier-only
+        onChangeRef.current(0, mods); // keep listening for a main key; releasing leaves modifier-only
         return;
       }
-      if (key) onChange(key.usage, mods);
+      if (!key) return; // Unsupported events must not end capture before the main key.
+      onChangeRef.current(key.usage, mods);
       setCapturing(false);
     };
     const onBlur = () => setCapturing(false);
@@ -41,7 +45,7 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('blur', onBlur);
     };
-  }, [capturing, onChange]);
+  }, [capturing]);
 
   return (
     <div class="keypicker">

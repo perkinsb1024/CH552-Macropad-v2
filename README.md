@@ -59,7 +59,7 @@ To use this configuration as a starting point, copy the contents of either the [
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built format v7 firmware is available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. This version adds **Timed actions**, temporary LED effects, and the ability to jump to the previous layer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v7 firmware files are available for [three-key](releases/ch552-macropad-3-key-ed572b98.hex) and [six-key](releases/ch552-macropad-6-key-ed572b98.hex) macropads, built from source revision `ed572b98`. This version adds **Timed actions**, action-based LED control (including dimming and effects), and the ability to jump to the previous layer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
 The current build and upload scripts target **macOS**. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
