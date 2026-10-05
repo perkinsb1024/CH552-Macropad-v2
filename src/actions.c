@@ -51,6 +51,9 @@ __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerReleasePending;
+__idata uint8_t consumerFirst;
+__idata uint8_t consumerSecond;
+__idata uint8_t consumerOwner; // Winning held input plus one; zero for a tap.
 __pdata uint16_t deadline;
 __pdata uint8_t pointerRepeated;
 
@@ -155,6 +158,13 @@ static FW_BIT flushOutputs(void) {
     }
     lastMouse = buttons;
   }
+  if (consumerFirst) {
+    if (!USB_queueConsumer(((uint16_t)consumerFirst >> 4 << 8) | consumerSecond)) {
+      return 0;
+    }
+    consumerFirst = 0;
+    if (!consumerOwner) consumerReleasePending = 1;
+  }
   return 1;
 }
 
@@ -175,8 +185,20 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       firmwareLedAction(second, first >> 4);
       break;
     case CONFIG_ACTION_NONE:
+      if (first) queueAction(first, second, rotation); // Type Text (0x10).
+      break;
     case CONFIG_ACTION_KEY_HOLD:
     case CONFIG_ACTION_MOUSE_HOLD:
+      break;
+    case CONFIG_ACTION_CONSUMER:
+    case CONFIG_ACTION_CONSUMER_HOLD:
+      // Consumers share one latest-wins lane, independent of queued key taps.
+      consumerFirst = first;
+      consumerSecond = second;
+      // A tap interrupts a held usage with a release before its fresh press.
+      if (first & 1) consumerReleasePending = 0;
+      else if (consumerOwner) consumerReleasePending = 1;
+      consumerOwner = (first & 1) ? input + 1 : 0;
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
       layerSelectionPending = 1;
@@ -246,8 +268,8 @@ static void updateLayer(void) {
     eventUsed = 0;
     eventHead = 0;
     eventTail = 0;
-    if (actionType(currentFirst) == CONFIG_ACTION_CONSUMER &&
-        (phase == 4 || phase == 5)) {
+    if (!consumerOwner && (consumerFirst || consumerReleasePending)) {
+      consumerFirst = 0;
       consumerReleasePending = 1;
     }
     currentFirst = 0;
@@ -279,6 +301,8 @@ void actionsInit(void) {
   currentFirst = 0;
   phase = 0;
   consumerReleasePending = 0;
+  consumerFirst = 0;
+  consumerOwner = 0;
   pointerRepeated = 0;
   tempOn = 0;
   tempMouse = 0;
@@ -390,7 +414,8 @@ static void releaseAction(uint8_t input) {
   if (buttonPressed[input]) {
     // Keep a brief hold alive until its press report has been accepted.
     buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
-                           type == CONFIG_ACTION_MOUSE_HOLD ? 2 : 0;
+                           type == CONFIG_ACTION_MOUSE_HOLD ||
+                           type == CONFIG_ACTION_CONSUMER_HOLD ? 2 : 0;
   }
 }
 
@@ -484,7 +509,7 @@ void actionsPoll(uint16_t now) {
   uint8_t type;
   uint8_t c;
   uint8_t usage;
-  uint8_t i;
+  __idata uint8_t i;
   uint8_t slot;
   if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
     resolvePending();
@@ -494,6 +519,11 @@ void actionsPoll(uint16_t now) {
     lastReportGeneration = USB_reportGeneration();
     lastKeyboard[0] = 0xFF;
     lastMouse = 0xFF;
+    if (consumerOwner) {
+      i = consumerOwner - 1;
+      consumerFirst = buttonFirst[i];
+      consumerSecond = buttonSecond[i];
+    }
   }
   if (consumerReleasePending) {
     if (USB_queueConsumer(0)) {
@@ -521,6 +551,10 @@ void actionsPoll(uint16_t now) {
         if (slot == 8) {
           continue; // A brief seventh hold still needs its own press report.
         }
+      }
+      if (consumerOwner == i + 1) {
+        consumerOwner = 0;
+        consumerReleasePending = 1;
       }
       buttonPressed[i] = 0;
     } else if (c && buttonPressed[i] &&
@@ -565,15 +599,11 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
-    } else if (type == CONFIG_ACTION_CONSUMER) {
-      if (USB_queueConsumer(((uint16_t)currentFirst >> 4 << 8) | currentSecond)) {
-        phase = 4;
-      }
     } else {
       tempFirst = currentFirst;
       tempSecond = currentSecond;
       tempMouse = 0;
-      if (type == CONFIG_ACTION_STRING) {
+      if (type == CONFIG_ACTION_NONE) {
         c = configStringChar(currentSecond, stringIndex);
         if (!c) {
           currentFirst = 0;
@@ -604,7 +634,7 @@ void actionsPoll(uint16_t now) {
     if (USB_reportsPending()) {
       return;
     }
-    if (type == CONFIG_ACTION_STRING) {
+    if (type == CONFIG_ACTION_NONE) {
       stringIndex++;
       phase = 0;
     } else if (--clicksLeft) {
@@ -621,11 +651,5 @@ void actionsPoll(uint16_t now) {
         phase = 1;
       }
     }
-  } else if (phase == 4) {
-    if (!USB_reportsPending() && USB_queueConsumer(0)) {
-      phase = 5;
-    }
-  } else if (phase == 5 && !USB_reportsPending()) {
-    currentFirst = 0;
   }
 }

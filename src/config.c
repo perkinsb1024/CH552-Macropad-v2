@@ -95,8 +95,6 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
             if (aux == 15) return 1;
             if (param < CONFIG_LED_INDICATOR_SET) return aux <= 3;
             return aux <= 2;
-        case CONFIG_ACTION_NONE:
-            return aux == 0 && param == 0;
         case CONFIG_ACTION_RELATIVE_LAYER:
             return aux <= 1 && (param <= 6 || param >= 0xFA);
         case CONFIG_ACTION_KEY_TAP:
@@ -116,17 +114,17 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
         case CONFIG_ACTION_MOUSE_Y:
             return aux <= !rotation && param != 0x80;
         case CONFIG_ACTION_CONSUMER:
+        case CONFIG_ACTION_CONSUMER_HOLD:
             // The full 12-bit consumer usage is retained, including its high nibble.
-            return aux != 0 || param != 0;
-        case CONFIG_ACTION_STRING:
-            if (aux || param >= poolUsed) {
-                return 0;
-            }
-            // A valid string starts at the pool beginning or immediately after NUL.
+            return (!rotation || type == CONFIG_ACTION_CONSUMER) &&
+                   (aux != 0 || param != 0);
+        case CONFIG_ACTION_NONE:
+            if (!aux) return param == 0;
+            if (aux != 1 || param >= poolUsed) return 0;
             return param == 0 || image[pool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
             return aux <= 1 && (param < layers ||
-                   (param == CONFIG_LAYER_PREVIOUS && image[2] == CONFIG_VERSION));
+                   param == CONFIG_LAYER_PREVIOUS);
         case CONFIG_ACTION_MOMENTARY_LAYER:
             return aux == 0 && param < layers && !rotation;
         default:
@@ -153,7 +151,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     if (variant != PHYSICAL_VARIANT) return 0;
 #endif
     if (variant > CONFIG_THREE_KEYS || image[0] != 'M' || image[1] != 'P' ||
-        (uint8_t)(image[2] - 6) > 1 ||
+        image[2] != CONFIG_VERSION ||
         ((image[5] & 1) != variant)) {
         return 0;
     }
@@ -167,10 +165,9 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     chords = (image[5] >> 1) & 63;
     // Each product fits a byte after the layer/chord count checks; the sum
     // remains 16-bit so malformed images cannot wrap past the capacity check.
-    timers = image[2] >= 7 ? ((image[3] >> 6) | ((image[4] >> 7) << 2)) : 0;
+    timers = (image[3] >> 6) | ((image[4] >> 7) << 2);
     if (timers > CONFIG_TIMED_MAX) return 0;
-    used = image[4];
-    if (image[2] >= 7) used &= 127;
+    used = image[4] & 127;
     end = 9 + (uint8_t)(size * layers) + (uint8_t)(3 * chords) +
           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)used;
     if (end > CONFIG_SIZE) {
@@ -286,8 +283,7 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
 }
 
 uint8_t configTimedCount(void) {
-    return activeConfig[2] >= 7 ?
-        (activeConfig[3] >> 6) | ((activeConfig[4] >> 7) << 2) : 0;
+    return (activeConfig[3] >> 6) | ((activeConfig[4] >> 7) << 2);
 }
 
 uint8_t configTimedOffset(void) {
@@ -297,7 +293,7 @@ uint8_t configTimedOffset(void) {
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
     uint8_t position = offset + index;
     uint8_t start;
-    if (position < offset || position >= (activeConfig[2] >= 7 ? (activeConfig[4] & 127) : activeConfig[4])) {
+    if (position < offset || position >= (activeConfig[4] & 127)) {
         return 0;
     }
     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();

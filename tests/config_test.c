@@ -212,7 +212,7 @@ static void testActions(void) {
                    type == CONFIG_ACTION_MOUSE_X ||
                    type == CONFIG_ACTION_MOUSE_Y) {
             param = 1;
-        } else if (type == CONFIG_ACTION_CONSUMER) {
+        } else if (type == CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_CONSUMER_HOLD) {
             param = 0xE9;
             activeConfig[9] = 0x08; // Volume up
         } else if (type == CONFIG_ACTION_STRING) {
@@ -351,7 +351,7 @@ static void testPreviousLayerSentinel(void) {
                 activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4);
                 for (uint16_t target = 0; target < 256; target++) {
                     activeConfig[10] = target; seal();
-                    assert(configValid(activeConfig, variant) == (aux <= 1 &&
+                    assert(configValid(activeConfig, variant) == (version == CONFIG_VERSION && aux <= 1 &&
                         (target < configLayerCount() || (version == CONFIG_VERSION && target == CONFIG_LAYER_PREVIOUS))));
                 }
             }
@@ -362,7 +362,47 @@ static void testPreviousLayerSentinel(void) {
     }
 }
 
+static void testConsumerHoldEncoding(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
+        for (uint8_t type = CONFIG_ACTION_CONSUMER; type <= CONFIG_ACTION_CONSUMER_HOLD; type++) {
+            testLoadStarterProfile(variant);
+            for (uint16_t usage = 0; usage < 4096; usage++) {
+                activeConfig[9] = type | ((usage >> 8) << 4);
+                activeConfig[10] = usage;
+                seal(); assert(!!configValid(activeConfig, variant) == !!usage);
+                activeConfig[9] = activeConfig[10] = 0;
+                activeConfig[rotation] = type | ((usage >> 8) << 4);
+                activeConfig[rotation + 1] = usage;
+                seal(); assert(!!configValid(activeConfig, variant) ==
+                    (usage && type == CONFIG_ACTION_CONSUMER));
+                activeConfig[rotation] = CONFIG_ACTION_SCROLL;
+                activeConfig[rotation + 1] = 1;
+            }
+        }
+        testLoadStarterProfile(variant);
+        activeConfig[4] = 2;
+        uint8_t pool = configTimedOffset();
+        activeConfig[pool] = 'A'; activeConfig[pool + 1] = 0;
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            activeConfig[9] = aux << 4; activeConfig[10] = 0;
+            seal(); assert(!!configValid(activeConfig, variant) == (aux <= 1));
+        }
+        activeConfig[3] = 1 << 6;
+        uint8_t timer = configTimedOffset();
+        activeConfig[4] = 0;
+        activeConfig[timer + 1] = CONFIG_ACTION_CONSUMER_HOLD;
+        activeConfig[timer + 2] = 0xE9;
+        seal(); assert(!configValid(activeConfig, variant));
+        // Legacy bytes must never be interpreted using the v8 type allocation.
+        testLoadStarterProfile(variant); activeConfig[2] = 7;
+        activeConfig[9] = 9; activeConfig[10] = 0xE9;
+        seal(); assert(!configValid(activeConfig, variant));
+    }
+}
+
 int main(void) {
+    testConsumerHoldEncoding();
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t timers = 0; timers < 8; timers++) {
             testLoadStarterProfile(variant);
@@ -400,19 +440,19 @@ int main(void) {
         activeConfig[2] = 6;
         activeConfig[3] |= 0xC0; // Old reserved bits are not timer counts.
         seal();
-        assert(configValid(activeConfig, variant) && configTimedCount() == 0);
+        assert(!configValid(activeConfig, variant)); // Legacy requires host migration.
         testLoadStarterProfile(variant);
-        activeConfig[2] = 7;
+        activeConfig[2] = CONFIG_VERSION;
         activeConfig[3] = 1 << 6;
         activeConfig[configTimedOffset()] = 255;
         seal();
         assert(configValid(activeConfig, variant) && configTimedCount() == 1);
         testLoadStarterProfile(variant);
-        activeConfig[2] = 7;
+        activeConfig[2] = CONFIG_VERSION;
         activeConfig[4] = CONFIG_SIZE - (9 + (variant ? 15 : 22));
         seal();
         assert(configValid(activeConfig, variant)); // Full string-pool budget.
-        for (uint8_t version = 8; version <= 9; version++) {
+        for (uint8_t version = CONFIG_VERSION + 1; version <= CONFIG_VERSION + 2; version++) {
             activeConfig[2] = version;
             seal();
             assert(!configValid(activeConfig, variant)); // Superseded local experiments.

@@ -9,6 +9,7 @@ static uint8_t reports[64][9];
 static uint8_t count;
 static uint8_t blocked;
 static uint8_t reportLimit;
+static uint8_t generation;
 
 uint8_t USB_queueKeyboard(const uint8_t *keys) {
     if (blocked || count == reportLimit) {
@@ -49,7 +50,7 @@ uint8_t USB_queueConsumer(uint16_t usage) {
 
 uint8_t USB_reportsPending(void) { return 0; }
 void USB_discardReports(void) {}
-uint8_t USB_reportGeneration(void) { return 0; }
+uint8_t USB_reportGeneration(void) { return generation; }
 uint8_t USB_asciiUsage(uint8_t c) { return c == 'A' ? 0x84 : 0x04; }
 
 static uint16_t ledCalls;
@@ -65,6 +66,83 @@ static void reset(void) {
     blocked = 0;
     reportLimit = 64;
     ledCalls = 0;
+}
+
+static uint16_t lastConsumer(void) {
+    for (uint8_t i = count; i; i--) {
+        if (reports[i - 1][0] == 5)
+            return reports[i - 1][1] | ((uint16_t)reports[i - 1][2] << 8);
+    }
+    assert(0); return 0;
+}
+
+static void testConsumerHolds(void) {
+    reset();
+    activeConfig[9] = 0xF0 | CONFIG_ACTION_CONSUMER_HOLD;
+    activeConfig[10] = 0xFF;
+    activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[12] = 0xEA;
+    actionsPress(0, 0); actionsPoll(0); assert(lastConsumer() == 0xFFF);
+    actionsPress(1, 1); actionsPoll(1); assert(lastConsumer() == 0xEA);
+    uint8_t before = count;
+    actionsRelease(0); actionsPoll(2); assert(count == before);
+    actionsRelease(1); actionsPoll(3); actionsPoll(4); assert(lastConsumer() == 0);
+
+    // Authorized compact policy: no restoration, equally for hold/tap winners.
+    reset(); activeConfig[9] = activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD;
+    activeConfig[10] = 0xE9; activeConfig[12] = 0xEA;
+    actionsPress(0, 0); actionsPoll(0);
+    actionsPress(1, 1); actionsPoll(1);
+    actionsRelease(1); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+    before = count; actionsPoll(100); assert(count == before);
+    actionsRelease(0); actionsPoll(101); assert(count == before);
+
+    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+    activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;
+    actionsPress(0, 0); actionsPoll(0);
+    actionsPress(1, 1); actionsRelease(1); actionsPoll(1);
+    assert(reports[count - 2][1] == 0 && lastConsumer() == 0xE9);
+    actionsPoll(2); assert(lastConsumer() == 0);
+    actionsRelease(0); actionsPoll(3); assert(lastConsumer() == 0);
+    // Repeated same-usage taps each contain a release/press edge.
+    actionsPress(1, 4); actionsRelease(1); actionsPoll(4);
+    assert(lastConsumer() == 0xE9); actionsPoll(5); assert(lastConsumer() == 0);
+
+    // An older pending tap cannot override a newer physical hold under pressure.
+    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER; activeConfig[10] = 0xE9;
+    activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[12] = 0xEA;
+    blocked = 1; actionsPress(0, 0); actionsPoll(0);
+    actionsPress(1, 1); actionsPoll(1); assert(!count);
+    blocked = 0; actionsPoll(2); assert(lastConsumer() == 0xEA);
+    actionsPoll(3); assert(lastConsumer() == 0xEA);
+
+    // A brief hold preserves its press and release through rejected reports.
+    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+    blocked = 1; actionsPress(0, 0); actionsRelease(0); actionsPoll(0);
+    assert(!count); blocked = 0; actionsPoll(1); assert(lastConsumer() == 0xE9);
+    blocked = 1; actionsPoll(2); assert(lastConsumer() == 0xE9);
+    blocked = 0; actionsPoll(3); assert(lastConsumer() == 0);
+
+    // Binding remains owned across a layer change, like keyboard holds.
+    reset(); activeConfig[3] = 1;
+    activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+    actionsPress(0, 0); actionsPoll(0);
+    actionsPress(1, 1); actionsPoll(1); assert(lastConsumer() == 0xE9);
+    actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+
+    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+    actionsPress(0, 0); actionsPoll(0);
+    count = 0; generation++; actionsPoll(1); assert(lastConsumer() == 0xE9);
+    actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+
+    // Either chord member releases the hold; reset clears all output.
+    reset(); activeConfig[5] = 2;
+    activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_CONSUMER_HOLD;
+    activeConfig[33] = 0xE9;
+    actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
+    assert(lastConsumer() == 0xE9);
+    actionsRelease(1); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+    actionsClear(); assert(lastConsumer() == 0);
 }
 
 // Drive the real CCW binding path, preserving ordinary one-shot consumption.
@@ -1060,6 +1138,7 @@ static void testConsumeWake(void) {
 }
 
 int main(void) {
+    testConsumerHolds();
     testConsumeWake();
     reset();
     uint8_t timer = configTimedOffset();
