@@ -48,6 +48,7 @@ __pdata uint8_t tempReady;
 __pdata uint8_t clicksLeft;
 __pdata uint8_t stringIndex;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
+__idata uint8_t timedFraction[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerReleasePending;
@@ -434,17 +435,23 @@ void actionsRotate(uint8_t clockwise) {
 // Prototype: validated rotation-compatible actions, independent virtual toggles.
 void actionsTimedReset(uint8_t tick) {
   timedClock = tick;
-  for (uint8_t i = 0; i < CONFIG_TIMED_MAX; i++) timedAge[i] = 0;
+  for (uint8_t i = 0; i < CONFIG_TIMED_MAX; i++) {
+    timedAge[i] = 0;
+    timedFraction[i] = 0;
+  }
 }
 
 // Tick and physical-input events share record traversal and action dispatch.
-static ACTION_BIT timedEvent(ACTION_BIT tick) {
+static ACTION_BIT timedEvent(__idata uint8_t tick) {
   __pdata uint8_t offset = configTimedOffset();
   ACTION_BIT consume = 0;
   for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t age = timedAge[i];
     uint8_t action = 0;
     if (tick) {
+      // tick is elapsed 512 ms units; each action carries on its own phase.
+      timedFraction[i] += tick;
+      if (timedFraction[i] >= tick) continue;
       timedWork = activeConfig[offset] & CONFIG_TIMED_INTERVAL_MASK;
       if ((age & 127) == timedWork) {
         age = CONFIG_TIMED_RESUME ? 128 : 0;
@@ -458,7 +465,10 @@ static ACTION_BIT timedEvent(ACTION_BIT tick) {
       }
 #endif
       age &= 127;
-      if (CONFIG_TIMED_ALL_RESET || (activeConfig[offset] & 128)) age = 0;
+      if (CONFIG_TIMED_ALL_RESET || (activeConfig[offset] & 128)) {
+        age = 0;
+        timedFraction[i] = 0;
+      }
     }
     timedAge[i] = age;
     if (action) {
@@ -471,9 +481,10 @@ static ACTION_BIT timedEvent(ACTION_BIT tick) {
 }
 
 void actionsTimedPoll(uint8_t tick) {
-  if (tick == timedClock) return;
-  timedClock = tick;
-  timedEvent(1);
+  tick -= timedClock;
+  if (!tick) return;
+  timedClock += tick;
+  timedEvent(tick);
 }
 
 ACTION_BIT actionsTimedInput(void) {

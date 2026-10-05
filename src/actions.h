@@ -6,6 +6,7 @@
 
 #define ACTION_BIT FW_BIT
 
+// Low byte of millis() >> 9: 512 ms ticks, polled at least every 131 seconds.
 void actionsTimedReset(uint8_t tick);
 void actionsTimedPoll(uint8_t tick);
 ACTION_BIT actionsTimedInput(void); // True consumes this physical event.

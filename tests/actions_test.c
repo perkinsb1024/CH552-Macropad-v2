@@ -67,6 +67,52 @@ static void reset(void) {
     ledCalls = 0;
 }
 
+// Existing timer regressions describe coarse intervals. Drive the real fine
+// clock twice by 128 ticks for every requested coarse tick, including wraps.
+static uint8_t testCoarseClock, testFineClock;
+static void resetCoarse(uint8_t tick) {
+    testCoarseClock = tick;
+    testFineClock = 0;
+    actionsTimedReset(0);
+}
+static void pollCoarse(uint8_t tick) {
+    uint8_t elapsed = tick - testCoarseClock;
+    testCoarseClock = tick;
+    while (elapsed--) {
+        testFineClock += 128; actionsTimedPoll(testFineClock);
+        testFineClock += 128; actionsTimedPoll(testFineClock);
+    }
+}
+
+static void testTimedPrecision(void) {
+    reset();
+    uint8_t timer = configTimedOffset();
+    activeConfig[3] = 2 << 6;
+    activeConfig[timer] = 0; // Periodic, independent of physical input.
+    activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
+    activeConfig[timer + CONFIG_TIMED_SIZE] = 128; // Restart on input.
+    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = CONFIG_ACTION_LED_CONTROL;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
+    actionsTimedReset(250);
+    actionsTimedPoll(249); // 255 ticks elapsed across wrap: no early carry.
+    assert(ledCalls == 0);
+    actionsTimedInput(); // Reset only the inactivity timer's fractional phase.
+    actionsTimedPoll(250);
+    assert(ledCalls == (CONFIG_TIMED_ALL_RESET ? 0 : 1));
+    actionsTimedPoll(249); // 255 more ticks, only timer 1 carries here.
+    assert(ledCommand == CONFIG_LED_KEY_SET);
+    assert(ledCalls == 2);
+    // Same fine tick is idempotent; a configuration reset clears both fractions.
+    actionsTimedPoll(249); assert(ledCalls == 2);
+    actionsTimedReset(249);
+    actionsTimedPoll(248); assert(ledCalls == 2);
+    actionsTimedPoll(249); assert(ledCalls == 4);
+}
+
+#define actionsTimedReset resetCoarse
+#define actionsTimedPoll pollCoarse
+
 // Drive the real CCW binding path, preserving ordinary one-shot consumption.
 static void selectLayer(uint8_t target, uint8_t oneShot) {
     uint8_t offset = 9 + 22 * actionsLayer() + 16;
@@ -1060,6 +1106,7 @@ static void testConsumeWake(void) {
 }
 
 int main(void) {
+    testTimedPrecision();
     testConsumeWake();
     reset();
     uint8_t timer = configTimedOffset();
