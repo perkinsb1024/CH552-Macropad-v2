@@ -57,13 +57,25 @@ __idata uint8_t consumerSecond;
 __idata uint8_t consumerOwner; // Winning held input plus one; zero for a tap.
 __pdata uint16_t deadline;
 __pdata uint8_t pointerRepeated;
+#if CONFIG_SCROLL_ACCELERATION
+#define SCROLL_SIMPLE_GROWTH (CONFIG_SCROLL_SLOW_X == 1 && CONFIG_SCROLL_FAST_X == 1 && CONFIG_SCROLL_SLOW_Y == 2 && CONFIG_SCROLL_FAST_Y == 1)
+#define SCROLL_FRACTIONAL (CONFIG_SCROLL_SLOW_Y > 1 || CONFIG_SCROLL_FAST_Y > 1)
+#define scrollContext(first, second, rotation) (((first) & 0x70) | ((second) >> 7) | ((rotation) & 2))
+__idata uint16_t actionsInputNow;
+__idata uint16_t scrollLast;
+__idata uint8_t scrollFirst;
+__idata uint8_t scrollGain;
+#if !SCROLL_SIMPLE_GROWTH && SCROLL_FRACTIONAL
+__idata uint8_t scrollFraction;
+#endif
+#endif
 
 #define actionType(first) ((first) & 15)
 
 static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
-      (rotation && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
-    if (rotation) {
+      ((rotation & 1) && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
+    if (rotation & 1) {
       if (droppedRotation != 255) {
         droppedRotation++;
       }
@@ -72,6 +84,46 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
     }
     return 0; // Reserve room for one action per button during rotation bursts.
   }
+#if CONFIG_SCROLL_ACCELERATION
+  if (rotation != 2) { // Autonomous timers do not participate in the stream.
+    if (actionType(first) != CONFIG_ACTION_SCROLL ||
+        !(first & CONFIG_SCROLL_MODE_MASK) || !second) {
+      scrollFirst = 0;
+    } else {
+      uint8_t magnitude;
+      if (scrollFirst != scrollContext(first, second, rotation) ||
+          (!(first & CONFIG_SCROLL_HOLD) && (uint16_t)(actionsInputNow - scrollLast) >= CONFIG_SCROLL_TIMEOUT_MS)) {
+        scrollGain = 0;
+#if !SCROLL_SIMPLE_GROWTH && SCROLL_FRACTIONAL
+        scrollFraction = 0;
+#endif
+      } else {
+#if SCROLL_SIMPLE_GROWTH
+        // One packed counter: Slow adds half a unit, Fast a whole unit.
+        // Gain 126 already saturates every nonzero base; stop before wrapping.
+        if (scrollGain < 252) scrollGain += (first & 0x20) ? 2 : 1;
+#else
+        __idata uint8_t increment = (first & 0x20) ? CONFIG_SCROLL_FAST_X : CONFIG_SCROLL_SLOW_X;
+#if SCROLL_FRACTIONAL
+        if (++scrollFraction >= ((first & 0x20) ? CONFIG_SCROLL_FAST_Y : CONFIG_SCROLL_SLOW_Y)) {
+          scrollFraction = 0;
+#endif
+          if (scrollGain <= 127 - increment) scrollGain += increment;
+          else scrollGain = 127;
+#if SCROLL_FRACTIONAL
+        }
+#endif
+#endif
+      }
+      scrollFirst = scrollContext(first, second, rotation);
+      scrollLast = actionsInputNow;
+      magnitude = (int8_t)second < 0 ? -second : second;
+      magnitude += SCROLL_SIMPLE_GROWTH ? scrollGain >> 1 : scrollGain;
+      if (magnitude > 127) magnitude = 127;
+      second = (int8_t)second < 0 ? -magnitude : magnitude;
+    }
+  }
+#endif
   eventData[eventHead][0] = first;
   eventData[eventHead][1] = second;
   eventHead = (eventHead + 1) & (EVENT_COUNT - 1);
@@ -174,6 +226,16 @@ static void updateLayer(void);
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
   uint8_t selectedLayer = baseLayer;
+#if CONFIG_SCROLL_ACCELERATION
+  if (input >= 9) rotation = 2;
+  else {
+    if (rotation && input == 8) rotation = 3;
+    if (actionType(first) != CONFIG_ACTION_SCROLL ||
+        !(first & CONFIG_SCROLL_MODE_MASK) || !second ||
+        scrollFirst != scrollContext(first, second, rotation))
+      scrollFirst = 0;
+  }
+#endif
   if (input >= 9) selectedLayer = effectiveLayer;
   else if (oneShotReturnLayer != 0xFF) {
     baseLayer = oneShotReturnLayer;
@@ -263,6 +325,9 @@ static void updateLayer(void) {
       return;
     }
     effectiveLayer = next;
+#if CONFIG_SCROLL_ACCELERATION
+    scrollFirst = 0;
+#endif
     for (i = 0; i < TOGGLE_INPUTS; i++) {
       latchedMouse[i] = 0;
     }
@@ -305,6 +370,9 @@ void actionsInit(void) {
   consumerFirst = 0;
   consumerOwner = 0;
   pointerRepeated = 0;
+#if CONFIG_SCROLL_ACCELERATION
+  scrollFirst = 0;
+#endif
   tempOn = 0;
   tempMouse = 0;
   lastMouse = 0;
@@ -367,6 +435,9 @@ void actionsPress(uint8_t input, uint16_t now) {
     return;
   }
   inputDown |= 1 << input;
+#if CONFIG_SCROLL_ACCELERATION
+  actionsInputNow = now;
+#endif
   if (input < keys && chordPartner[input]) {
     return; // A chord cannot retrigger until both of its keys have been released.
   }
@@ -399,6 +470,9 @@ void actionsPress(uint8_t input, uint16_t now) {
     for (other = 0; other < keys; other++) {
       if (configChord(effectiveLayer, input, other, &first, &second)) {
         pendingInput = input + 1;
+#if CONFIG_SCROLL_ACCELERATION
+        scrollFirst = 0; // A pending chord is a distinct physical trigger.
+#endif
         pendingLayer = effectiveLayer;
         pendingSince = now;
         return;
@@ -412,6 +486,10 @@ void actionsPress(uint8_t input, uint16_t now) {
 
 static void releaseAction(uint8_t input) {
   uint8_t type = actionType(buttonFirst[input]);
+#if CONFIG_SCROLL_ACCELERATION
+  if (type == CONFIG_ACTION_SCROLL && (buttonFirst[input] & CONFIG_SCROLL_HOLD))
+    scrollFirst = 0;
+#endif
   if (buttonPressed[input]) {
     // Keep a brief hold alive until its press report has been accepted.
     buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
@@ -471,7 +549,11 @@ static ACTION_BIT timedEvent(__idata uint8_t tick) {
   __pdata uint8_t offset = configTimedOffset();
   ACTION_BIT consume = 0;
   for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
+#if CONFIG_SCROLL_ACCELERATION
+    __idata uint8_t age = timedAge[i];
+#else
     uint8_t age = timedAge[i];
+#endif
     uint8_t action = 0;
     if (tick) {
       // tick is elapsed 512 ms units; each action carries on its own phase.
@@ -513,7 +595,13 @@ void actionsTimedPoll(uint8_t tick) {
 }
 
 ACTION_BIT actionsTimedInput(void) {
+#if CONFIG_SCROLL_ACCELERATION
+  ACTION_BIT consumed = timedEvent(0);
+  if (consumed) scrollFirst = 0;
+  return consumed;
+#else
   return timedEvent(0);
+#endif
 }
 
 void actionsPoll(uint16_t now) {
@@ -522,6 +610,11 @@ void actionsPoll(uint16_t now) {
   uint8_t usage;
   __idata uint8_t i;
   uint8_t slot;
+#if CONFIG_SCROLL_ACCELERATION
+  actionsInputNow = now;
+  if (!(scrollFirst & CONFIG_SCROLL_HOLD) &&
+      (uint16_t)(now - scrollLast) >= CONFIG_SCROLL_TIMEOUT_MS) scrollFirst = 0;
+#endif
   if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
     resolvePending();
     updateLayer();
@@ -572,6 +665,11 @@ void actionsPoll(uint16_t now) {
                (buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X) ||
                 buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y))) {
       movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
+#if CONFIG_SCROLL_HOLD_SUPPORT
+    } else if (c && buttonPressed[i] &&
+               (buttonFirst[i] & ~CONFIG_SCROLL_MODE_MASK) == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL)) {
+      queueAction(buttonFirst[i], buttonSecond[i], 0);
+#endif
     }
   }
   if (!flushOutputs()) {

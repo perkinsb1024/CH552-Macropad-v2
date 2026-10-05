@@ -46,6 +46,32 @@
 #define CONFIG_ACTION_MOUSE_HOLD       0x5
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x6
 #define CONFIG_ACTION_SCROLL           0x7
+#define CONFIG_SCROLL_HOLD             0x40
+#define CONFIG_SCROLL_MODE_MASK        0x30
+#ifndef CONFIG_SCROLL_HOLD_SUPPORT
+#define CONFIG_SCROLL_HOLD_SUPPORT 1
+#endif
+#ifndef CONFIG_SCROLL_ACCELERATION
+#define CONFIG_SCROLL_ACCELERATION 1
+#endif
+#ifndef CONFIG_SCROLL_SLOW_X
+#define CONFIG_SCROLL_SLOW_X 1
+#endif
+#ifndef CONFIG_SCROLL_SLOW_Y
+#define CONFIG_SCROLL_SLOW_Y 2
+#endif
+#ifndef CONFIG_SCROLL_FAST_X
+#define CONFIG_SCROLL_FAST_X 1
+#endif
+#ifndef CONFIG_SCROLL_FAST_Y
+#define CONFIG_SCROLL_FAST_Y 1
+#endif
+#ifndef CONFIG_SCROLL_TIMEOUT_MS
+#define CONFIG_SCROLL_TIMEOUT_MS 200
+#endif
+#if CONFIG_SCROLL_SLOW_X < 1 || CONFIG_SCROLL_SLOW_X > 8 || CONFIG_SCROLL_FAST_X < 1 || CONFIG_SCROLL_FAST_X > 8 || CONFIG_SCROLL_SLOW_Y < 1 || CONFIG_SCROLL_SLOW_Y > 8 || CONFIG_SCROLL_FAST_Y < 1 || CONFIG_SCROLL_FAST_Y > 8
+#error Scroll acceleration X/Y presets must be in the range 1-8
+#endif
 #define CONFIG_ACTION_CONSUMER         0x8
 #define CONFIG_ACTION_CONSUMER_HOLD    0x9
 // Full first byte: type None with auxiliary value 1.

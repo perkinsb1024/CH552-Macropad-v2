@@ -5,6 +5,9 @@
 #include "firmware_types.h"
 
 #define ACTION_BIT FW_BIT
+// Main loop publishes input time before encoder dispatch when acceleration is
+// enabled. Button dispatch and output polling also synchronize this clock.
+extern __idata uint16_t actionsInputNow;
 
 // Low byte of millis() >> 9: 512 ms ticks, polled at least every 131 seconds.
 void actionsTimedReset(uint8_t tick);

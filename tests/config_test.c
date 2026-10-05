@@ -401,8 +401,47 @@ static void testConsumerHoldEncoding(void) {
     }
 }
 
+static void testScrollHoldValidation(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        testLoadStarterProfile(variant);
+        activeConfig[9] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
+        activeConfig[10] = 1; seal(); assert(configValid(activeConfig, variant));
+        activeConfig[10] = 0x80; seal(); assert(!configValid(activeConfig, variant));
+        activeConfig[9] = activeConfig[10] = 0;
+        uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
+        activeConfig[rotation] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
+        activeConfig[rotation + 1] = 1;
+        seal(); assert(!configValid(activeConfig, variant));
+        testLoadStarterProfile(variant); activeConfig[3] = 1 << 6;
+        uint8_t timer = configTimedOffset();
+        activeConfig[timer + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
+        activeConfig[timer + 2] = 1;
+        seal(); assert(!configValid(activeConfig, variant));
+        testLoadStarterProfile(variant); activeConfig[5] = variant | 2;
+        uint8_t chord = configTimedOffset() - 3;
+        activeConfig[chord] = 0;
+        activeConfig[chord + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
+        activeConfig[chord + 2] = 1;
+        seal(); assert(configValid(activeConfig, variant));
+#if CONFIG_SCROLL_ACCELERATION
+        testLoadStarterProfile(variant);
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            activeConfig[9] = CONFIG_ACTION_SCROLL | (aux << 4);
+            activeConfig[10] = 1;
+            seal(); assert(!!configValid(activeConfig, variant) == (aux < 7 && (aux & 3) != 3));
+            activeConfig[9] = activeConfig[10] = 0;
+            activeConfig[rotation] = CONFIG_ACTION_SCROLL | (aux << 4);
+            activeConfig[rotation + 1] = 1;
+            seal(); assert(!!configValid(activeConfig, variant) == (aux < 3));
+            activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
+        }
+#endif
+    }
+}
+
 int main(void) {
     testConsumerHoldEncoding();
+    testScrollHoldValidation();
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t timers = 0; timers < 8; timers++) {
             testLoadStarterProfile(variant);
