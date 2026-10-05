@@ -14,8 +14,9 @@ Only the timed-action clock changed: both initialization and polling now use
 Shared uptime alignment remains: first firing may be up to 131.072 seconds early,
 while subsequent repetitions use the full interval. Earlier local v7 timer bytes
 were superseded. The v7 editor, codecs, JSON, simulator, v6 migration, bundled
-profiles and protocol documentation are now implemented; hardware validation
-remains pending. See [config-v7.md](config-v7.md).
+profiles and protocol documentation are now implemented; feature-behavior hardware
+validation remains pending. Stack validation is complete, with 36 bytes peak
+observed usage under heavy workloads (see the stack measurements below). See [config-v7.md](config-v7.md).
 
 | Variant | Flash used | Flash free | Stack capacity |
 | --- | ---: | ---: | ---: |
@@ -92,8 +93,9 @@ to `__idata`. `lastMouse` and `rainbowChanged` also move to `__idata` to maintai
 valid internal allocation. The six USB/protocol boolean flags formerly in
 xRAM now use native bit-addressable RAM. The final 128-tick build allocates 29
 bits (four physical bytes) to bit storage, including compiler temporaries.
-Stack capacity is the linker's reserved space, not a measured peak-use result;
-hardware validation is still pending.
+Stack capacity is the linker's reserved space for these historical builds.
+Subsequent [hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom.
 
 ## Optimizations retained
 

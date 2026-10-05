@@ -48,7 +48,8 @@ xRAM grows by four bytes per variant (baseline 617/626): one byte each for curre
 phase, speed, indicator policy, and key policy. This unpacked array produces smaller
 code than the initially explored packed state. Policies use internal Configured=3,
 while the action wire value remains F. Stack figures are the linker's available
-region, not a measured hardware high-water mark. Flash headroom is tight.
+region for those historical builds. Subsequent [hardware validation](#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads. Flash headroom is tight.
 
 Successful `pio run -t releases` exports:
 
@@ -85,43 +86,22 @@ Stack and xRAM usage are unchanged by that reassignment.
 The drift state uses three/six bytes of indirect internal RAM. Moving the hue and
 frame timer from xRAM into direct internal RAM and deriving each falling color
 ramp by complementing the rising ramp offsets the added flash cost. The stack
-region is smaller than the previous 138 bytes; host checks do not measure hardware
-stack usage. Host renderer checks cover both variants, smooth transitions across
+region is smaller than the previous 138 bytes. Subsequent
+[hardware validation](#stack-usage-hardware-validation) measured 36 bytes peak
+observed stack usage under heavy workloads. Host renderer checks cover both variants, smooth transitions across
 drift and timer wraps, unchanged fixed presets, saved-preset previews, and reset.
 Build outputs are temporary; checked-in release artifacts were preserved.
 
-### Stack usage still needs hardware validation
+### Stack usage hardware validation
 
-Behavior appears stable during user testing, but explicit stack usage has not
-been validated on hardware. The 123-byte six-key and 126-byte three-key stack
-regions describe available capacity, not measured headroom. Passing host tests
-and firmware builds does not establish that the stack cannot overflow.
+Hardware validation is complete: the user measured a peak observed stack usage
+of **36 bytes**, even under heavy workloads. Against the current documented
+120-byte six-key and 123-byte three-key linker capacities, this leaves
+**84–87 bytes** of headroom. The earlier capacity figures in this document are
+historical build measurements; the hardware result is a subsequent validation.
 
-Possible validation steps:
-
-1. Build a temporary diagnostic firmware for each variant. Use its own linker
-   map to identify the stack region, since instrumentation can change the layout.
-2. Add a stack watermark: fill unused stack memory with a recognizable pattern
-   in early startup, before interrupts are enabled. Preserve live stack entries
-   and all allocated RAM; do not fill the entire region from an ordinary function
-   while its own call frames occupy it.
-3. Exercise simultaneous USB/HID traffic, configuration reads and saves, color
-   previews, rainbow drift, layer changes, chords/macros, and key/encoder input.
-   Include startup, USB reset/reconnect, and invalid-configuration recovery.
-4. Inspect the watermark using a debugger or a temporary diagnostic readout.
-   Record the deepest observed stack usage and remaining untouched bytes for
-   both variants. Include interrupt stack usage; sampling the stack pointer in
-   the main loop alone can miss brief peaks.
-5. Optionally place a canary near the upper stack boundary and check it during
-   testing. Treat it as an additional tripwire, not proof of safety: overflow
-   may corrupt execution before the check runs.
-6. Review generated assembly and interrupt handlers for worst-case call depth
-   and saved registers. Compare that estimate with the measurements, retain a
-   margin, and record the firmware revision, toolchain, and exercised scenarios.
-
-Watermark results establish the peak observed under the tested workload, not a
-guarantee for every execution path. Account for any layout or stack-use changes
-introduced by diagnostic code when assessing the normal firmware.
+The 36-byte result is the peak observed under the tested workloads. Linker
+capacity figures continue to describe available space rather than runtime usage.
 
 ## Optimizations retained
 
@@ -206,7 +186,9 @@ the internal validation truth value, checking only the sign of validated nonzero
 relative steps, and storing the relative flag as a byte to avoid SDCC boolean
 conversion overhead. Toggle shares the packed policy-pair comparison already
 used for relative preset matching. No existing lighting features were removed.
-Stack regions are linker capacity, not measured hardware usage.
+Stack regions are historical linker capacities. Subsequent
+[hardware validation](#stack-usage-hardware-validation) measured 36 bytes peak
+observed usage under heavy workloads.
 
 Host suites pass, including both variants and all 4,096 payloads (116 valid).
 Toggle tests cover all four selectable presets from every policy pair, repeated
@@ -274,7 +256,9 @@ before using the existing relative cycle saves 16 bytes, reducing the net cost t
 RAM allocation and were not retained.
 
 RAM allocation and stack capacity are unchanged. Stack capacity is the linker's
-allocation, not measured peak use. Both production builds passed the memory-layout
+allocation; subsequent [hardware validation](#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads, leaving 84–87 bytes
+of headroom against these capacities. Both production builds passed the memory-layout
 checks. Build outputs were kept in temporary directories; release files were not
 regenerated.
 

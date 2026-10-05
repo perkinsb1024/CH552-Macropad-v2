@@ -106,8 +106,9 @@ is 660 bytes above the 148-byte USB reservation, with 216 bytes above the final
 allocation. Three-key uses 102 + 529 allocated bytes and has 225 bytes above the
 final allocation. Paged storage does not consume internal stack RAM, although
 changed compiler temporaries reduce reported stack capacity from 128 to 122 bytes
-on six-key and from 131 to 125 on three-key. These are capacities, not measured
-worst-case stack usage.
+on six-key and from 131 to 125 on three-key. These are historical linker capacities.
+Subsequent [hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom.
 
 ### Shared timer path
 
@@ -195,7 +196,9 @@ Fresh before/after temporary builds at the normal 14,336-byte limit measured:
 
 PSEG increases from 102 to 108 bytes. Ordinary XSEG decreases by six bytes
 (538 → 532 on six-key, 529 → 523 on three-key), leaving the final RAM address
-unchanged. Stack capacities are linker capacities, not measured peak usage.
+unchanged. Stack capacities are historical linker capacities; subsequent
+[hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads.
 The complete host regression suite and both boards' build/layout checks pass.
 No hardware testing or release generation was performed.
 

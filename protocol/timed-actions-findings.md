@@ -138,9 +138,11 @@ CSEG module differences account for it: sketch/input integration +56, configurat
 parsing/validation/string addressing +350, action dispatch/scheduler +408. Thus
 the timer counter alone is not responsible for most of the cost.
 
-Stack figures describe linker capacity, not measured worst-case usage. Recursive
-call/interrupt depth and hardware behavior would still need validation before
-shipping even a size-compliant implementation.
+Stack figures describe linker capacity for these historical prototypes. Subsequent
+[hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom
+in the tested firmware. These results do not establish hardware behavior for each
+experimental prototype.
 
 ## RAM and optimizations
 

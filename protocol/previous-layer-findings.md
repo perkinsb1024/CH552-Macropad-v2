@@ -22,7 +22,9 @@ in either variant. Parameter 7 is no longer accepted as a previous-layer target.
 Limit: 14,336 bytes. One new `__data` byte remembers the prior layer; stack
 capacity decreases by one byte. Paged RAM remains 108 bytes and external RAM
 remains 526/517 bytes (six/three). Contiguous external free RAM is unchanged at
-222/231 bytes. These are linker capacities, not peak-stack measurements.
+222/231 bytes. These are historical linker capacities. Subsequent
+[hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom.
 
 The initial `__idata` prototype used 56 more flash bytes and decreased stack by
 two bytes. Reusing an existing local compiled identically. Inspecting the map
@@ -94,7 +96,9 @@ layers. The simulator round-trips the target through configuration transport.
 No additional firmware changes or flash/RAM bytes were needed for the editor work.
 The historical measurements above predate subsequent LED changes; current free
 flash is 135 bytes (three keys) and 131 bytes (six keys), with stack capacities
-123/120 bytes. No physical-device tests were performed as part of this completion.
+123/120 bytes. No physical-device tests were performed as part of that completion;
+subsequent [hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads.
 
 ## Verification
 

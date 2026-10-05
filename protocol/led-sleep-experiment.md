@@ -64,7 +64,9 @@ The six-key baseline was freshly rebuilt in a separate temporary source copy;
 the three-key baseline matches the recorded working toggle measurement. Both new
 firmware builds fail the linker size check. No flash-limit increase was used.
 xRAM is unchanged; the additional direct RAM byte reduces available stack region
-by one byte. These stack figures are linker capacity, not measured usage.
+by one byte. These stack figures are historical linker capacities. Subsequent
+[hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads in the tested firmware.
 
 Temporary results are in `/private/tmp/macropad-led-sleep/0/firmware.mem` (six-key)
 and `/private/tmp/macropad-led-sleep/three/firmware.mem` (three-key), which may be

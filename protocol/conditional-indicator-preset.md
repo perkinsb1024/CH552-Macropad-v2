@@ -43,8 +43,10 @@ Both linker checks failed. The six-key result exceeded the user's approximately
 16-byte over-limit cutoff, so the prototype was removed without optimization work.
 Against this baseline, at least 20 bytes must be recovered to fit both variants;
 additional headroom would be preferable. These costs are toolchain/source dependent,
-not a guarantee for later revisions. Stack regions are linker capacity, not measured
-hardware headroom. Persistent xRAM usage did not increase.
+not a guarantee for later revisions. Stack regions are historical linker capacities.
+Subsequent [hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads in the tested firmware.
+Persistent xRAM usage did not increase.
 
 ## Firmware changes
 

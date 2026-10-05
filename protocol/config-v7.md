@@ -453,5 +453,7 @@ bindings. All 128 bytes remain available; trailing bytes are CRC-covered.
 
 Final firmware measurements are 14,165 used / 171 free bytes for six keys and
 14,161 used / 175 free for three keys, against a 14,336-byte limit. Stack capacity
-is 121/124 bytes (six/three); these are linker capacities, not measured peak use.
+is 121/124 bytes (six/three) for these historical builds. Subsequent
+[hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
+measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom.
 See [implementation measurements](timed-alert-findings.md) for preserved prototypes.
