@@ -10,6 +10,9 @@ configurator to edit experiment-only action encodings.
 | --- | ---: | ---: | ---: | ---: |
 | Baseline | 14,263 | 14,259 | 0 / 0 | 73 / 77 |
 | Held scrolling only | 14,343 | 14,341 | +80 / +82 | -7 / -5 |
+| Held scrolling + initial acceleration | 14,817 | 14,815 | +554 / +556 | -481 / -479 |
+| Held scrolling + packed default presets | 14,785 | 14,783 | +522 / +524 | -449 / -447 |
+| Held scrolling + Y=1, Slow X=1 / Fast X=2 | 14,815 | 14,813 | +552 / +554 | -479 / -477 |
 
 Held scrolling adds no persistent state: PSEG 108, XSEG 526 / 517, DSEG 128,
 ISEG 9 / 6, BSEG 30 bits, stack reserve 120 / 123 bytes, matching baseline.
@@ -33,3 +36,47 @@ Temporary builds: `/private/tmp/macropad-v8-builds/scroll-hold-only/`.
 
 Flash priority: retain held scrolling before acceleration. If combined firmware
 does not fit, remove acceleration first. No hardware flashing performed.
+
+## Acceleration milestone
+
+Default acceleration's incremental cost over the isolated held-scrolling
+milestone is **442 flash bytes**. It adds six persistent indirect-RAM bytes:
+the published input clock, last accepted event timestamp, stream context, and
+packed gain counter. Linked areas are PSEG 108, XSEG 526 / 517, DSEG 127,
+ISEG 15 / 12, BSEG 33 bits, stack reserve 113 / 116 bytes. Compiler scratch and
+bit allocation also change; area figures should not be mistaken for just the
+new persistent state.
+
+Modes: Off=0, Slow=1, Fast=2 in the low two auxiliary bits; hold uses bit 2.
+Other values reject. The initial firmware presets are +1 every two subsequent
+events for Slow and +1 every subsequent event for Fast. X/Y constants support
+1–8; the common initial presets use one packed half-step counter instead of a
+separate spacing byte. Alternative constants select the general algorithm.
+Y=1 with different X values is not smaller than the packed defaults in this
+build, so simplifying presets alone does not solve the flash shortfall.
+
+Maximum resulting magnitude is 127. Input timeout is a firmware constant of
+200 ms. Ordinary releases do not reset repeated scroll taps; releasing a scroll
+hold stops repeats and resets its stream. A continuously held scrolling key
+does not expire solely because USB playback takes more than 200 ms. Other input
+triggers still reset gain. Holds and non-held physical Scroll Steps participate;
+timed actions use their configured unaccelerated step without affecting the
+physical stream, even if their action bytes contain an acceleration mode.
+
+Stream context includes mode, hold flag, output sign, and physical wheel
+direction. A reversal resets even when both detents map to the same output sign.
+Switching base magnitudes within the same context applies existing gain to the
+new base; configuration/layer changes explicitly reset. This avoids a redundant
+stored base byte. Each accepted event computes its delta once before queueing;
+USB retries and individual unit reports never advance gain. Dropped events do
+not add gain, but different-context physical triggers reset even if dropped.
+Pending chord input also resets the stream; chord holds can then build gain
+through their generated repeats. Non-held repeated chords may restart at base
+because their pending key presses are distinct intervening physical triggers.
+
+All host suites pass with default presets and alternative X/Y presets (Slow
+X=2/Y=3, Fast X=3/Y=2). Added tests cover fractional growth, maximum saturation,
+inactivity boundary, clock wrap, mode/sign changes, no-op triggers, physical
+reversal with identical output signs, queue drops, timer isolation, and held
+repeat acceleration. Both hardware builds pass RAM layout. Default artifact
+path: `/private/tmp/macropad-v8-builds/scroll-packed-final/`.

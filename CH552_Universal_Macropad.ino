@@ -485,6 +485,9 @@ void loop() {
   }
 #endif
   // Process due timers before physical input so resume/input actions win this frame.
+#if CONFIG_SCROLL_ACCELERATION
+  actionsInputNow = now;
+#endif
   if (activeConfigValid) actionsTimedPoll(clock >> 17);
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     scanButton(i, now);

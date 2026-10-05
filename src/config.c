@@ -110,7 +110,16 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
             return (!rotation || type != CONFIG_ACTION_MOUSE_HOLD) &&
                    aux == 0 && param > 0 && param <= 7;
         case CONFIG_ACTION_SCROLL:
+#if CONFIG_SCROLL_ACCELERATION
+            return aux < 7 && (aux & 3) != 3 &&
+                   (!rotation || !(aux & 4)) && param != 0x80 &&
+                   (CONFIG_SCROLL_HOLD_SUPPORT || !(aux & 4));
+#elif CONFIG_SCROLL_HOLD_SUPPORT
             return !(aux & ~4) && (!rotation || !aux) && param != 0x80;
+#else
+            if (aux) return 0;
+            // Fall through: legacy scroll and pointer share the delta bound.
+#endif
         case CONFIG_ACTION_MOUSE_X:
         case CONFIG_ACTION_MOUSE_Y:
             return aux <= !rotation && param != 0x80;

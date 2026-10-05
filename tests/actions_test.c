@@ -67,6 +67,84 @@ static void reset(void) {
     ledCalls = 0;
 }
 
+#if CONFIG_SCROLL_ACCELERATION
+extern uint8_t currentFirst, eventUsed;
+static int16_t drainScroll(uint16_t now) {
+    int16_t total = 0;
+    for (uint8_t t = 0; t < 128; t++) {
+        count = 0; actionsPoll(now + t);
+        for (uint8_t i = 0; i < count; i++) {
+            if (reports[i][0] == 2) total += (int8_t)reports[i][4];
+        }
+        if (!currentFirst && !eventUsed) return total;
+    }
+    assert(0); return 0;
+}
+static int16_t scrollTap(uint16_t now) {
+    actionsPress(0, now); actionsRelease(0);
+    return drainScroll(now);
+}
+static void testScrollAcceleration(void) {
+    reset(); activeConfig[9] = 0x10 | CONFIG_ACTION_SCROLL; activeConfig[10] = 2;
+    assert(scrollTap(0) == 2);
+    assert(scrollTap(150) == 2 + (1 / CONFIG_SCROLL_SLOW_Y) * CONFIG_SCROLL_SLOW_X);
+    assert(scrollTap(300) == 2 + (2 / CONFIG_SCROLL_SLOW_Y) * CONFIG_SCROLL_SLOW_X);
+    assert(scrollTap(500) == 2); // Exactly 200 ms resets.
+    // Non-scroll no-op triggers and mode/base changes reset independently.
+    activeConfig[11] = activeConfig[12] = 0;
+    actionsPress(1, 501); actionsRelease(1); assert(scrollTap(502) == 2);
+    activeConfig[9] = 0x20 | CONFIG_ACTION_SCROLL;
+    assert(scrollTap(503) == 2);
+    assert(scrollTap(650) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+    activeConfig[10] = (uint8_t)-2; assert(scrollTap(800) == -2);
+    assert(scrollTap(950) == -(2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X));
+    // Counter and signed magnitude saturate, never wrap or produce -128.
+    for (uint16_t n = 2; n < 1100; n++) {
+        int16_t expected = 2 + (n / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X;
+        if (expected > 127) expected = 127;
+        assert(scrollTap((uint16_t)(800 + n * 150)) == -expected);
+    }
+    // A fine timestamp wrap preserves a short continuous sequence.
+    actionsInit(); activeConfig[10] = 2;
+    assert(scrollTap(65520) == 2);
+    assert(scrollTap(134) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+    actionsPoll(334); assert(scrollTap(335) == 2);
+    // Opposite physical detents reset even if mapped to identical scroll signs.
+    reset(); activeConfig[23] = activeConfig[25] = 0x20 | CONFIG_ACTION_SCROLL;
+    activeConfig[24] = activeConfig[26] = 2;
+    actionsInputNow = 0; actionsRotate(1); assert(drainScroll(0) == 2);
+    actionsInputNow = 150; actionsRotate(1);
+    assert(drainScroll(150) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+    actionsInputNow = 300; actionsRotate(0); assert(drainScroll(300) == 2);
+    // Off terminates the stream. Dropped detents never add gain; reversal still
+    // terminates it when a waiting keyboard action consumes rotation capacity.
+    activeConfig[25] = CONFIG_ACTION_SCROLL; actionsInputNow = 450;
+    actionsRotate(0); assert(drainScroll(450) == 2);
+    actionsInputNow = 600; actionsRotate(1); assert(drainScroll(600) == 2);
+    activeConfig[9] = CONFIG_ACTION_KEY_TAP; activeConfig[10] = 4;
+    actionsPress(0, 601); actionsRelease(0);
+    actionsInputNow = 602; actionsRotate(0); assert(actionsDropped(1) == 1);
+    drainScroll(602);
+    actionsInputNow = 750; actionsRotate(1); assert(drainScroll(750) == 2);
+    // Timed scroll output is isolated from the physical stream.
+    reset(); activeConfig[9] = 0x20 | CONFIG_ACTION_SCROLL; activeConfig[10] = 2;
+    assert(scrollTap(0) == 2);
+    activeConfig[3] = 1 << 6;
+    uint8_t timer = configTimedOffset(); activeConfig[timer] = 0;
+    activeConfig[timer + 1] = 0x20 | CONFIG_ACTION_SCROLL;
+    activeConfig[timer + 2] = 2;
+    actionsTimedReset(0); actionsInputNow = 50; actionsTimedPoll(1);
+    assert(drainScroll(50) == 2);
+    assert(scrollTap(150) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+    // Scroll-hold repeats accelerate, and either release stops future repeats.
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | 0x20 | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = 1;
+    actionsPress(0, 0); assert(drainScroll(0) == 1);
+    assert(drainScroll(8) == 1 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+    actionsRelease(0); assert(drainScroll(30) == 0);
+}
+#endif
+
 static void testScrollHold(void) {
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
     activeConfig[10] = (uint8_t)-2;
@@ -1089,6 +1167,9 @@ static void testConsumeWake(void) {
 }
 
 int main(void) {
+#if CONFIG_SCROLL_ACCELERATION
+    testScrollAcceleration();
+#endif
     testScrollHold();
     testConsumeWake();
     reset();

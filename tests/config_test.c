@@ -384,6 +384,19 @@ static void testScrollHoldValidation(void) {
         activeConfig[chord + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
         activeConfig[chord + 2] = 1;
         seal(); assert(configValid(activeConfig, variant));
+#if CONFIG_SCROLL_ACCELERATION
+        testLoadStarterProfile(variant);
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            activeConfig[9] = CONFIG_ACTION_SCROLL | (aux << 4);
+            activeConfig[10] = 1;
+            seal(); assert(!!configValid(activeConfig, variant) == (aux < 7 && (aux & 3) != 3));
+            activeConfig[9] = activeConfig[10] = 0;
+            activeConfig[rotation] = CONFIG_ACTION_SCROLL | (aux << 4);
+            activeConfig[rotation + 1] = 1;
+            seal(); assert(!!configValid(activeConfig, variant) == (aux < 3));
+            activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
+        }
+#endif
     }
 }
 
