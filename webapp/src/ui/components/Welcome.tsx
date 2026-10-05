@@ -14,8 +14,11 @@ export function Welcome() {
         </div>
         <h2>Configure your macropad</h2>
         <p>
-          Bind keys, chords and the encoder across five layers on six-key pads or seven on three-key pads, pick LED colors, and save
+          Bind key presses, chords and the encoder across multiple layers, pick LED colors, and save
           everything to the device. Settings live on the macropad, so nothing here needs to run afterwards.
+        </p>
+        <p>
+          Not sure how to start? Read the <a href="https://github.com/perkinsb1024/CH552-Macropad-v2/blob/main/documentation/Configuration%20Overview.md" target="_blank" rel="noopener noreferrer">Configuration Overview</a> to get up to speed.
         </p>
 
         {!hidSupported && (
