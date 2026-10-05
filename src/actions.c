@@ -527,6 +527,9 @@ void actionsPoll(uint16_t now) {
                (buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X) ||
                 buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y))) {
       movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
+    } else if (c && buttonPressed[i] &&
+               buttonFirst[i] == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL)) {
+      queueAction(buttonFirst[i], buttonSecond[i], 0);
     }
   }
   if (!flushOutputs()) {

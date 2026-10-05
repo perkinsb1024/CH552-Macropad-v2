@@ -46,6 +46,7 @@
 #define CONFIG_ACTION_MOUSE_HOLD       0x5
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x6
 #define CONFIG_ACTION_SCROLL           0x7
+#define CONFIG_SCROLL_HOLD             0x40
 #define CONFIG_ACTION_CONSUMER         0x8
 #define CONFIG_ACTION_STRING           0x9
 #define CONFIG_ACTION_SET_LAYER        0xA

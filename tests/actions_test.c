@@ -67,6 +67,35 @@ static void reset(void) {
     ledCalls = 0;
 }
 
+static void testScrollHold(void) {
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = (uint8_t)-2;
+    actionsPress(0, 0); actionsPoll(0); actionsPoll(1);
+    assert(count == 2 && reports[0][4] == 255 && reports[1][4] == 255);
+    actionsPoll(7); assert(count == 2);
+    actionsPoll(8); actionsPoll(9); assert(count == 4);
+    actionsRelease(0); actionsPoll(16); assert(count == 4);
+    actionsPress(0, 17); actionsRelease(0); actionsPoll(17); actionsPoll(18);
+    assert(count == 6); actionsPoll(30); assert(count == 6);
+
+    // A chord scroll holds until either member releases.
+    reset(); activeConfig[5] = 2;
+    activeConfig[31] = 0; activeConfig[32] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[33] = 1;
+    actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
+    assert(count == 1); actionsPoll(8); assert(count == 2);
+    actionsRelease(1); actionsPoll(16); assert(count == 2);
+
+    // Repeat scheduling retries after transport pressure; configuration clear
+    // stops future repeats. Initial queued step survives a short release.
+    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+    activeConfig[10] = 1; blocked = 1;
+    actionsPress(0, 0); actionsRelease(0); actionsPoll(0); assert(!count);
+    blocked = 0; actionsPoll(1); assert(count == 1 && reports[0][4] == 1);
+    actionsPoll(100); assert(count == 1); actionsClear();
+    uint8_t before = count; actionsPoll(200); assert(count == before);
+}
+
 // Drive the real CCW binding path, preserving ordinary one-shot consumption.
 static void selectLayer(uint8_t target, uint8_t oneShot) {
     uint8_t offset = 9 + 22 * actionsLayer() + 16;
@@ -1060,6 +1089,7 @@ static void testConsumeWake(void) {
 }
 
 int main(void) {
+    testScrollHold();
     testConsumeWake();
     reset();
     uint8_t timer = configTimedOffset();
