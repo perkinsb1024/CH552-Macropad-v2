@@ -54,6 +54,24 @@ Remarkably, due to having a smaller fixed-layer byte size (and therefore more po
 
 To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click **Import from Clipboard** in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
 
+## Firmware Version History
+
+Below are the the primary firmware features added with each version
+
+| Firmware version | Primary features added |
+| --- | --- |
+| [v8](protocol/config-v8.md) | - Maximum **Timed action** error is improved from ~131s to 512ms<br> - **Media / system hold** keeps a consumer control held until release (useful for brightness and volume)<br> - **Scroll** gains **Hold**, with 100ms between repeated step groups<br> - **Mouse click** supports 1–16 clicks through **Single / Double / Custom**, replacing the separate **Mouse double-click** action. |
+| [v7](protocol/config-v7.md) | - Up to four **Timed actions**, repeating or restarted by input, with optional **On next input** actions and **Consume this input**<br> - **Set all LEDs** adds temporary bright/dim colors or rainbow, always on or blinking 1–8 times<br> - **Previous layer** becomes a target for persistent and one-shot layer switching. |
+| [v6](protocol/config-v6.md) | - **LED control** actions adjust brightness, rainbow spacing and speed during use, with relative steps, common brightness presets, **Toggle preset on/off**, and configured restores<br> - **Variable — Scattered colors** adds independently drifting rainbow colors. |
+| [v5](protocol/config-v5.md) | - Configurable global **Rainbow phase spacing** and **Rainbow speed**, with four choices for each. |
+| [v4](protocol/config-v4.md) | - More layers: up to five on six-key macropads or seven on three-key macropads. **Relative layer** offsets expand to −6 through +6. |
+| [v3](protocol/config-v3.md) | - **On for 1.5 seconds** replaces **Blink once** for **Layer indicator**<br> - **Off** key colors can be transparent, letting the idle layer lighting show through<br> - **Rainbow** becomes available for timed and blinking layer indications. |
+| [v2](protocol/config-v2.md) | - **Full Brightness** / **Dim** layer indicators<br> - Global chords<br> - Signed **Relative layer** steps and one-shot layer switching<br> - Held pointer movement<br> - On-device color previews<br> - *This was the first format with a published firmware release and archived configurator* |
+| v1 (initial prototype) | - Browser configuration over WebHID, with profiles saved on the device<br> - Up to four layers<br> - Independent key, wheel-button and wheel-direction bindings<br> - Two-key chords<br> - Keyboard, mouse, media and **Type text** actions<br> - Per-key colors and layer indications, including **Rainbow** lighting. |
+
+Older firmware uses its matching [archived configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/).
+The current editor can import older profiles and migrate them before saving v8.
+
 ## How to Compile the Firmware
 
 > [!NOTE]
@@ -209,7 +227,7 @@ No local web app installation is needed. Open the [Macropad Configurator](https:
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-Configuration format 8 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. Each timer has its own phase: clock quantization is less than 512 ms early, with possible additional playback/USB delay. Configuration records remain five bytes.
+Configuration format 8 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. Each timer has its own phase: clock quantization is less than 512ms early, with possible additional playback/USB delay. Configuration records remain five bytes.
 
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
@@ -217,13 +235,13 @@ holds are not restored. Keyboard and consumer holds continue across layer change
 until their physical input releases. **Scroll** offers **Tap/Hold** on keys, chords and
 the wheel button; rotation and timers remain single steps. Release stops new
 scroll repeats while already accepted steps finish. Held scrolling waits at
-least 100 ms after each complete step, giving about ten steps per second at
-step 1; pointer holds retain their 8 ms interval. Acceleration is available
+least 100ms after each complete step, giving about ten steps per second at
+step 1; pointer holds retain their 8ms interval. Acceleration is available
 only on its [separate experiment branch](protocol/v8-scroll-experiment.md).
 
 **Mouse click** offers **Single / Double / Custom**. **Custom** shows a slider for
 3–16 clicks. The selected mouse buttons are pressed and released for each click,
-with a 200 ms pause between clicks. **Custom** remembers its last count per action
+with a 200ms pause between clicks. **Custom** remembers its last count per action
 slot when switching modes and shows an estimated duration rounded to one decimal.
 The sequence delays subsequent queued actions; holds, media and layer/LED actions
 use independent handling. Legacy double-click bindings (v7 and earlier) migrate to
