@@ -54,7 +54,7 @@ uint16_t configCrc(const __xdata uint8_t *image) {
         }
         crc ^= (uint16_t)image[i] << 8;
         for (bit = 0; bit < 8; bit++) {
-            _Bool high = (crc & 0x8000) != 0;
+            uint8_t high = (uint8_t)(crc >> 8) & 0x80;
             crc <<= 1;
             if (high) crc ^= 0x1021;
         }
@@ -64,8 +64,11 @@ uint16_t configCrc(const __xdata uint8_t *image) {
 
 static FW_BIT keyboardUsageValid(uint8_t usage) {
     // HID keyboard non-modifier usages supported by the US layout mapper.
-    return usage == 0 || ((uint8_t)(usage - 0x04) <= 0x61) ||
-           ((uint8_t)(usage - 0x68) <= 0x0B);
+    if (!usage) return 1;
+    usage -= 0x04;
+    if (usage <= 0x61) return 1;
+    usage -= 0x64;
+    return usage <= 0x0B;
 }
 
 static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,

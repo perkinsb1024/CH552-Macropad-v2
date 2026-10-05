@@ -1,5 +1,37 @@
 # V8 firmware experiments
 
+## Combined implementation
+
+Branch: `experiment/v8-merged`. The normal build enables timed-action precision,
+Consumer Hold and held scrolling. Acceleration is disabled by default. Color
+preview and all existing lighting behavior are preserved.
+
+| Build | Six-key flash | Three-key flash | Free (6/3 key) |
+| --- | ---: | ---: | ---: |
+| Initial combined implementation, acceleration on | 14,879 | 14,875 | -543 / -539 |
+| Optimized combined implementation, acceleration on | 14,667 | 14,665 | -331 / -329 |
+| Optimized combined implementation, acceleration off (default) | 14,325 | 14,323 | 11 / 13 |
+
+The default build adds seven persistent RAM bytes (four timer fractions and
+three consumer state bytes). RAM areas are PSEG 108, XSEG 526 / 517, DSEG 127,
+ISEG 16 / 13, BSEG 26 bits, stack reserve 112 / 115 bytes. Acceleration adds
+six more persistent bytes; its linked ISEG is 23 / 20 and stack reserve 106 / 109.
+
+Optimizations keep action types and stream contexts eight-bit, narrow consumer
+ownership comparisons, assemble consumer usages without an intermediate
+16-bit right shift, share repeat eligibility, simplify timer clock updates and
+keyboard validation, and avoid CRC boolean-conversion overhead. Host suites
+pass with acceleration both enabled and disabled. Two USB queue trials were
+discarded: direct critical wrappers were rejected by SDCC's nested-critical
+rules, and deriving report lengths saved RAM but no flash.
+
+Standalone milestone costs remain recorded below and in the consumer/scroll
+experiment reports. Combined costs are not additive because compiler allocation
+and shared optimizations change when features are linked together. The default
+combined build is not compatible with the unchanged v7 configurator; v8 UI and
+migration are the next implementation step. Acceleration testing is isolated to
+its own experiment branch.
+
 Baseline: `196e81e`. Flash capacity: 14,336 bytes. Measurements use ordinary
 temporary builds of both fixed hardware geometries, never release generation.
 Oversized diagnostic builds use a relaxed linker ceiling solely to measure cost;

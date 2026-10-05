@@ -60,7 +60,7 @@ __pdata uint8_t pointerRepeated;
 #if CONFIG_SCROLL_ACCELERATION
 #define SCROLL_SIMPLE_GROWTH (CONFIG_SCROLL_SLOW_X == 1 && CONFIG_SCROLL_FAST_X == 1 && CONFIG_SCROLL_SLOW_Y == 2 && CONFIG_SCROLL_FAST_Y == 1)
 #define SCROLL_FRACTIONAL (CONFIG_SCROLL_SLOW_Y > 1 || CONFIG_SCROLL_FAST_Y > 1)
-#define scrollContext(first, second, rotation) (((first) & 0x70) | ((second) >> 7) | ((rotation) & 2))
+#define scrollContext(first, second, rotation) ((uint8_t)(((first) & 0x70) | ((second) >> 7) | ((rotation) & 2)))
 __idata uint16_t actionsInputNow;
 __idata uint16_t scrollLast;
 __idata uint8_t scrollFirst;
@@ -70,7 +70,7 @@ __idata uint8_t scrollFraction;
 #endif
 #endif
 
-#define actionType(first) ((first) & 15)
+#define actionType(first) ((uint8_t)((first) & 15))
 
 static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
@@ -91,7 +91,8 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
       scrollFirst = 0;
     } else {
       uint8_t magnitude;
-      if (scrollFirst != scrollContext(first, second, rotation) ||
+      uint8_t context = scrollContext(first, second, rotation);
+      if (scrollFirst != context ||
           (!(first & CONFIG_SCROLL_HOLD) && (uint16_t)(actionsInputNow - scrollLast) >= CONFIG_SCROLL_TIMEOUT_MS)) {
         scrollGain = 0;
 #if !SCROLL_SIMPLE_GROWTH && SCROLL_FRACTIONAL
@@ -101,7 +102,7 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
 #if SCROLL_SIMPLE_GROWTH
         // One packed counter: Slow adds half a unit, Fast a whole unit.
         // Gain 126 already saturates every nonzero base; stop before wrapping.
-        if (scrollGain < 252) scrollGain += (first & 0x20) ? 2 : 1;
+        if (scrollGain < 252) scrollGain += (uint8_t)((first & 0x20) ? 2 : 1);
 #else
         __idata uint8_t increment = (first & 0x20) ? CONFIG_SCROLL_FAST_X : CONFIG_SCROLL_SLOW_X;
 #if SCROLL_FRACTIONAL
@@ -115,7 +116,7 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
 #endif
 #endif
       }
-      scrollFirst = scrollContext(first, second, rotation);
+      scrollFirst = context;
       scrollLast = actionsInputNow;
       magnitude = (int8_t)second < 0 ? -second : second;
       magnitude += SCROLL_SIMPLE_GROWTH ? scrollGain >> 1 : scrollGain;
@@ -212,7 +213,7 @@ static FW_BIT flushOutputs(void) {
     lastMouse = buttons;
   }
   if (consumerFirst) {
-    if (!USB_queueConsumer(((uint16_t)consumerFirst >> 4 << 8) | consumerSecond)) {
+    if (!USB_queueConsumer(((uint16_t)(consumerFirst >> 4) << 8) | consumerSecond)) {
       return 0;
     }
     consumerFirst = 0;
@@ -588,10 +589,9 @@ static ACTION_BIT timedEvent(__idata uint8_t tick) {
 }
 
 void actionsTimedPoll(uint8_t tick) {
-  tick -= timedClock;
-  if (!tick) return;
-  timedClock += tick;
-  timedEvent(tick);
+  uint8_t elapsed = tick - timedClock;
+  timedClock = tick;
+  if (elapsed) timedEvent(elapsed);
 }
 
 ACTION_BIT actionsTimedInput(void) {
@@ -656,20 +656,20 @@ void actionsPoll(uint16_t now) {
           continue; // A brief seventh hold still needs its own press report.
         }
       }
-      if (consumerOwner == i + 1) {
+      if (consumerOwner == (uint8_t)(i + 1)) {
         consumerOwner = 0;
         consumerReleasePending = 1;
       }
       buttonPressed[i] = 0;
-    } else if (c && buttonPressed[i] &&
-               (buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X) ||
-                buttonFirst[i] == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y))) {
-      movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
+    } else if (c && buttonPressed[i]) {
+      // Pointer hold encodings are adjacent; share repeat eligibility with scroll.
+      if ((uint8_t)(buttonFirst[i] - (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X)) <= 1) {
+        movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
 #if CONFIG_SCROLL_HOLD_SUPPORT
-    } else if (c && buttonPressed[i] &&
-               (buttonFirst[i] & ~CONFIG_SCROLL_MODE_MASK) == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL)) {
-      queueAction(buttonFirst[i], buttonSecond[i], 0);
+      } else if ((uint8_t)(buttonFirst[i] & ~CONFIG_SCROLL_MODE_MASK) == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL)) {
+        queueAction(buttonFirst[i], buttonSecond[i], 0);
 #endif
+      }
     }
   }
   if (!flushOutputs()) {
