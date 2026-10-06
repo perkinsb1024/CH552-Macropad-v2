@@ -54,6 +54,8 @@ the matching v9 editor before installing a v10 test image.
    busy USB/output queues. If using the stack diagnostic, record the observed
    peak against the 75/78-byte capacities; these are linker capacities rather
    than measured worst-case stack usage.
+   The [v10 stack sanity check](../Stack%20Test/README.md) supplies the diagnostic,
+   reader and a single workload profile adapted to each board variant.
 7. In the editor, enter an arbitrary duration such as 300 seconds (rounds to
    299.008), select the maximum interval (8,388.608), reorder layers, and remove
    a timer's assigned layer. Removal should require explicit reassignment and

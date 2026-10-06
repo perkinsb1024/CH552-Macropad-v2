@@ -1,0 +1,339 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 10,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "transparentBlack": true,
+  "chordWindowMs": 40,
+  "rainbowPhaseDegrees": 60,
+  "rainbowSpeed": "fast",
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "keyHold",
+          "usage": 4,
+          "modifiers": 0
+        },
+        {
+          "type": "keyTap",
+          "usage": 5,
+          "modifiers": 2
+        },
+        {
+          "type": "string",
+          "text": "T!a \n"
+        },
+        {
+          "type": "scroll",
+          "delta": 127,
+          "hold": true,
+          "horizontal": false
+        },
+        {
+          "type": "scroll",
+          "delta": -127,
+          "hold": false,
+          "horizontal": false
+        },
+        {
+          "type": "consumerHold",
+          "usage": 234
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": 127,
+        "hold": false,
+        "horizontal": false
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": -127,
+        "hold": false,
+        "horizontal": false
+      },
+      "leds": [
+        "Orange",
+        "Orange",
+        "Orange",
+        "Orange",
+        "Orange",
+        "Orange"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 0,
+      "indicatorColor": 2,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "momentaryLayer",
+          "layer": 3
+        },
+        {
+          "type": "oneShotRelativeLayer",
+          "offset": 1
+        },
+        {
+          "type": "ledControl",
+          "command": "effectBlink8",
+          "value": 15
+        },
+        {
+          "type": "scroll",
+          "delta": 127,
+          "hold": true,
+          "horizontal": true
+        },
+        {
+          "type": "scroll",
+          "delta": -127,
+          "hold": false,
+          "horizontal": true
+        },
+        {
+          "type": "consumer",
+          "usage": 233
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": 127,
+        "hold": false,
+        "horizontal": true
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": -127,
+        "hold": false,
+        "horizontal": true
+      },
+      "leds": [
+        "Yellow",
+        "Yellow",
+        "Yellow",
+        "Yellow",
+        "Yellow",
+        "Yellow"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 1,
+      "indicatorColor": 4,
+      "indicatorFullBrightness": true
+    },
+    {
+      "keys": [
+        {
+          "type": "setLayer",
+          "layer": 0
+        },
+        {
+          "type": "ledControl",
+          "command": "rainbowPhaseRelative",
+          "value": 1
+        },
+        {
+          "type": "ledControl",
+          "command": "commonPresetToggle",
+          "value": 2
+        },
+        {
+          "type": "consumerHold",
+          "usage": 234
+        },
+        {
+          "type": "scroll",
+          "delta": -127,
+          "hold": true,
+          "horizontal": false
+        },
+        {
+          "type": "string",
+          "text": "T!a \n"
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": 127,
+        "hold": false,
+        "horizontal": false
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": -127,
+        "hold": false,
+        "horizontal": false
+      },
+      "leds": [
+        "Leaf",
+        "Leaf",
+        "Leaf",
+        "Leaf",
+        "Leaf",
+        "Leaf"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 2,
+      "indicatorColor": 6,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        {
+          "type": "keyHold",
+          "usage": 6,
+          "modifiers": 2
+        },
+        {
+          "type": "ledControl",
+          "command": "restoreAll",
+          "value": 0
+        },
+        {
+          "type": "ledControl",
+          "command": "effectOn",
+          "value": 10
+        },
+        {
+          "type": "scroll",
+          "delta": -127,
+          "hold": true,
+          "horizontal": true
+        },
+        {
+          "type": "keyTap",
+          "usage": 7,
+          "modifiers": 0
+        },
+        {
+          "type": "none"
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": 127,
+        "hold": false,
+        "horizontal": true
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": -127,
+        "hold": false,
+        "horizontal": true
+      },
+      "leds": [
+        "Cyan",
+        "Cyan",
+        "Cyan",
+        "Cyan",
+        "Cyan",
+        "Cyan"
+      ],
+      "bootloaderFromRun": false,
+      "indicatorBehavior": 3,
+      "indicatorColor": 8,
+      "indicatorFullBrightness": true
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        0,
+        1
+      ],
+      "global": true,
+      "action": {
+        "type": "string",
+        "text": "T!a \n"
+      }
+    },
+    {
+      "layer": 0,
+      "keys": [
+        0,
+        2
+      ],
+      "global": false,
+      "action": {
+        "type": "oneShotSetLayer",
+        "layer": 3
+      }
+    }
+  ],
+  "timedActions": [
+    {
+      "ticks": 1,
+      "resetOnInput": false,
+      "consumeInput": false,
+      "action": {
+        "type": "ledControl",
+        "command": "rainbowPhaseRelative",
+        "value": 1
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "rainbowSpeedRelative",
+        "value": 1
+      }
+    },
+    {
+      "layer": 1,
+      "ticks": 2,
+      "resetOnInput": false,
+      "consumeInput": false,
+      "action": {
+        "type": "ledControl",
+        "command": "effectOn",
+        "value": 15
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "effectRestore",
+        "value": 0
+      }
+    },
+    {
+      "ticks": 3,
+      "resetOnInput": true,
+      "consumeInput": false,
+      "action": {
+        "type": "ledControl",
+        "command": "effectBlink8",
+        "value": 10
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "restoreAll",
+        "value": 0
+      }
+    }
+  ],
+  "localMetadata": {
+    "profileName": "v10 stack sanity",
+    "layerNames": [
+      "Mash 1",
+      "Mash 2",
+      "Mash 3",
+      "Mash 4"
+    ]
+  }
+}

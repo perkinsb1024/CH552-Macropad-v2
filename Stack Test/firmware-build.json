@@ -1,0 +1,29 @@
+{
+  "builtUtc": "2026-10-06T06:05:35.624733+00:00",
+  "baseRevision": "45d3f2b8fb17bd6f97309175955ecb671692352a",
+  "uncommittedChanges": true,
+  "formatVersion": 10,
+  "diagnostic": "GET_STATUS appends stack base/highest",
+  "files": {
+    "6-key-stack-test-firmware.hex": "5f05f4271a133116b24946cc050c7681e0d645e9c9bbf4ef4cb8229f5cc0137e",
+    "6-key-stack-test-firmware.map": "bd0d8d3b36cec446c3703c6a946f39676cf2058b1d44e1e46c65f312dacc3475",
+    "6-key-stack-test-firmware.mem": "96e42aafbe06c846cb75127fb124f0ebbc5925c7fd0dba769c25fb2464ab2acb",
+    "3-key-stack-test-firmware.hex": "65f379ea27cd389e546db8481061e3492e0c8e523e006b270e557b3baba92b5f",
+    "3-key-stack-test-firmware.map": "d662f6d2aae7945eb9d93f461d7a146566c9867fd5f0559a1e4b396a8393a990",
+    "3-key-stack-test-firmware.mem": "ffa95f8ddd0b68faec9a963bfb93f947e86fb40efb58c2fdadc351415bf00f20"
+  },
+  "measurements": [
+    {
+      "keys": 6,
+      "flash": 14332,
+      "spare": 4,
+      "stack": 75
+    },
+    {
+      "keys": 3,
+      "flash": 14330,
+      "spare": 6,
+      "stack": 78
+    }
+  ]
+}

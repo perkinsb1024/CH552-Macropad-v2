@@ -152,6 +152,8 @@ Memory in the current v10 source builds, in bytes:
 
 Hardware validation under heavy workloads (using firmware v7) recorded a peak stack usage of only 36 bytes (which occurred during boot, USB set up and initialization).
 The [stack validation instructions and diagnostic code](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v7/Stack%20Test/README.md) are available on the `validation/stack-usage-test-v7` branch.
+The current [v10 stack sanity check](Stack%20Test/README.md) provides one mash-friendly
+profile per hardware variant and verified diagnostic builds with unchanged stack capacity.
 
 ### Build Release HEX Files for Both Variants
 

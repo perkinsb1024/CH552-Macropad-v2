@@ -1,0 +1,48 @@
+Compiling sketch.c
+Compiling config.c
+Compiling actions.c
+Compiling storage.c
+Compiling protocol_firmware.c
+Compiling USBHIDKeyboardMouse.c
+Compiling USBconstant.c
+Compiling USBhandler.c
+Compiling main.c
+Compiling HardwareSerial0.c
+Compiling HardwareSerial0ISR.c
+Compiling HardwareSerial1.c
+Compiling HardwareSerial1ISR.c
+Compiling Print-float.c
+Compiling Print.c
+Compiling USBCDC.c
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/hardware/mcs51/0.0.25/cores/ch55xduino/USBCDC.c:1: warning 190: ISO C forbids an empty source file
+Compiling USBconstant.c
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/hardware/mcs51/0.0.25/cores/ch55xduino/USBconstant.c:1: warning 190: ISO C forbids an empty source file
+Compiling USBhandler.c
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/hardware/mcs51/0.0.25/cores/ch55xduino/USBhandler.c:1: warning 190: ISO C forbids an empty source file
+Compiling WInterrupts.c
+Compiling WMath.c
+Compiling debug_util.c
+Compiling eeprom.c
+Compiling genericPrintSerial0.c
+Compiling genericPrintSerial0Float.c
+Compiling genericPrintSerial1.c
+Compiling genericPrintSerial1Float.c
+Compiling genericPrintUSBSerial.c
+Compiling genericPrintUSBSerialFloat.c
+Compiling weakOverride.c
+Compiling weakOverrideGPIO.c
+Compiling weakOverrideTimer2.c
+Compiling wiring.c
+/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/wiring.c:144: warning 59: function 'millis' must return value
+Compiling wiring_analog.c
+Compiling wiring_digital.c
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/hardware/mcs51/0.0.25/variants/ch552/pins_arduino.h:99: warning 158: overflow in implicit constant conversion
+Compiling wiring_pulsein.c
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/hardware/mcs51/0.0.25/cores/ch55xduino/wiring_pulsein.c:271: warning 59: function 'pulseIn' must return value
+Compiling digitalReadDirectLut.c
+/Users/benperkins/Library/Arduino15/packages/CH55xDuino/hardware/mcs51/0.0.25/cores/ch55xduino/directGpioLut/digitalReadDirectLut.c:86: warning 59: function 'digitalReadDirectLutAddrAndCarryReturn' must return value
+Compiling digitalWriteDirectLut.c
++ /Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/bin/sdar rcs /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core.lib /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_HardwareSerial0.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_HardwareSerial0ISR.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_HardwareSerial1.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_HardwareSerial1ISR.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_Print-float.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_Print.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_USBCDC.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_USBconstant.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_USBhandler.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_WInterrupts.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_WMath.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_debug_util.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_eeprom.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_genericPrintSerial0.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_genericPrintSerial0Float.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_genericPrintSerial1.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_genericPrintSerial1Float.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_genericPrintUSBSerial.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_genericPrintUSBSerialFloat.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_weakOverride.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_weakOverrideGPIO.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_weakOverrideTimer2.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_wiring.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_wiring_analog.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_wiring_digital.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_wiring_pulsein.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_digitalReadDirectLut.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_digitalWriteDirectLut.rel
+Compiling optionalLink_WS2812_P3_4.c
++ /Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/bin/sdcc --nostdlib -L/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True -L/Users/benperkins/Library/Arduino15/packages/CH55xDuino/tools/sdcc/build.13407_4/share/sdcc/lib/small_int_calc_stack_auto --code-size 14336 --xram-size 876 --xram-loc 148 -mmcs51 -DCH552 /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/sketch.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/config.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/actions.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/protocol_firmware.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/storage.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core_main.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/hid_USBHIDKeyboardMouse.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/hid_USBconstant.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/hid_USBhandler.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/ws2812_p34.rel /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/core.lib -lmcs51 -llibsdcc -lliblong -lliblonglong -llibint -llibfloat --out-fmt-ihx -o /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/firmware.ihx
+Firmware: /var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-v10-stack-pzkd3jkv/6-key-True/firmware.hex

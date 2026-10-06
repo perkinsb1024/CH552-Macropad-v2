@@ -31,6 +31,18 @@ __idata __at (0x0C) volatile uint8_t timer0_overflow_count_5th_byte = 0;
 void Timer0Interrupt(void) __interrupt(INT_NO_TMR0) __using(1);
 
 void main(void) {
+#if ENABLE_STACK_TEST
+  // After C RAM initialization, before init() enables interrupts. main is
+  // entered by LJMP, with SP at the linker stack base minus one. No frames.
+  __asm
+    mov r0,sp
+    inc r0
+  00090$:
+    mov @r0,#0xa5
+    inc r0
+    cjne r0,#0,00090$
+  __endasm;
+#endif
   init();
   setup();
   for (;;) {

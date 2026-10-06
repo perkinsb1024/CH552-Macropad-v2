@@ -116,13 +116,43 @@ static uint8_t processRequest(void) {
         protocolReply[9 + i] = protocolInfo[i];
       break;
     case PROTOCOL_GET_STATUS:
+#if ENABLE_STACK_TEST
+      protocolReply[7] = 8;
+#else
       protocolReply[7] = 6;
+#endif
       protocolReply[9] = flashValid;
       protocolReply[10] = activeConfigValid ? actionsLayer() : 0;
       protocolReply[11] = activeConfigValid ? configStartupLayer() : 0;
       protocolReply[12] = uploadState;
       protocolReply[13] = actionsDropped(0);
       protocolReply[14] = actionsDropped(1);
+#if ENABLE_STACK_TEST
+      // Diagnostic status appends stack base and highest non-A5 address.
+      // Inline scan preserves EA in carry and adds no RAM or call frame.
+      __asm
+        .globl __start__stack
+        mov c,_EA
+        clr _EA
+        mov r0,#0xff
+      00090$:
+        mov a,@r0
+        xrl a,#0xa5
+        jnz 00091$
+        dec r0
+        mov a,r0
+        xrl a,#(__start__stack - 1)
+        jnz 00090$
+      00091$:
+        mov dptr,#(_protocolReply + 15)
+        mov a,#__start__stack
+        movx @dptr,a
+        inc dptr
+        mov a,r0
+        movx @dptr,a
+        mov _EA,c
+      __endasm;
+#endif
       break;
     case PROTOCOL_READ_FLASH:
     case PROTOCOL_READ_ACTIVE:
