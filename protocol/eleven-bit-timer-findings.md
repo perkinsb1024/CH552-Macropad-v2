@@ -153,7 +153,7 @@ The artifacts above are historical experiment builds: they advertise version 9
 but use the experimental six-byte layout and require a matching test profile.
 Current production test builds advertise version 10. The comparison generator
 changes only temporary source copies; the direct build script uses the repository
-implementation. Checked-in release files remain the published v9 images.
+implementation. Normal v10 release HEX files now use revision `30101c94`.
 
 ## v10 preparation validation
 
@@ -162,6 +162,7 @@ The production native builds use 14,294 bytes of flash on six-key pads and
 host suite passes on both variants. Configurator tests cover every sixth-byte
 metadata combination, 11-bit boundaries, exact v9 interval migration, storage
 overflow recovery, layer reordering/removal and scoped reachability. The frozen
-v9 editor retains compatibility with the published firmware. The user confirmed the full v10 hardware suite passed, including the stack
-sanity check with 39 bytes observed on the six-key pad. See the
+v9 editor retains compatibility with v9 firmware. The full v10 hardware suite
+passed, with 39 bytes observed in the six-key stack sanity check. Normal release
+HEX files were generated from revision `30101c94`. See the
 [hardware checklist](v10-hardware-validation.md).

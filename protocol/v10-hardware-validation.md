@@ -1,11 +1,15 @@
 # v10 hardware validation
 
 Preparation steps 1–4 and the full v10 hardware validation suite are complete.
-The user confirmed the suite passed. Release generation and publication remain
-pending. The six-byte records, 11-bit interval,
-layer scopes and per-timer fractional counters are enabled in production source.
+The user confirmed the suite passed. Normal v10 release HEX files were generated
+from revision `30101c94` after removing the diagnostic code. Publication is separate
+from building these files. The six-byte records, 11-bit interval, layer scopes and
+per-timer fractional counters are enabled in production source.
 
-## Test builds
+- [Three-key release HEX](../releases/ch552-macropad-3-key-30101c94.hex)
+- [Six-key release HEX](../releases/ch552-macropad-6-key-30101c94.hex)
+
+## Historical test builds
 
 These temporary HEX files advertise format 10 and use the actual 14,336-byte
 application limit. They were built from the uncommitted preparation source.
@@ -20,9 +24,8 @@ application limit. They were built from the uncommitted preparation source.
 | Three keys | 14,292 | 44 | 108 | 487 | 78 |
 | Six keys | 14,294 | 42 | 108 | 496 | 75 |
 
-The configurator preview has been rebuilt for v10. The bundled web uploader
-continues to install the checked-in v9 release; use the matching test HEX above
-with the normal file-based upload procedure for this validation.
+The configurator and bundled web uploader now target the v10 release files above.
+The temporary images are retained here as provenance for the completed test run.
 
 ## Hardware checklist
 
@@ -76,7 +79,7 @@ profile, elapsed time and any unexpected behavior for failures.
 - Configurator: 403 tests across 38 files, including actual firmware validation
   and protocol simulation, exact legacy interval conversion, and preserving
   oversized migrated profiles while blocking device saving.
-- Uploader: 15 tests, including matching archived-editor links and intact v9
+- Uploader: 15 tests, including matching configurator links and intact v10
   release images.
 - Web production build and archived-editor checksum verification: pass.
 

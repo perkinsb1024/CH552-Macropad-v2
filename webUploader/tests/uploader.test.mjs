@@ -13,10 +13,11 @@ test('published firmware opens its matching configurator', async () => {
   for (const entry of manifest.firmware) {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url), 'utf8');
     assert.equal(firmwareFormat(parseHex(content), entry.keys), entry.formatVersion);
-    assert.equal(entry.formatVersion, 9);
-    assert.equal(configuratorPath(entry.formatVersion, 10), '../versions/format-v9/');
+    assert.equal(entry.formatVersion, 10);
+    assert.equal(configuratorPath(entry.formatVersion, 10), '../');
   }
   assert.equal(configuratorPath(10, 10), '../');
+  assert.equal(configuratorPath(9, 10), '../versions/format-v9/');
   assert.throws(() => configuratorPath(11, 10), /matching configurator/);
   assert.throws(() => firmwareFormat(new Uint8Array(16), 3), /identify/);
 });
@@ -174,7 +175,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     await element('install').emit('click');
     assert.equal(element('status').textContent, 'Firmware programmed and verified.');
     const successLink = element('status').children.find(child => typeof child !== 'string');
-    assert.equal(successLink.href, '../versions/format-v9/');
+    assert.equal(successLink.href, '../');
     assert.equal(successLink.textContent, 'Open the macropad configurator to load or save your profile');
   } finally {
     for (const [key, descriptor] of Object.entries(originals)) {

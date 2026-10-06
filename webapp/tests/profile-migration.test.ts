@@ -8,6 +8,7 @@ import { ConfigClient } from '../src/protocol/client';
 import { Opcode } from '../src/protocol/packet';
 import { SimulatedDevice } from '../src/protocol/simulator';
 import { canSave, connection, connectSimulator, disconnect, profile, save, archivedFirmware } from '../src/ui/store';
+import { ArchivedFirmwareNotice } from '../src/ui/components/ArchivedFirmwareNotice';
 
 afterEach(async () => { await disconnect(); vi.restoreAllMocks(); });
 
@@ -60,6 +61,11 @@ describe('device profile migration', () => {
     expect(connection.value.kind).toBe('disconnected');
     expect(canSave.value).toBe(false);
     expect(archivedFirmware.value).toEqual({ version, url: siteUrl(`versions/format-v${version}/`) });
+    const notice = ArchivedFirmwareNotice()!;
+    const links = (notice.props.children as { props?: { href?: string } }[])
+      .filter(child => child && typeof child === 'object' && child.props?.href)
+      .map(child => child.props!.href);
+    expect(links).toEqual([siteUrl(`versions/format-v${version}/`), siteUrl('webUploader/')]);
     expect(flashReads).not.toHaveBeenCalled();
     expect(writes).not.toHaveBeenCalled();
     vi.restoreAllMocks();

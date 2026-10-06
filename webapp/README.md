@@ -236,13 +236,16 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-Checked-in releases and the bundled uploader carry v9 firmware from revision
-`8339b59a`: [three-key](../releases/ch552-macropad-3-key-8339b59a.hex) and
-[six-key](../releases/ch552-macropad-6-key-8339b59a.hex). Use the frozen format-v9 editor
-with these releases. Current source and the latest editor target v10, whose
-release generation awaits hardware validation. The frozen format-v8 editor remains available for devices
-running v8 firmware. Back up older profiles before updating, then load and save
-them with the matching editor to migrate to its format.
+The release HEX files and bundled uploader use v10 firmware from revision
+`30101c94`: [three-key](../releases/ch552-macropad-3-key-30101c94.hex) and
+[six-key](../releases/ch552-macropad-6-key-30101c94.hex). Use the latest editor
+with these releases. The full v10 hardware suite passed; the six-key stack sanity
+check observed 39 bytes used out of 75 available. Frozen editors remain available
+for older firmware, including format-v9. The old-firmware warning links to both
+the matching archive and the firmware updater. Back up older profiles before
+updating, then load and explicitly save them with the latest editor to migrate
+to v10. Migration preserves timer durations; oversized profiles remain editable
+but must be reduced before saving.
 
 ## Horizontal Scrolling (v9)
 

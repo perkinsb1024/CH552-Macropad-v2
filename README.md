@@ -79,11 +79,9 @@ The current editor can import older profiles and migrate them before saving v10.
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v9 firmware files are available for [three-key](releases/ch552-macropad-3-key-8339b59a.hex) and [six-key](releases/ch552-macropad-6-key-8339b59a.hex) macropads, built from source revision `8339b59a`. This version adds **Horizontal** scrolling for taps and holds while retaining the v8 features: improved **Timed actions** accuracy, **Media / system hold**, held **Scroll**, and 1–16 clicks with **Mouse click**. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v10 firmware files are available for [three-key](releases/ch552-macropad-3-key-30101c94.hex) and [six-key](releases/ch552-macropad-6-key-30101c94.hex) macropads, built from source revision `30101c94`. This version adds layer-specific **Timed actions** with 4.096-second interval steps and retains the per-timer 16 ms fractional clock. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the frozen [v9 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v9/) with these v9 releases. The current source and latest editor target v10; v10 release files await hardware validation. The frozen [v8 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v8/) remains available for devices running v8 firmware. Back up your profile before
-updating; v9 leaves old flash intact, but inputs stay inactive until the editor
-migrates and saves the profile as v9.
+Use the [latest configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v10 releases. The frozen [v9 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v9/) remains available for devices running v9 firmware. Back up your profile before updating; v10 leaves old flash intact, but inputs stay inactive until the editor migrates and saves the profile as v10. Legacy timer durations are preserved exactly. Each timer needs one additional configuration byte, so a full migrated profile may require an explicit storage reduction before saving.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
