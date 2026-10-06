@@ -152,11 +152,22 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     __xdata uint8_t timers;
     uint8_t pool;
     uint8_t used;
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+    __idata uint8_t layer;
+#else
     uint8_t layer;
+#endif
     uint8_t offset;
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+    // Free direct-addressed temporaries for the extra scheduler path.
+    __idata uint8_t i;
+    __idata uint8_t previous = 0;
+    __idata uint8_t id;
+#else
     uint8_t i;
     uint8_t previous = 0;
     uint8_t id;
+#endif
     uint16_t end;
     uint16_t crc;
 #ifdef __SDCC
@@ -208,6 +219,10 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         offset += 3;
     }
     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+        __idata uint8_t scope = image[offset + 5] & 7;
+        if (scope && scope > layers) return 0;
+#endif
         if (!actionValid(image, offset + 1, layers, 1, pool, used)) return 0;
 #if CONFIG_TIMED_RESUME
         if (!actionValid(image, offset + 3, layers, 1, pool, used)) return 0;

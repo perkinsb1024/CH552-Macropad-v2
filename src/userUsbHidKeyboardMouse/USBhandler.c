@@ -18,7 +18,8 @@ __xdata uint8_t Ep0Report[32];
 #error "This example needs more USB ram. Increase this setting in menu."
 #endif
 
-__data uint16_t SetupLen;
+// Descriptor sizes are compile-time bounded to a byte in USBconstant.c.
+__data uint8_t SetupLen;
 __data uint8_t SetupReq;
 __data uint8_t ep0ReportExpected;
 __data uint8_t ep0ReportReceived;
@@ -43,11 +44,13 @@ static uint8_t sendDescriptor(void) {
 
 void USB_EP0_SETUP() {
   __data uint8_t len = USB_RX_LEN;
-  __data uint16_t descriptorLen = 0;
+  __data uint8_t descriptorLen = 0;
   ep0ReportExpected = 0;
   descriptorInRam = 0;
   if (len == (sizeof(USB_SETUP_REQ))) {
-    SetupLen = ((uint16_t)UsbSetupBuf->wLengthH << 8) | (UsbSetupBuf->wLengthL);
+    // Every supported IN transfer is shorter than 256 bytes. Saturation keeps
+    // exact OUT/zero-length validation intact even for malformed high bytes.
+    SetupLen = UsbSetupBuf->wLengthH ? 255 : UsbSetupBuf->wLengthL;
     len = 0; // Default is success and upload 0 length
     SetupReq = UsbSetupBuf->bRequest;
     usbMsgFlags = 0;

@@ -7,6 +7,11 @@
 #define CONFIG_SIZE 128
 // v8: Type Text shares type 0; type 9 is Consumer Hold. Timers stay five bytes.
 #define CONFIG_VERSION 9
+// Measurement-only six-byte timers. Default firmware keeps the v9 layout;
+// enabling this requires experimental images and has no configurator support.
+#ifndef CONFIG_TIMED_LAYER_EXPERIMENT
+#define CONFIG_TIMED_LAYER_EXPERIMENT 0
+#endif
 #define CONFIG_TIMED_CONSUME 0x40
 #define CONFIG_LAYER_PREVIOUS 0xFF
 #ifndef CONFIG_TIMED_MAX
@@ -16,12 +21,19 @@
 #define CONFIG_TIMED_ALL_RESET 0
 #endif
 #ifndef CONFIG_TIMED_INTERVAL_MASK
-#define CONFIG_TIMED_INTERVAL_MASK 63
+#define CONFIG_TIMED_INTERVAL_MASK (CONFIG_TIMED_LAYER_EXPERIMENT ? 255 : 63)
 #endif
 #ifndef CONFIG_TIMED_RESUME
 #define CONFIG_TIMED_RESUME 1
 #endif
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+#if !CONFIG_TIMED_RESUME
+#error "The six-byte experiment requires next-input actions"
+#endif
+#define CONFIG_TIMED_SIZE 6
+#else
 #define CONFIG_TIMED_SIZE (CONFIG_TIMED_RESUME ? 5 : 3)
+#endif
 #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
 #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
 #define CONFIG_HEADER_TRANSPARENT_BLACK 0x80

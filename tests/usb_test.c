@@ -249,7 +249,31 @@ static void testHorizontalDescriptor(void) {
     assert(pans == 1 && bits == 32);
 }
 
+static void testSetupLengthSaturation(void) {
+    // Cover every high-byte alias: exact-length OUT/class requests must still
+    // reject oversized lengths, while IN descriptors truncate to actual data.
+    for (uint32_t length = 0; length < 65536; length++) {
+        reset(); setupRequest(0x21, 9, 0x203, 0, length);
+        assert(((UEP0_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) == (length != 32));
+        reset(); setupRequest(0x21, 9, 0x201, 0, length);
+        assert(((UEP0_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) == (length != 2));
+        reset(); setupRequest(0x21, 10, 0x0201, 0, length);
+        assert(((UEP0_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) == (length != 0));
+        reset(); setupRequest(0xA1, 2, 1, 0, length);
+        assert(((UEP0_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) == (length != 1));
+        reset(); setupRequest(0, USB_SET_CONFIGURATION, 1, 0, length);
+        assert(((UEP0_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) == (length != 0));
+        reset(); setupRequest(0x81, USB_GET_DESCRIPTOR, 0x2200, 0, length);
+        uint16_t total = length < sizeof(ReportDescriptor) ? length : sizeof(ReportDescriptor);
+        uint8_t first = total < DEFAULT_ENDP0_SIZE ? total : DEFAULT_ENDP0_SIZE;
+        assert(UEP0_T_LEN == first && SetupLen == total - first);
+        reset(); setupRequest(0x80, USB_GET_STATUS, 0, 0, length);
+        assert(UEP0_T_LEN == (length < 2 ? length : 2));
+    }
+}
+
 int main(void) {
+    testSetupLengthSaturation();
     testHorizontalDescriptor();
     testQueue();
     testControlReports();

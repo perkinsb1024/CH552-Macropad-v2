@@ -215,3 +215,15 @@ __code uint16_t ManufacturerDescriptor[] = {
     // SDCC is little endian
     (((6 + 1) * 2) | (DTYPE_String << 8)), 'D', 'e', 'q', 'i', 'n', 'g',
 };
+
+// USBhandler.c saturates incoming wLength and uses byte-sized transfer counts.
+// Fail compilation if a descriptor grows beyond that representation.
+typedef char usbDescriptorsFitByte[
+    sizeof(DeviceDescriptor) <= 255 &&
+    sizeof(ConfigurationDescriptor) <= 255 &&
+    sizeof(ReportDescriptor) <= 255 &&
+    sizeof(USB_HID_Descriptor_HID_t) <= 255 &&
+    sizeof(LanguageDescriptor) <= 255 &&
+    sizeof(SerialDescriptor) <= 255 &&
+    sizeof(ProductDescriptor) <= 255 &&
+    sizeof(ManufacturerDescriptor) <= 255 ? 1 : -1];

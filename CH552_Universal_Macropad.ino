@@ -52,13 +52,15 @@ __code int8_t encoderTransitions[16] = {
 };
 
 __xdata uint8_t ledData[NUM_BYTES];
-__xdata uint8_t rawState[7];
-__xdata uint8_t stableState[7];
-__xdata uint16_t rawChanged[7];
+// Private button state needs no external-RAM pointer ABI. Internal indirect
+// addressing saves flash; the firmware map measures the resulting stack space.
+__idata uint8_t rawState[7];
+__idata uint8_t stableState[7];
+__idata uint16_t rawChanged[7];
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
 __idata uint8_t lastLayer;
-__xdata uint8_t allowRunBootloader;
+ACTION_BIT allowRunBootloader;
 __pdata uint8_t layerIndicatorPhasesLeft;
 __pdata uint8_t layerIndicatorDeadline;
 __idata uint8_t rainbowChanged;
@@ -416,8 +418,13 @@ void firmwareApplyConfig(void) {
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+  // Only bits 7-14 reach the byte clock; the existing low word is sufficient.
+  actionsTimedReset(now >> 7);
+#else
   // Timer fractional clock: 512 ms; each action divides by 256 independently.
   actionsTimedReset(clock >> 9);
+#endif
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
@@ -488,7 +495,11 @@ void loop() {
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
 #endif
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+  if (activeConfigValid) actionsTimedPoll(now >> 7);
+#else
   if (activeConfigValid) actionsTimedPoll(clock >> 9);
+#endif
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     scanButton(i, now);
   }

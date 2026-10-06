@@ -40,7 +40,8 @@ static const __code uint8_t protocolInfo[14] = {
 __xdata uint8_t protocolInbox[32];
 __xdata uint8_t protocolReply[32];
 __xdata uint8_t stagedConfig[CONFIG_SIZE];
-volatile __xdata uint8_t protocolState;
+// The final page-zero byte is useful for this ISR/main-loop mailbox flag.
+volatile __pdata uint8_t protocolState;
 volatile PROTOCOL_BIT resetPending;
 PROTOCOL_BIT flashValid;
 PROTOCOL_BIT activeConfigValid;

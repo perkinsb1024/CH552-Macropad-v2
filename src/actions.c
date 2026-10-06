@@ -223,6 +223,9 @@ static FW_BIT flushOutputs(void) {
 }
 
 static void updateLayer(void);
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+static void resetLayerTimers(void);
+#endif
 
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
@@ -326,6 +329,9 @@ static void updateLayer(void) {
       return;
     }
     effectiveLayer = next;
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+    resetLayerTimers();
+#endif
 #if CONFIG_SCROLL_ACCELERATION
     scrollFirst = 0;
 #endif
@@ -537,7 +543,10 @@ void actionsRotate(uint8_t clockwise) {
   updateLayer();
 }
 
-// Prototype: validated rotation-compatible actions, independent virtual toggles.
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+#include "timed_actions_experiment.inc"
+#else
+// Validated rotation-compatible actions, independent virtual toggles.
 void actionsTimedReset(uint8_t tick) {
   timedClock = tick;
   for (uint8_t i = 0; i < CONFIG_TIMED_MAX; i++) {
@@ -604,6 +613,7 @@ ACTION_BIT actionsTimedInput(void) {
   return timedEvent(0);
 #endif
 }
+#endif
 
 void actionsPoll(uint16_t now) {
   uint8_t type;
