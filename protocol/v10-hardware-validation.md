@@ -1,7 +1,8 @@
 # v10 hardware validation
 
-Preparation steps 1–4 are complete. Hardware validation is step 5; release
-generation and publication remain pending. The six-byte records, 11-bit interval,
+Preparation steps 1–4 and the full v10 hardware validation suite are complete.
+The user confirmed the suite passed. Release generation and publication remain
+pending. The six-byte records, 11-bit interval,
 layer scopes and per-timer fractional counters are enabled in production source.
 
 ## Test builds
@@ -57,8 +58,8 @@ the matching v9 editor before installing a v10 test image.
    The [v10 stack sanity check](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v10/Stack%20Test/README.md)
    preserves the diagnostic, reader and workload on its validation branch.
    The completed six-key sanity run observed 39 bytes used, with 36 untouched.
-7. In the editor, enter an arbitrary duration such as 300 seconds (rounds to
-   299.008), select the maximum interval (8,388.608), reorder layers, and remove
+7. In the editor, adjust the interval slider (for example, 73 ticks gives
+   299.008 seconds), select the maximum interval (8,388.608), reorder layers, and remove
    a timer's assigned layer. Removal should require explicit reassignment and
    preserve both timer actions. Verify undo and JSON backup/restore.
 

@@ -45,9 +45,10 @@ function timedBindingDrag(slot: Slot) {
 
 export function duration(seconds: number): string {
   const rounded = Math.round(seconds);
-  const minutes = Math.floor(rounded / 60);
+  const hours = Math.floor(rounded / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
   const remainder = rounded % 60;
-  return `${minutes ? `${minutes} minute${minutes === 1 ? '' : 's'} ` : ''}${remainder} second${remainder === 1 ? '' : 's'}`;
+  return `${hours ? `${hours} hour${hours === 1 ? '' : 's'} ` : ''}${minutes ? `${minutes} minute${minutes === 1 ? '' : 's'} ` : ''}${remainder} second${remainder === 1 ? '' : 's'}`;
 }
 export function approximateDuration(ticks: number): string {
   return `≈ ${duration(ticks * TIMED_TICK_SECONDS)}`;
@@ -98,21 +99,13 @@ export function TimedActionsPanel() {
             </select>
           </label>
           {timer.layer !== undefined && <p class="hint">Runs while its assigned layer is active. Changing layers restarts its interval. An armed next-input action remains available on any layer.</p>}
-          <label class="field"><span class="field-label">Interval <output>{approximateDuration(timer.ticks)}</output></span>
+          <label class="field timer-interval"><span class="field-label">Interval <output>{approximateDuration(timer.ticks)}</output></span>
             <input type="range" min={1} max={MAX_TIMED_TICKS} step={1} value={timer.ticks} aria-label={`Timer ${index + 1} interval ticks`} onInput={(event) => {
               const input = event.target as HTMLInputElement;
               const ticks = clampTicks(input.value);
               input.value = String(ticks);
               updateProfile((draft) => { draft.timedActions![index]!.ticks = ticks; }, `timer:${index}:ticks`);
             }} />
-            <input type="number" min={TIMED_TICK_SECONDS} max={MAX_TIMED_TICKS * TIMED_TICK_SECONDS} step={TIMED_TICK_SECONDS}
-              aria-label={`Timer ${index + 1} interval seconds`} value={timer.ticks * 4096 / 1000} onChange={(event) => {
-                const input = event.target as HTMLInputElement;
-                const ticks = clampTicks(String(Number(input.value) / TIMED_TICK_SECONDS));
-                input.value = String(ticks * 4096 / 1000);
-                updateProfile(draft => { draft.timedActions![index]!.ticks = ticks; }, `timer:${index}:ticks`);
-              }} />
-            <span class="muted">Seconds · rounds to the nearest 4.096-second step</span>
           </label>
           <label class="timer-reset"><input type="checkbox" checked={timer.resetOnInput} onChange={(event) => {
             const reset = (event.target as HTMLInputElement).checked;

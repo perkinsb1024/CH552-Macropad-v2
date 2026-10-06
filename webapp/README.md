@@ -144,8 +144,8 @@ migration unchanged. JSON and drafts retain semantic action names as action code
 ## Timed Actions and Temporary LED Effects (v10)
 
 Four timers share the profile's storage budget, at six bytes each. Intervals
-use 1–2048 ticks of 4.096 seconds. **Interval** provides a full-width slider and
-seconds input rounded to the nearest tick, with an approximate duration shown.
+use 1–2048 ticks of 4.096 seconds. **Interval** provides a full-width slider
+with an approximate duration shown in hours, minutes and seconds as needed.
 **Run on** selects **All layers** or a specific layer. A scoped timer advances
 only on its assigned layer; actual layer transitions reset scoped intervals but
 preserve armed **On next input** actions. Global timer phases continue.

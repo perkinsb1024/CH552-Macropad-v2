@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { TimedActionsPanel, approximateDuration, clampTicks } from '../src/ui/components/TimedActionsPanel';
+import { TimedActionsPanel, approximateDuration, clampTicks, duration } from '../src/ui/components/TimedActionsPanel';
 import { Inspector } from '../src/ui/components/Inspector';
 import { defaultProfile } from '../src/model/defaults';
 import { computeCapacity } from '../src/model/capacity';
@@ -110,7 +110,10 @@ it('clamps edits and provides whole-number durations', () => {
     expect(String(target.value)).toBe(String(ticks));
   }
   expect(clampTicks('Infinity')).toBe(2048);
-  expect(approximateDuration(2048)).toBe('≈ 139 minutes 49 seconds');
+  expect(duration(3599)).toBe('59 minutes 59 seconds');
+  expect(duration(3600)).toBe('1 hour 0 seconds');
+  expect(duration(5194)).toBe('1 hour 26 minutes 34 seconds');
+  expect(approximateDuration(2048)).toBe('≈ 2 hours 19 minutes 49 seconds');
   expect(nodes(TimedActionsPanel()).find(n => n.type === 'output')?.props.title).toBeUndefined();
 });
 it('edits consume independently from restart, and undo restores it', () => {

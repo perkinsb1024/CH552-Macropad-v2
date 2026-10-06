@@ -2032,7 +2032,7 @@ output {
 .timer-list { display: grid; gap: 12px; margin-bottom: 12px; }
 .timer-row { padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
 .timer-row .card-head { margin-bottom: 8px; }
-.timer-row input[type="number"] { max-width: 100px; }
+.timer-interval { padding-top: 12px; }
 .timer-reset { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 13px; }
 .timer-action { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-elev); color: var(--fg); cursor: pointer; text-align: left; }
 .timer-action.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -2048,6 +2048,7 @@ output {
 }
 .viewer-workspace .tabs { margin-bottom: 10px; }
 .viewer-workspace .device { padding-top: 18px; }
+.viewer-indicator { margin: 8px 0 0; text-align: center; font-size: 13px; }
 .viewer-layer-status { margin: 0 0 16px; }
 .viewer-layer-status .notice { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .viewer-layer-status .btn { margin-left: auto; }

@@ -59,6 +59,8 @@ export function ProfileViewer() {
   const deviceLayer = c.kind === 'connected' && c.connection.status.flashValid ? c.connection.status.currentLayer : null;
   const knownLayer = deviceLayer !== null && p && deviceLayer >= 0 && deviceLayer < p.layers.length;
   const mismatch = knownLayer && selectedLayer.value !== deviceLayer;
+  const viewedLayer = p?.layers[selectedLayer.value];
+  const indicatorMode = viewedLayer && ['Off', '1.5 Seconds', `Blink ${selectedLayer.value + 1} Times`, 'Always On'][viewedLayer.indicatorBehavior];
   return <div class="app profile-viewer">
     <TopBar readOnly />
     <ArchivedFirmwareNotice />
@@ -82,6 +84,7 @@ export function ProfileViewer() {
             </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
           </div>}
           <DeviceView readOnly />
+          <p class="muted viewer-indicator">Layer indicator: {indicatorMode}</p>
         </section>
         <div class="viewer-extras"><ViewerChords /><ViewerTimers /></div>
       </>}

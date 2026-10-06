@@ -77,7 +77,8 @@ JSON version 10 uses the existing `timedActions` list with `ticks`, boolean
 `resetOnInput`, boolean `consumeInput`, `action` and `resumeAction`. Optional
 `layer` is a zero-based layer index; omit it for a global timer. `ticks` must be
 1–2,048. The editor provides **Run on**, **All layers** or a specific layer, and
-seconds input rounded to the nearest 4.096-second step. Layer reordering remaps
+an interval slider in 4.096-second steps with a duration label including hours
+for long intervals. Layer reordering remaps
 timer assignments. Removing an assigned layer preserves the timer and both
 actions, marks its assignment invalid, and requires explicit reassignment before
 saving.

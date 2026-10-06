@@ -162,6 +162,6 @@ The production native builds use 14,294 bytes of flash on six-key pads and
 host suite passes on both variants. Configurator tests cover every sixth-byte
 metadata combination, 11-bit boundaries, exact v9 interval migration, storage
 overflow recovery, layer reordering/removal and scoped reachability. The frozen
-v9 editor retains compatibility with the published firmware. Hardware validation
-is the remaining prerequisite for release generation; see the
+v9 editor retains compatibility with the published firmware. The user confirmed the full v10 hardware suite passed, including the stack
+sanity check with 39 bytes observed on the six-key pad. See the
 [hardware checklist](v10-hardware-validation.md).

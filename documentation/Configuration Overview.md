@@ -261,7 +261,7 @@ You can add up to four timed actions, depending on remaining configuration stora
 ![A repeating amber lighting reminder with a roughly twenty-minute interval and a next-input action that clears it](../images/configuration-overview/08-timed-actions.png)
 
 1. Click **Add timed action**
-2. Choose **All layers** or a specific layer in **Run on**, then set **Interval** with the slider or seconds field
+2. Choose **All layers** or a specific layer in **Run on**, then set **Interval** with the slider
 3. Choose whether to enable **Restart on key / encoder input**
 4. Click **When timer fires**, then choose its action in the **Action editor**
 5. Optionally expand **On next input** and configure a follow-up action and **Consume this input**
@@ -277,8 +277,8 @@ You can add up to four timed actions, depending on remaining configuration stora
 “Input” means activity on the macropad. Using your computer's regular keyboard or mouse does not restart these timers. Keeping a button held only resets the timer when you first press the button.
 
 The interval uses steps of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds.
-Enter a duration in seconds or use the slider; the editor rounds to the nearest
-supported interval. Each timer measures from its own last start or restart,
+Use the slider to select the interval; its label shows the approximate duration
+in hours, minutes and seconds as needed. Each timer measures from its own last start or restart,
 with less than 16 ms of early clock quantization. A one-step interval becomes
 due about 4.080–4.096 seconds after its reset. Polling, queued output and the
 device clock can add timing error. Each timer uses six bytes of device storage.
@@ -554,7 +554,7 @@ If you start from the two-layer starter, customize its existing layers instead o
 
 ### Create a Reminder to Take a Break
 
-1. Click **Add timed action**. Enter 3600 seconds for **Interval**; the supported duration rounds to 3600.384 seconds, roughly one hour
+1. Click **Add timed action**. Adjust the **Interval** slider to roughly one hour (879 ticks, or 3600.384 seconds)
 2. Leave **Restart on key / encoder input** off for an hourly reminder. Turn it on if you want the reminder only after and hour of macropad inactivity
 3. Select **When timer fires → LED control → Set all LEDs → Always on**. Choose **Amber** and **Full Brightness**
 4. Expand **On next input**, select its action, and choose **LED control → Set all LEDs → As configured**

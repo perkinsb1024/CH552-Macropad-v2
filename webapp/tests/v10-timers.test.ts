@@ -108,10 +108,10 @@ function nodes(v: unknown): Node[] {
   if (!v || typeof v !== 'object' || !('props' in v)) return [];
   const n = v as Node; return [n, ...nodes(n.props.children)];
 }
-it('edits seconds and scope, remaps moved layers and preserves timers when their layer is deleted', () => {
+it('edits interval and scope, remaps moved layers and preserves timers when their layer is deleted', () => {
   profile.value = defaultProfile(0); profile.value.timedActions = [timer()];
   const field = (label: string) => nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === label)!;
-  (field('Timer 1 interval seconds').props.onChange as (e: unknown) => void)({ target: { value: '300' } });
+  (field('Timer 1 interval ticks').props.onInput as (e: unknown) => void)({ target: { value: '73' } });
   expect(profile.value.timedActions[0]!.ticks).toBe(73);
   (field('Timer 1 layer').props.onChange as (e: unknown) => void)({ target: { value: '1' } });
   expect(profile.value.timedActions[0]!.layer).toBe(1);

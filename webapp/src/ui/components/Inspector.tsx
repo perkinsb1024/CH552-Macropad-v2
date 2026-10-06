@@ -1,5 +1,6 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useMemo, useState } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
 import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
@@ -36,7 +37,7 @@ function MouseButtons({ value, onChange }: { value: number; onChange(v: number):
   );
 }
 
-function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest }: {
+function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest, children }: {
   label: string;
   directionLabel: string;
   negativeLabel: string;
@@ -45,6 +46,7 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
   value: number;
   onChange(v: number): void;
   onTest?(): void;
+  children?: ComponentChildren;
 }) {
   const magnitude = Math.max(1, Math.min(127, Math.abs(value)));
   const negative = value < 0;
@@ -55,6 +57,7 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
       <span class="field-label">{label} <output>{magnitude}</output></span>
       <input type="range" min={1} max={127} step={1} value={magnitude} aria-label={label} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
       <span class="hint">{hint}</span>
+      {children}
       <div class="field scroll-direction">
         <span class="field-label">{directionLabel}</span>
         <div class="segmented" role="group" aria-label={directionLabel}>
@@ -265,14 +268,15 @@ export function Inspector() {
       )}
 
       {action.type === 'scroll' && (
-        <div class="field">
-          <span class="field-label">Scroll axis</span>
-          <div class="segmented" role="group" aria-label="Scroll axis">
-            <button type="button" class={!action.horizontal ? 'is-selected' : ''} aria-pressed={!action.horizontal} onClick={() => update({ ...action, horizontal: false })}>Vertical</button>
-            <button type="button" class={action.horizontal ? 'is-selected' : ''} aria-pressed={!!action.horizontal} onClick={() => update({ ...action, horizontal: true })}>Horizontal</button>
+        <DirectionalStep onTest={() => setShowScrollTest(true)} label="Wheel step" directionLabel="Scroll direction" negativeLabel={action.horizontal ? 'Left' : 'Up'} positiveLabel={action.horizontal ? 'Right' : 'Down'} hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })}>
+          <div class="field">
+            <span class="field-label">Scroll axis</span>
+            <div class="segmented" role="group" aria-label="Scroll axis">
+              <button type="button" class={!action.horizontal ? 'is-selected' : ''} aria-pressed={!action.horizontal} onClick={() => update({ ...action, horizontal: false })}>Vertical</button>
+              <button type="button" class={action.horizontal ? 'is-selected' : ''} aria-pressed={!!action.horizontal} onClick={() => update({ ...action, horizontal: true })}>Horizontal</button>
+            </div>
           </div>
-          <DirectionalStep onTest={() => setShowScrollTest(true)} label="Wheel step" directionLabel="Scroll direction" negativeLabel={action.horizontal ? 'Left' : 'Up'} positiveLabel={action.horizontal ? 'Right' : 'Down'} hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
-        </div>
+        </DirectionalStep>
       )}
       {action.type === 'mouseX' && (
         <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
