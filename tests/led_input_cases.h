@@ -2,10 +2,10 @@
 static void advanceTimedTo(uint32_t target) {
     // Exercise the real main loop at each fine boundary, rather than simulating
     // a CPU blocked for an entire coarse interval (an unsupported polling gap).
-    uint32_t next = ((currentMs >> 9) + 1) << 9;
+    uint32_t next = ((currentMs >> 4) + 1) << 4;
     while (next < target) {
         currentMs = next; loop();
-        next += 512;
+        next += 16;
     }
     currentMs = target; loop();
 }
@@ -17,7 +17,7 @@ static void testTimedLighting(void) {
     activeConfig[9] = 0x1F; // The waking key explicitly selects dim key feedback.
     activeConfig[10] = CONFIG_LED_KEY_SET;
     activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
-    activeConfig[offset] = 128; // Inactivity, one coarse tick.
+    activeConfig[offset] = 0; activeConfig[offset + 5] = 128; // Inactivity, one coarse tick.
     activeConfig[offset + 1] = 0x3F;
     activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
 #if CONFIG_TIMED_RESUME
@@ -30,7 +30,7 @@ static void testTimedLighting(void) {
     currentMs = 0;
     firmwareApplyConfig();
     assert(ledData[0] == 255);
-    advanceTimedTo(131072);
+    advanceTimedTo(4096);
     assert(ledSettings[2] == 0 && ledSettings[3] == 1 && ledData[0] == 0);
     P1 &= ~0x02;
     currentMs += 1;
@@ -46,44 +46,44 @@ static void testTimedLighting(void) {
     P1 = P3 = 0xFF;
     currentMs = 0;
     firmwareApplyConfig();
-    advanceTimedTo(131061);
+    advanceTimedTo(4085);
     P1 &= ~0x02;
     loop(); // Raw edge, not yet debounced.
-    currentMs = 131072;
+    currentMs = 4096;
     loop(); // Deadline and debounced input in the same frame.
     assert(ledSettings[2] == 3 && ledSettings[3] == 1 && ledData[3] == 255);
 #endif
-    // Each reset starts an independent fractional phase. Error is below 512 ms,
+    // Each reset starts an independent fractional phase. Error is below 16 ms,
     // including resets just before/after a shared fine-clock boundary.
-    const uint32_t starts[] = {0, 511, 512, 65000, 98000, 130000};
+    const uint32_t starts[] = {0, 15, 16, 65000, 98000, 130000};
     for (uint8_t i = 0; i < sizeof(starts) / sizeof(starts[0]); i++) {
         P1 = P3 = 0xFF;
         currentMs = starts[i];
         firmwareApplyConfig();
         actionsTimedInput();
-        uint32_t due = (starts[i] & ~511UL) + 131072;
-        assert(starts[i] + 131072 - due < 512);
+        uint32_t due = (starts[i] & ~15UL) + 4096;
+        assert(starts[i] + 4096 - due < 16);
         advanceTimedTo(due - 1);
         assert(ledSettings[2] == 3);
         advanceTimedTo(due);
         assert(ledSettings[2] == 0);
-        // Subsequent firings remain one full 131.072-second tick apart.
+        // Subsequent firings remain one full 4.096-second tick apart.
         firmwareLedAction(CONFIG_LED_BOTH_SET, 15);
-        advanceTimedTo(due + 131072 - 1);
+        advanceTimedTo(due + 4096 - 1);
         assert(ledSettings[2] == 3);
-        advanceTimedTo(due + 131072);
+        advanceTimedTo(due + 4096);
         assert(ledSettings[2] == 0);
     }
-    // All six interval bits count at the new rate: 64 ticks = 8,388,608 ms.
+    // All eleven interval bits count: 2,048 ticks = 8,388,608 ms.
     P1 = P3 = 0xFF;
-    activeConfig[offset] = 128 | CONFIG_TIMED_INTERVAL_MASK;
+    activeConfig[offset] = 255; activeConfig[offset + 5] = 128 | 56;
     currentMs = 0;
     firmwareApplyConfig();
-    for (uint8_t tick = 1; tick < 64; tick++) {
-        advanceTimedTo((uint32_t)tick << 17);
+    for (uint16_t tick = 1; tick < 2048; tick++) {
+        advanceTimedTo((uint32_t)tick << 12);
         assert(ledSettings[2] == 3);
     }
-    advanceTimedTo(((uint32_t)64 << 17) - 1);
+    advanceTimedTo(((uint32_t)2048 << 12) - 1);
     assert(ledSettings[2] == 3);
     currentMs++;
     loop();
@@ -94,8 +94,8 @@ static void testConsumedPhysicalInput(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfig[3] = 1 << 6;
     uint8_t offset = configTimedOffset();
-    activeConfig[offset] = 128;
-    activeConfig[offset] |= CONFIG_TIMED_CONSUME;
+    activeConfig[offset] = 0; activeConfig[offset + 5] = 128;
+    activeConfig[offset + 5] |= CONFIG_TIMED_CONSUME;
     activeConfig[offset + 1] = 0x3F;
     activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
     activeConfig[offset + 3] = 0xFF;
@@ -109,7 +109,7 @@ static void testConsumedPhysicalInput(void) {
     previewOptions = 0;
     currentMs = 0;
     firmwareApplyConfig();
-    advanceTimedTo(131072);
+    advanceTimedTo(4096);
     P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
     assert(ledSettings[3] == 3); // Resume works; the key's Dim command did not.
     P1 |= 2; currentMs++; loop(); currentMs += 10; loop();
@@ -117,12 +117,12 @@ static void testConsumedPhysicalInput(void) {
     assert(ledSettings[3] == 1); // The next distinct press is normal.
     // A due timer and debounced wake press in the same loop still consume once.
     P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
-    advanceTimedTo(131061); P1 &= ~2; loop();
-    advanceTimedTo(131072);
+    advanceTimedTo(4085); P1 &= ~2; loop();
+    advanceTimedTo(4096);
     assert(ledSettings[3] == 3);
     P1 = P3 = 0xFF;
     currentMs = 0; firmwareApplyConfig();
-    advanceTimedTo(131072);
+    advanceTimedTo(4096);
     // One clockwise detent starting at 11; partial transitions do not wake.
     const uint8_t sequence[] = {2, 0, 1, 3};
     for (uint8_t i = 0; i < 4; i++) {
@@ -135,7 +135,7 @@ static void testConsumedPhysicalInput(void) {
     assert(ledSettings[3] == 1);
     // Encoder button may still enter the bootloader even when its binding is consumed.
     P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
-    advanceTimedTo(131072);
+    advanceTimedTo(4096);
     P3 &= ~8; currentMs++; loop(); currentMs += 10; loop();
     assert(allowRunBootloader);
     expectBootloader = 1;
@@ -279,12 +279,12 @@ static void testTemporaryEffects(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfig[3] = 1 << 6;
     uint8_t timer = configTimedOffset();
-    activeConfig[timer] = 128;
-    activeConfig[timer] |= CONFIG_TIMED_CONSUME;
+    activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
+    activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = 0xFF; activeConfig[timer + 2] = CONFIG_LED_EFFECT_ON;
     activeConfig[timer + 3] = 0x0F; activeConfig[timer + 4] = CONFIG_LED_EFFECT_RESTORE;
     P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
-    advanceTimedTo(131072); assert(previewOptions == 0xFF);
+    advanceTimedTo(4096); assert(previewOptions == 0xFF);
     uint8_t before = frameCount;
     P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
     assert(!previewOptions && frameCount == before && actionsLayer() == 0);

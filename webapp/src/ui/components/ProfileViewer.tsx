@@ -30,10 +30,10 @@ export function ViewerTimers() {
   const timers = profile.value!.timedActions ?? [];
   if (!timers.length) return null;
   return <section class="card viewer-bindings">
-    <header class="card-head"><h2>Timed actions</h2><span class="muted">Across all layers</span></header>
+    <header class="card-head"><h2>Timed actions</h2><span class="muted">Global or per layer</span></header>
     <ul class="viewer-binding-list viewer-timers">
       {timers.map((timer, index) => <li key={index}>
-        <div><strong>Timer {index + 1}</strong><span class="muted">
+        <div><strong>Timer {index + 1}</strong><span class="muted">{timer.layer === undefined ? 'All layers' : layerName(timer.layer)}</span><span class="muted">
           {timer.resetOnInput ? 'After ' : 'Repeats every '}{duration(timer.ticks * TIMED_TICK_SECONDS)}{timer.resetOnInput ? ' of inactivity' : ''}
         </span></div>
         <div><span class="muted">When fired</span><ActionLabel action={timer.action} /></div>

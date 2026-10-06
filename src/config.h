@@ -5,15 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// v8: Type Text shares type 0; type 9 is Consumer Hold. Timers stay five bytes.
-#define CONFIG_VERSION 9
-// Six-byte, eleven-bit layer-scoped timers. Default firmware keeps the v9
-// layout until the new format/configurator are introduced. Opt-in builds need
-// custom records: byte 0 is interval-1 low, byte 5 bits 3-5 are interval-1 high,
-// bits 0-2 are scope, and bits 6-7 are consume/restart flags.
-#ifndef CONFIG_TIMED_LAYER_EXPERIMENT
-#define CONFIG_TIMED_LAYER_EXPERIMENT 0
-#endif
+// v10: six-byte layer-scoped timers, eleven-bit intervals in 4.096 s units.
+#define CONFIG_VERSION 10
 #define CONFIG_TIMED_CONSUME 0x40
 #define CONFIG_LAYER_PREVIOUS 0xFF
 #ifndef CONFIG_TIMED_MAX
@@ -22,20 +15,9 @@
 #ifndef CONFIG_TIMED_ALL_RESET
 #define CONFIG_TIMED_ALL_RESET 0
 #endif
-#ifndef CONFIG_TIMED_INTERVAL_MASK
-#define CONFIG_TIMED_INTERVAL_MASK (CONFIG_TIMED_LAYER_EXPERIMENT ? 255 : 63)
-#endif
-#ifndef CONFIG_TIMED_RESUME
+#define CONFIG_TIMED_INTERVAL_MASK 255
 #define CONFIG_TIMED_RESUME 1
-#endif
-#if CONFIG_TIMED_LAYER_EXPERIMENT
-#if !CONFIG_TIMED_RESUME
-#error "The six-byte experiment requires next-input actions"
-#endif
 #define CONFIG_TIMED_SIZE 6
-#else
-#define CONFIG_TIMED_SIZE (CONFIG_TIMED_RESUME ? 5 : 3)
-#endif
 #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
 #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
 #define CONFIG_HEADER_TRANSPARENT_BLACK 0x80

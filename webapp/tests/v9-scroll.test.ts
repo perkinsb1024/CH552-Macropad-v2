@@ -33,7 +33,7 @@ it.each([0, 1] as const)('round-trips horizontal buttons, chords, rotation and b
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: hold }];
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: tap, resumeAction: tap }];
   const image = encodeProfile(p);
-  expect(image[2]).toBe(9);
+  expect(image[2]).toBe(10);
   expect(image[9]).toBe(0xc7);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);

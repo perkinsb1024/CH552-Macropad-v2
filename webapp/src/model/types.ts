@@ -49,6 +49,8 @@ export interface Chord {
 }
 
 export interface TimedAction {
+  /** Absent means global; otherwise the zero-based layer where the timer runs. */
+  layer?: number;
   ticks: number;
   resetOnInput: boolean;
   consumeInput: boolean;

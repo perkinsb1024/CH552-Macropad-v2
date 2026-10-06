@@ -24,11 +24,12 @@ interface LayerState {
   previous: number;
   oneShotReturn: number;
   held: number;
+  pendingTimers: number;
 }
 
 const effectiveLayer = (state: LayerState): number => state.held < 0 ? state.base : state.held;
 const stateKey = (state: LayerState): string =>
-  `${state.base},${state.previous},${state.oneShotReturn},${state.held}`;
+  `${state.base},${state.previous},${state.oneShotReturn},${state.held},${state.pendingTimers}`;
 
 /** Layer/history analysis, rather than treating Previous as an arbitrary return edge.
  * Timers are optional transitions: timing, consumption and simultaneous inputs are
@@ -41,7 +42,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
   if (!count || !Number.isInteger(startup) || startup < 0 || startup >= count) return [];
 
   const bindings = profile.layers.map((_, layer) => actionsOnLayer(profile, layer));
-  const timers = (profile.timedActions ?? []).flatMap(timer => [timer.action, timer.resumeAction]);
+  const timers = profile.timedActions ?? [];
   const states: LayerState[] = [];
   const ids = new Map<string, number>();
   const predecessors: Set<number>[] = [];
@@ -55,7 +56,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
     predecessors.push(new Set());
     return id;
   };
-  add({ base: startup, previous: startup, oneShotReturn: -1, held: -1 });
+  add({ base: startup, previous: startup, oneShotReturn: -1, held: -1, pendingTimers: 0 });
 
   const transition = (state: LayerState, action: Action, timed: boolean): LayerState | undefined => {
     // Normal input resolves its binding first, then consumes the pending one-shot.
@@ -97,7 +98,18 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
       if (next) predecessors[add(next)]!.add(id);
     };
     for (const action of bindings[effectiveLayer(state)]!) connect(transition(state, action, false));
-    for (const action of timers) connect(transition(state, action, true));
+    timers.forEach((timer, index) => {
+      const bit = 1 << index;
+      if (timer.layer === undefined || timer.layer === effectiveLayer(state)) {
+        const next = transition(state, timer.action, true);
+        if (next) connect({ ...next, pendingTimers: next.pendingTimers | bit });
+      }
+      // Armed resume actions remain possible after leaving the assigned layer.
+      if (state.pendingTimers & bit) {
+        const next = transition(state, timer.resumeAction, true);
+        if (next) connect({ ...next, pendingTimers: next.pendingTimers & ~bit });
+      }
+    });
     if (state.held >= 0) connect({ ...state, held: -1 });
   }
 

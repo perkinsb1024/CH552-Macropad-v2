@@ -61,7 +61,7 @@ export function TimedActionsPanel() {
   const p = profile.value!;
   const timers = p.timedActions ?? [];
   const unavailable = timers.length >= MAX_TIMED_ACTIONS ? `Maximum ${MAX_TIMED_ACTIONS} timed actions.`
-    : (capacity.value?.remaining ?? 0) < TIMED_ENTRY_SIZE ? 'Not enough storage (5 bytes needed).' : '';
+    : (capacity.value?.remaining ?? 0) < TIMED_ENTRY_SIZE ? 'Not enough storage (6 bytes needed).' : '';
   const add = () => {
     if (unavailable) return;
     updateProfile((draft) => {
@@ -70,8 +70,8 @@ export function TimedActionsPanel() {
     selectedSlot.value = { kind: 'timed', layer: 0, index: timers.length, resume: false };
   };
   return <details class="card timed-actions">
-    <summary class="card-head"><h2>Timed actions</h2><span class="muted">Across all layers · {timers.length}/{MAX_TIMED_ACTIONS}</span><IconChevron /></summary>
-    {!timers.length && <p class="empty">Repeat an action on a timer, or after inactivity. Each timer uses 5 bytes.</p>}
+    <summary class="card-head"><h2>Timed actions</h2><span class="muted">Global or per layer · {timers.length}/{MAX_TIMED_ACTIONS}</span><IconChevron /></summary>
+    {!timers.length && <p class="empty">Repeat an action on a timer, or after inactivity. Each timer uses 6 bytes.</p>}
     <div class="timer-list">
       {timers.map((timer, index) => {
         const select = (resume: boolean): Slot => ({ kind: 'timed', layer: 0, index, resume });
@@ -84,6 +84,20 @@ export function TimedActionsPanel() {
               if (slot?.kind === 'timed') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
             }}><IconTrash /></button>
           </header>
+          <label class="field"><span class="field-label">Run on</span>
+            <select aria-label={`Timer ${index + 1} layer`} value={timer.layer === undefined ? 'global' : String(timer.layer)} onChange={(event) => {
+              const value = (event.target as HTMLSelectElement).value;
+              updateProfile(draft => {
+                if (value === 'global') delete draft.timedActions![index]!.layer;
+                else draft.timedActions![index]!.layer = Number(value);
+              });
+            }}>
+              <option value="global">All layers</option>
+              {timer.layer !== undefined && !p.layers[timer.layer] && <option value={String(timer.layer)}>Removed layer — choose a layer</option>}
+              {p.layers.map((_, layer) => <option value={String(layer)}>Layer {layer + 1}</option>)}
+            </select>
+          </label>
+          {timer.layer !== undefined && <p class="hint">Runs while its assigned layer is active. Changing layers restarts its interval. An armed next-input action remains available on any layer.</p>}
           <label class="field"><span class="field-label">Interval <output>{approximateDuration(timer.ticks)}</output></span>
             <input type="range" min={1} max={MAX_TIMED_TICKS} step={1} value={timer.ticks} aria-label={`Timer ${index + 1} interval ticks`} onInput={(event) => {
               const input = event.target as HTMLInputElement;
@@ -91,7 +105,14 @@ export function TimedActionsPanel() {
               input.value = String(ticks);
               updateProfile((draft) => { draft.timedActions![index]!.ticks = ticks; }, `timer:${index}:ticks`);
             }} />
-            <span class="muted">{timer.ticks} × 131 seconds</span>
+            <input type="number" min={TIMED_TICK_SECONDS} max={MAX_TIMED_TICKS * TIMED_TICK_SECONDS} step={TIMED_TICK_SECONDS}
+              aria-label={`Timer ${index + 1} interval seconds`} value={timer.ticks * 4096 / 1000} onChange={(event) => {
+                const input = event.target as HTMLInputElement;
+                const ticks = clampTicks(String(Number(input.value) / TIMED_TICK_SECONDS));
+                input.value = String(ticks * 4096 / 1000);
+                updateProfile(draft => { draft.timedActions![index]!.ticks = ticks; }, `timer:${index}:ticks`);
+              }} />
+            <span class="muted">Seconds · rounds to the nearest 4.096-second step</span>
           </label>
           <label class="timer-reset"><input type="checkbox" checked={timer.resetOnInput} onChange={(event) => {
             const reset = (event.target as HTMLInputElement).checked;
@@ -124,6 +145,6 @@ export function TimedActionsPanel() {
     </div>
     <button class="btn" disabled={!!unavailable} title={unavailable || 'Add a timed action'} onClick={add}><IconPlus /> Add timed action</button>
     {unavailable && <p class="hint">{unavailable}</p>}
-    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Each timer measures from its own start or restart, with less than 512 ms of clock quantization. Queued output may run later. Held actions are unavailable.</p>
+    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Each timer measures from its own start or restart, with less than 16 ms of clock quantization. Queued output may run later. Held actions are unavailable.</p>
   </details>;
 }

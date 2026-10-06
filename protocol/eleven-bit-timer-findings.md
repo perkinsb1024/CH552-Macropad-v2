@@ -4,12 +4,12 @@ Both hardware variants fit the real 14,336-byte application limit with the
 per-timer fractional counters retained. No feature degradation or removal was
 needed. These measurements extend the [eight-bit investigation](six-byte-timer-intervals-and-fit.md).
 
-The measured scheduler is now implemented in `src/timed_actions_experiment.inc`,
-with its high counter bytes in `src/actions.c` and the 16 ms clock in the main
-sketch. It remains behind `CONFIG_TIMED_LAYER_EXPERIMENT=1` while normal v9
-firmware retains its compatible five-byte layout. Neither a new configuration
-version nor configurator support is included in this firmware implementation.
-
+The measured scheduler has been promoted to production v10 in
+`src/timed_actions.inc`, with its high counter bytes in `src/actions.c` and the
+16 ms clock in the main sketch. The fractional counters remain enabled. The
+[configuration-v10 specification](config-v10.md) defines the finalized layout,
+layer behavior and migration rules. The configurator now supports this format.
+Production v10 builds retain the measurements below.
 | Hardware | Flash bytes | Spare bytes | Paged RAM bytes | External RAM bytes | Available stack bytes |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Six keys | 14,294 | 42 | 108 | 496 | 75 |
@@ -19,6 +19,24 @@ The previous optimized eight-bit images used 14,292 / 14,290 bytes. These
 eleven-bit builds are only two bytes larger after the additional scheduler
 optimizations below. That comparison includes both the wider counters and those
 optimizations; widening the original scheduler alone costs substantially more.
+
+## Stack-capacity breakdown
+
+The available stack region decreased by 36 bytes on either board. The timer
+changes account for 11 bytes of that reduction; the flash-saving RAM
+optimizations account for the other 25 bytes.
+
+| Stage | Six-key stack bytes | Three-key stack bytes | Reduction from preceding stage |
+| --- | ---: | ---: | ---: |
+| Original v9 | 111 | 114 | — |
+| Optimized v9, original timers | 86 | 89 | 25 |
+| Layered eight-bit timers | 82 | 85 | 4 |
+| Layered eleven-bit timers | 75 | 78 | 7 |
+
+The largest RAM-placement tradeoff moved 28 bytes of button/debounce state from
+external RAM into internal RAM, which shares capacity with the stack. Other
+allocation changes partially offset that cost. These figures are linker-reported
+stack capacities, not measured runtime stack usage.
 
 ## Record layout and timing
 
@@ -131,10 +149,19 @@ Final artifacts, including source snapshots, host probes, logs, maps and hex fil
 - [Three-key firmware](/private/tmp/macropad-eleven-bit-test-builds-5hitr2jh/three-key.hex)
 - [Size results](/private/tmp/macropad-eleven-bit-test-builds-5hitr2jh/results.json)
 
-These are experimental six-byte configurations, not a published configuration
-format. Opt-in firmware still advertises version 9; existing version-9
-configurator timer records are incompatible with these images. The experiment
-comparison generator changes only temporary source copies; the direct build
-script now uses the repository implementation. The project's default firmware
-behavior, configurator, configuration version and checked-in release files are
-unchanged. No commit was made for this experiment or implementation.
+The artifacts above are historical experiment builds: they advertise version 9
+but use the experimental six-byte layout and require a matching test profile.
+Current production test builds advertise version 10. The comparison generator
+changes only temporary source copies; the direct build script uses the repository
+implementation. Checked-in release files remain the published v9 images.
+
+## v10 preparation validation
+
+The production native builds use 14,294 bytes of flash on six-key pads and
+14,292 on three-key pads, with 75/78 bytes of stack capacity. The full firmware
+host suite passes on both variants. Configurator tests cover every sixth-byte
+metadata combination, 11-bit boundaries, exact v9 interval migration, storage
+overflow recovery, layer reordering/removal and scoped reachability. The frozen
+v9 editor retains compatibility with the published firmware. Hardware validation
+is the remaining prerequisite for release generation; see the
+[hardware checklist](v10-hardware-validation.md).

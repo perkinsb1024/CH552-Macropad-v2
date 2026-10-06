@@ -60,6 +60,7 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
+| [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on one layer, with 4.096-second interval steps and less than 16 ms clock quantization. Six-byte records support 1–2048 ticks. |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
 | [v8](protocol/config-v8.md) | - Maximum **Timed action** error is improved from ~131s to 512ms<br> - **Media / system hold** keeps a consumer control held until release (useful for brightness and volume)<br> - **Scroll** gains **Hold**, with 100ms between repeated step groups<br> - **Mouse click** supports 1–16 clicks through **Single / Double / Custom**, replacing the separate **Mouse double-click** action. |
 | [v7](protocol/config-v7.md) | - Up to four **Timed actions**, repeating or restarted by input, with optional **On next input** actions and **Consume this input**<br> - **Set all LEDs** adds temporary bright/dim colors or rainbow, always on or blinking 1–8 times<br> - **Previous layer** becomes a target for persistent and one-shot layer switching. |
@@ -71,7 +72,7 @@ Below are the the primary firmware features added with each version
 | v1 (initial prototype) | - Browser configuration over WebHID, with profiles saved on the device<br> - Up to four layers<br> - Independent key, wheel-button and wheel-direction bindings<br> - Two-key chords<br> - Keyboard, mouse, media and **Type text** actions<br> - Per-key colors and layer indications, including **Rainbow** lighting. |
 
 Older firmware uses its matching [archived configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/).
-The current editor can import older profiles and migrate them before saving v9.
+The current editor can import older profiles and migrate them before saving v10.
 
 ## How to Compile the Firmware
 
@@ -80,7 +81,7 @@ The current editor can import older profiles and migrate them before saving v9.
 >
 > Pre-built v9 firmware files are available for [three-key](releases/ch552-macropad-3-key-8339b59a.hex) and [six-key](releases/ch552-macropad-6-key-8339b59a.hex) macropads, built from source revision `8339b59a`. This version adds **Horizontal** scrolling for taps and holds while retaining the v8 features: improved **Timed actions** accuracy, **Media / system hold**, held **Scroll**, and 1–16 clicks with **Mouse click**. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [latest configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v9 releases. The frozen [v8 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v8/) remains available for devices running v8 firmware. Back up your profile before
+Use the frozen [v9 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v9/) with these v9 releases. The current source and latest editor target v10; v10 release files await hardware validation. The frozen [v8 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v8/) remains available for devices running v8 firmware. Back up your profile before
 updating; v9 leaves old flash intact, but inputs stay inactive until the editor
 migrates and saves the profile as v9.
 
@@ -141,13 +142,13 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current v9 source builds, in bytes:
+Memory in the current v10 source builds, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 10 | 6 |
-| External RAM allocated (XSEG) | 517 | 526 |
-| Stack available (linker reserve) | 114 | 111 |
+| Flash remaining | 44 | 42 |
+| External RAM allocated (XSEG) | 487 | 496 |
+| Stack available (linker reserve) | 78 | 75 |
 
 Hardware validation under heavy workloads (using firmware v7) recorded a peak stack usage of only 36 bytes (which occurred during boot, USB set up and initialization).
 The [stack validation instructions and diagnostic code](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v7/Stack%20Test/README.md) are available on the `validation/stack-usage-test-v7` branch.
@@ -230,7 +231,7 @@ On first use, or when the saved profile is invalid, the keys and encoder stay in
 
 **Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100 ms interval. Horizontal scrolling requires v9 firmware.
 
-Configuration format 9 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, with intervals of 1–64 ticks (131.072 seconds per tick, up to about 140 minutes). Timers can restart on input, run an optional action on the next input, and consume that input to dismiss an alert without running its normal binding. Each timer has its own phase: clock quantization is less than 512ms early, with possible additional playback/USB delay. Configuration records remain five bytes.
+Configuration format 10 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16 ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
@@ -256,11 +257,11 @@ use independent handling. Legacy double-click bindings (v7 and earlier) migrate 
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor reads binary formats 2–9, JSON versions 1–9, and older drafts while
-preserving bindings and metadata. Old **Type Text** records become v9 text records,
-never **Consumer Hold**. Firmware accepts only v9; read/import the old profile and
-explicitly save it to reactivate inputs. Older firmware uses frozen format 2–8
-editors under `versions/format-vN/`. See [configuration format 9](protocol/config-v9.md).
+The editor reads binary formats 2–10, JSON versions 1–10, and older drafts while
+preserving bindings and metadata. Old **Type Text** records become current text records,
+never **Consumer Hold**. Firmware accepts only v10; read/import the old profile and
+explicitly save it to reactivate inputs. Older firmware uses frozen format 2–9
+editors under `versions/format-vN/`. Legacy timer intervals retain their exact duration; a profile that exceeds 128 bytes after migration remains editable but must be reduced before saving. See [configuration format 10](protocol/config-v10.md).
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -308,5 +309,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v9.md)
+- [Configuration format](protocol/config-v10.md)
 - [USB configuration protocol](protocol/hid-v1.md)

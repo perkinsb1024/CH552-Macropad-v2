@@ -59,7 +59,7 @@ For editing without a connection, choose **edit offline** for a three-key or six
 | **Action editor** | Choose what the selected control does and adjust its settings. For a numbered key, you can also pick its key-press color here |
 | **Chords** | Assign actions to two-key combinations |
 | **Layer options** | Set the current layer's indicator lighting |
-| **Timed actions** | Run actions repeatedly or after inactivity, across all layers |
+| **Timed actions** | Run actions repeatedly or after inactivity, across all layers or on one selected layer |
 | **Shortcuts** | Search ready-made actions and drag them onto an input |
 | **Device storage** | See how much of the 128-byte budget your profile uses |
 | **Backup & restore** | Export, import, or reset the profile in the editor |
@@ -202,7 +202,7 @@ You can have up to seven layers on a three-key macropad, or five on a six-key ma
 ![Layer 2 selected for editing while Layer 1 remains the startup layer](../images/configuration-overview/06-layers.png)
 
 - Click a layer tab to edit it
-- **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). **Global** chords and timers are already shared
+- **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). **Global** chords and timers assigned to **All layers** are already shared. Layer-specific timers keep their original assignment
 - Choose the **Startup layer** in **Profile**. This is the layer used when the device starts and after a configuration save
 - The trash button beside the layer tabs removes the selected layer, its bindings, and its local chords after confirmation. **Global** chords are preserved. At least one layer must remain. If you remove the startup layer, **Layer 1** becomes the startup layer
 - After removing a layer, review all layer-switch actions. A target may become unavailable or now refer to another layer at that number
@@ -256,12 +256,12 @@ A recognized chord runs its action instead of the two individual actions. For a 
 
 ## Timed Actions and Reminders
 
-You can add up to four timed actions, depending on remaining configuration storage space. They operate across all layers and repeat automatically.
+You can add up to four timed actions, depending on remaining configuration storage space. They repeat automatically and can operate across all layers or on one selected layer.
 
 ![A repeating amber lighting reminder with a roughly twenty-minute interval and a next-input action that clears it](../images/configuration-overview/08-timed-actions.png)
 
 1. Click **Add timed action**
-2. Move the **Interval** slider to the approximate duration you want
+2. Choose **All layers** or a specific layer in **Run on**, then set **Interval** with the slider or seconds field
 3. Choose whether to enable **Restart on key / encoder input**
 4. Click **When timer fires**, then choose its action in the **Action editor**
 5. Optionally expand **On next input** and configure a follow-up action and **Consume this input**
@@ -276,13 +276,18 @@ You can add up to four timed actions, depending on remaining configuration stora
 
 “Input” means activity on the macropad. Using your computer's regular keyboard or mouse does not restart these timers. Keeping a button held only resets the timer when you first press the button.
 
-The interval uses steps of 131.072 seconds, up to 2 hours 19 minutes 48.608 seconds.
-The configurator shows the approximate time next to the slider. In v8, each timer
-measures from its own last start or restart,
-with less than 512 ms of clock quantization instead of up to 131 seconds.
-A one-step interval becomes due about 130.560–131.072 seconds after its reset.
-Polling, queued output and the device clock can add timing error; these remain
-reminders rather than an exact host countdown. The five-byte storage cost is unchanged.
+The interval uses steps of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds.
+Enter a duration in seconds or use the slider; the editor rounds to the nearest
+supported interval. Each timer measures from its own last start or restart,
+with less than 16 ms of early clock quantization. A one-step interval becomes
+due about 4.080–4.096 seconds after its reset. Polling, queued output and the
+device clock can add timing error. Each timer uses six bytes of device storage.
+
+A timer assigned to a layer advances only while that layer is active. Every
+actual layer change resets layer-specific intervals, so returning to the layer
+starts a fresh interval. Global timers continue through layer changes. Already
+armed **On next input** actions remain armed and run on the next macropad input,
+even if their timer's assigned layer is no longer active.
 
 ### On Next Input
 
@@ -468,7 +473,7 @@ While space is limited, the configuration format is extremely efficient and can 
 | Each three-key layer | 15 bytes, including all its regular input assignments, key colors, and layer options |
 | Each six-key layer | 22 bytes, including all its regular input assignments, key colors, and layer options |
 | Each chord | 3 bytes, whether local or global |
-| Each timed action | 5 bytes, including its interval, options, and both action assignments |
+| Each timed action | 6 bytes, including its interval, options, and both action assignments |
 | Each different text phrase | One byte per character, plus one extra byte |
 
 Ordinary actions fit into the space already reserved for their layer, chord, or timer. For example, changing a key from **Nothing** to a keyboard shortcut, mouse action, or **LED control** does not need extra space. **Type text** adds the phrase's storage cost.
@@ -549,7 +554,7 @@ If you start from the two-layer starter, customize its existing layers instead o
 
 ### Create a Reminder to Take a Break
 
-1. Click **Add timed action**. Choose an interval of 28 × 131 seconds, roughly one hour
+1. Click **Add timed action**. Enter 3600 seconds for **Interval**; the supported duration rounds to 3600.384 seconds, roughly one hour
 2. Leave **Restart on key / encoder input** off for an hourly reminder. Turn it on if you want the reminder only after and hour of macropad inactivity
 3. Select **When timer fires → LED control → Set all LEDs → Always on**. Choose **Amber** and **Full Brightness**
 4. Expand **On next input**, select its action, and choose **LED control → Set all LEDs → As configured**
@@ -574,7 +579,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v8 clock quantization is less than 512 ms early. Older v7 firmware could fire up to 131 seconds early; use matching v8 firmware for improved precision |
+| A reminder fires earlier than expected | v10 clock quantization is less than 16 ms early. Earlier firmware has coarser timing; use matching v10 firmware and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |
@@ -588,7 +593,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 <details>
 <summary><strong>Advanced: Gotchas and things to watch out for with Timed Actions</strong></summary>
 
-**Timed actions** and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that all layer changes cancel pending actions.
+**Timed actions** and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that layer changes preserve armed **On next input** actions while resetting layer-specific intervals. Layer changes still cancel queued playback.
 
 ### How Multiple Pending Follow-Ups Run
 

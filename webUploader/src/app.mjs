@@ -1,5 +1,6 @@
 import { Ch552Bootloader } from './bootloader.mjs';
 import { parseHex } from './hex.mjs';
+import { configuratorPath } from './firmware-format.mjs';
 
 const $ = id => document.getElementById(id);
 const status = $('status'), connect = $('connect'), install = $('install');
@@ -134,7 +135,8 @@ install.addEventListener('click', async () => {
     $('device-info').textContent = 'Installation complete; bootloader session closed.';
     report('Firmware programmed and verified.');
     const configuratorLink = document.createElement('a');
-    configuratorLink.href = '../';
+    const entry = manifest.firmware.find(f => f.keys === selectedVariant);
+    configuratorLink.href = configuratorPath(entry.formatVersion, manifest.currentFormatVersion);
     configuratorLink.textContent = 'Open the macropad configurator to load or save your profile';
     status.append(' ', configuratorLink, '.');
   } catch (error) {

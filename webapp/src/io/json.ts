@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 9;
+export const JSON_VERSION = 10;
 const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
@@ -156,7 +156,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -205,7 +205,9 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       if (!isRecord(timer)) throw new ImportError(`Timed action ${i + 1} is malformed.`);
       if (typeof timer.resetOnInput !== 'boolean') throw new ImportError('Reset on input must be true or false.');
       if (typeof timer.consumeInput !== 'boolean') throw new ImportError('Consume input must be true or false.');
+      if (Number(raw.version) < 10 && timer.layer !== undefined) throw new ImportError('Layer-specific timers require profile version 10.');
       return { ticks: int(timer.ticks, 'Timer interval'), consumeInput: timer.consumeInput, resetOnInput: timer.resetOnInput,
+        ...(timer.layer !== undefined ? { layer: int(timer.layer, 'Timer layer') } : {}),
         action: action(timer.action, `Timed action ${i + 1}`), resumeAction: action(timer.resumeAction, `Timed action ${i + 1} resume`) };
     });
   }
@@ -215,10 +217,12 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     ...(profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction])];
   if (Number(raw.version) < 9 && allActions.some(a => a.type === 'scroll' && a.horizontal)) throw new ImportError('Horizontal scrolling requires profile version 9.');
   if (Number(raw.version) < 8 && allActions.some(a => a.type === 'consumerHold' || (a.type === 'scroll' && a.hold))) throw new ImportError('Consumer Hold and held scrolling require profile version 8.');
-  migrateLegacyProfile(profile);
+  migrateLegacyProfile(profile, Number(raw.version));
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
   const issues = validateProfile(profile);
-  if (issues.length) throw new ImportError(issues.map((i) => `${i.where}: ${i.message}`).join('\n'));
+  // Oversized imports remain editable and exportable; encoding/saving stays blocked.
+  const invalid = issues.filter(i => i.where !== 'Storage');
+  if (invalid.length) throw new ImportError(invalid.map((i) => `${i.where}: ${i.message}`).join('\n'));
   const meta: LocalMetadata = {};
   if (isRecord(raw.localMetadata)) {
     if (Array.isArray(raw.localMetadata.layerNames)) meta.layerNames = raw.localMetadata.layerNames.map((n) => (typeof n === 'string' ? n : ''));

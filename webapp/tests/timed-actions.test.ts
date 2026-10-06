@@ -22,13 +22,13 @@ function firmwareAccepts(image: Uint8Array, variant: number) {
   return validator.accepts(image, variant);
 }
 
-describe('v8 timed-action images', () => {
+describe('v10 timed-action images', () => {
   it.each([0, 1] as const)('matches firmware for all four counts, endpoints and flag combinations on variant %s', (variant) => {
     for (let count = 0; count <= 4; count++) {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[2]).toBe(9);
+      expect(image[2]).toBe(10);
       expect((image[3]! >> 6) | ((image[4]! >> 7) << 2)).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
@@ -41,9 +41,9 @@ describe('v8 timed-action images', () => {
     p.timedActions = [{ ...timer(64, true), action: { type: 'string', text: 'abc' }, resumeAction: { type: 'string', text: 'abc' } }];
     const image = encodeProfile(p);
     const offset = 9 + 44 + 3;
-    expect([...image.slice(offset, offset + 5)]).toEqual([191, 16, 0, 16, 0]);
-    expect([...image.slice(offset + 5, offset + 9)]).toEqual([97, 98, 99, 0]);
-    expect(computeCapacity(p)).toMatchObject({ chords: 3, timedActions: 5, strings: 4, used: 65 });
+    expect([...image.slice(offset, offset + 6)]).toEqual([63, 16, 0, 16, 0, 128]);
+    expect([...image.slice(offset + 6, offset + 10)]).toEqual([97, 98, 99, 0]);
+    expect(computeCapacity(p)).toMatchObject({ chords: 3, timedActions: 6, strings: 4, used: 66 });
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
     expect(firmwareAccepts(image, 0)).toBe(true);
   });
@@ -82,7 +82,7 @@ describe('v8 timed-action images', () => {
   });
   it('validates intervals, flags, capacity, and backups without silently dropping timers', () => {
     const p = defaultProfile(0); p.timedActions = [timer()];
-    for (const ticks of [0, 65, 1.5, NaN]) {
+    for (const ticks of [0, 2049, 1.5, NaN]) {
       p.timedActions[0]!.ticks = ticks;
       expect(validateProfile(p).length).toBeGreaterThan(0);
     }
@@ -113,14 +113,14 @@ describe('v8 timed-action images', () => {
 });
 
 it.each([0, 1] as const)('packs both flags without reducing interval or profile capacity on variant %s', variant => {
-  for (const ticks of [1, 64]) for (const reset of [false, true]) for (const consume of [false, true]) {
+  for (const ticks of [1, 256, 257, 2048]) for (const reset of [false, true]) for (const consume of [false, true]) {
     const p = defaultProfile(variant);
     p.timedActions = [{ ...timer(ticks, reset), consumeInput: consume,
       action: { type: 'ledControl', command: 'effectOn', value: 15 },
       resumeAction: { type: 'ledControl', command: 'effectRestore', value: 0 } }];
     const image = encodeProfile(p);
     const offset = 9 + p.layers.length * (variant ? 15 : 22);
-    expect([...image.slice(offset, offset + 5)]).toEqual([(ticks - 1) | (reset ? 128 : 0) | (consume ? 64 : 0), 255, 129, 15, 128]);
+    expect([...image.slice(offset, offset + 6)]).toEqual([(ticks - 1) & 255, 255, 129, 15, 128, ((ticks - 1) >> 8) << 3 | (reset ? 128 : 0) | (consume ? 64 : 0)]);
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
     expect(firmwareAccepts(image, variant)).toBe(true);

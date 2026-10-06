@@ -418,13 +418,8 @@ void firmwareApplyConfig(void) {
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
-#if CONFIG_TIMED_LAYER_EXPERIMENT
-  // Only bits 4-11 reach the 16 ms byte clock; the low word is sufficient.
+  // Bits 4-11 form the 16 ms fine clock; the low word is sufficient.
   actionsTimedReset(now >> 4);
-#else
-  // Timer fractional clock: 512 ms; each action divides by 256 independently.
-  actionsTimedReset(clock >> 9);
-#endif
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
@@ -495,11 +490,7 @@ void loop() {
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
 #endif
-#if CONFIG_TIMED_LAYER_EXPERIMENT
   if (activeConfigValid) actionsTimedPoll(now >> 4);
-#else
-  if (activeConfigValid) actionsTimedPoll(clock >> 9);
-#endif
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     scanButton(i, now);
   }

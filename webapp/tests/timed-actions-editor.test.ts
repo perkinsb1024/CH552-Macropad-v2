@@ -53,12 +53,12 @@ it('adds and edits expiry/resume actions through the common inspector, including
   expect(getAction(profile.value!, selectedSlot.value!)?.type).toBe('ledControl');
   undo(); expect(profile.value!.timedActions![0]!.resumeAction).toEqual({ type: 'none' });
   redo(); expect(profile.value!.timedActions![0]!.resumeAction.type).toBe('ledControl');
-  expect(computeCapacity(profile.value!).timedActions).toBe(5);
+  expect(computeCapacity(profile.value!).timedActions).toBe(6);
 });
 it('edits interval and reset flag, and removes a timer without leaving a stale selection', () => {
   start(); add(); add();
   const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
-  expect(input.props).toMatchObject({ type: 'range', min: 1, max: 64, step: 1 });
+  expect(input.props).toMatchObject({ type: 'range', min: 1, max: 2048, step: 1 });
   (input.props.onInput as (e: unknown) => void)({ target: { value: '55' } });
   const checkbox = nodes(TimedActionsPanel()).find(n => n.props.type === 'checkbox')!;
   (checkbox.props.onChange as (e: unknown) => void)({ target: { checked: false } });
@@ -68,8 +68,8 @@ it('edits interval and reset flag, and removes a timer without leaving a stale s
   click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove timer 1')!);
   expect(profile.value!.timedActions).toBeUndefined();
   expect(selectedSlot.value).toBeNull();
-  expect(approximateDuration(55)).toBe('≈ 120 minutes 9 seconds');
-  expect(approximateDuration(1)).toBe('≈ 2 minutes 11 seconds');
+  expect(approximateDuration(55)).toBe('≈ 3 minutes 45 seconds');
+  expect(approximateDuration(1)).toBe('≈ 4 seconds');
 });
 it('limits additions by firmware timer count and shared profile capacity', () => {
   start(); for (let i = 0; i < 4; i++) add();
@@ -102,15 +102,15 @@ it('round-trips timer drafts and clipboard actions while rejecting pasted holds'
 
 it('clamps edits and provides whole-number durations', () => {
   start(); add();
-  for (const [value, ticks] of [['444',64], ['0',1], ['-5',1], ['1.5',2], ['',1]] as const) {
+  for (const [value, ticks] of [['9999',2048], ['0',1], ['-5',1], ['1.5',2], ['',1]] as const) {
     const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
     const target = { value };
     (input.props.onInput as (e: unknown) => void)({ target });
     expect(profile.value!.timedActions![0]!.ticks).toBe(ticks);
     expect(String(target.value)).toBe(String(ticks));
   }
-  expect(clampTicks('Infinity')).toBe(64);
-  expect(approximateDuration(64)).toBe('≈ 139 minutes 49 seconds');
+  expect(clampTicks('Infinity')).toBe(2048);
+  expect(approximateDuration(2048)).toBe('≈ 139 minutes 49 seconds');
   expect(nodes(TimedActionsPanel()).find(n => n.type === 'output')?.props.title).toBeUndefined();
 });
 it('edits consume independently from restart, and undo restores it', () => {

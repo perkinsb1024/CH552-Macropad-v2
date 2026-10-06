@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseHex } from './src/hex.mjs';
+import { firmwareFormat } from './src/firmware-format.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const upstream = join(root, 'upstream');
@@ -55,7 +56,7 @@ ${core}
     const name = matches[0];
     const content = await readFile(join(releases, name));
     const image = parseHex(content.toString('utf8'));
-    firmware.push({ keys, name, bytes: image.length, sha256: createHash('sha256').update(content).digest('hex') });
+    firmware.push({ keys, name, bytes: image.length, formatVersion: firmwareFormat(image, keys), sha256: createHash('sha256').update(content).digest('hex') });
   }
   await mkdir(join(output, 'firmware'), { recursive: true });
   // Only clean generated firmware files so old releases do not linger in local builds.
@@ -63,13 +64,16 @@ ${core}
     if (name.endsWith('.hex')) await rm(join(output, 'firmware', name));
   }
   for (const entry of firmware) await cp(join(releases, entry.name), join(output, 'firmware', entry.name));
-  for (const name of ['index.html', 'style.css', 'app.mjs', 'bootloader.mjs', 'hex.mjs']) await cp(join(root, 'src', name), join(output, name));
+  for (const name of ['index.html', 'style.css', 'app.mjs', 'bootloader.mjs', 'hex.mjs', 'firmware-format.mjs']) await cp(join(root, 'src', name), join(output, name));
   await writeFile(join(output, 'upstream-patched.mjs'), factory);
   await cp(join(upstream, 'LICENSE'), join(output, 'upstream-LICENSE.txt'));
   await cp(join(root, 'README.md'), join(output, 'README.md'));
   await cp(patch, join(output, 'verification-fix.patch'));
   await cp(alignmentPatch, join(output, 'packet-alignment-fix.patch'));
   await writeFile(join(output, 'upstream-original.js'), original);
-  await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, firmware }, null, 2) + '\n');
+  const constants = await readFile(resolve(root, '../webapp/src/model/constants.ts'), 'utf8');
+  const currentFormatVersion = Number(/FORMAT_VERSION\s*=\s*(\d+)/.exec(constants)?.[1]);
+  if (!currentFormatVersion) throw new Error('Cannot identify current configurator format.');
+  await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, currentFormatVersion, firmware }, null, 2) + '\n');
   console.log(`Built beta uploader: ${output}\nUpstream: ${revision}\nFirmware: ${firmware.map(f => f.name).join(', ')}`);
 } finally { await rm(temporary, { recursive: true, force: true }); }

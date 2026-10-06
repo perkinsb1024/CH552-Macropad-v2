@@ -28,9 +28,9 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
-Formats 8 and 9 report action mask `0xFFEF`: mouse clicks use type 3 with auxiliary
+Formats 8–10 report action mask `0xFFEF`: mouse clicks use type 3 with auxiliary
 count minus one, and type 4 is reserved. Its configuration version identifies
-the full action map; see [config-v9.md](config-v9.md).
+the full action map; see [config-v10.md](config-v10.md).
 
 The format-7 action mask reports all sixteen action types, including **LED control**
 at F. Use GET_INFO format version 7 to identify its action map and LED support;
@@ -108,8 +108,9 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 Format 7 adds timer records and temporary LED-control commands without changing
 transport v1. See [config-v7.md](config-v7.md). V7 firmware accepts format 6 images, which its editor can migrate before saving
-v7. Current v9 firmware accepts only format 9; the current editor migrates older
-profiles before saving v9.
+v7. Current v10 firmware accepts only format 10; the current editor migrates older
+profiles before saving v10. Format 10 changes timer records without changing the
+HID transport or action mask.
 
 In format 9, mouse report ID 2 adds horizontal AC Pan in two formerly padding
 bits (payload byte 0, bits 6–7, signed -1 to +1). Buttons occupy bits 0–2,

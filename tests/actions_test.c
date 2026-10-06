@@ -95,7 +95,7 @@ static void testTimedPrecision(void) {
     activeConfig[timer] = 0; // Periodic, independent of physical input.
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
-    activeConfig[timer + CONFIG_TIMED_SIZE] = 128; // Restart on input.
+    activeConfig[timer + CONFIG_TIMED_SIZE] = 0; activeConfig[timer + CONFIG_TIMED_SIZE + 5] = 128; // Restart on input.
     activeConfig[timer + CONFIG_TIMED_SIZE + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
     actionsTimedReset(250);
@@ -417,7 +417,7 @@ static void testPreviousLayer(void) {
     reset(); activeConfig[3] = 1;
     activeConfig[3] |= 1 << 6;
     uint8_t timer = configTimedOffset();
-    activeConfig[timer] = 128 | CONFIG_TIMED_CONSUME;
+    activeConfig[timer + 5] = 128 | CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 2] = 1;
     activeConfig[timer + 3] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 4] = CONFIG_LAYER_PREVIOUS;
     actionsTimedReset(0); actionsTimedPoll(1); assert(actionsLayer() == 1);
@@ -1304,8 +1304,8 @@ static void testConsumeWake(void) {
     reset();
     activeConfig[3] = 1 << 6;
     uint8_t timer = configTimedOffset();
-    activeConfig[timer] = 128;
-    activeConfig[timer] |= CONFIG_TIMED_CONSUME;
+    activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
+    activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
     // Consume even with a None resume action; no state should be created for a hold.
@@ -1336,8 +1336,8 @@ static void testConsumeWake(void) {
     timer = configTimedOffset();
     activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_KEY_TAP; activeConfig[33] = 6;
     activeConfig[3] = 1 << 6;
-    activeConfig[timer] = 128;
-    activeConfig[timer] |= CONFIG_TIMED_CONSUME;
+    activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
+    activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
     actionsTimedReset(0);
@@ -1353,10 +1353,10 @@ static void testConsumeWake(void) {
     activeConfig[3] = 2 << 6;
     timer = configTimedOffset();
     for (uint8_t i = 0; i < 2; i++) {
-        activeConfig[timer + 5 * i + 3] = CONFIG_ACTION_LED_CONTROL;
-        activeConfig[timer + 5 * i + 4] = CONFIG_LED_RESTORE;
+        activeConfig[timer + CONFIG_TIMED_SIZE * i + 3] = CONFIG_ACTION_LED_CONTROL;
+        activeConfig[timer + CONFIG_TIMED_SIZE * i + 4] = CONFIG_LED_RESTORE;
     }
-    activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 5] |= CONFIG_TIMED_CONSUME;
     actionsTimedReset(0); actionsTimedPoll(1);
     assert(actionsTimedInput() && ledCalls == 2);
     assert(!actionsTimedInput() && ledCalls == 2);
@@ -1366,7 +1366,7 @@ static void testConsumeWake(void) {
     activeConfig[9] = 0x1A; activeConfig[10] = 1;
     activeConfig[33] = CONFIG_ACTION_KEY_TAP; activeConfig[34] = 4;
     timer = configTimedOffset();
-    activeConfig[timer] = CONFIG_TIMED_CONSUME;
+    activeConfig[timer + 5] = CONFIG_TIMED_CONSUME;
     actionsInit(); actionsTimedReset(0);
     actionsPress(0, 0); actionsRelease(0);
     assert(actionsLayer() == 1);
@@ -1400,7 +1400,7 @@ int main(void) {
     activeConfig[timer + 3] = 0xFF;
     activeConfig[timer + 4] = CONFIG_LED_INDICATOR_SET;
 #endif
-    activeConfig[timer + CONFIG_TIMED_SIZE] = 129; // Every two ticks, reset on input.
+    activeConfig[timer + CONFIG_TIMED_SIZE] = 1; activeConfig[timer + CONFIG_TIMED_SIZE + 5] = 128; // Every two ticks, reset on input.
     activeConfig[timer + CONFIG_TIMED_SIZE + 1] = 0x1F;
     activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
     actionsTimedReset(254);
@@ -1426,11 +1426,11 @@ int main(void) {
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
     actionsTimedReset(0);
-    for (uint8_t tick = 1; tick <= CONFIG_TIMED_INTERVAL_MASK; tick++) {
+    for (uint16_t tick = 1; tick <= CONFIG_TIMED_INTERVAL_MASK; tick++) {
         actionsTimedPoll(tick);
         assert(ledCalls == 0);
     }
-    actionsTimedPoll(CONFIG_TIMED_INTERVAL_MASK + 1);
+    actionsTimedPoll((uint8_t)(CONFIG_TIMED_INTERVAL_MASK + 1));
     assert(ledCalls == 1);
     actionsTimedReset(7);
     actionsTimedPoll(7);
@@ -1474,7 +1474,7 @@ int main(void) {
     activeConfig[timer] = 2;
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
-    activeConfig[timer + CONFIG_TIMED_SIZE] = 130;
+    activeConfig[timer + CONFIG_TIMED_SIZE] = 2; activeConfig[timer + CONFIG_TIMED_SIZE + 5] = 128;
     activeConfig[timer + CONFIG_TIMED_SIZE + 1] = 0x1F;
     activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
     actionsTimedReset(0);

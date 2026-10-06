@@ -152,7 +152,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -466,7 +466,10 @@ function applyLayerOrder(order: number[]): void {
       layer.counterclockwise = updateTarget(layer.counterclockwise);
     }
     for (const chord of draft.chords) chord.action = updateTarget(chord.action);
-    for (const timer of draft.timedActions ?? []) { timer.action = updateTarget(timer.action); timer.resumeAction = updateTarget(timer.resumeAction); }
+    for (const timer of draft.timedActions ?? []) {
+      timer.action = updateTarget(timer.action); timer.resumeAction = updateTarget(timer.resumeAction);
+      if (timer.layer !== undefined) timer.layer = remap(timer.layer);
+    }
     draft.startupLayer = remap(draft.startupLayer);
   });
   selectedLayer.value = remap(selectedLayer.value);
@@ -586,6 +589,10 @@ export function layerReferences(p: Profile, layer: number): { actions: number; c
     visit(l.counterclockwise);
   });
   p.chords.forEach((c) => (c.global || c.layer !== layer) && visit(c.action));
+  for (const timer of p.timedActions ?? []) {
+    visit(timer.action); visit(timer.resumeAction);
+    if (timer.layer === layer) actions++;
+  }
   return { actions, chords: p.chords.filter((c) => !c.global && c.layer === layer).length };
 }
 
@@ -615,7 +622,11 @@ export function removeLayer(layer: number): void {
       l.counterclockwise = shift(l.counterclockwise);
     }
     for (const c of draft.chords) c.action = shift(c.action);
-    for (const timer of draft.timedActions ?? []) { timer.action = shift(timer.action); timer.resumeAction = shift(timer.resumeAction); }
+    for (const timer of draft.timedActions ?? []) {
+      timer.action = shift(timer.action); timer.resumeAction = shift(timer.resumeAction);
+      if (timer.layer === layer) timer.layer = -1; // Require explicit reassignment; preserve both actions.
+      else if (timer.layer !== undefined && timer.layer > layer) timer.layer--;
+    }
     if (draft.startupLayer > layer) draft.startupLayer--;
     else if (draft.startupLayer === layer) draft.startupLayer = 0;
   });

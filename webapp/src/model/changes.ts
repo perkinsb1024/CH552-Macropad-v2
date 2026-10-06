@@ -119,7 +119,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
   }
   if (JSON.stringify(before.timedActions ?? []) !== JSON.stringify(after.timedActions ?? [])) {
     const describe = (p: Profile) => (p.timedActions ?? []).map((t, i) =>
-      `${i + 1}: ${t.ticks} ticks${t.resetOnInput ? ', resets on input' : ''}${t.consumeInput ? ', consumes wake input' : ''} → ${actionName(t.action)}; resume: ${actionName(t.resumeAction)}`).join(' · ') || 'None';
+      `${i + 1}: ${t.ticks} ticks, ${t.layer === undefined ? 'all layers' : `Layer ${t.layer + 1}`}${t.resetOnInput ? ', resets on input' : ''}${t.consumeInput ? ', consumes wake input' : ''} → ${actionName(t.action)}; resume: ${actionName(t.resumeAction)}`).join(' · ') || 'None';
     changes.push({ where: 'Timed actions', before: describe(before), after: describe(after), undo: (draft) => {
       if (before.timedActions) draft.timedActions = structuredClone(before.timedActions);
       else delete draft.timedActions;

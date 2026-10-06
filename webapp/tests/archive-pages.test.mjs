@@ -16,7 +16,7 @@ describe('archived pages in development', () => {
   });
   afterAll(async () => { await server?.close(); });
 
-  it.each([2, 3, 4, 5, 6, 7, 8])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
+  it.each([2, 3, 4, 5, 6, 7, 8, 9])('serves frozen v%s HTML, including direct index URLs and query strings', async (version) => {
     const frozen = await readFile(new URL(`../public/versions/format-v${version}/index.html`, import.meta.url), 'utf8');
     for (const path of [`/versions/format-v${version}/`, `/versions/format-v${version}/?sim=six`, `/versions/format-v${version}/index.html`]) {
       const response = await fetch(origin + path);
@@ -36,7 +36,7 @@ describe('archived pages in development', () => {
     expect(redirect.headers.get('location')).toBe('/versions/format-v2/?sim=six');
   });
 
-  it.each([7, 8])('serves the frozen v%s live view with its own relative assets', async version => {
+  it.each([7, 8, 9])('serves the frozen v%s live view with its own relative assets', async version => {
     const path = `/versions/format-v${version}/liveView/index.html`;
     const frozen = await readFile(new URL(`../public/versions/format-v${version}/liveView/index.html`, import.meta.url), 'utf8');
     const response = await fetch(origin + path);

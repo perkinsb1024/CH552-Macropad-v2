@@ -23,7 +23,7 @@ it.each([0, 1] as const)('migrates v7 text in keys, wheel, chords and both timer
   p.layers[0]!.clockwise = text;
   p.layers[0]!.keys[1] = { type: 'consumer', usage: 0xfff };
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: text }];
-  p.timedActions = [{ ticks: 64, resetOnInput: true, consumeInput: true, action: text, resumeAction: text }];
+  p.timedActions = [{ ticks: 2048, resetOnInput: true, consumeInput: true, action: text, resumeAction: text }];
   const modern = encodeProfile(p);
   expect(modern.slice(9, 11)).toEqual(new Uint8Array([0x10, 0]));
   const old = modern.slice(); legacyTextCodes(old); old[2] = 7; sealImage(old);
@@ -35,7 +35,7 @@ it.each([0, 1] as const)('migrates v7 text in keys, wheel, chords and both timer
   expect(encodeProfile(decoded.profile)).toEqual(modern);
   expect(validator.accepts(modern, variant)).toBe(true);
   const meta = { profileName: 'Work', layerNames: ['Tools', 'Media'] };
-  const json = JSON.parse(exportProfile(p, meta)); json.version = 7;
+  const json = JSON.parse(exportProfile(p, meta)); json.version = 7; json.timedActions[0].ticks = 64;
   expect(importProfile(JSON.stringify(json))).toEqual({ profile: p, meta });
 });
 

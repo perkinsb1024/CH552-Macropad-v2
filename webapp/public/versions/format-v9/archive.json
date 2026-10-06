@@ -1,0 +1,19 @@
+{
+  "formatVersion": 9,
+  "sourceCommit": "b40b1aa56746727023104f50971d7c70a1a79f8f",
+  "changes": [
+    "Frozen v9 editor and live view with archive banner; shared uploader redirect"
+  ],
+  "validation": "TypeScript, production build and existing archive verification passed.",
+  "sha256": {
+    "assets/configurator-6Bp2YDm_.js.map": "6785d764cc4966a203601daa1c3bc20b9cb603613eaf3189f32593e643c6d02a",
+    "assets/main-BgYCFN0t.js": "7b3c7f2b4865f1c094fea3a9931e74120d7927db820bf24f70e95f6dd2e58dde",
+    "assets/main-BgYCFN0t.js.map": "c2853f5f08522f8c25b1c404e59b4327a85778cf7cd924f62ddb9572d6ab4876",
+    "assets/main-nlRXe1xO.css": "e62322630cc4f6bd8b3508eecc885511b9ee14a076e092d94efa7ccf2aada78f",
+    "assets/viewer-6Bp2YDm_.js.map": "99e77239b960bfd09bf5b1207eab4a8dac4e70d8b715d582430e6c8d510fd804",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "c8db131b34ff6203092ab97b78232dd399635d7df9651b579c4ab3776b2643b6",
+    "liveView/index.html": "641a00a745078286b48a36a99ebaf43dee59d64cda57256224fc21b4b897d2ec",
+    "webUploader/index.html": "1f6eeef42358c61a1efc93fdabb8b605378fc4ac2d95f52532b5943f6bf0e0f8"
+  }
+}

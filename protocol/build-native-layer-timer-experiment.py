@@ -1,4 +1,4 @@
-"""Build the retained, opt-in experiment at the real application flash limit."""
+"""Build the production v10 firmware at the real application flash limit."""
 from concurrent.futures import ThreadPoolExecutor
 from configparser import ConfigParser
 import importlib.util
@@ -29,7 +29,7 @@ def build(root, variant):
     settings = ConfigParser()
     settings.read(ROOT / "platformio.ini")
     existing = settings.get("env:ch552", "build_flags", fallback="")
-    settings.set("env:ch552", "build_flags", existing + " -DCONFIG_TIMED_LAYER_EXPERIMENT=1")
+    settings.set("env:ch552", "build_flags", existing)
     with (source / "platformio.ini").open("w") as target:
         settings.write(target)
     # Test the repository implementation directly, without timer source edits.

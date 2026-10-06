@@ -1,6 +1,25 @@
 import { keyCount, layerSize } from '../src/model/constants';
+/** Convert representable v10 timer durations to five-byte legacy records. */
+export function legacyTimerRecords(image: Uint8Array): void {
+  if (image[2]! < 10) return;
+  let offset = 9 + layerSize((image[5]! & 1) as 0 | 1) * ((image[3]! & 7) + 1) + 3 * ((image[5]! >> 1) & 63);
+  const original = image.slice();
+  const timers = (image[3]! >> 6) | ((image[4]! >> 7) << 2);
+  const start = offset;
+  for (let i = 0; i < timers; i++, offset += 5) {
+    const old = start + i * 6;
+    const ticks = (original[old]! | ((original[old + 5]! & 56) << 5)) + 1;
+    if (ticks % 32 || (original[old + 5]! & 7)) throw new Error('Timer cannot be represented in a legacy image');
+    image[offset] = ticks / 32 - 1 | (original[old + 5]! & 192);
+    image.set(original.slice(old + 1, old + 5), offset + 1);
+  }
+  image.fill(0, offset);
+  image.set(original.slice(start + timers * 6, start + timers * 6 + (image[4]! & 127)), offset);
+  image[2] = 9;
+}
 /** Re-encode v8 text records as v6/v7 text, before changing the version byte. */
 export function legacyTextCodes(image: Uint8Array): void {
+  legacyTimerRecords(image);
   const variant = (image[5]! & 1) as 0 | 1;
   const size = layerSize(variant);
   const layers = (image[3]! & 7) + 1;

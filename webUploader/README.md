@@ -2,7 +2,7 @@
 
 *This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
-The bundled firmware uses configuration format v9, built from revision `8339b59a`: [three-key](../releases/ch552-macropad-3-key-8339b59a.hex) and [six-key](../releases/ch552-macropad-6-key-8339b59a.hex). Use the [latest configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) after installation. Back up your profile before updating; older profiles remain in DataFlash but inputs stay inactive until the latest editor migrates and saves them as v9.
+The bundled firmware uses configuration format v9, built from revision `8339b59a`: [three-key](../releases/ch552-macropad-3-key-8339b59a.hex) and [six-key](../releases/ch552-macropad-6-key-8339b59a.hex). Use the frozen [v9 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v9/) after installation. The installer reads the configuration format from each bundled HEX and links to its matching editor. Current source and the latest editor target v10; v10 release generation awaits hardware validation. Back up your profile before updating; older profiles remain in DataFlash but inputs stay inactive until the matching editor migrates and saves them as v9.
 
 The static page is built into `webapp/dist/webUploader/` for the existing GitHub Pages site. When this branch is merged and deployed, it will be available at:
 

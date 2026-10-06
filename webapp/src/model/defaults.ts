@@ -1,4 +1,4 @@
-import { DEFAULT_RAINBOW_SPEED, DEFAULT_RAINBOW_PHASE, keyCount, type Variant, MOD_CTRL, MOD_GUI, MOD_SHIFT, LayerIndicatorBehavior } from './constants';
+import { FORMAT_VERSION, DEFAULT_RAINBOW_SPEED, DEFAULT_RAINBOW_PHASE, keyCount, type Variant, MOD_CTRL, MOD_GUI, MOD_SHIFT, LayerIndicatorBehavior } from './constants';
 import type { Action, Layer, Profile } from './types';
 
 const SHORTCUT_USAGES = [0x1d, 0x06, 0x19, 0x1d, 0x1b, 0x04]; // Z, C, V, Z, X, A
@@ -68,7 +68,7 @@ export function cloneProfile(profile: Profile): Profile {
 /** Upgrade older editor profiles without changing bindings or palette indices.
  * Indicator value 1 now means timed-on; transparency defaults to disabled.
  */
-export function migrateLegacyProfile(profile: Profile): Profile {
+export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VERSION): Profile {
   profile.transparentBlack ??= false;
   profile.rainbowPhase ??= DEFAULT_RAINBOW_PHASE;
   profile.rainbowSpeed ??= DEFAULT_RAINBOW_SPEED;
@@ -95,6 +95,11 @@ export function migrateLegacyProfile(profile: Profile): Profile {
   }
   for (const chord of profile.chords) chord.action = migrateAction(chord.action);
   for (const timer of profile.timedActions ?? []) {
+    if (sourceVersion < 10) {
+      if (!Number.isInteger(timer.ticks) || timer.ticks < 1 || timer.ticks > 64 || timer.layer !== undefined)
+        throw new Error('Legacy timers require 1–64 ticks and cannot have a layer assignment.');
+      timer.ticks *= 32;
+    }
     timer.action = migrateAction(timer.action);
     timer.resumeAction = migrateAction(timer.resumeAction);
   }
