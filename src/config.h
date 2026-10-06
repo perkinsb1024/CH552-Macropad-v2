@@ -7,8 +7,10 @@
 #define CONFIG_SIZE 128
 // v8: Type Text shares type 0; type 9 is Consumer Hold. Timers stay five bytes.
 #define CONFIG_VERSION 9
-// Measurement-only six-byte timers. Default firmware keeps the v9 layout;
-// enabling this requires experimental images and has no configurator support.
+// Six-byte, eleven-bit layer-scoped timers. Default firmware keeps the v9
+// layout until the new format/configurator are introduced. Opt-in builds need
+// custom records: byte 0 is interval-1 low, byte 5 bits 3-5 are interval-1 high,
+// bits 0-2 are scope, and bits 6-7 are consume/restart flags.
 #ifndef CONFIG_TIMED_LAYER_EXPERIMENT
 #define CONFIG_TIMED_LAYER_EXPERIMENT 0
 #endif

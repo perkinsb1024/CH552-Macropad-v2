@@ -47,6 +47,10 @@ __data uint8_t tempOn;
 __pdata uint8_t tempReady;
 __pdata uint8_t stringIndex;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
+#if CONFIG_TIMED_LAYER_EXPERIMENT
+// High interval-counter bits occupy the same positions as record bits 3-5.
+__idata uint8_t timedHigh[CONFIG_TIMED_MAX];
+#endif
 __idata uint8_t timedFraction[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.

@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("layer_probes", ROOT / "protocol/build-layer-timer-probes.py")
 probes = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probes)
+spec = importlib.util.spec_from_file_location("eleven_bit_probes", ROOT / "protocol/build-eleven-bit-timer-probes.py")
+eleven_bit_probes = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(eleven_bit_probes)
 
 
 def build(root, variant):
@@ -29,7 +32,8 @@ def build(root, variant):
     settings.set("env:ch552", "build_flags", existing + " -DCONFIG_TIMED_LAYER_EXPERIMENT=1")
     with (source / "platformio.ini").open("w") as target:
         settings.write(target)
-    probes.run_probe(source, "six", True, True, variant, keep_resume=True, native_experiment=True)
+    # Test the repository implementation directly, without timer source edits.
+    eleven_bit_probes.probe(source, variant, "split-flags-gating")
     with (directory / "build.log").open("w") as log:
         subprocess.run([sys.executable, str(ROOT / "pio-platform/build_firmware.py"),
                         "build", str(source), str(output), "24000000", "148", "14336", str(variant)],

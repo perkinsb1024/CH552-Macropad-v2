@@ -419,8 +419,8 @@ void firmwareApplyConfig(void) {
   uint32_t clock = millis();
   uint16_t now = clock;
 #if CONFIG_TIMED_LAYER_EXPERIMENT
-  // Only bits 7-14 reach the byte clock; the existing low word is sufficient.
-  actionsTimedReset(now >> 7);
+  // Only bits 4-11 reach the 16 ms byte clock; the low word is sufficient.
+  actionsTimedReset(now >> 4);
 #else
   // Timer fractional clock: 512 ms; each action divides by 256 independently.
   actionsTimedReset(clock >> 9);
@@ -496,7 +496,7 @@ void loop() {
   actionsInputNow = now;
 #endif
 #if CONFIG_TIMED_LAYER_EXPERIMENT
-  if (activeConfigValid) actionsTimedPoll(now >> 7);
+  if (activeConfigValid) actionsTimedPoll(now >> 4);
 #else
   if (activeConfigValid) actionsTimedPoll(clock >> 9);
 #endif

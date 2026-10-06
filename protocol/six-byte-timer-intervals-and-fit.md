@@ -1,5 +1,10 @@
 # Six-byte timer intervals and flash fit
 
+The opt-in repository scheduler now implements the later
+[eleven-bit variant](eleven-bit-timer-findings.md). The eight-bit results below
+are historical measurements; the direct implementation build script now tests
+eleven-bit timers.
+
 Follow-up to [the initial layer investigation](layer-timed-actions-findings.md),
 measured on 2026-10-05 against `60661c8`. Retained work is on
 `experiment/layer-timers-fit`, uncommitted.
