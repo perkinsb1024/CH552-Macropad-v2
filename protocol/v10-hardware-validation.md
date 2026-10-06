@@ -54,8 +54,9 @@ the matching v9 editor before installing a v10 test image.
    busy USB/output queues. If using the stack diagnostic, record the observed
    peak against the 75/78-byte capacities; these are linker capacities rather
    than measured worst-case stack usage.
-   The [v10 stack sanity check](../Stack%20Test/README.md) supplies the diagnostic,
-   reader and a single workload profile adapted to each board variant.
+   The [v10 stack sanity check](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v10/Stack%20Test/README.md)
+   preserves the diagnostic, reader and workload on its validation branch.
+   The completed six-key sanity run observed 39 bytes used, with 36 untouched.
 7. In the editor, enter an arbitrary duration such as 300 seconds (rounds to
    299.008), select the maximum interval (8,388.608), reorder layers, and remove
    a timer's assigned layer. Removal should require explicit reassignment and
