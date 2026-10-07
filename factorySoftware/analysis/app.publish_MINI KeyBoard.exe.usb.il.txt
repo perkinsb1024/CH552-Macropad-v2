@@ -1,0 +1,1128 @@
+METHOD 0x06000011 HID.Hid::Write RVA 248c
+000c ldarg.0            
+000d ldfld              HID.Hid::deviceOpened
+0012 brfalse.s          128
+0014 ldarg.0            
+0015 ldfld              HID.Hid::outputReportLength
+001a newarr             System.Byte
+001f stloc.0            
+0020 ldloc.0            
+0021 ldc.i4.0           
+0022 ldarg.1            
+0023 ldfld              HID.report::reportID
+0028 stelem.i1          
+0029 ldc.i4.0           
+002a stloc.1            
+002b ldarg.1            
+002c ldfld              HID.report::reportBuff
+0031 ldlen              
+0032 conv.i4            
+0033 ldarg.0            
+0034 ldfld              HID.Hid::outputReportLength
+0039 ldc.i4.1           
+003a sub                
+003b bge.s              72
+003d ldarg.1            
+003e ldfld              HID.report::reportBuff
+0043 ldlen              
+0044 conv.i4            
+0045 stloc.1            
+0046 br.s               81
+0048 ldarg.0            
+0049 ldfld              HID.Hid::outputReportLength
+004e ldc.i4.1           
+004f sub                
+0050 stloc.1            
+0051 ldc.i4.1           
+0052 stloc.2            
+0053 br.s               102
+0055 ldloc.0            
+0056 ldloc.2            
+0057 ldarg.1            
+0058 ldfld              HID.report::reportBuff
+005d ldloc.2            
+005e ldc.i4.1           
+005f sub                
+0060 ldelem.u1          
+0061 stelem.i1          
+0062 ldloc.2            
+0063 ldc.i4.1           
+0064 add                
+0065 stloc.2            
+0066 ldloc.2            
+0067 ldloc.1            
+0068 ble.s              85
+006a ldarg.0            
+006b ldfld              HID.Hid::hidDevice
+0070 ldloc.0            
+0071 ldc.i4.0           
+0072 ldc.i4.s           65
+0074 callvirt           ::Write
+0079 ldc.i4.0           
+007a stloc.3            
+007b leave.s            130
+007d pop                
+007e leave.s            128
+0080 ldc.i4.4           
+0081 ret                
+0082 ldloc.3            
+0083 ret                
+
+METHOD 0x06000032 HIDTester.FormMain::AutoCheckUsb RVA 2e08
+000c ldarg.0            
+000d ldfld              HIDTester.FormMain::WriteMode
+0012 brtrue             228
+0017 ldarg.0            
+0018 ldfld              HIDTester.FormMain::myHid
+001d callvirt           HID.Hid::get_Opened
+0022 brtrue             181
+0027 ldc.i4             4489
+002c stloc.0            
+002d ldc.i4             34960
+0032 stloc.1            
+0033 ldarg.0            
+0034 ldarg.0            
+0035 ldfld              HIDTester.FormMain::myHid
+003a ldloc.0            
+003b ldloc.1            
+003c callvirt           HID.Hid::OpenDevice
+0041 dup                
+0042 stloc.2            
+0043 stfld              HIDTester.FormMain::myHidPtr
+0048 ldloc.2            
+0049 call               ::op_Explicit
+004e ldc.i4.m1          
+004f beq.s              134
+0051 ldarg.0            
+0052 call               HIDTester.FormMain::KeyBoardVersion_Check
+0057 ldarg.0            
+0058 ldfld              HIDTester.FormMain::stateLabel
+005d ldstr              'Connected'
+0062 callvirt           ::set_Text
+0067 ldarg.0            
+0068 ldfld              HIDTester.FormMain::stateLabel
+006d ldarg.0            
+006e ldfld              HIDTester.FormMain::stateLabel
+0073 call               ::get_Green
+0078 dup                
+0079 stloc.3            
+007a callvirt           ::set_BackColor
+007f ldloc.3            
+0080 callvirt           ::set_BackColor
+0085 ret                
+0086 ldarg.0            
+0087 ldfld              HIDTester.FormMain::stateLabel
+008c ldstr              'Not Connected'
+0091 callvirt           ::set_Text
+0096 ldarg.0            
+0097 ldfld              HIDTester.FormMain::stateLabel
+009c ldarg.0            
+009d ldfld              HIDTester.FormMain::stateLabel
+00a2 call               ::get_Red
+00a7 dup                
+00a8 stloc.3            
+00a9 callvirt           ::set_BackColor
+00ae ldloc.3            
+00af callvirt           ::set_BackColor
+00b4 ret                
+00b5 ldarg.0            
+00b6 ldfld              HIDTester.FormMain::stateLabel
+00bb ldstr              'Connected'
+00c0 callvirt           ::set_Text
+00c5 ldarg.0            
+00c6 ldfld              HIDTester.FormMain::stateLabel
+00cb ldarg.0            
+00cc ldfld              HIDTester.FormMain::stateLabel
+00d1 call               ::get_Green
+00d6 dup                
+00d7 stloc.3            
+00d8 callvirt           ::set_BackColor
+00dd ldloc.3            
+00de callvirt           ::set_BackColor
+00e3 ret                
+00e4 ldarg.0            
+00e5 ldfld              HIDTester.FormMain::WriteMode
+00ea ldc.i4.1           
+00eb bne.un             472
+00f0 ldarg.0            
+00f1 ldfld              HIDTester.FormMain::myHidLib
+00f6 callvirt           HIDTester.HidLib::Get_Dev_Sta
+00fb brtrue.s           366
+00fd ldarg.0            
+00fe ldfld              HIDTester.FormMain::myHidLib
+0103 callvirt           HIDTester.HidLib::Connect_Device
+0108 brfalse.s          319
+010a ldarg.0            
+010b call               HIDTester.FormMain::KeyBoardVersion_Check
+0110 ldarg.0            
+0111 ldfld              HIDTester.FormMain::stateLabel
+0116 ldstr              'Connected'
+011b callvirt           ::set_Text
+0120 ldarg.0            
+0121 ldfld              HIDTester.FormMain::stateLabel
+0126 ldarg.0            
+0127 ldfld              HIDTester.FormMain::stateLabel
+012c call               ::get_Green
+0131 dup                
+0132 stloc.3            
+0133 callvirt           ::set_BackColor
+0138 ldloc.3            
+0139 callvirt           ::set_BackColor
+013e ret                
+013f ldarg.0            
+0140 ldfld              HIDTester.FormMain::stateLabel
+0145 ldstr              'Not Connected'
+014a callvirt           ::set_Text
+014f ldarg.0            
+0150 ldfld              HIDTester.FormMain::stateLabel
+0155 ldarg.0            
+0156 ldfld              HIDTester.FormMain::stateLabel
+015b call               ::get_Red
+0160 dup                
+0161 stloc.3            
+0162 callvirt           ::set_BackColor
+0167 ldloc.3            
+0168 callvirt           ::set_BackColor
+016d ret                
+016e ldarg.0            
+016f ldfld              HIDTester.FormMain::myHidLib
+0174 callvirt           HIDTester.HidLib::Check_Disconnect
+0179 brfalse.s          426
+017b ldarg.0            
+017c ldfld              HIDTester.FormMain::stateLabel
+0181 ldstr              'Connected'
+0186 callvirt           ::set_Text
+018b ldarg.0            
+018c ldfld              HIDTester.FormMain::stateLabel
+0191 ldarg.0            
+0192 ldfld              HIDTester.FormMain::stateLabel
+0197 call               ::get_Green
+019c dup                
+019d stloc.3            
+019e callvirt           ::set_BackColor
+01a3 ldloc.3            
+01a4 callvirt           ::set_BackColor
+01a9 ret                
+01aa ldarg.0            
+01ab ldfld              HIDTester.FormMain::stateLabel
+01b0 ldstr              'Not Connected'
+01b5 callvirt           ::set_Text
+01ba ldarg.0            
+01bb ldfld              HIDTester.FormMain::stateLabel
+01c0 ldarg.0            
+01c1 ldfld              HIDTester.FormMain::stateLabel
+01c6 call               ::get_Red
+01cb dup                
+01cc stloc.3            
+01cd callvirt           ::set_BackColor
+01d2 ldloc.3            
+01d3 callvirt           ::set_BackColor
+01d8 ret                
+
+METHOD 0x06000033 HIDTester.FormMain::myhid_DataReceived RVA 2fe1
+0001 ldarg.0            
+0002 ldarg.2            
+0003 ldfld              HID.report::reportBuff
+0008 stfld              HIDTester.FormMain::RecDataBuffer
+000d newobj             ::.ctor
+0012 ldarg.0            
+0013 ldfld              HIDTester.FormMain::RecDataBuffer
+0018 callvirt           ::GetString
+001d pop                
+001e ret                
+
+METHOD 0x06000038 HIDTester.FormMain::KeyBoardVersion_Check RVA 31f0
+000c ldc.i4.s           65
+000e newarr             System.Byte
+0013 stloc.0            
+0014 ldc.i4.0           
+0015 stsfld             .KeyParam::ReportID
+001a ldloc.0            
+001b ldc.i4.0           
+001c ldc.i4.0           
+001d stelem.i1          
+001e ldloc.0            
+001f ldc.i4.1           
+0020 ldc.i4.0           
+0021 stelem.i1          
+0022 ldarg.0            
+0023 ldfld              HIDTester.FormMain::WriteMode
+0028 brtrue.s           123
+002a ldsfld             .KeyParam::ReportID
+002f ldloc.0            
+0030 newobj             HID.report::.ctor
+0035 stloc.1            
+0036 ldarg.0            
+0037 ldfld              HIDTester.FormMain::myHid
+003c ldloc.1            
+003d callvirt           HID.Hid::Write
+0042 conv.u1            
+0043 brtrue.s           76
+0045 ldc.i4.0           
+0046 stsfld             .KeyParam::ReportID
+004b ret                
+004c ldc.i4.2           
+004d stsfld             .KeyParam::ReportID
+0052 ldsfld             .KeyParam::ReportID
+0057 ldloc.0            
+0058 newobj             HID.report::.ctor
+005d stloc.1            
+005e ldarg.0            
+005f ldfld              HIDTester.FormMain::myHid
+0064 ldloc.1            
+0065 callvirt           HID.Hid::Write
+006a conv.u1            
+006b brtrue.s           116
+006d ldc.i4.2           
+006e stsfld             .KeyParam::ReportID
+0073 ret                
+0074 ldc.i4.3           
+0075 stsfld             .KeyParam::ReportID
+007a ret                
+007b ldarg.0            
+007c ldfld              HIDTester.FormMain::WriteMode
+0081 ldc.i4.1           
+0082 bne.un.s           228
+0084 ldc.i4.3           
+0085 stsfld             .KeyParam::ReportID
+008a ldarg.0            
+008b ldfld              HIDTester.FormMain::myHidLib
+0090 ldsfld             .KeyParam::ReportID
+0095 ldloc.0            
+0096 callvirt           HIDTester.HidLib::WriteDevice
+009b brfalse.s          164
+009d ldc.i4.3           
+009e stsfld             .KeyParam::ReportID
+00a3 ret                
+00a4 ldc.i4.0           
+00a5 stsfld             .KeyParam::ReportID
+00aa ldarg.0            
+00ab ldfld              HIDTester.FormMain::myHidLib
+00b0 ldsfld             .KeyParam::ReportID
+00b5 ldloc.0            
+00b6 callvirt           HIDTester.HidLib::WriteDevice
+00bb brfalse.s          196
+00bd ldc.i4.0           
+00be stsfld             .KeyParam::ReportID
+00c3 ret                
+00c4 ldc.i4.2           
+00c5 stsfld             .KeyParam::ReportID
+00ca ldarg.0            
+00cb ldfld              HIDTester.FormMain::myHidLib
+00d0 ldsfld             .KeyParam::ReportID
+00d5 ldloc.0            
+00d6 callvirt           HIDTester.HidLib::WriteDevice
+00db brfalse.s          228
+00dd ldc.i4.2           
+00de stsfld             .KeyParam::ReportID
+00e3 ret                
+00e4 ret                
+
+METHOD 0x06000039 HIDTester.FormMain::Send_WriteFlash_Cmd RVA 32d8
+000c ldc.i4.s           65
+000e newarr             System.Byte
+0013 stloc.0            
+0014 ldloc.0            
+0015 ldc.i4.0           
+0016 ldc.i4             170
+001b stelem.i1          
+001c ldloc.0            
+001d ldc.i4.1           
+001e ldc.i4             170
+0023 stelem.i1          
+0024 ldarg.0            
+0025 ldfld              HIDTester.FormMain::WriteMode
+002a brtrue             246
+002f ldsfld             .KeyParam::ReportID
+0034 ldloc.0            
+0035 newobj             HID.report::.ctor
+003a stloc.1            
+003b ldarg.0            
+003c ldfld              HIDTester.FormMain::myHid
+0041 ldloc.1            
+0042 callvirt           HID.Hid::Write
+0047 conv.u1            
+0048 brtrue.s           160
+004a ldsfld             .KeyParam::Language_Set
+004f brtrue.s           99
+0051 ldarg.0            
+0052 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0057 ldstr              'Download success'
+005c callvirt           ::set_Text
+0061 br.s               123
+0063 ldsfld             .KeyParam::Language_Set
+0068 ldc.i4.1           
+0069 bne.un.s           123
+006b ldarg.0            
+006c ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0071 ldstr              '下载成功'
+0076 callvirt           ::set_Text
+007b ldarg.0            
+007c ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0081 ldarg.0            
+0082 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0087 call               ::get_Green
+008c dup                
+008d stloc.2            
+008e callvirt           ::set_BackColor
+0093 ldloc.2            
+0094 callvirt           ::set_BackColor
+0099 ldarg.0            
+009a call               HIDTester.FormMain::Show_Dowload_Text
+009f ret                
+00a0 ldsfld             .KeyParam::Language_Set
+00a5 brtrue.s           185
+00a7 ldarg.0            
+00a8 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00ad ldstr              'Download failed'
+00b2 callvirt           ::set_Text
+00b7 br.s               209
+00b9 ldsfld             .KeyParam::Language_Set
+00be ldc.i4.1           
+00bf bne.un.s           209
+00c1 ldarg.0            
+00c2 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00c7 ldstr              '下载失败'
+00cc callvirt           ::set_Text
+00d1 ldarg.0            
+00d2 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00d7 ldarg.0            
+00d8 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00dd call               ::get_Red
+00e2 dup                
+00e3 stloc.2            
+00e4 callvirt           ::set_BackColor
+00e9 ldloc.2            
+00ea callvirt           ::set_BackColor
+00ef ldarg.0            
+00f0 call               HIDTester.FormMain::Show_Dowload_Text
+00f5 ret                
+00f6 ldarg.0            
+00f7 ldfld              HIDTester.FormMain::WriteMode
+00fc ldc.i4.1           
+00fd bne.un             448
+0102 ldarg.0            
+0103 ldfld              HIDTester.FormMain::myHidLib
+0108 ldsfld             .KeyParam::ReportID
+010d ldloc.0            
+010e callvirt           HIDTester.HidLib::WriteDevice
+0113 brfalse.s          363
+0115 ldsfld             .KeyParam::Language_Set
+011a brtrue.s           302
+011c ldarg.0            
+011d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0122 ldstr              'Download success'
+0127 callvirt           ::set_Text
+012c br.s               326
+012e ldsfld             .KeyParam::Language_Set
+0133 ldc.i4.1           
+0134 bne.un.s           326
+0136 ldarg.0            
+0137 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+013c ldstr              '下载成功'
+0141 callvirt           ::set_Text
+0146 ldarg.0            
+0147 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+014c ldarg.0            
+014d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0152 call               ::get_Green
+0157 dup                
+0158 stloc.2            
+0159 callvirt           ::set_BackColor
+015e ldloc.2            
+015f callvirt           ::set_BackColor
+0164 ldarg.0            
+0165 call               HIDTester.FormMain::Show_Dowload_Text
+016a ret                
+016b ldsfld             .KeyParam::Language_Set
+0170 brtrue.s           388
+0172 ldarg.0            
+0173 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0178 ldstr              'Download failed'
+017d callvirt           ::set_Text
+0182 br.s               412
+0184 ldsfld             .KeyParam::Language_Set
+0189 ldc.i4.1           
+018a bne.un.s           412
+018c ldarg.0            
+018d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0192 ldstr              '下载失败'
+0197 callvirt           ::set_Text
+019c ldarg.0            
+019d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+01a2 ldarg.0            
+01a3 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+01a8 call               ::get_Red
+01ad dup                
+01ae stloc.2            
+01af callvirt           ::set_BackColor
+01b4 ldloc.2            
+01b5 callvirt           ::set_BackColor
+01ba ldarg.0            
+01bb call               HIDTester.FormMain::Show_Dowload_Text
+01c0 ret                
+
+METHOD 0x0600003a HIDTester.FormMain::Send_WriteFlashLED_Cmd RVA 349c
+000c ldc.i4.s           65
+000e newarr             System.Byte
+0013 stloc.0            
+0014 ldloc.0            
+0015 ldc.i4.0           
+0016 ldc.i4             170
+001b stelem.i1          
+001c ldloc.0            
+001d ldc.i4.1           
+001e ldc.i4             161
+0023 stelem.i1          
+0024 ldarg.0            
+0025 ldfld              HIDTester.FormMain::WriteMode
+002a brtrue             246
+002f ldsfld             .KeyParam::ReportID
+0034 ldloc.0            
+0035 newobj             HID.report::.ctor
+003a stloc.1            
+003b ldarg.0            
+003c ldfld              HIDTester.FormMain::myHid
+0041 ldloc.1            
+0042 callvirt           HID.Hid::Write
+0047 conv.u1            
+0048 brtrue.s           160
+004a ldsfld             .KeyParam::Language_Set
+004f brtrue.s           99
+0051 ldarg.0            
+0052 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0057 ldstr              'Download success'
+005c callvirt           ::set_Text
+0061 br.s               123
+0063 ldsfld             .KeyParam::Language_Set
+0068 ldc.i4.1           
+0069 bne.un.s           123
+006b ldarg.0            
+006c ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0071 ldstr              '下载成功'
+0076 callvirt           ::set_Text
+007b ldarg.0            
+007c ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0081 ldarg.0            
+0082 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0087 call               ::get_Green
+008c dup                
+008d stloc.2            
+008e callvirt           ::set_BackColor
+0093 ldloc.2            
+0094 callvirt           ::set_BackColor
+0099 ldarg.0            
+009a call               HIDTester.FormMain::Show_Dowload_Text
+009f ret                
+00a0 ldsfld             .KeyParam::Language_Set
+00a5 brtrue.s           185
+00a7 ldarg.0            
+00a8 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00ad ldstr              'Download failed'
+00b2 callvirt           ::set_Text
+00b7 br.s               209
+00b9 ldsfld             .KeyParam::Language_Set
+00be ldc.i4.1           
+00bf bne.un.s           209
+00c1 ldarg.0            
+00c2 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00c7 ldstr              '下载失败'
+00cc callvirt           ::set_Text
+00d1 ldarg.0            
+00d2 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00d7 ldarg.0            
+00d8 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+00dd call               ::get_Red
+00e2 dup                
+00e3 stloc.2            
+00e4 callvirt           ::set_BackColor
+00e9 ldloc.2            
+00ea callvirt           ::set_BackColor
+00ef ldarg.0            
+00f0 call               HIDTester.FormMain::Show_Dowload_Text
+00f5 ret                
+00f6 ldarg.0            
+00f7 ldfld              HIDTester.FormMain::WriteMode
+00fc ldc.i4.1           
+00fd bne.un             448
+0102 ldarg.0            
+0103 ldfld              HIDTester.FormMain::myHidLib
+0108 ldsfld             .KeyParam::ReportID
+010d ldloc.0            
+010e callvirt           HIDTester.HidLib::WriteDevice
+0113 brfalse.s          363
+0115 ldsfld             .KeyParam::Language_Set
+011a brtrue.s           302
+011c ldarg.0            
+011d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0122 ldstr              'Download success'
+0127 callvirt           ::set_Text
+012c br.s               326
+012e ldsfld             .KeyParam::Language_Set
+0133 ldc.i4.1           
+0134 bne.un.s           326
+0136 ldarg.0            
+0137 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+013c ldstr              '下载成功'
+0141 callvirt           ::set_Text
+0146 ldarg.0            
+0147 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+014c ldarg.0            
+014d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0152 call               ::get_Green
+0157 dup                
+0158 stloc.2            
+0159 callvirt           ::set_BackColor
+015e ldloc.2            
+015f callvirt           ::set_BackColor
+0164 ldarg.0            
+0165 call               HIDTester.FormMain::Show_Dowload_Text
+016a ret                
+016b ldsfld             .KeyParam::Language_Set
+0170 brtrue.s           388
+0172 ldarg.0            
+0173 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0178 ldstr              'Download failed'
+017d callvirt           ::set_Text
+0182 br.s               412
+0184 ldsfld             .KeyParam::Language_Set
+0189 ldc.i4.1           
+018a bne.un.s           412
+018c ldarg.0            
+018d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+0192 ldstr              '下载失败'
+0197 callvirt           ::set_Text
+019c ldarg.0            
+019d ldfld              HIDTester.FormMain::label_Dowload_Dsp
+01a2 ldarg.0            
+01a3 ldfld              HIDTester.FormMain::label_Dowload_Dsp
+01a8 call               ::get_Red
+01ad dup                
+01ae stloc.2            
+01af callvirt           ::set_BackColor
+01b4 ldloc.2            
+01b5 callvirt           ::set_BackColor
+01ba ldarg.0            
+01bb call               HIDTester.FormMain::Show_Dowload_Text
+01c0 ret                
+
+METHOD 0x0600003b HIDTester.FormMain::Send_SwLayer RVA 3660
+000c ldc.i4.s           65
+000e newarr             System.Byte
+0013 stloc.0            
+0014 ldloc.0            
+0015 ldc.i4.0           
+0016 ldc.i4             161
+001b stelem.i1          
+001c ldloc.0            
+001d ldc.i4.1           
+001e ldsfld             .KeyParam::KEY_Cur_Layer
+0023 stelem.i1          
+0024 ldloc.0            
+0025 ldc.i4.1           
+0026 ldelem.u1          
+0027 brtrue.s           45
+0029 ldloc.0            
+002a ldc.i4.1           
+002b ldc.i4.1           
+002c stelem.i1          
+002d ldarg.0            
+002e ldfld              HIDTester.FormMain::WriteMode
+0033 brtrue.s           80
+0035 ldsfld             .KeyParam::ReportID
+003a ldloc.0            
+003b newobj             HID.report::.ctor
+0040 stloc.1            
+0041 ldarg.0            
+0042 ldfld              HIDTester.FormMain::myHid
+0047 ldloc.1            
+0048 callvirt           HID.Hid::Write
+004d conv.u1            
+004e pop                
+004f ret                
+0050 ldarg.0            
+0051 ldfld              HIDTester.FormMain::WriteMode
+0056 ldc.i4.1           
+0057 bne.un.s           107
+0059 ldarg.0            
+005a ldfld              HIDTester.FormMain::myHidLib
+005f ldsfld             .KeyParam::ReportID
+0064 ldloc.0            
+0065 callvirt           HIDTester.HidLib::WriteDevice
+006a pop                
+006b ret                
+
+METHOD 0x0600003c HIDTester.FormMain::Download_Click RVA 36cc
+000c ldc.i4.0           
+000d stloc.0            
+000e ldc.i4.s           65
+0010 newarr             System.Byte
+0015 stloc.1            
+0016 ldloc.1            
+0017 ldc.i4.0           
+0018 ldsfld             .KeyParam::Data_Send_Buff
+001d ldsfld             .KeyParam::KeySet_KeyNum
+0022 ldelem.u1          
+0023 stelem.i1          
+0024 ldloc.1            
+0025 ldc.i4.0           
+0026 ldelem.u1          
+0027 brtrue.s           42
+0029 ret                
+002a ldsfld             .KeyParam::ReportID
+002f brtrue.s           79
+0031 ldloc.1            
+0032 ldc.i4.1           
+0033 ldsfld             .KeyParam::Data_Send_Buff
+0038 ldsfld             .KeyParam::KeyType_Num
+003d ldelema            System.Byte
+0042 dup                
+0043 ldind.u1           
+0044 ldc.i4.s           15
+0046 and                
+0047 conv.u1            
+0048 dup                
+0049 stloc.3            
+004a stind.i1           
+004b ldloc.3            
+004c stelem.i1          
+004d br.s               129
+004f ldarg.0            
+0050 call               HIDTester.FormMain::Send_SwLayer
+0055 ldloc.1            
+0056 ldc.i4.1           
+0057 ldsfld             .KeyParam::KEY_Cur_Layer
+005c stelem.i1          
+005d ldloc.1            
+005e ldc.i4.1           
+005f ldelema            System.Byte
+0064 dup                
+0065 ldind.u1           
+0066 ldc.i4.4           
+0067 shl                
+0068 conv.u1            
+0069 stind.i1           
+006a ldloc.1            
+006b ldc.i4.1           
+006c ldelema            System.Byte
+0071 dup                
+0072 ldind.u1           
+0073 ldsfld             .KeyParam::Data_Send_Buff
+0078 ldsfld             .KeyParam::KeyType_Num
+007d ldelem.u1          
+007e or                 
+007f conv.u1            
+0080 stind.i1           
+0081 ldsfld             .KeyParam::Data_Send_Buff
+0086 ldsfld             .KeyParam::KeyType_Num
+008b ldelem.u1          
+008c ldc.i4.s           15
+008e and                
+008f ldc.i4.1           
+0090 bne.un             429
+0095 ldloc.1            
+0096 ldc.i4.2           
+0097 ldsfld             .KeyParam::Data_Send_Buff
+009c ldsfld             .KeyParam::KeyGroupCharNum
+00a1 ldelem.u1          
+00a2 stelem.i1          
+00a3 ldc.i4.0           
+00a4 stloc.0            
+00a5 br                 405
+00aa ldloc.1            
+00ab ldc.i4.3           
+00ac ldloc.0            
+00ad stelem.i1          
+00ae ldloc.0            
+00af switch             [209, 225, 247, 269, 292, 316]
+00cc br                 338
+00d1 ldloc.1            
+00d2 ldc.i4.4           
+00d3 ldsfld             .KeyParam::Data_Send_Buff
+00d8 ldc.i4.4           
+00d9 ldelem.u1          
+00da stelem.i1          
+00db ldloc.1            
+00dc ldc.i4.5           
+00dd ldc.i4.0           
+00de stelem.i1          
+00df br.s               338
+00e1 ldloc.1            
+00e2 ldc.i4.4           
+00e3 ldsfld             .KeyParam::Data_Send_Buff
+00e8 ldc.i4.4           
+00e9 ldelem.u1          
+00ea stelem.i1          
+00eb ldloc.1            
+00ec ldc.i4.5           
+00ed ldsfld             .KeyParam::Data_Send_Buff
+00f2 ldc.i4.5           
+00f3 ldelem.u1          
+00f4 stelem.i1          
+00f5 br.s               338
+00f7 ldloc.1            
+00f8 ldc.i4.4           
+00f9 ldsfld             .KeyParam::Data_Send_Buff
+00fe ldc.i4.6           
+00ff ldelem.u1          
+0100 stelem.i1          
+0101 ldloc.1            
+0102 ldc.i4.5           
+0103 ldsfld             .KeyParam::Data_Send_Buff
+0108 ldc.i4.7           
+0109 ldelem.u1          
+010a stelem.i1          
+010b br.s               338
+010d ldloc.1            
+010e ldc.i4.4           
+010f ldsfld             .KeyParam::Data_Send_Buff
+0114 ldc.i4.8           
+0115 ldelem.u1          
+0116 stelem.i1          
+0117 ldloc.1            
+0118 ldc.i4.5           
+0119 ldsfld             .KeyParam::Data_Send_Buff
+011e ldc.i4.s           9
+0120 ldelem.u1          
+0121 stelem.i1          
+0122 br.s               338
+0124 ldloc.1            
+0125 ldc.i4.4           
+0126 ldsfld             .KeyParam::Data_Send_Buff
+012b ldc.i4.s           10
+012d ldelem.u1          
+012e stelem.i1          
+012f ldloc.1            
+0130 ldc.i4.5           
+0131 ldsfld             .KeyParam::Data_Send_Buff
+0136 ldc.i4.s           11
+0138 ldelem.u1          
+0139 stelem.i1          
+013a br.s               338
+013c ldloc.1            
+013d ldc.i4.4           
+013e ldsfld             .KeyParam::Data_Send_Buff
+0143 ldc.i4.s           12
+0145 ldelem.u1          
+0146 stelem.i1          
+0147 ldloc.1            
+0148 ldc.i4.5           
+0149 ldsfld             .KeyParam::Data_Send_Buff
+014e ldc.i4.s           13
+0150 ldelem.u1          
+0151 stelem.i1          
+0152 ldarg.0            
+0153 ldfld              HIDTester.FormMain::WriteMode
+0158 brtrue.s           373
+015a ldsfld             .KeyParam::ReportID
+015f ldloc.1            
+0160 newobj             HID.report::.ctor
+0165 stloc.2            
+0166 ldarg.0            
+0167 ldfld              HIDTester.FormMain::myHid
+016c ldloc.2            
+016d callvirt           HID.Hid::Write
+0172 pop                
+0173 br.s               400
+0175 ldarg.0            
+0176 ldfld              HIDTester.FormMain::WriteMode
+017b ldc.i4.1           
+017c bne.un.s           400
+017e ldarg.0            
+017f ldfld              HIDTester.FormMain::myHidLib
+0184 ldsfld             .KeyParam::ReportID
+0189 ldloc.1            
+018a callvirt           HIDTester.HidLib::WriteDevice
+018f pop                
+0190 ldloc.0            
+0191 ldc.i4.1           
+0192 add                
+0193 conv.u1            
+0194 stloc.0            
+0195 ldloc.0            
+0196 ldsfld             .KeyParam::Data_Send_Buff
+019b ldsfld             .KeyParam::KeyGroupCharNum
+01a0 ldelem.u1          
+01a1 ble                170
+01a6 ldarg.0            
+01a7 call               HIDTester.FormMain::Send_WriteFlash_Cmd
+01ac ret                
+01ad ldsfld             .KeyParam::Data_Send_Buff
+01b2 ldsfld             .KeyParam::KeyType_Num
+01b7 ldelem.u1          
+01b8 ldc.i4.s           15
+01ba and                
+01bb ldc.i4.2           
+01bc bne.un.s           535
+01be ldloc.1            
+01bf ldc.i4.2           
+01c0 ldsfld             .KeyParam::Data_Send_Buff
+01c5 ldc.i4.5           
+01c6 ldelem.u1          
+01c7 stelem.i1          
+01c8 ldloc.1            
+01c9 ldc.i4.3           
+01ca ldsfld             .KeyParam::Data_Send_Buff
+01cf ldc.i4.6           
+01d0 ldelem.u1          
+01d1 stelem.i1          
+01d2 ldarg.0            
+01d3 ldfld              HIDTester.FormMain::WriteMode
+01d8 brtrue.s           501
+01da ldsfld             .KeyParam::ReportID
+01df ldloc.1            
+01e0 newobj             HID.report::.ctor
+01e5 stloc.2            
+01e6 ldarg.0            
+01e7 ldfld              HIDTester.FormMain::myHid
+01ec ldloc.2            
+01ed callvirt           HID.Hid::Write
+01f2 pop                
+01f3 br.s               528
+01f5 ldarg.0            
+01f6 ldfld              HIDTester.FormMain::WriteMode
+01fb ldc.i4.1           
+01fc bne.un.s           528
+01fe ldarg.0            
+01ff ldfld              HIDTester.FormMain::myHidLib
+0204 ldsfld             .KeyParam::ReportID
+0209 ldloc.1            
+020a callvirt           HIDTester.HidLib::WriteDevice
+020f pop                
+0210 ldarg.0            
+0211 call               HIDTester.FormMain::Send_WriteFlash_Cmd
+0216 ret                
+0217 ldsfld             .KeyParam::Data_Send_Buff
+021c ldsfld             .KeyParam::KeyType_Num
+0221 ldelem.u1          
+0222 ldc.i4.s           15
+0224 and                
+0225 ldc.i4.8           
+0226 bne.un.s           631
+0228 ldloc.1            
+0229 ldc.i4.2           
+022a ldsfld             .KeyParam::Data_Send_Buff
+022f ldc.i4.2           
+0230 ldelem.u1          
+0231 stelem.i1          
+0232 ldarg.0            
+0233 ldfld              HIDTester.FormMain::WriteMode
+0238 brtrue.s           597
+023a ldsfld             .KeyParam::ReportID
+023f ldloc.1            
+0240 newobj             HID.report::.ctor
+0245 stloc.2            
+0246 ldarg.0            
+0247 ldfld              HIDTester.FormMain::myHid
+024c ldloc.2            
+024d callvirt           HID.Hid::Write
+0252 pop                
+0253 br.s               624
+0255 ldarg.0            
+0256 ldfld              HIDTester.FormMain::WriteMode
+025b ldc.i4.1           
+025c bne.un.s           624
+025e ldarg.0            
+025f ldfld              HIDTester.FormMain::myHidLib
+0264 ldsfld             .KeyParam::ReportID
+0269 ldloc.1            
+026a callvirt           HIDTester.HidLib::WriteDevice
+026f pop                
+0270 ldarg.0            
+0271 call               HIDTester.FormMain::Send_WriteFlashLED_Cmd
+0276 ret                
+0277 ldsfld             .KeyParam::Data_Send_Buff
+027c ldsfld             .KeyParam::KeyType_Num
+0281 ldelem.u1          
+0282 ldc.i4.s           15
+0284 and                
+0285 ldc.i4.3           
+0286 bne.un.s           767
+0288 ldloc.1            
+0289 ldc.i4.2           
+028a ldsfld             .KeyParam::Data_Send_Buff
+028f ldc.i4.5           
+0290 ldelem.u1          
+0291 stelem.i1          
+0292 ldloc.1            
+0293 ldc.i4.3           
+0294 ldsfld             .KeyParam::Data_Send_Buff
+0299 ldc.i4.6           
+029a ldelem.u1          
+029b stelem.i1          
+029c ldloc.1            
+029d ldc.i4.4           
+029e ldsfld             .KeyParam::Data_Send_Buff
+02a3 ldc.i4.7           
+02a4 ldelem.u1          
+02a5 stelem.i1          
+02a6 ldloc.1            
+02a7 ldc.i4.5           
+02a8 ldsfld             .KeyParam::Data_Send_Buff
+02ad ldc.i4.8           
+02ae ldelem.u1          
+02af stelem.i1          
+02b0 ldloc.1            
+02b1 ldc.i4.6           
+02b2 ldsfld             .KeyParam::Data_Send_Buff
+02b7 ldc.i4.s           9
+02b9 ldelem.u1          
+02ba stelem.i1          
+02bb ldarg.0            
+02bc ldfld              HIDTester.FormMain::WriteMode
+02c1 brtrue.s           734
+02c3 ldsfld             .KeyParam::ReportID
+02c8 ldloc.1            
+02c9 newobj             HID.report::.ctor
+02ce stloc.2            
+02cf ldarg.0            
+02d0 ldfld              HIDTester.FormMain::myHid
+02d5 ldloc.2            
+02d6 callvirt           HID.Hid::Write
+02db pop                
+02dc br.s               761
+02de ldarg.0            
+02df ldfld              HIDTester.FormMain::WriteMode
+02e4 ldc.i4.1           
+02e5 bne.un.s           761
+02e7 ldarg.0            
+02e8 ldfld              HIDTester.FormMain::myHidLib
+02ed ldsfld             .KeyParam::ReportID
+02f2 ldloc.1            
+02f3 callvirt           HIDTester.HidLib::WriteDevice
+02f8 pop                
+02f9 ldarg.0            
+02fa call               HIDTester.FormMain::Send_WriteFlash_Cmd
+02ff ret                
+
+METHOD 0x0600005f HIDTester.HidLib::Connect_Device RVA 50f4
+000c ldarg.0            
+000d ldc.i4             4489
+0012 call               ::Enumerate
+0017 call               token(0x2B000003)
+001c stfld              HIDTester.HidLib::wDevice
+0021 ldarg.0            
+0022 ldfld              HIDTester.HidLib::wDevice
+0027 brfalse            172
+002c ldc.i4             4489
+0031 call               ::Enumerate
+0036 call               token(0x2B000004)
+003b callvirt           ::GetEnumerator
+0040 stloc.0            
+0041 br.s               147
+0043 ldloca.s           local(0x0000)
+0045 call               ::get_Current
+004a stloc.1            
+004b ldloc.1            
+004c callvirt           ::get_DevicePath
+0051 ldstr              'mi_01'
+0056 callvirt           ::IndexOf
+005b ldc.i4.m1          
+005c beq.s              147
+005e ldarg.0            
+005f ldfld              HIDTester.HidLib::DeviceList
+0064 ldloc.1            
+0065 callvirt           ::Add
+006a ldarg.0            
+006b ldloc.1            
+006c stfld              HIDTester.HidLib::wDevice
+0071 ldarg.0            
+0072 ldfld              HIDTester.HidLib::wDevice
+0077 callvirt           ::OpenDevice
+007c ldarg.0            
+007d ldfld              HIDTester.HidLib::wDevice
+0082 ldc.i4.1           
+0083 callvirt           ::set_MonitorDeviceEvents
+0088 ldarg.0            
+0089 ldc.i4.1           
+008a stfld              HIDTester.HidLib::Dev_Sta
+008f ldc.i4.1           
+0090 stloc.2            
+0091 leave.s            174
+0093 ldloca.s           local(0x0000)
+0095 call               ::MoveNext
+009a brtrue.s           67
+009c leave.s            172
+009e ldloca.s           local(0x0000)
+00a0 constrained.       token(0x1B000007)
+00a6 callvirt           ::Dispose
+00ab endfinally         
+00ac ldc.i4.0           
+00ad ret                
+00ae ldloc.2            
+00af ret                
+
+METHOD 0x06000061 HIDTester.HidLib::WriteDevice RVA 51d8
+000c ldarg.0            
+000d ldfld              HIDTester.HidLib::wDevice
+0012 callvirt           ::CreateReport
+0017 stloc.0            
+0018 ldloc.0            
+0019 ldarg.1            
+001a callvirt           ::set_ReportId
+001f ldloc.0            
+0020 callvirt           ::get_Data
+0025 ldc.i4.0           
+0026 ldarg.2            
+0027 ldc.i4.0           
+0028 ldelem.u1          
+0029 stelem.i1          
+002a ldloc.0            
+002b callvirt           ::get_Data
+0030 ldc.i4.1           
+0031 ldarg.2            
+0032 ldc.i4.1           
+0033 ldelem.u1          
+0034 stelem.i1          
+0035 ldloc.0            
+0036 callvirt           ::get_Data
+003b ldc.i4.2           
+003c ldarg.2            
+003d ldc.i4.2           
+003e ldelem.u1          
+003f stelem.i1          
+0040 ldloc.0            
+0041 callvirt           ::get_Data
+0046 ldc.i4.3           
+0047 ldarg.2            
+0048 ldc.i4.3           
+0049 ldelem.u1          
+004a stelem.i1          
+004b ldloc.0            
+004c callvirt           ::get_Data
+0051 ldc.i4.4           
+0052 ldarg.2            
+0053 ldc.i4.4           
+0054 ldelem.u1          
+0055 stelem.i1          
+0056 ldloc.0            
+0057 callvirt           ::get_Data
+005c ldc.i4.5           
+005d ldarg.2            
+005e ldc.i4.5           
+005f ldelem.u1          
+0060 stelem.i1          
+0061 ldloc.0            
+0062 callvirt           ::get_Data
+0067 ldc.i4.6           
+0068 ldarg.2            
+0069 ldc.i4.6           
+006a ldelem.u1          
+006b stelem.i1          
+006c ldloc.0            
+006d callvirt           ::get_Data
+0072 ldc.i4.7           
+0073 ldarg.2            
+0074 ldc.i4.7           
+0075 ldelem.u1          
+0076 stelem.i1          
+0077 ldarg.0            
+0078 ldfld              HIDTester.HidLib::wDevice
+007d ldloc.0            
+007e ldc.i4             500
+0083 callvirt           ::WriteReport
+0088 brfalse.s          140
+008a ldc.i4.1           
+008b ret                
+008c ldc.i4.0           
+008d ret                

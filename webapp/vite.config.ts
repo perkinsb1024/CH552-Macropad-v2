@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: { input: {
       configurator: 'index.html',
       viewer: 'liveView/index.html',
+      bootloaderProbe: 'bootloaderProbe/index.html',
     } },
   },
   test: { environment: 'node', include: ['tests/**/*.test.{ts,mjs}'] },

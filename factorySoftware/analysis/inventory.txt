@@ -1,0 +1,34 @@
+factorySoftware/Release/.DS_Store: 6148 bytes SHA256 15bdefcad982689a5ae1d37df6fb4f6e55569064e486fb623900a91aefafbdf5
+factorySoftware/Release/HidLibrary.dll: 45056 bytes SHA256 8bafd3e1c6f88822dbf738c929f7d3162d08243067c69c4a85e52ed13a78d12b
+factorySoftware/Release/HidLibrary.pdb: 138752 bytes SHA256 ff33c180707989f3cff1136b131af640da01999e44cf2d05c1d8bc204633210f
+factorySoftware/Release/MINI KeyBoard.application: 1829 bytes SHA256 50a1a15cd4c355233f421f1443f9c4186f745e7e7d97201e74a351ea9a10412e
+factorySoftware/Release/MINI KeyBoard.exe: 217088 bytes SHA256 4ae53d3a40921e4f57444c489fa1b38fe91a2e907feda17630450fc97a7cd7b1
+  RESOURCE HIDTester.FormMain.resources
+  RESOURCE HIDTester.FunKey.resources
+  RESOURCE HIDTester.LayerFun.resources
+  RESOURCE HIDTester.LEDkey.resources
+  RESOURCE HIDTester.MouseKey.resources
+  RESOURCE HIDTester.MULKey.resources
+  RESOURCE HIDTester.Properties.Resources.resources
+  RESOURCE HIDTester.BasicKeys.resources
+factorySoftware/Release/MINI KeyBoard.exe.config: 856 bytes SHA256 523055b9660fe832629c179c388b99bd76bc87d8fe96c8acd864aec9b539cbb8
+factorySoftware/Release/MINI KeyBoard.exe.manifest: 6467 bytes SHA256 6dceed116ec9218c531dbf243a6f7fa3b9db393bd873e581daddfff1bbf60644
+factorySoftware/Release/MINI KeyBoard.pdb: 153088 bytes SHA256 4a9bb819fb3562642fa4ef59b3a224313f56b55e83664abc4e4430e11f9ac325
+factorySoftware/Release/Theraot.Core.dll: 787968 bytes SHA256 4406b6affde4fbec5c47aed24d0050c0148d94772d3f2c11e6c96ce2ad527799
+factorySoftware/Release/app.publish/MINI KeyBoard.exe: 218096 bytes SHA256 cd20ac6e9ca5d6786acd8ae1a7240420a8f838d79f5d2c5ca7dc5dce2d5c6385
+  RESOURCE HIDTester.FormMain.resources
+  RESOURCE HIDTester.FunKey.resources
+  RESOURCE HIDTester.LayerFun.resources
+  RESOURCE HIDTester.LEDkey.resources
+  RESOURCE HIDTester.MouseKey.resources
+  RESOURCE HIDTester.MULKey.resources
+  RESOURCE HIDTester.Properties.Resources.resources
+  RESOURCE HIDTester.BasicKeys.resources
+factorySoftware/Release/en-US/MINI KeyBoard.resources.dll: 3584 bytes SHA256 dde0308965aafd94cf3983aeaa3707b279683515b9c97f4aaa8c66a015e7a070
+  RESOURCE HIDTester.FormMain.en-US.resources
+factorySoftware/Release/zh-CN/MINI KeyBoard.resources.dll: 7168 bytes SHA256 e3df7b8cdb2d0a7d3f92490fd3ca7afc7fa99cad327f31f3ffd6d8d6fcd52e24
+  RESOURCE HIDTester.FormMain.zh-CN.resources
+  RESOURCE HIDTester.LayerFun.zh-CN.resources
+  RESOURCE HIDTester.LEDkey.zh-CN.resources
+  RESOURCE HIDTester.MouseKey.zh-CN.resources
+  RESOURCE HIDTester.MULKey.zh-CN.resources
