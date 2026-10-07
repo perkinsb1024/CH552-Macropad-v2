@@ -23,3 +23,10 @@ export function describeCharacter(ch: string): string {
 export function encodedLength(text: string): number {
   return text.length + 1;
 }
+
+/** Visible whitespace for text previews, without changing the stored text. */
+export function visibleText(text: string): string {
+  const normalized = normalizeText(text);
+  const showSpaces = /^\s|\s$|\s{2}/.test(normalized);
+  return normalized.replace(/ /g, showSpaces ? '␣' : ' ').replace(/\t/g, '⇥').replace(/\n/g, '↵');
+}

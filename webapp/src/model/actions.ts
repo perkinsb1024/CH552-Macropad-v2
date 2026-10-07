@@ -1,3 +1,4 @@
+import { visibleText } from './strings';
 import { ledSummary } from './ledControl';
 import { ActionCode, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER } from './constants';
 import type { Action, ActionType } from './types';
@@ -144,8 +145,10 @@ export function summarize(action: Action): string {
       return consumerName(action.usage);
     case 'consumerHold':
       return `Hold ${consumerName(action.usage)}`;
-    case 'string':
-      return action.text.length ? `“${action.text.length > 14 ? action.text.slice(0, 13) + '…' : action.text}”` : 'Empty text';
+    case 'string': {
+      const text = visibleText(action.text);
+      return text.length ? `“${text.length > 14 ? text.slice(0, 13) + '…' : text}”` : 'Empty text';
+    }
     case 'setLayer':
       return isPreviousLayer(action) ? 'Previous layer' : `Layer ${action.layer + 1}`;
     case 'oneShotSetLayer':
@@ -170,7 +173,7 @@ export function actionTooltip(action: Action): string {
       if (action.usage) parts.push(keyName(action.usage));
       return `${label}: ${parts.join(' + ') || 'No key'}`;
     }
-    case 'string': return `${label}: ${action.text.length ? `“${action.text}”` : 'Empty text'}`;
+    case 'string': return `${label}: ${action.text.length ? `“${visibleText(action.text)}”` : 'Empty text'}`;
     case 'mouseHold':
     case 'mouseToggle': return `${label}: ${mouseButtonNames(action.buttons).join(' + ') || '?'}`;
     case 'consumerHold': return `${label}: ${consumerName(action.usage)}`;

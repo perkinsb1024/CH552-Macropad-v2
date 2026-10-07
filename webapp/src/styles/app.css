@@ -2313,3 +2313,5 @@ output {
 @container layer-options (min-width: 720px) {
   .layer-options .palette { grid-template-columns: repeat(16, minmax(0, 1fr)); }
 }
+
+.text-action-preview { display: inline-block; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }

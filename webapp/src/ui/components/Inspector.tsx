@@ -5,7 +5,7 @@ import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer }
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
-import { normalizeText } from '../../model/strings';
+import { normalizeText, visibleText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
 import { isMacroLayerSwitch, macroSwitchesLayer } from '../../model/macros';
 import { actionProblem, slotLabel } from '../../model/validate';
@@ -175,7 +175,7 @@ export function Inspector() {
             {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} ({macro.actions.length} step{macro.actions.length === 1 ? '' : 's'})</option>)}
           </select>
         </label>
-        <div class="field">
+        {!singleRun && <div class="field">
           <span class="field-label">Repeat</span>
           <div class="segmented" role="group" aria-label="Repeat">
             <button type="button" class={action.repeats > 1 ? 'is-selected' : ''} aria-pressed={action.repeats > 1} disabled={singleRun} onClick={() => update({ ...action, repeats: singleRun ? 1 : Math.max(2, action.repeats) })}>On</button>
@@ -185,9 +185,9 @@ export function Inspector() {
             <span class="field-label">Run count <output>{action.repeats}</output></span>
             <input type="range" aria-label="Run count" min={2} max={16} step={1} disabled={singleRun} value={action.repeats} onInput={e => update({ ...action, repeats: singleRun ? 1 : Math.max(2, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value) || 2))) })} />
           </label>}
-        </div>
+        </div>}
       </>}
-      {singleRun && <p class="hint">This macro switches layers, so Repeat must be Off.</p>}
+      {singleRun && <p class="hint">This macro switches layers, so it cannot be repeated</p>}
       {action.type === 'pause' && <label class="field"><span class="field-label">Pause duration <output>{action.ticks * 16}ms</output></span>
         <input type="range" aria-label="Pause duration" min={0} max={255} value={action.ticks} onInput={e => update({ ...action, ticks: Number((e.target as HTMLInputElement).value) })} />
         <span class="hint">16ms steps. Add consecutive pauses for longer waits.</span>
@@ -362,17 +362,26 @@ export function Inspector() {
       {action.type === 'string' && (
         <label class="field">
           <span class="field-label">Text <output>{action.text.length + 1} byte{action.text.length === 0 ? '' : 's'}</output></span>
-          <textarea rows={4} value={action.text} spellcheck={false} onInput={(e) => update({ ...action, text: normalizeText((e.target as HTMLTextAreaElement).value) })} placeholder="Typed with the US keyboard layout" />
+          <textarea rows={4} value={action.text} spellcheck={false} onKeyDown={(e) => {
+            if (e.key !== 'Tab' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+            e.preventDefault();
+            e.stopPropagation();
+            // Native insertion preserves the browser's typing undo/redo history
+            // and emits input, which updates the profile through onInput below.
+            // Assigning textarea.value here clears that history in browsers.
+            document.execCommand('insertText', false, '\t');
+          }} onInput={(e) => update({ ...action, text: normalizeText((e.target as HTMLTextAreaElement).value) })} placeholder="Typed with the US keyboard layout" />
+          {action.text.length > 0 && <span class="hint" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>Preview: “{visibleText(action.text)}”</span>}
           {savedStrings.length > 0 && (
             <select aria-label="Reuse an existing string" value="" onChange={(e) => {
               const text = (e.target as HTMLSelectElement).value;
               if (text) update({ ...action, text });
             }}>
               <option value="">Reuse an existing string…</option>
-              {savedStrings.map((text) => <option key={text} value={text}>{text}</option>)}
+              {savedStrings.map((text) => <option key={text} value={text}>{visibleText(text)}</option>)}
             </select>
           )}
-          <span class="hint">Printable ASCII, tab and newline only. Identical strings across layers and chords share one copy in device storage. Output depends on the host's keyboard layout.</span>
+          <span class="hint">Printable ASCII, tab (⇥) and newline (↵) only. Tab inserts a tab; Shift+Tab moves focus out. Identical strings across layers and chords share one copy in device storage. Output depends on the host's keyboard layout.</span>
         </label>
       )}
 

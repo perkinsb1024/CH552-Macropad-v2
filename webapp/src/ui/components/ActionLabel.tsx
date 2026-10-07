@@ -1,6 +1,7 @@
 import { keyName } from '../../keys/keyboard';
-import { modifierNames, summarize } from '../../model/actions';
+import { actionTooltip, modifierNames, summarize } from '../../model/actions';
 import { ledSummary } from '../../model/ledControl';
+import { visibleText } from '../../model/strings';
 import type { Action } from '../../model/types';
 
 function NonePill() {
@@ -20,6 +21,11 @@ export function ShortcutPills({ usage, modifiers, hold = false, showTooltip = tr
 }
 
 export function ActionLabel({ action, showTooltip = true }: { action: Action; showTooltip?: boolean }) {
+  if (action.type === 'string') return (
+    <span class="text-action-preview" title={showTooltip ? actionTooltip(action) : undefined}>
+      {action.text.length ? `“${visibleText(action.text)}”` : 'Empty text'}
+    </span>
+  );
   if (action.type === 'none') return <NonePill />;
   if (action.type === 'ledControl') return (
     <span title={showTooltip ? ledSummary(action.command, action.value, false, action.brightness) : undefined}>{ledSummary(action.command, action.value, true, action.brightness)}</span>

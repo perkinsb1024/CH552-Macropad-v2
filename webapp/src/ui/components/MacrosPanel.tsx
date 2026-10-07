@@ -24,7 +24,7 @@ export function MacrosPanel() {
   const canAddStep = (index: number) => !macroSwitchesLayer(macros[index]!.actions) && computeCapacity({ ...p, macros: macros.map((macro, i) => i === index ? { actions: [...macro.actions, { type: 'pause', ticks: 0 }] } : macro) }).remaining >= 0;
   return <details class="card macros-panel">
     <summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
-    <p class="hint">Add steps, then assign <strong>Execute macro</strong> to a key, encoder, chord, or timer. Each invocation can repeat 1–16 times, or once if the macro switches layers. Pauses give applications time to respond.</p>
+    <p class="hint">Add steps, then assign <strong>Execute macro</strong> to a key, encoder, chord, or timer. Macros that do not switch layers can be repeated up to 16 times. Pauses give applications time to respond.</p>
     <div class="timer-list">
       {macros.map((macro, index) => <article class="timer-row" data-macro={index} tabIndex={-1} key={index}>
         <header class="card-head"><strong>Macro {index + 1}</strong>
@@ -34,7 +34,7 @@ export function MacrosPanel() {
             if (slot?.kind === 'macro') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
           }}><IconTrash /></button>
         </header>
-        {macroSwitchesLayer(macro.actions) && <p class="hint">A layer switch must be the final step, and this macro must run once. Remove the layer switch to add more steps. Changing layers also cancels playback if triggered outside the macro.</p>}
+        {macroSwitchesLayer(macro.actions) && <p class="hint">Macro steps are not permitted after a layer switch, and repeat will be disabled. Temporarily remove the layer switch step to add more steps. Changing layers from outside this macro will also cancel any pending steps.</p>}
         {!macro.actions.length && <p class="empty">No steps yet.</p>}
         <div class="macro-steps" onDragOver={(event) => {
           if ((event.target as HTMLElement).closest('.macro-step')) return;
@@ -86,6 +86,6 @@ export function MacrosPanel() {
       updateProfile(draft => { (draft.macros ??= []).push({ actions: [{ type: 'keyTap', usage: 4, modifiers: 0 }] }); });
       selectedSlot.value = { kind: 'macro', layer: 0, index: macros.length, step: 0 };
     }}><IconPlus /> Add macro</button>
-    <p class="hint">Steps use 2 bytes each plus a 1-byte terminator per macro. Held actions and nested macros are unavailable. A layer change cancels playback. Some actions wait for macro playback to finish, while others do not. View <a href="https://github.com/perkinsb1024/CH552-Macropad-v2/blob/main/documentation/Configuration%20Overview.md#macros" target="_blank" rel="noopener noreferrer">Configuration Overview</a> for more information. If the queue is full, newly triggered actions that need to wait (including other macros) are ignored.</p>
+    <p class="hint">Macros use 2 bytes per step, plus 1 additional byte, regardless of how many steps. Macros cannot use "hold" actions or execute a different macro. Some externally-triggered actions wait for macro playback to finish, while others do not. A layer change cancels playback. View <a href="https://github.com/perkinsb1024/CH552-Macropad-v2/blob/main/documentation/Configuration%20Overview.md#macros" target="_blank" rel="noopener noreferrer">Configuration Overview</a> for more information. If the queue is full, newly triggered actions that need to wait (including other macros) will be ignored.</p>
   </details>;
 }
