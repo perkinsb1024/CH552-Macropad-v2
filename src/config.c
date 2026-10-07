@@ -1,6 +1,12 @@
 #include "config.h"
 
+// Page alignment shortens indexed reads. protocolInit loads every byte before
+// use; build_firmware.py checks this absolute allocation separately from XSEG.
+#ifdef __SDCC
+__xdata __at (0x300) uint8_t activeConfig[CONFIG_SIZE];
+#else
 __xdata uint8_t activeConfig[CONFIG_SIZE];
+#endif
 
 __code uint8_t configPalette[16][3] = {
   { 255, 0, 0 }, // Red
@@ -71,13 +77,26 @@ static FW_BIT keyboardUsageValid(uint8_t usage) {
     return usage <= 0x0B;
 }
 
-static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
-                           uint8_t layers, uint8_t rotation, uint8_t pool,
-                           uint8_t poolUsed) {
-    uint8_t type = image[offset] & 15;
-    uint8_t aux = image[offset] >> 4;
-    uint8_t param = image[offset + 1];
+// Validation runs only in the main loop. Sharing context avoids repeatedly
+// passing image metadata and reduces SDCC register spills into internal RAM.
+static __data uint8_t validationLayers, validationPool, validationUsed;
+static const __xdata uint8_t *__data validationImage;
+static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
+    uint8_t first = validationImage[offset];
+    uint8_t type = first & 15;
+    uint8_t aux = first >> 4;
+    uint8_t param = validationImage[offset + 1];
+    __idata uint8_t macros = validationPool + validationUsed;
+    if (rotation == 2 && type != CONFIG_ACTION_MACRO) rotation = 1;
     switch (type) {
+        case CONFIG_ACTION_MACRO:
+            // Absolute image offset: no runtime directory or recursive lookup.
+            // Macro steps use rotation=2, which prohibits nested invocations.
+            if (rotation == 2 ||
+                (!CONFIG_MACRO_REPEAT && aux) || param < macros ||
+                param >= CONFIG_SIZE - (CONFIG_MACRO_STYLE == 1 ? 3 : 1)) return 0;
+            if ((param - macros) & (CONFIG_MACRO_STYLE == 1 ? 3 : 1)) return 0;
+            return 1;
         case CONFIG_ACTION_LED_CONTROL:
             if (param >= CONFIG_LED_EFFECT_RESTORE) {
                 if (param == CONFIG_LED_EFFECT_RESTORE) return aux == 0;
@@ -132,26 +151,26 @@ static FW_BIT actionValid(const __xdata uint8_t *image, uint8_t offset,
                    (aux != 0 || param != 0);
         case CONFIG_ACTION_NONE:
             if (!aux) return param == 0;
-            if (aux != 1 || param >= poolUsed) return 0;
-            return param == 0 || image[pool + param - 1] == 0;
+#if CONFIG_MACRO_PAUSE
+            if (aux == 2) return 1;
+#endif
+            if (aux != 1 || param >= validationUsed) return 0;
+            return param == 0 || validationImage[validationPool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
-            return aux <= 1 && (param < layers ||
+            return aux <= 1 && (param < validationLayers ||
                    param == CONFIG_LAYER_PREVIOUS);
         case CONFIG_ACTION_MOMENTARY_LAYER:
-            return aux == 0 && param < layers && !rotation;
+            return aux == 0 && param < validationLayers && !rotation;
         default:
             return 0;
     }
 }
 
 FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
-    uint8_t layers;
     uint8_t keys;
     uint8_t size;
     uint8_t chords;
     __xdata uint8_t timers;
-    uint8_t pool;
-    uint8_t used;
     __idata uint8_t layer;
     uint8_t offset;
     // Keep validator temporaries indirect to preserve direct RAM for dispatch.
@@ -160,79 +179,84 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     __idata uint8_t id;
     uint16_t end;
     uint16_t crc;
+    validationImage = image;
 #ifdef __SDCC
     if (variant != PHYSICAL_VARIANT) return 0;
 #endif
-    if (variant > CONFIG_THREE_KEYS || image[0] != 'M' || image[1] != 'P' ||
-        image[2] != CONFIG_VERSION ||
-        ((image[5] & 1) != variant)) {
+    if (variant > CONFIG_THREE_KEYS || validationImage[0] != 'M' || validationImage[1] != 'P' ||
+        validationImage[2] != CONFIG_VERSION ||
+        ((validationImage[5] & 1) != variant)) {
         return 0;
     }
-    layers = (image[3] & 7) + 1;
-    if (((image[3] >> 3) & 7) >= layers) {
+    validationLayers = (validationImage[3] & 7) + 1;
+    if (((validationImage[3] >> 3) & 7) >= validationLayers) {
         return 0;
     }
     keys = keyCount(variant);
     size = layerSize(variant);
-    if (layers > maxLayers(variant)) return 0;
-    chords = (image[5] >> 1) & 63;
+    if (validationLayers > maxLayers(variant)) return 0;
+    chords = (validationImage[5] >> 1) & 63;
     // Each product fits a byte after the layer/chord count checks; the sum
     // remains 16-bit so malformed images cannot wrap past the capacity check.
-    timers = (image[3] >> 6) | ((image[4] >> 7) << 2);
+    timers = (validationImage[3] >> 6) | ((validationImage[4] >> 7) << 2);
     if (timers > CONFIG_TIMED_MAX) return 0;
-    used = image[4] & 127;
-    end = 9 + (uint8_t)(size * layers) + (uint8_t)(3 * chords) +
-          (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)used;
+    validationUsed = validationImage[4] & 127;
+    end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+          (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed;
     if (end > CONFIG_SIZE) {
         return 0;
     }
-    pool = (uint8_t)end - used;
-    for (layer = 0; layer < layers; layer++) {
-        offset = 9 + size * layer;
-        for (i = 0; i < keys + 3; i++) {
-            if (!actionValid(image, offset + 2 * i, layers,
-                             i >= keys + 1, pool, used)) {
+    validationPool = (uint8_t)end - validationUsed;
+    offset = 9;
+    for (layer = 0; layer < validationLayers; layer++) {
+        for (i = 0; i < keys + 3; i++, offset += 2) {
+            if (!actionValid(offset, i >= keys + 1)) {
                 return 0;
             }
         }
+        offset += size - 2 * (keys + 3);
     }
-    offset = 9 + size * layers;
     for (i = 0; i < chords; i++) {
-        id = image[offset];
-        if (((id >> 4) & 7) >= layers ||
+        id = validationImage[offset];
+        if (((id >> 4) & 7) >= validationLayers ||
             (id & 15) >= pairCount(variant) ||
             (i && id <= previous) ||
-            !actionValid(image, offset + 1, layers, 0, pool, used)) {
+            !actionValid(offset + 1, 0)) {
             return 0;
         }
         previous = id;
         offset += 3;
     }
     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
-        __idata uint8_t scope = image[offset + 5] & 7;
-        if (scope && scope > layers) return 0;
-        if (!actionValid(image, offset + 1, layers, 1, pool, used)) return 0;
+        __idata uint8_t scope = validationImage[offset + 5] & 7;
+        if (scope && scope > validationLayers) return 0;
+        if (!actionValid(offset + 1, 1)) return 0;
 #if CONFIG_TIMED_RESUME
-        if (!actionValid(image, offset + 3, layers, 1, pool, used)) return 0;
+        if (!actionValid(offset + 3, 1)) return 0;
 #endif
     }
-    if (used && image[pool + used - 1] != 0) {
+    if (validationUsed && validationImage[validationPool + validationUsed - 1] != 0) {
         return 0;
     }
-    for (i = 0; i < used; i++) {
-        if (image[pool + i] != 0 && image[pool + i] != 9 &&
-            image[pool + i] != 10 &&
-            (image[pool + i] < 32 || image[pool + i] > 126)) {
+    for (i = 0; i < validationUsed; i++) {
+        uint8_t c = validationImage[validationPool + i];
+        if (c != 0 && c != 9 && c != 10 && (c < 32 || c > 126)) {
             return 0;
         }
     }
-    crc = configCrc(image);
-    return image[6] == (uint8_t)crc && image[7] == (uint8_t)(crc >> 8);
+    for (offset = validationPool + validationUsed; offset < CONFIG_SIZE - 1; offset += 2) {
+        if (!actionValid(offset, 2)) return 0;
+    }
+    if (offset < CONFIG_SIZE && validationImage[offset]) return 0;
+    crc = configCrc(validationImage);
+    return validationImage[6] == (uint8_t)crc && validationImage[7] == (uint8_t)(crc >> 8);
 }
 
 uint8_t configLayerCount(void) { return (activeConfig[3] & 7) + 1; }
 uint8_t configStartupLayer(void) { return (activeConfig[3] >> 3) & 7; }
+#ifndef __SDCC
 uint8_t configKeyCount(void) { return keyCount(activeConfig[5] & 1); }
+#endif
 uint8_t configChordWindowMs(void) { return (activeConfig[8] & 15) * 5; }
 
 // Share the active-image layer address calculation across all accessors.

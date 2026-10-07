@@ -46,6 +46,14 @@ __pdata uint8_t tempMouse;
 __data uint8_t tempOn;
 __pdata uint8_t tempReady;
 __pdata uint8_t stringIndex;
+// A single streaming cursor avoids per-definition runtime storage or recursion.
+__data uint8_t macroNext;
+__data uint8_t macroStart;
+#if CONFIG_MACRO_REPEAT
+__idata uint8_t macroRepeat;
+#endif
+// A private toggle lane keeps macro ownership independent of physical/timed inputs.
+__idata uint8_t macroMouse;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
@@ -53,9 +61,9 @@ __idata uint8_t timedFraction[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerReleasePending;
-__idata uint8_t consumerFirst;
-__idata uint8_t consumerSecond;
-__idata uint8_t consumerOwner; // Winning held input plus one; zero for a tap.
+__data uint8_t consumerFirst;
+__data uint8_t consumerSecond;
+__data uint8_t consumerOwner; // Winning held input plus one; zero for a tap.
 __pdata uint16_t deadline;
 __pdata uint8_t pointerRepeated;
 __idata uint8_t scrollRepeated; // Low-byte completion time; held steps wait 100 ms.
@@ -135,7 +143,7 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
 }
 
 static uint8_t mouseButtons(void) {
-  uint8_t buttons = 0;
+  uint8_t buttons = macroMouse;
   uint8_t i;
   for (i = 0; i < TOGGLE_INPUTS; i++) {
     buttons |= latchedMouse[i];
@@ -252,7 +260,7 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       firmwareLedAction(second, first >> 4);
       break;
     case CONFIG_ACTION_NONE:
-      if (first) queueAction(first, second, rotation); // Type Text (0x10).
+      if (first) queueAction(first, second, rotation); // Text/Pause auxiliary values.
       break;
     case CONFIG_ACTION_KEY_HOLD:
     case CONFIG_ACTION_MOUSE_HOLD:
@@ -344,6 +352,8 @@ static void updateLayer(void) {
       consumerReleasePending = 1;
     }
     currentFirst = 0;
+    macroNext = 0;
+    macroMouse = 0;
     phase = 0;
     tempOn = 0;
     tempMouse = 0;
@@ -370,6 +380,8 @@ void actionsInit(void) {
   eventTail = 0;
   eventUsed = 0;
   currentFirst = 0;
+  macroNext = 0;
+  macroMouse = 0;
   phase = 0;
   consumerReleasePending = 0;
   consumerFirst = 0;
@@ -544,11 +556,11 @@ void actionsRotate(uint8_t clockwise) {
 #include "timed_actions.inc"
 
 void actionsPoll(uint16_t now) {
-  uint8_t type;
-  uint8_t c;
-  uint8_t usage;
+  __idata uint8_t type;
+  __idata uint8_t c;
+  __idata uint8_t usage;
   __idata uint8_t i;
-  uint8_t slot;
+  __idata uint8_t slot;
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
   if (!(scrollFirst & CONFIG_SCROLL_HOLD) &&
@@ -575,12 +587,12 @@ void actionsPoll(uint16_t now) {
       return;
     }
   }
-  if (!flushOutputs()) {
+  if (!flushOutputs() || consumerReleasePending) {
     return;
   }
   // Repeat only when the transport and queued taps are idle. The short interval
   // permits an 8-bit clock; subtraction also works across timer wrap.
-  c = !currentFirst && !eventUsed && !USB_reportsPending() &&
+  c = !currentFirst && !macroNext && !eventUsed && !USB_reportsPending() &&
       (uint8_t)((uint8_t)now - pointerRepeated) >= 8;
   if (c) pointerRepeated = now;
   for (i = 0; i < MAX_INPUTS; i++) {
@@ -615,11 +627,33 @@ void actionsPoll(uint16_t now) {
   if (!flushOutputs()) {
     return;
   }
-  if (!currentFirst && eventUsed) {
-    currentFirst = eventData[eventTail][0];
-    currentSecond = eventData[eventTail][1];
-    eventTail = (eventTail + 1) & (EVENT_COUNT - 1);
-    eventUsed--;
+  if (!currentFirst) {
+    if (macroNext) {
+#if CONFIG_MACRO_STYLE == 1
+      c = macroNext == (uint8_t)(macroStart + 4);
+#else
+      c = macroNext >= CONFIG_SIZE - 1 || !activeConfig[macroNext];
+#endif
+      if (c) {
+#if CONFIG_MACRO_REPEAT
+        if (macroRepeat) {
+          macroRepeat--;
+          macroNext = macroStart;
+        } else
+#endif
+        macroNext = 0;
+      }
+      if (macroNext) {
+        currentFirst = activeConfig[macroNext];
+        currentSecond = activeConfig[macroNext + 1];
+        macroNext += 2;
+      }
+    } else if (eventUsed) {
+      currentFirst = eventData[eventTail][0];
+      currentSecond = eventData[eventTail][1];
+      eventTail = (eventTail + 1) & (EVENT_COUNT - 1);
+      eventUsed--;
+    }
     phase = 0;
     stringIndex = 0;
   }
@@ -631,7 +665,22 @@ void actionsPoll(uint16_t now) {
     if (USB_reportsPending()) {
       return;
     }
-    if (type == CONFIG_ACTION_SCROLL) {
+#if CONFIG_MACRO_PAUSE
+    if (currentFirst == CONFIG_ACTION_PAUSE) {
+      deadline = now + ((uint16_t)currentSecond << 4);
+      phase = 3;
+    } else
+#endif
+    if (type == CONFIG_ACTION_MACRO) {
+      macroNext = macroStart = currentSecond;
+#if CONFIG_MACRO_REPEAT
+      macroRepeat = currentFirst >> 4;
+#endif
+      currentFirst = 0;
+    } else if (type == CONFIG_ACTION_MOUSE_TOGGLE) {
+      macroMouse ^= currentSecond;
+      currentFirst = 0;
+    } else if (type == CONFIG_ACTION_SCROLL) {
       int8_t delta = currentSecond;
       if (!delta) {
         currentFirst = 0;
@@ -648,6 +697,11 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
+    } else if (type >= CONFIG_ACTION_CONSUMER) {
+      // Held bindings never enter this queue; X/Y movement was handled above.
+      runAction(currentFirst, currentSecond, 0, 9);
+      currentFirst = 0;
+      updateLayer();
     } else {
       tempFirst = currentFirst;
       tempSecond = currentSecond;
@@ -694,6 +748,9 @@ void actionsPoll(uint16_t now) {
     }
   } else if (phase == 3) {
     if ((int16_t)(now - deadline) >= 0) {
+#if CONFIG_MACRO_PAUSE
+      if (currentFirst == CONFIG_ACTION_PAUSE) { currentFirst = 0; return; }
+#endif
       tempOn = 1;
       if (flushOutputs()) {
         deadline = now + 8;

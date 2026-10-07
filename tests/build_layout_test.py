@@ -42,6 +42,13 @@ class MemoryLayoutTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "exceeds"):
             self.check(l_XSEG=755)
 
+    def test_absolute_active_configuration(self):
+        self.check(_activeConfig=0x300, l_XSEG=498)
+        with self.assertRaisesRegex(RuntimeError, "absolute active configuration"):
+            self.check(_activeConfig=0x300, l_XSEG=499)
+        with self.assertRaisesRegex(RuntimeError, "Unexpected absolute"):
+            self.check(_activeConfig=0x380)
+
     def test_startup_copy_and_clear(self):
         for area in ("l_XINIT", "l_XISEG"):
             with self.assertRaisesRegex(RuntimeError, "XINIT"):

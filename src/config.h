@@ -5,8 +5,18 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// v10: six-byte layer-scoped timers, eleven-bit intervals in 4.096 s units.
-#define CONFIG_VERSION 10
+// Experimental v11 adds macros; v12 is the fixed-pair comparison encoding.
+#define CONFIG_VERSION (CONFIG_MACRO_STYLE == 1 ? 12 : 11)
+// Experiment: 1 = fixed pairs; 2 = NUL-terminated dynamic sequences.
+#ifndef CONFIG_MACRO_STYLE
+#define CONFIG_MACRO_STYLE 2
+#endif
+#ifndef CONFIG_MACRO_REPEAT
+#define CONFIG_MACRO_REPEAT 1
+#endif
+#ifndef CONFIG_MACRO_PAUSE
+#define CONFIG_MACRO_PAUSE 1
+#endif
 #define CONFIG_TIMED_CONSUME 0x40
 #define CONFIG_LAYER_PREVIOUS 0xFF
 #ifndef CONFIG_TIMED_MAX
@@ -38,7 +48,8 @@
 #define CONFIG_ACTION_KEY_TAP          0x1
 #define CONFIG_ACTION_KEY_HOLD         0x2
 #define CONFIG_ACTION_MOUSE_CLICK      0x3
-// Type 0x4 is reserved; Mouse click auxiliary encodes click count minus one.
+#define CONFIG_ACTION_MACRO            0x4
+// Mouse click auxiliary encodes click count minus one.
 #define CONFIG_ACTION_MOUSE_HOLD       0x5
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x6
 #define CONFIG_ACTION_SCROLL           0x7
@@ -73,6 +84,7 @@
 #define CONFIG_ACTION_CONSUMER_HOLD    0x9
 // Full first byte: type None with auxiliary value 1.
 #define CONFIG_ACTION_STRING           0x10
+#define CONFIG_ACTION_PAUSE            0x20 // Parameter: 16 ms units, 0-255.
 #define CONFIG_ACTION_SET_LAYER        0xA
 #define CONFIG_ACTION_MOMENTARY_LAYER  0xB
 #define CONFIG_ACTION_RELATIVE_LAYER   0xC
@@ -120,7 +132,11 @@
 #define CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER 2
 #define CONFIG_LAYER_INDICATOR_ALWAYS_ON     3
 
+#ifdef __SDCC
+extern __xdata __at (0x300) uint8_t activeConfig[CONFIG_SIZE];
+#else
 extern __xdata uint8_t activeConfig[CONFIG_SIZE];
+#endif
 extern __code uint8_t configPalette[16][3];
 
 uint8_t configTimedCount(void);
@@ -129,7 +145,11 @@ uint16_t configCrc(const __xdata uint8_t *image);
 FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant);
 uint8_t configLayerCount(void);
 uint8_t configStartupLayer(void);
+#ifdef __SDCC
+#define configKeyCount() ((uint8_t)(PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 3 : 6))
+#else
 uint8_t configKeyCount(void);
+#endif
 uint8_t configChordWindowMs(void);
 uint8_t configLayerOptions(uint8_t layer);
 uint8_t configLedColor(uint8_t layer, uint8_t key);

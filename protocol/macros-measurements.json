@@ -1,0 +1,1188 @@
+{
+  "baseline_revision": "4647e6d",
+  "application_limit": 14336,
+  "usb_ram": 148,
+  "compiler": "SDCC 4.2.2 build.13407_4",
+  "note": "Stack is linker capacity, not measured runtime unused stack. Capacity figures from direct-RAM allocation failures are provisional. XSEG omits the separately reported 128-byte absolute active image.",
+  "comparison_artifacts": "/private/tmp/macropad-macro-comparison-ej5l_br8",
+  "optimization_artifacts": "/private/tmp/macropad-macros-71gdjd2l",
+  "variants": [
+    {
+      "case": "baseline",
+      "variant": 0,
+      "success": true,
+      "flash": 14294,
+      "spare": 42,
+      "internal": 180,
+      "stack": 75,
+      "paged": 108,
+      "external": 496,
+      "absolute": 0,
+      "errors": [],
+      "external_total": 604
+    },
+    {
+      "case": "baseline",
+      "variant": 1,
+      "success": true,
+      "flash": 14292,
+      "spare": 44,
+      "internal": 177,
+      "stack": 78,
+      "paged": 108,
+      "external": 487,
+      "absolute": 0,
+      "errors": [],
+      "external_total": 595
+    },
+    {
+      "case": "pair",
+      "variant": 0,
+      "success": true,
+      "flash": 14208,
+      "spare": 128,
+      "internal": 178,
+      "stack": 78,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "pair",
+      "variant": 1,
+      "success": true,
+      "flash": 14206,
+      "spare": 130,
+      "internal": 175,
+      "stack": 81,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "pair-repeat",
+      "variant": 0,
+      "success": true,
+      "flash": 14228,
+      "spare": 108,
+      "internal": 179,
+      "stack": 77,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "pair-repeat",
+      "variant": 1,
+      "success": true,
+      "flash": 14224,
+      "spare": 112,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "dynamic",
+      "variant": 0,
+      "success": true,
+      "flash": 14232,
+      "spare": 104,
+      "internal": 178,
+      "stack": 78,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "dynamic",
+      "variant": 1,
+      "success": true,
+      "flash": 14228,
+      "spare": 108,
+      "internal": 175,
+      "stack": 81,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "dynamic-repeat",
+      "variant": 0,
+      "success": true,
+      "flash": 14252,
+      "spare": 84,
+      "internal": 179,
+      "stack": 77,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "dynamic-repeat",
+      "variant": 1,
+      "success": true,
+      "flash": 14250,
+      "spare": 86,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "dynamic-pause",
+      "variant": 0,
+      "success": true,
+      "flash": 14306,
+      "spare": 30,
+      "internal": 179,
+      "stack": 77,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "dynamic-pause",
+      "variant": 1,
+      "success": true,
+      "flash": 14302,
+      "spare": 34,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "counted",
+      "variant": 0,
+      "success": true,
+      "flash": 14220,
+      "spare": 116,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "counted",
+      "variant": 1,
+      "success": true,
+      "flash": 14218,
+      "spare": 118,
+      "internal": 173,
+      "stack": 83,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "counted-repeat",
+      "variant": 0,
+      "success": true,
+      "flash": 14254,
+      "spare": 82,
+      "internal": 179,
+      "stack": 77,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 605
+    },
+    {
+      "case": "counted-repeat",
+      "variant": 1,
+      "success": true,
+      "flash": 14250,
+      "spare": 86,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "errors": [],
+      "external_total": 596
+    },
+    {
+      "case": "dynamic-unaligned",
+      "variant": 0,
+      "success": false,
+      "flash": 14368,
+      "spare": -32,
+      "internal": 179,
+      "stack": 77,
+      "paged": 108,
+      "external": 497,
+      "absolute": 0,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "external_total": 605
+    },
+    {
+      "case": "dynamic-unaligned",
+      "variant": 1,
+      "success": false,
+      "flash": 14364,
+      "spare": -28,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 488,
+      "absolute": 0,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "external_total": 596
+    }
+  ],
+  "optimization_probes": [
+    {
+      "case": "basic",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14710,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "basic-globalimage",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14682,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "cache-walk",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14706,
+      "stack": 72,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "cache-walk2",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14606,
+      "stack": 69,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "callee-all",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 15422,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "callee-combined",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 15036,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "callee-config",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14702,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "callee-usb",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14644,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "callee-validator",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14668,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "context",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14696,
+      "stack": 72,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "context-packed",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14762,
+      "stack": 83,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "context-packed-counters",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 16 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14726,
+      "stack": 90,
+      "pdata": 108,
+      "xdata": 492
+    },
+    {
+      "case": "counted",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14378,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-direct-next",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14364,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-direct-next-owner",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14350,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-direct-owner-first",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14354,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-image",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14364,
+      "stack": 76,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "counted-image-direct",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14322,
+      "stack": 76,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "counted-repeat",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14418,
+      "stack": 67,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-repeat-direct-next",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14400,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-repeat-direct-next-owner",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14386,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-repeat-direct-owner-first",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14394,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "counted-repeat-image",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14402,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "counted-repeat-image-direct",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14356,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "counted-repeat-image-direct-compact",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14324,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "counted-repeat-image-direct-compact-directstart",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14324,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "dynamic-delay",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14378,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "dynamic-optimized",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14450,
+      "stack": 72,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "dynamic-order",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14310,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "dynamic-order-aligned",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14248,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 369
+    },
+    {
+      "case": "dynamic-pause-256",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14356,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "dynamic-pause-256-aligned",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14292,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 369
+    },
+    {
+      "case": "dynamic-pause-ms",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14358,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "dynamic-pause-ms-aligned",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14294,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 369
+    },
+    {
+      "case": "final-dynamic",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14302,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 369
+    },
+    {
+      "case": "final-dynamic",
+      "variant": 1,
+      "success": true,
+      "errors": [],
+      "flash": 14298,
+      "stack": 80,
+      "pdata": 108,
+      "xdata": 360
+    },
+    {
+      "case": "geometry",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14474,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry-header",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14474,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry-macrostate",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14444,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry2",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14470,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry2-direct-next",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14452,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry2-direct-next-owner",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14440,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry2-direct-owner-first",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14448,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry2-globalimage",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14470,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "geometry2-image",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14456,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "geometry2-image-direct",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14410,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "geometry2-image-direct-compact",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14326,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "geometry2-image-direct-compact-directstart",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14324,
+      "stack": 77,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "globalimage",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14678,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "globalimage-cache",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14678,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "globalimage-cache-walk",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14678,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "globalimage-cache-walk2",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14576,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "globalimage-cache2",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14590,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "packed",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14808,
+      "stack": 81,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "packed-pageswap",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 16 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14746,
+      "stack": 81,
+      "pdata": 99,
+      "xdata": 492
+    },
+    {
+      "case": "packed-pageswap-wide",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 16 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14704,
+      "stack": 75,
+      "pdata": 108,
+      "xdata": 483
+    },
+    {
+      "case": "packed-pressswap",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Couldn't get 16 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14710,
+      "stack": 81,
+      "pdata": 108,
+      "xdata": 489
+    },
+    {
+      "case": "pair-optimized",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14364,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "pair-optimized-direct-next",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14346,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "pair-optimized-direct-next-owner",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14334,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "pair-optimized-direct-owner-first",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14342,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "pair-optimized-image",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14350,
+      "stack": 80,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "pair-optimized-image-direct",
+      "variant": 0,
+      "success": true,
+      "errors": [],
+      "flash": 14304,
+      "stack": 80,
+      "pdata": 108,
+      "xdata": 497
+    },
+    {
+      "case": "pair-optimized-repeat",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14390,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "params",
+      "variant": 0,
+      "success": false,
+      "errors": [
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ],
+      "flash": 14780,
+      "stack": 67,
+      "pdata": 108,
+      "xdata": 496
+    },
+    {
+      "case": "baseline",
+      "variant": 0,
+      "success": true,
+      "flash": 14294,
+      "stack": 75,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": []
+    },
+    {
+      "case": "dynamic",
+      "variant": 0,
+      "success": false,
+      "flash": 14782,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 8 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "dynamic-repeat",
+      "variant": 0,
+      "success": false,
+      "flash": 14804,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 8 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "dynamic-tail",
+      "variant": 0,
+      "success": false,
+      "flash": 14702,
+      "stack": 72,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "dynamic-tail-repeat",
+      "variant": 0,
+      "success": false,
+      "flash": 14724,
+      "stack": 71,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "pair",
+      "variant": 0,
+      "success": false,
+      "flash": 14684,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 8 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "pair-tail",
+      "variant": 0,
+      "success": false,
+      "flash": 14620,
+      "stack": 73,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "probe-ascii",
+      "variant": 0,
+      "success": false,
+      "flash": 14740,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "probe-config-bytes",
+      "variant": 0,
+      "success": false,
+      "flash": 14922,
+      "stack": 72,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 8 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "probe-reference",
+      "variant": 0,
+      "success": false,
+      "flash": 14742,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "probe-usb-counters",
+      "variant": 0,
+      "success": false,
+      "flash": 14706,
+      "stack": 74,
+      "pdata": 108,
+      "xdata": 492,
+      "errors": [
+        "ERROR: Couldn't get 16 bytes allocated in internal RAM for area DSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    },
+    {
+      "case": "probe-usb-pointer",
+      "variant": 0,
+      "success": false,
+      "flash": 14750,
+      "stack": 70,
+      "pdata": 108,
+      "xdata": 496,
+      "errors": [
+        "ERROR: Couldn't get 3 bytes allocated in internal RAM for area OSEG.",
+        "ERROR: Insufficient ROM/EPROM/FLASH memory."
+      ]
+    }
+  ]
+}

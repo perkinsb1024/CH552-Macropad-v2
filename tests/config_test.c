@@ -78,13 +78,13 @@ static void testHeaderAndIgnoredFields(void) {
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         activeConfig[3] |= 0xC0;
         activeConfig[8] |= 0xC0;
-        activeConfig[127] = 0xFF;
+        activeConfig[127] = 0;
         seal();
         assert(configValid(activeConfig, variant));
         assert(configLayerCount() == 1 && configStartupLayer() == 0);
         assert(configKeyCount() == (variant ? 3 : 6));
         assert(configChordWindowMs() == 40);
-        // Ignored bytes are still covered by CRC.
+        // Header and tail bytes remain covered by CRC.
         activeConfig[127] ^= 1;
         assert(!configValid(activeConfig, variant));
         activeConfig[2] = 2;
@@ -433,7 +433,7 @@ static void testConsumerHoldEncoding(void) {
         activeConfig[pool] = 'A'; activeConfig[pool + 1] = 0;
         for (uint8_t aux = 0; aux < 16; aux++) {
             activeConfig[9] = aux << 4; activeConfig[10] = 0;
-            seal(); assert(!!configValid(activeConfig, variant) == (aux <= 1));
+            seal(); assert(!!configValid(activeConfig, variant) == (aux <= (CONFIG_MACRO_PAUSE ? 2 : 1)));
         }
         activeConfig[3] = 1 << 6;
         uint8_t timer = configTimedOffset();

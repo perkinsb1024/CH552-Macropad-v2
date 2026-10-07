@@ -56,6 +56,16 @@ def check_memory_layout(map_text, usb_ram):
         and external_start + external_size <= 1024
     ):
         raise RuntimeError("External RAM overlaps paged/USB RAM or exceeds CH552 RAM")
+    # Experimental macros align the active image on page three. Absolute xdata
+    # is omitted from l_XSEG, so it needs an explicit overlap/capacity check.
+    active_start = symbols.get("_activeConfig")
+    if active_start is not None and (active_start == 0x300 or not (
+        external_start <= active_start and active_start + 128 <= external_start + external_size
+    )):
+        if active_start != 0x300:
+            raise RuntimeError("Unexpected absolute active configuration address")
+        if paged_start + paged_size > active_start or external_start + external_size > active_start:
+            raise RuntimeError("External RAM overlaps the absolute active configuration")
     # Our startup omits the XINIT copier, but must retain clearing/P2 setup.
     if symbols["l_XINIT"] or symbols["l_XISEG"]:
         raise RuntimeError("XINIT storage requires the omitted startup copy routine")

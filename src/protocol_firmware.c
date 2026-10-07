@@ -34,7 +34,7 @@ void firmwareApplyConfig(void);
 static const __code uint8_t protocolInfo[14] = {
   'U', 'M', 'A', 'C', PROTOCOL_VERSION, CONFIG_VERSION, PHYSICAL_VARIANT,
   PHYSICAL_VARIANT ? 3 : 6, PHYSICAL_VARIANT ? 3 : 6,
-  CONFIG_MAX_LAYERS, CONFIG_SIZE, CONFIG_PALETTE_VERSION, 0xEF, 0xFF
+  CONFIG_MAX_LAYERS, CONFIG_SIZE, CONFIG_PALETTE_VERSION, 0xFF, 0xFF
 };
 
 __xdata uint8_t protocolInbox[32];
