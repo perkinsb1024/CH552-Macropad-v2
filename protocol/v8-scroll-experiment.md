@@ -17,7 +17,7 @@ but neither **Consumer Hold** nor the timer precision experiment.
 To test, use this branch's configurator (`cd webapp`, `npm run build`) and ordinary
 firmware build/upload workflow. No firmware has been uploaded by this work.
 Select a **Scroll** action and choose **Off**, **Slow** or **Fast** from **Scroll acceleration (experiment)**. Keys/chords/encoder press also offer **Tap/Hold**. Try a base step of
-1 first; reverse direction, pause longer than 200 ms and trigger another action
+1 first; reverse direction, pause longer than 200ms and trigger another action
 to compare resets. Start with a fresh profile or an original v7 backup: this
 branch's configurator does not import v8 backups with **Consumer Hold**. Keep steps
 small while judging feel because each computed
@@ -90,9 +90,9 @@ Y=1 with different X values is not smaller than the packed defaults in this
 build, so simplifying presets alone does not solve the flash shortfall.
 
 Maximum resulting magnitude is 127. Input timeout is a firmware constant of
-200 ms. Ordinary releases do not reset repeated scroll taps; releasing a scroll
+200ms. Ordinary releases do not reset repeated scroll taps; releasing a scroll
 hold stops repeats and resets its stream. A continuously held scrolling key
-does not expire solely because USB playback takes more than 200 ms. Other input
+does not expire solely because USB playback takes more than 200ms. Other input
 triggers still reset gain. Holds and non-held physical **Scroll** Steps participate;
 timed actions use their configured unaccelerated step without affecting the
 physical stream, even if their action bytes contain an acceleration mode.

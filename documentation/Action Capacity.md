@@ -12,7 +12,7 @@ The 128-byte image uses a 9-byte header, 15 bytes per 3-key layer or 22 bytes pe
 
 Timers are optional and do not reserve storage when absent, so all numeric tables below remain unchanged from v5/v6. Each configured timer subtracts 6 bytes from the shared chord/text budget and provides two separate action records (expiry and next input). These are excluded from the physical-input totals. With timers and strings, subtract `6 × timer count + string-pool bytes + macro bytes` from the formula numerator above.
 
-Macros are optional. Each step uses two bytes and each definition normally adds a two-byte terminator; the final definition can use the image boundary instead. Repeats add no definition bytes. Macro steps are not extra physical-input slots.
+Macros are optional. Each step uses two bytes and each definition adds a one-byte terminator (this terminator is omitted for the last macro if it completely fills the configuration space). Repeats add no definition bytes. Macro steps are not extra physical-input slots.
 
 Text actions also need string-pool storage: each distinct string uses one byte per character plus a terminating byte. That storage counts against the maximum chord count. Unassigned keys and encoder actions still occupy their fixed layer slots.
 

@@ -36,9 +36,9 @@ Every upload and flash readback is a canonical 128-byte image. Unused bytes are 
 | 4 | 1 | Used string-pool length, including terminators |
 | 5 | 1 | Bit 0: physical variant (0 for six keys/LEDs, 1 for three); bits 1–6: chord-entry count; bit 7: zero |
 | 6 | 2 | CRC16-CCITT-FALSE over bytes 0–5 followed by bytes 8–127 |
-| 8 | 1 | Low nibble: chord window in 5 ms units (0–75 ms); high nibble: reserved, zero |
+| 8 | 1 | Low nibble: chord window in 5ms units (0–75ms); high nibble: reserved, zero |
 
-Specify CRC parameters in the protocol document: polynomial 0x1021, initial value 0xFFFF, no reflection, final XOR zero. Store the resulting CRC low byte first. A low-nibble value of 8 gives the initial 40 ms window. Zero disables chord recognition while retaining saved chord bindings.
+Specify CRC parameters in the protocol document: polynomial 0x1021, initial value 0xFFFF, no reflection, final XOR zero. Store the resulting CRC low byte first. A low-nibble value of 8 gives the initial 40ms window. Zero disables chord recognition while retaining saved chord bindings.
 
 ### Layer records: 22 or 15 bytes
 
@@ -135,7 +135,7 @@ Separate physical input scanning, logical actions, and USB report construction. 
 
 Use elapsed-time button debouncing and a quadrature transition decoder that produces complete logical encoder steps. Replace blocking double-click, tap, and string delays with a small bounded scheduler so USB configuration and input scanning remain responsive. Use explicit queue/backpressure rules for fast rotation and long strings; completed actions must always release their temporary outputs.
 
-For a physical key that belongs to at least one configured chord on the effective layer, defer its single-key action for the profile's chord window, measured from its debounced press. A second physical key pressed within that window triggers a chord only if the pair is configured on the first key's captured layer; then suppress both single-key actions. If the pair is unconfigured, execute the first single-key action and handle the second key normally. If the first key is released before the window expires, execute its single-key press and release in order so short taps are not lost. A zero window disables chord recognition and removes this delay. Keys with no chord participation and the encoder button act without this delay. Start with 40 ms and tune the default on hardware; the selected value is stored once per profile, not per layer.
+For a physical key that belongs to at least one configured chord on the effective layer, defer its single-key action for the profile's chord window, measured from its debounced press. A second physical key pressed within that window triggers a chord only if the pair is configured on the first key's captured layer; then suppress both single-key actions. If the pair is unconfigured, execute the first single-key action and handle the second key normally. If the first key is released before the window expires, execute its single-key press and release in order so short taps are not lost. A zero window disables chord recognition and removes this delay. Keys with no chord participation and the encoder button act without this delay. Start with 40ms and tune the default on hardware; the selected value is stored once per profile, not per layer.
 
 Activate a chord on the second debounced press. For hold and momentary-layer actions, release the chord action when either constituent key is released; do not fire either constituent single-key action afterward. Both keys must be released before the same chord can activate again. When a third key is pressed, treat it independently of the active chord. Keep pending key and active chord state bounded by the physical key count, and process it without blocking USB traffic.
 
@@ -220,7 +220,7 @@ Read the full flash image and decode it only after validation. If flash is inval
 
 ### Editor
 
-Provide layer tabs, a one-to-four layer count, startup-layer selection, a chord-window setting in 5 ms steps from 0 to 75 ms, and a layout matching the connected variant: three or six keys with their LEDs, plus the encoder button and both rotation directions. Offer optional actions for pairs of physical keys on each layer and explain the delay applied to keys used in chords; zero disables chord recognition. Encode the corresponding variant-specific layer size; reject a profile whose variant does not match the device.
+Provide layer tabs, a one-to-four layer count, startup-layer selection, a chord-window setting in 5ms steps from 0 to 75ms, and a layout matching the connected variant: three or six keys with their LEDs, plus the encoder button and both rotation directions. Offer optional actions for pairs of physical keys on each layer and explain the delay applied to keys used in chords; zero disables chord recognition. Encode the corresponding variant-specific layer size; reject a profile whose variant does not match the device.
 
 Selecting a control opens an action editor with the applicable fields. Provide explicit key selection and optional shortcut capture using physical KeyboardEvent.code mappings; some OS/browser shortcuts cannot be captured, so selection must always remain available. Display **Ctrl**/**Shift**/Alt/**GUI** clearly and explain the supported string keyboard layout.
 
@@ -259,7 +259,7 @@ Required checks:
 
 - Every binding type round-trips through the TypeScript codec and firmware decoder; negative deltas, consumer high bits, and modifier-only combinations retain their meaning.
 - Chord-plus-string capacity matches 97/75/53/31 bytes for six keys and 104/89/74/59 bytes for three keys. Test exact fits, one-byte overflow, maximum chord counts, shared strings, empty strings, invalid offsets, missing terminators, and layer-count changes.
-- Chord-window values 0–15 round-trip as 0–75 ms in 5 ms steps; reject a nonzero reserved high nibble. Confirm zero disables chord recognition and 8 selects 40 ms.
+- Chord-window values 0–15 round-trip as 0–75ms in 5ms steps; reject a nonzero reserved high nibble. Confirm zero disables chord recognition and 8 selects 40ms.
 - Chord tests cover mapped and unmapped pairs, both press orders, a brief single-key tap, threshold boundaries, hold release by either key, a third pressed key, layer changes while a key is pending, and invalid or duplicate pair identifiers.
 - Corrupt headers, unsupported versions, bad CRCs, invalid action parameters, and malformed HID packets never cause out-of-bounds reads or writes.
 - A click after scrolling produces no additional scroll; mouse movement is not replayed by later clicks or media events.

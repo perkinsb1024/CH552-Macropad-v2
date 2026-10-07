@@ -24,7 +24,7 @@
 <div class="stat"><span>Last interval</span><strong id="last">—</strong></div>
 <div class="stat"><span>Median interval</span><strong id="median">—</strong></div>
 <div class="stat"><span>Minimum interval</span><strong id="minimum">—</strong></div>
-<div class="stat"><span>Intervals below 90 ms</span><strong id="fast">0</strong></div>
+<div class="stat"><span>Intervals below 90ms</span><strong id="fast">0</strong></div>
 </div>
 <h2 style="font-size:18px;margin:20px 0 10px">Mouse clicks</h2>
 <div class="stats">
@@ -34,8 +34,8 @@
 <div class="stat"><span>Last press-to-press gap</span><strong id="click-gap">—</strong></div>
 <div class="stat"><span>Last press duration</span><strong id="press-length">—</strong></div>
 </div>
-<p class="note">A 3–16 click action should produce exactly that many complete press/release cycles with Left only. Press duration is at least <strong>8 ms</strong>; the next press follows release by at least <strong>200 ms</strong> (roughly 208 ms or longer from press to press). The log also includes browser <code>click</code>, <code>auxclick</code> and <code>dblclick</code> notifications; these do not increase the cycle count. Manual mouse clicks in the area also count, so clear the log before testing.</p>
-<p class="note">Expected for a single held key at step 1: approximately <strong>100–108 ms</strong> between events on either axis (about 10 per second), with possible extra USB or browser delay. Larger configured steps emit several individual wheel reports in a batch, so use step 1 for this check.</p>
+<p class="note">A 3–16 click action should produce exactly that many complete press/release cycles with Left only. Press duration is at least <strong>8ms</strong>; the next press follows release by at least <strong>200ms</strong> (roughly 208ms or longer from press to press). The log also includes browser <code>click</code>, <code>auxclick</code> and <code>dblclick</code> notifications; these do not increase the cycle count. Manual mouse clicks in the area also count, so clear the log before testing.</p>
+<p class="note">Expected for a single held key at step 1: approximately <strong>100–108ms</strong> between events on either axis (about 10 per second), with possible extra USB or browser delay. Larger configured steps emit several individual wheel reports in a batch, so use step 1 for this check.</p>
 </div>
 <div class="card">
 <h2 style="font-size:18px;margin-top:0">Event log <small style="font-weight:400;color:#536078">· newest 200 displayed · last 2,000 retained for CSV</small></h2>
@@ -53,7 +53,7 @@ let wheelCount = 0, presses = 0, releases = 0, cycles = 0, lastClickGap = null, 
 const previousByType = new Map(), pressedAt = new Map();
 const units = ['pixels', 'lines', 'pages'];
 const buttons = ['Left', 'Middle', 'Right'];
-const ms = value => value === null ? '—' : `${value.toFixed(1)} ms`;
+const ms = value => value === null ? '—' : `${value.toFixed(1)}ms`;
 function render() {
   renderTimer = null;
   const wheels = events.filter(e => e.kind === 'wheel');

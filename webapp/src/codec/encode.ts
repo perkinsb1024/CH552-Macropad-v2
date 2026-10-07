@@ -84,7 +84,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   let macroEnd = HEADER_SIZE + size * profile.layers.length + CHORD_ENTRY_SIZE * chords.length + TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0) + poolLength;
   const macroOffsets = (profile.macros ?? []).map(macro => {
     const start = macroEnd;
-    macroEnd += 2 * macro.actions.length + 2;
+    macroEnd += 2 * macro.actions.length + 1;
     return start;
   });
   image[0] = 0x4d; // M
@@ -145,7 +145,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
       image.set(encodeAction(action, offsets, macroOffsets), offset);
       offset += 2;
     }
-    if (offset + 1 < IMAGE_SIZE) { image[offset++] = 0; image[offset++] = 0; }
+    if (offset < IMAGE_SIZE) image[offset++] = 0;
   }
 
   sealImage(image);

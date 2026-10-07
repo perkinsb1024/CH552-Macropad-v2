@@ -288,6 +288,7 @@ output {
   font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
   font-weight: 500;
+  text-transform: none;
 }
 .field {
   display: flex;
@@ -304,7 +305,8 @@ output {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.click-count-field {
+.click-count-field,
+.macro-run-count-field {
   margin-top: 8px;
 }
 .field-wide {
@@ -1407,9 +1409,6 @@ output {
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius-sm);
-}
-.chord-main:hover {
-  background: var(--bg-sunken);
 }
 .chord-keys {
   display: inline-flex;

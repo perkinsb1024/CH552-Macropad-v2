@@ -31,7 +31,7 @@ are unchanged. Both versions fit the actual 14,336-byte application limit.
 
 ## Implementation and timing tradeoff
 
-The retained version uses `millis()` bits 4–11 for a 16 ms fine clock and one
+The retained version uses `millis()` bits 4–11 for a 16ms fine clock and one
 fractional byte per timer. After 256 fine ticks, a timer's interval age advances
 by one 4.096-second unit.
 
@@ -43,7 +43,7 @@ seconds; polling must occur before an entire wrap elapses.
 
 Starting or resetting a timer now aligns it with the shared coarse clock. The
 first expiry can be approximately 4.096 seconds early, rather than approximately
-16 ms, before accounting for polling/queue delays and oscillator accuracy.
+16ms, before accounting for polling/queue delays and oscillator accuracy.
 Uninterrupted repetitions retain the selected period. Interval resolution and
 maximum duration remain 4.096 seconds and 8,388.608 seconds in both versions.
 

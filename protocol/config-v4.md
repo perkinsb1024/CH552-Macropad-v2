@@ -36,7 +36,7 @@ The nine-byte header is:
 | 4 | **String**-pool length | Number of used bytes in the string pool. |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | **Chord window** | Bits 0–3: duration in 5 ms units<br>Bits 4–7: `0` |
+| 8 | **Chord window** | Bits 0–3: duration in 5ms units<br>Bits 4–7: `0` |
 
 | CRC16-CCITT-FALSE setting | Value |
 | --- | --- |
@@ -75,10 +75,10 @@ including dimming and animated **Rainbow**. Without an always-on background it i
 
 **On for 1.5 seconds** displays the indicator continuously after a layer change.
 **Blink by layer number** displays one blink per one-based layer number, with
-250 ms lit and 250 ms dark phases. Both indications override all pressed-key
+250ms lit and 250ms dark phases. Both indications override all pressed-key
 colors throughout the animation; dark blink phases are fully dark. Each new
-layer change replaces the previous animation. Timing uses 2 ms ticks, so the
-first phase can be up to 1 ms shorter than its nominal duration.
+layer change replaces the previous animation. Timing uses 2ms ticks, so the
+first phase can be up to 1ms shorter than its nominal duration.
 
 Indicator color index 15 means animated **Rainbow** in **Always on**, *On for 1.5
 seconds*, and **Blink by layer number** modes, at the selected brightness. Numbered
@@ -155,7 +155,7 @@ negate any accepted delta.
 For X and Y movement, auxiliary bit 0 (record byte 0, bit 4) selects hold mode.
 Auxiliary value `0` sends one movement step per press or encoder detent.
 Value `1` sends an initial step and repeats the delta while the input is held,
-at an 8 ms interval when USB is ready and queued actions have finished.
+at an 8ms interval when USB is ready and queued actions have finished.
 Releasing a key, the encoder button, or either chord key stops new repeats.
 Held inputs retain their original bindings across layer changes, as other holds do.
 Repeat reports are skipped when USB is busy; they do not accumulate for later playback.
@@ -196,4 +196,4 @@ The editor's starter profile has two layers: **Mac shortcuts** followed by
 **Windows shortcuts**. Six-key pads use **Undo**, **Copy**, **Paste**, **Redo**, **Cut**,
 and **Select all**; three-key pads use the first three shortcuts on each layer.
 The layers use persistent **White** and **Yellow** lighting respectively, and the
-profile has a 40 ms chord window with no chords or strings.
+profile has a 40ms chord window with no chords or strings.

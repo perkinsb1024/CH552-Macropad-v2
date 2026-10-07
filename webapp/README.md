@@ -45,7 +45,7 @@ to read its saved profile; editor drafts are neither restored nor cleared.
 
 The viewer shows the same macropad preview, layer tabs, applicable local/global
 chords, and compact timed-action summaries. It has no editing, saving, drag/drop,
-or configuration clipboard shortcuts. Device status is polled every 500 ms.
+or configuration clipboard shortcuts. Device status is polled every 500ms.
 Manual tab selection shows a persistent warning when it differs from the active
 device layer. Ordinary polls preserve that selection; the next reported device
 layer change selects the device layer again. **Follow device** also resynchronizes
@@ -155,7 +155,7 @@ preserve armed **On next input** actions. Global timer phases continue.
 is disabled by default. Optional next-input actions run once after firing,
 including after leaving the assigned layer. Consumption suppresses the normal
 physical binding even with no next-input action. Each timer retains an independent
-16 ms fractional phase; early clock quantization is less than 16 ms, separately
+16ms fractional phase; early clock quantization is less than 16ms, separately
 from queued-output latency and oscillator drift.
 
 Both timer action slots accept dragged shortcuts and swap actions with keys,
@@ -197,8 +197,8 @@ and consumer holds retain their original binding across layers until release.
 
 **Scroll** offers **Tap/Hold** on keys, chords and the encoder button. It repeats the
 configured step when playback and transport are idle; release stops new repeats.
-Repeats wait at least 100 ms after the previous complete step, giving about ten
-steps per second at wheel step 1. Pointer holds retain their 8 ms interval.
+Repeats wait at least 100ms after the previous complete step, giving about ten
+steps per second at wheel step 1. Pointer holds retain their 8ms interval.
 Both hold features reject rotation and timed-action slots, including drag/drop
 and clipboard operations. Preview/live-view summaries identify held scrolling
 and media controls. Acceleration is not part of this merged build.
@@ -213,8 +213,8 @@ be read and migrated without being automatically overwritten.
 
 **Mouse click** offers **Single / Double / Custom**, with a 3–16 slider for **Custom**.
 The last custom count is remembered per slot in local settings when switching
-modes. **Custom** displays an estimated duration to one decimal, based on 8 ms per
-press plus 200 ms between clicks. Later queued actions wait for the sequence;
+modes. **Custom** displays an estimated duration to one decimal, based on 8ms per
+press plus 200ms between clicks. Later queued actions wait for the sequence;
 held outputs, consumer controls and layer/LED actions use independent handling.
 USB backpressure can lengthen playback. The optional JSON `clicks` field defaults
 to one; legacy `mouseDouble` actions migrate to `mouseClick` with `clicks: 2`.
@@ -225,7 +225,7 @@ Binary type 3 stores count minus one in its auxiliary nibble; v8 rejects type 4.
 Open `/wheel-debug.html` beneath the site's project prefix (locally,
 `http://localhost:4173/wheel-debug.html` when using the preview server). Hover over
 the blue area, clear the log, and use a macropad key. For held scrolling, use one
-key at wheel step 1 and compare intervals against roughly 100–108 ms. For
+key at wheel step 1 and compare intervals against roughly 100–108ms. For
 multi-click testing, select **Left** only and compare complete press/release cycles
 against the configured count. Browser click/double-click notifications are logged
 separately without increasing that count. The page reports press duration and
@@ -253,7 +253,7 @@ but must be reduced before saving.
 **Scroll axis** selects **Vertical** or **Horizontal** while preserving step and
 **Tap**/**Hold** behavior. **Scroll direction** shows **Up**/**Down** or
 **Left**/**Right** accordingly. Auxiliary bit 3 selects horizontal; bit 2 still
-selects hold. Both axes use the same 100 ms hold delay. JSON version 9 stores
+selects hold. Both axes use the same 100ms hold delay. JSON version 9 stores
 optional boolean `horizontal`; older imports retain vertical scrolling.
 
 Under **Scroll direction**, an inversion hint names the selected axis and offers
@@ -275,7 +275,7 @@ another mouse event reports its current button state.
 **Macros** adds numbered definitions with ordered steps. Select a step to use the
 common **Action editor**; move it up/down, swap/clipboard compatible actions, or
 remove it. **Execute macro** selects a definition and **Repeat count** (1–16).
-**Pause duration** is 0–4080 ms in 16 ms increments. Held actions, nested macros
+**Pause duration** is 0–4080ms in 16ms increments. Held actions, nested macros
 and **Nothing** steps are unavailable. Layer switches (absolute, relative and
 one-shot) must be the final step, even if their target is already active, and
 invocations of these macros must have **Repeat count** set to 1. **Add step** is

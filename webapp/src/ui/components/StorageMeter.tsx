@@ -11,7 +11,7 @@ export function StorageMeter() {
     { key: 'layers', label: `${p.layers.length} layer${p.layers.length > 1 ? 's' : ''}`, bytes: cap.layers, detail: `${layerSize(p.variant)} bytes each` },
     { key: 'chords', label: `${p.chords.length} chord${p.chords.length === 1 ? '' : 's'}`, bytes: cap.chords, detail: '3 bytes each' },
     { key: 'timers', label: `${p.timedActions?.length ?? 0} timed action${p.timedActions?.length === 1 ? '' : 's'}`, bytes: cap.timedActions, detail: '6 bytes each' },
-    { key: 'macros', label: `${p.macros?.length ?? 0} macro${p.macros?.length === 1 ? '' : 's'}`, bytes: cap.macros, detail: '2 bytes per step + terminators' },
+    { key: 'macros', label: `${p.macros?.length ?? 0} macro${p.macros?.length === 1 ? '' : 's'}`, bytes: cap.macros, detail: '2 bytes per step + terminator' },
     { key: 'strings', label: `${cap.pool.length} string${cap.pool.length === 1 ? '' : 's'}`, bytes: cap.strings, detail: 'length + terminator' },
   ];
   return (

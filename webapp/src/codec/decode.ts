@@ -57,7 +57,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
   switch (type) {
     case ActionCode.Macro: {
       const start = pool.start + pool.used;
-      return b1 < start || b1 > 126 || ((b1 - start) & 1) ? 'Invalid macro offset' : { type: 'macro', macro: b1, repeats: aux + 1 };
+      return b1 < start || b1 >= IMAGE_SIZE ? 'Invalid macro offset' : { type: 'macro', macro: b1, repeats: aux + 1 };
     }
     case ActionCode.LedControl: {
       const spec = ledCommandFromCode(b1);
@@ -237,20 +237,28 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const starts = new Set<number>();
     let beginning = true;
     let offset = end;
-    for (; offset + 1 < IMAGE_SIZE; offset += 2) {
+    for (; offset < IMAGE_SIZE;) {
+      if (!image[offset]) {
+        steps.set(offset++, { type: 'none' });
+        beginning = true;
+        continue;
+      }
+      if (offset + 1 >= IMAGE_SIZE) return fail('malformed', 'Non-zero unpaired macro byte.');
       const step = decodeAction(image[offset]!, image[offset + 1]!, layerCount, true, pool, image[2]!);
       if (typeof step === 'string' || step.type === 'macro') return fail('malformed', `Macro tail at byte ${offset}: ${typeof step === 'string' ? step : 'Nested macro'}.`);
       steps.set(offset, step);
-      if (step.type === 'none') beginning = true;
-      else if (beginning) { starts.add(offset); beginning = false; }
+      if (beginning) { starts.add(offset); beginning = false; }
+      offset += 2;
     }
-    if (offset < IMAGE_SIZE && image[offset]) return fail('malformed', 'Non-zero unpaired macro byte.');
     const bindings = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action), ...timedActions.flatMap(t => [t.action, t.resumeAction])];
-    for (const action of bindings) if (action.type === 'macro') starts.add(action.macro);
+    for (const action of bindings) if (action.type === 'macro') {
+      if (!steps.has(action.macro)) return fail('malformed', 'Macro offset points to an action parameter.');
+      starts.add(action.macro);
+    }
     const addresses = [...starts].sort((a, b) => a - b);
     for (const address of addresses) {
       const actions: Action[] = [];
-      for (let cursor = address; cursor + 1 < IMAGE_SIZE; cursor += 2) {
+      for (let cursor = address; cursor < IMAGE_SIZE; cursor += 2) {
         const step = steps.get(cursor)!;
         if (step.type === 'none') break;
         actions.push({ ...step });

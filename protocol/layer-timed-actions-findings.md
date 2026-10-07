@@ -107,7 +107,7 @@ the existing eight-bit per-timer fractional accumulator:
 | Selectable interval unit | 131.072 s | 32.768 s |
 | Number of interval units | 1–64 | 1–256 |
 | Maximum duration | 8,388.608 s | 8,388.608 s |
-| Fine scheduling quantum | 512 ms | 128 ms |
+| Fine scheduling quantum | 512ms | 128ms |
 
 This gives four times finer selectable durations and four times finer dispatch
 quantization, with the same maximum of 2 h 19 min 48.608 s. The one-unit deadline

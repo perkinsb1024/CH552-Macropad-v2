@@ -23,7 +23,8 @@ uploader firmware remain v10; v11 is ready for hardware validation on
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
 retain their stated validation rules. The tail after strings now contains
-validated action pairs; arbitrary legacy padding is no longer ignored.
+validated two-byte actions and single-byte zero terminators/padding; arbitrary
+legacy padding is no longer ignored.
 
 ## Version and migration
 
@@ -85,7 +86,7 @@ Optional `macros` is an ordered list of `{ "actions": [...] }` objects. Its
 zero-based array index is the editor macro number minus one. An invocation is
 `{ "type": "macro", "macro": 0, "repeats": 1 }`, with an existing macro index and
 1–16 repeats (JSON import defaults omitted repeats to 1). A pause is
-`{ "type": "pause", "ticks": 16 }`, with 0–255 ticks of 16 ms. These names and
+`{ "type": "pause", "ticks": 16 }`, with 0–255 ticks of 16ms. These names and
 fields are semantic JSON, independent of on-device action numbering/addresses.
 Macros/pauses in JSON versions before 11 reject. Nested invocations, held actions
 and **Nothing** steps reject; **Nothing** is a wire terminator, so use a zero
@@ -119,14 +120,14 @@ firmware accepts those no-output records. Text imports normalize CRLF/CR to LF.
 The editor lays out every macro in list order after the deduplicated string
 pool. It resolves indices to absolute byte addresses on every encode, so changes
 to layers, chords, timers, text and steps cannot leave stale pointers. Normally
-it writes one `00 00` terminator per macro. The final nonempty macro may omit its
-terminator when its last step reaches byte 126 or 127. **Device storage** accounts
+it writes one `00` terminator per macro. The final nonempty macro may omit its
+terminator when its last step ends at byte 127. **Device storage** accounts
 for the same boundary optimization. Macro strings share the ordinary string pool.
 
 **Macros** supports adding/removing definitions and steps, dragging steps to insert or swap,
 selecting steps in the common **Action editor**, and drag/clipboard action swaps.
 **Execute macro** exposes **Macro** and **Repeat count**; **Pause duration** uses
-16 ms increments. Deleting a macro clears its invocations and renumbers later
+16ms increments. Deleting a macro clears its invocations and renumbers later
 references. Undo restores both definitions and bindings. Moving/removing layers
 updates explicit targets in macro steps. Layer-route analysis follows macro
 steps only until their first effective layer change, where firmware cancels them.
@@ -164,11 +165,11 @@ The nine-byte header is:
 | 4 | **String**-pool length and timer count | Bits 0–6: used pool bytes<br>Bit 7: high bit of timer count |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | **Chord window** and rainbow settings | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra slow**) |
+| 8 | **Chord window** and rainbow settings | Bits 0–3: chord duration in 5ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra slow**) |
 
 Timer count is `(byte3 >> 6) | ((byte4 >> 7) << 2)` and must be 0–4.
 Layer and startup-layer indices are zero-based. The startup layer must exist.
-The chord window is 0–75 ms in 5 ms units; zero disables chord recognition.
+The chord window is 0–75ms in 5ms units; zero disables chord recognition.
 A second press must arrive strictly before the window expires to activate a
 mapped chord. The old auto-sleep experiment is not part of v11.
 
@@ -191,10 +192,10 @@ The frame interval is independent of phase spacing:
 
 | Speed bits | Setting | Hue step interval | Full 256-step cycle |
 | --- | --- | --- | --- |
-| `00` | **Extra fast** | 4 ms | 1.024 s |
-| `01` | **Fast** (default) | 6 ms | 1.536 s |
-| `10` | **Slow** | 10 ms | 2.560 s |
-| `11` | **Extra slow** | 18 ms | 4.608 s |
+| `00` | **Extra fast** | 4ms | 1.024 s |
+| `01` | **Fast** (default) | 6ms | 1.536 s |
+| `10` | **Slow** | 10ms | 2.560 s |
+| `11` | **Extra slow** | 18ms | 4.608 s |
 
 Spacing applies to every layer's rainbow indication, including timed and blinking
 indications. Solid colors and pressed-key overrides retain their existing behavior.
@@ -242,10 +243,10 @@ including dimming and animated **Rainbow**. Without an always-on background it i
 
 **On for 1.5 seconds** displays the indicator continuously after a layer change.
 **Blink by layer number** displays one blink per one-based layer number, with
-250 ms lit and 250 ms dark phases. Both indications override all pressed-key
+250ms lit and 250ms dark phases. Both indications override all pressed-key
 colors throughout the animation; dark blink phases are fully dark. Each new
-layer change replaces the previous animation. Timing uses 2 ms ticks, so the
-first phase can be up to 1 ms shorter than its nominal duration.
+layer change replaces the previous animation. Timing uses 2ms ticks, so the
+first phase can be up to 1ms shorter than its nominal duration.
 
 Indicator color index 15 means animated **Rainbow** in **Always on**, **On for 1.5
 seconds**, and **Blink by layer number** modes, at the selected brightness. Numbered
@@ -292,7 +293,7 @@ The action types are:
 | --- | --- | --- | --- |
 | 0 | **Nothing** | `0` | `0` |
 | 0 | **Type Text** (full first byte `0x10`) | `1` | **String**-pool offset |
-| 0 | **Pause** (full first byte `0x20`) | `2` | Unsigned delay in 16 ms units, 0–255 |
+| 0 | **Pause** (full first byte `0x20`) | `2` | Unsigned delay in 16ms units, 0–255 |
 | 1 | **Keyboard tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
 | 2 | **Keyboard hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
 | 3 | **Mouse click** | **Click count** minus one (`0`–`15` = 1–16 clicks) | Button mask 1–7 |
@@ -347,7 +348,7 @@ negate any accepted delta.
 For X and Y movement, auxiliary bit 0 (record byte 0, bit 4) selects hold mode.
 Auxiliary value `0` sends one movement step per press or encoder detent.
 Value `1` sends an initial step and repeats the delta while the input is held,
-at an 8 ms interval when USB is ready and queued actions have finished.
+at an 8ms interval when USB is ready and queued actions have finished.
 Releasing a key, the encoder button, or either chord key stops new repeats.
 Held inputs retain their original bindings across layer changes, as other holds do.
 Repeat reports are skipped when USB is busy; they do not accumulate for later playback.
@@ -486,7 +487,7 @@ slots; it does not need a physical release. A brief physical press plays the
 complete configured sequence.
 
 Each click is an ordinary mouse-button press followed by release. Presses last
-at least 8 ms, with a 200 ms pause after release before the next click. USB
+at least 8ms, with a 200ms pause after release before the next click. USB
 backpressure can lengthen these times. The host decides whether a sequence
 counts as a double-click or another multiple-click gesture. Keyboard, held mouse
 buttons and toggled mouse buttons retain their existing composition rules.
@@ -500,7 +501,7 @@ Held outputs, consumer controls, and layer/LED actions use independent handling.
 | **Mouse click** | `0x03 \| ((clicks - 1) << 4)` | Mouse button mask 1–7 |
 | **Nothing** | `0x00` | `0x00` |
 | **Type Text** | `0x10` | Offset of a complete NULL-terminated string in the shared pool |
-| **Pause** | `0x20` | Duration in 16 ms units, 0–255 |
+| **Pause** | `0x20` | Duration in 16ms units, 0–255 |
 | **Execute macro** | `0x0F \| ((repeats - 1) << 4)` | Absolute address of a macro step |
 | **Consumer Tap** | `0x07 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
 | **Consumer Hold** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
@@ -512,6 +513,8 @@ Held outputs, consumer controls, and layer/LED actions use independent handling.
 **Type Text** shares low-nibble type 0 with **Nothing**: auxiliary 0 is **Nothing** and must
 have parameter 0; auxiliary 1 is **Type Text**, and auxiliary 2 is **Pause**. Other auxiliary values reject. Empty
 text still requires a valid pool offset pointing at a NULL byte.
+These are two-byte binding records; the macro tail instead uses a single `00`
+terminator with no parameter, as specified under Macros and pauses.
 
 **Consumer Hold** occupies low-nibble type 9, directly after **Consumer Tap** (type 8).
 Both retain nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Hold** is
@@ -581,12 +584,12 @@ axes and pointer movement zero, so polling cannot repeat a scroll.
 
 Initial press sends one configured step. Holding a key, chord or encoder button
 repeats that step when action playback and the USB transport are idle, with at
-least 100 ms after the previous complete scroll step before repeating.
+least 100ms after the previous complete scroll step before repeating.
 Step 1 produces about ten wheel counts per second while held. Each configured
 step plays as individual signed unit wheel reports, so large steps can take
-longer and delay later actions. Repeat eligibility is checked on the shared 8 ms
+longer and delay later actions. Repeat eligibility is checked on the shared 8ms
 pointer polling cadence, so actual spacing may be slightly longer; pointer
-movement itself retains its 8 ms interval. Delayed repeats do not accumulate
+movement itself retains its 8ms interval. Delayed repeats do not accumulate
 for a catch-up burst.
 Release stops future repeats; already accepted steps finish. Multiple eligible
 held scroll bindings are visited in input-index order, matching pointer holds.
@@ -638,8 +641,8 @@ Timer actions and a consumed input leave an armed one-shot layer return intact.
 Encoder-hold bootloader detection remains available for consumed presses.
 
 Each timer retains an independent fractional byte. A carry of 256 fine ticks
-advances its interval age; each fine tick is 16 ms. Start/reset alignment error
-is less than approximately 16 ms early, separately from poll/queue delays and
+advances its interval age; each fine tick is 16ms. Start/reset alignment error
+is less than approximately 16ms early, separately from poll/queue delays and
 oscillator drift. The byte fine clock wraps every 4.096 seconds; poll gaps must
 remain below that duration.
 
@@ -660,7 +663,7 @@ Always-on effects persist until replaced, explicitly cleared, an actual layer
 change, or configuration application/USB reset. Selecting the already active
 layer leaves the effect intact. Key feedback can cover an always-on effect;
 blinking effects cover key feedback and include fully dark alternating phases.
-Each phase lasts 250 ms; when blinking finishes, normal LED rendering resumes
+Each phase lasts 250ms; when blinking finishes, normal LED rendering resumes
 without replaying the layer's blink/timed indication. **Rainbow** uses the current
 runtime speed and phase policies.
 
@@ -684,18 +687,26 @@ preset and restore brightness on next input; effect swatches intentionally have
 The macro tail begins at `macroStart = stringPoolStart + poolBytes`. There is no
 macro count, directory, fixed slot allocation, presence flag, or extra header
 byte. With no macros the tail is zero padding. A sequence is a run of ordinary
-two-byte action records. `00 00` ends it. Reaching image byte 127 or 128 also ends
-it when fewer than two bytes remain. A final unpaired byte must be zero.
+two-byte action records. A single `00` byte at an action boundary ends it; no
+parameter byte follows that terminator. Reaching the end of the 128-byte image
+also ends it. A nonzero action first byte at byte 127 is invalid because its
+parameter would be outside the image. Zero parameter bytes inside actions do
+not terminate a sequence. Each terminator changes the parity of subsequent
+action boundaries; neither absolute nor tail-relative even alignment is required.
 
 **Execute macro** is `((repeats - 1) << 4) | 0x0F`, followed by its absolute start
 address. Repeats range from 1 through 16. The address must satisfy all of:
 
-- `macroStart <= address < 127`;
-- `(address - macroStart) % 2 == 0`;
-- every complete pair in the tail passes the macro-step validation below.
+- `macroStart <= address < 128`;
+- the address is a boundary reached by scanning the tail from `macroStart`,
+  advancing one byte for `00` and two bytes for a nonzero action first byte;
+- every action in the tail has an in-bounds parameter and passes the macro-step
+  validation below.
 
-The reference may point to any aligned step, including a shared suffix or a
-**Nothing** terminator. A terminator reference is an empty sequence. Firmware
+The reference may point to any step boundary, including a shared suffix or a
+zero terminator. A terminator reference is an empty sequence, including at byte
+127. A reference into an action parameter is invalid even if that byte is zero
+or looks like a valid opcode. Firmware
 does not assign ordinal macro numbers; an editor can name/number definitions and
 resolve their addresses after laying out the image. Repacking layers, chords,
 timers or strings requires remapping every macro reference in bindings and
@@ -703,10 +714,11 @@ both timer action fields. Macro steps cannot reference other macros.
 
 Allowed steps are **Keyboard tap**, **Type Text**, **Mouse click**, **Mouse toggle**,
 **Scroll Tap**, **Consumer tap**, persistent/one-shot **Set layer** and **Relative
-layer**, X/Y movement in **Tap** mode, **LED control**, **Pause**, and **Nothing**.
+layer**, X/Y movement in **Tap** mode, **LED control**, and **Pause**.
+**Nothing** is represented by the single-byte terminator rather than a step.
 All normal parameter rules still apply. Reject **Execute macro**, **Keyboard hold**,
 **Mouse hold**, **Consumer hold**, **Scroll Hold**, **Momentary layer**, and held
-X/Y movement anywhere in the tail, including unreferenced pairs. Strings used
+X/Y movement anywhere in the tail, including unreferenced actions. Strings used
 by steps share the existing string pool and its start/bounds checks.
 
 A macro invocation occupies one entry in the normal eight-event queue, regardless
@@ -741,7 +753,7 @@ macro definition. Macro consumers use the existing latest-wins consumer lane;
 a new physical consumer action can interrupt it. No held-action lifecycle or
 nested macro stack is provided.
 
-**Pause** is `20 nn`, with duration `nn * 16 ms`, from 0 to 4,080 ms. It is valid
+**Pause** is `20 nn`, with duration `nn * 16ms`, from 0 to 4,080ms. It is valid
 as a direct binding or macro step, and uses the existing nonblocking deadline
 state. Inputs, timers, LEDs and USB continue to be serviced while it waits. It
 starts after preceding output drains; the next step starts no earlier than its
@@ -754,21 +766,22 @@ Example, with a single six-key layer and no chords/timers: store `chrome\0` at
 
 ```text
 81 2C   Keyboard tap: GUI+Space
-20 10   Pause: 16 * 16 = 256 ms
+20 10   Pause: 16 * 16 = 256ms
 10 00   Type Text: string-pool offset 0
 01 28   Keyboard tap: Enter
-00 00   End sequence
+00      End sequence
 ```
 
 Bind a trigger to `0F 26` (one execution, absolute address `0x26` = 38).
 The layer binding itself already occupies its normal two bytes; added data is
-7 string bytes plus 10 macro bytes. Repeating once costs no extra data; two
+7 string bytes plus 9 macro bytes. Repeating once costs no extra data; two
 executions change the binding to `1F 26`. UI automation timing is application-
 dependent; the example's delay has host-test coverage, not an OS-level guarantee.
 
-A standalone sequence of N steps normally costs `2*N + 2` bytes. Adjacent macros
-share neither a directory nor unused fixed slots. The last sequence can omit its
-terminator if it reaches the image boundary. With one layer and no strings,
+A standalone sequence of N steps normally costs `2*N + 1` bytes; an empty
+definition costs one byte. Adjacent macros
+share neither a directory nor unused fixed slots. The last sequence omits its
+terminator if it completely fills the 128-byte configuration space. With one layer and no strings,
 chords or timers, at most 48 steps fit on six-key hardware or 52 on three-key
 hardware. More layers and other dynamic data share the same 128-byte budget.
 
@@ -794,8 +807,8 @@ number that can actually fit. Pair indices must be valid for the hardware
 variant: 0–14 for six keys, 0–2 for three keys. Pool length is encoded in seven
 bits (0–127) and must fit the remaining image space. A nonempty pool must end in
 NULL. **String** sharing includes keys, encoder actions, chords, expiry and next-input
-bindings and macro steps. All 128 bytes remain available. Every trailing pair
-is validated as a macro step, zero pairs act as terminators/padding, and all
+bindings and macro steps. All 128 bytes remain available. Every trailing action
+is validated as a macro step, single zero bytes act as terminators/padding, and all
 trailing bytes remain CRC-covered.
 
 ## HID configuration protocol
@@ -941,8 +954,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,304 | 32 | 108 | 369 | 128 | 77 |
-| Three keys | 14,300 | 36 | 108 | 360 | 128 | 80 |
+| Six keys | 14,308 | 28 | 108 | 369 | 128 | 79 |
+| Three keys | 14,304 | 32 | 108 | 360 | 128 | 82 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -950,7 +963,7 @@ its address and overlap with ordinary external/paged/USB memory. `protocolInit`
 loads all 128 bytes from DataFlash before any image use; absolute storage does
 not rely on the ordinary XSEG startup clear loop.
 
-Stack figures are linker-reserved capacities, two bytes higher than the v10
+Stack figures are linker-reserved capacities, four bytes higher than the v10
 baseline on each board. No v11 hardware stack high-water or physical macro/OS
 validation has been performed. Reproduce measurements and the complete host
 regressions with `python3 tests/run_host_tests.py` and temporary native builds:

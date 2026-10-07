@@ -13,19 +13,22 @@ application limit. Native outputs are temporary; releases are unchanged.
 
 | Resource, bytes | Six-key | Three-key |
 | --- | ---: | ---: |
-| Flash used | 14,304 | 14,300 |
-| Flash remaining | 32 | 36 |
-| Occupied internal RAM (including register banks/overlays) | 179 | 176 |
+| Flash used | 14,308 | 14,304 |
+| Flash remaining | 28 | 32 |
+| Occupied internal RAM (including register banks/overlays) | 177 | 174 |
 | Paged external RAM | 108 | 108 |
 | Ordinary XSEG | 369 | 360 |
 | Absolute active image | 128 | 128 |
 | Total allocated application external RAM | 605 | 596 |
 | USB DMA, additional | 148 | 148 |
-| Linker stack capacity | 77 | 80 |
+| Linker stack capacity | 79 | 82 |
 
-The final code allocation improves flash by two bytes on each board relative to
-the initial dynamic/repeat/pause prototype. RAM and stack capacity are unchanged.
-Compared with v10 baseline `4647e6d`, stack capacity increases by two bytes on
+Single-byte macro terminators add four flash bytes on each board relative to
+the earlier two-byte-terminator implementation (14,304/14,300 bytes). Validator
+allocation frees two internal RAM bytes, increasing linker stack capacity from
+77/80 to 79/82 bytes; external RAM is unchanged.
+The change remains in unreleased configuration format 11.
+Compared with v10 baseline `4647e6d`, stack capacity increases by four bytes on
 each board and allocated application xRAM increases by one byte. Stack capacity
 is not a runtime high-water measurement; v11's hardware peak is still unknown.
 
@@ -39,17 +42,19 @@ The zeroing loop does not initialize absolute storage; `protocolInit` loads all
 ## Retained implementation choices
 
 - No macro count, directory or permanently reserved definition slots. Definitions
-  occupy the tail after strings. Each step costs two bytes; a zero pair ends the
+  occupy the tail after strings. Each step costs two bytes; a single zero byte ends the
   sequence. The image boundary can terminate the final nonempty sequence.
-- Absolute byte references avoid a runtime directory/search. Tail-relative
-  alignment permits odd starts and shared suffixes. Validate all tail pairs,
+- Absolute byte references avoid a runtime directory/search. Validation scans
+  one-byte terminators and two-byte actions to check reference boundaries;
+  references may target shared suffixes or empty terminators, including byte 127.
+  Validate all tail actions,
   even unreachable ones; reject nested macros and release-dependent actions.
 - Four persistent control bytes track next/start address, remaining repeats and
   a private mouse-toggle lane. Each invocation consumes one queue entry; steps
   stream directly, so a sequence longer than eight actions cannot overflow the
   queue merely by expanding. Later invocations can still fill it and drop.
-- **Pause** reuses the existing deadline/phase state; its 16 ms quantum and maximum
-  4080 ms duration preserve wrap-safe 16-bit deadline comparisons. No new timer
+- **Pause** reuses the existing deadline/phase state; its 16ms quantum and maximum
+  4080ms duration preserve wrap-safe 16-bit deadline comparisons. No new timer
   or pause state is allocated. Inputs/USB/LEDs continue polling while it waits.
 - Consumer tap releases drain before the next macro step. Held pointer/scroll
   repeat checks include active macro state, preventing repeats in inter-step gaps.
@@ -113,16 +118,17 @@ npm run build
 Both native builds and all firmware host suites pass. The web suite checks the
 actual compiled firmware validator independently of TypeScript decoding, including
 all shifted action codes in keys/chords/rotation/timers, full macro storage tails,
-repeat bounds, odd alignment, suffixes, empty sequences, invalid/nested/held tail
+repeat bounds, single-byte terminators, every byte-address reference on both
+variants, suffixes, repeated empty sequences at byte 127, invalid/nested/held tail
 records, storage relocation, deduplicated text, JSON/drafts and simulated upload.
 Editor tests cover add/edit/reorder/delete, reference renumbering, undo/redo,
 layer remapping, held/nested restrictions and repeat/pause controls.
 The production build includes archive checksum verification and the existing
-web uploader bundle. All 467 web tests pass, including local archive HTTP checks. The final macro
+web uploader bundle. All 485 web tests pass, including local archive HTTP checks. The final macro
 suite also passes AddressSanitizer and UndefinedBehaviorSanitizer on both boards.
 
 Chrome visual validation used a separate six-key simulator tab: added a macro,
-selected **Pause**, verified the 256 ms slider and storage accounting, assigned
+selected **Pause**, verified the 256ms slider and storage accounting, assigned
 **Execute macro** to a key, entered 16 repeats, and saved/read back all 128 bytes.
 No physical macropad was modified during this task.
 

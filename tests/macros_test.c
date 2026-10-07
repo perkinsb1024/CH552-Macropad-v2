@@ -50,7 +50,8 @@ static uint8_t define(uint8_t offset, const uint8_t *bytes, uint8_t steps) {
 #if CONFIG_MACRO_STYLE == 1
     assert(steps <= 2); return offset + 4;
 #else
-    return offset + 2 * steps + 2;
+    if (offset + 2 * steps < CONFIG_SIZE) activeConfig[offset + 2 * steps] = 0;
+    return offset + 2 * steps + 1;
 #endif
 }
 static void press(uint8_t key, uint16_t now) { actionsPress(key, now); actionsRelease(key); }
@@ -73,7 +74,10 @@ static void testValidation(void) {
 #if CONFIG_MACRO_STYLE == 1
             expected = ref >= start && ref <= 124 && !((ref - start) & 3) && (CONFIG_MACRO_REPEAT || !aux);
 #else
-            expected = ref >= start && ref <= 126 && !((ref - start) & 1) && (CONFIG_MACRO_REPEAT || !aux);
+            expected = ref >= start && ref < CONFIG_SIZE &&
+                       ref != start + 1 && ref != start + 3 &&
+                       ref != second + 1 && ref != second + 3 &&
+                       (CONFIG_MACRO_REPEAT || !aux);
 #endif
             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == expected);
         }
@@ -98,9 +102,40 @@ static void testValidation(void) {
     activeConfig[126] = 1; activeConfig[127] = 5;
     bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 80); assert(keyPresses(4) == 1 && keyPresses(5) == 1);
-    // Odd tail cannot hide an unpaired opcode.
+    // Padding cannot hide an unpaired opcode, regardless of tail alignment.
     reset(); activeConfig[127] = 1; seal();
+#if CONFIG_MACRO_STYLE == 1
     if ((start & 1) != 0) assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+#else
+    assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+#endif
+}
+static void testSingleByteTerminators(void) {
+#if CONFIG_MACRO_STYLE == 2
+    reset();
+    const uint8_t first[] = {CONFIG_ACTION_KEY_TAP, 4};
+    // A zero parameter and an opcode-looking parameter are still action data.
+    const uint8_t next[] = {0x11, 0, CONFIG_ACTION_CONSUMER, 0xF0, CONFIG_ACTION_KEY_TAP, 5};
+    uint8_t second = define(start, first, 1);
+    define(second, next, 3);
+    bind(0, start, 1); bind(1, second, 2); seal();
+    assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    press(0, 0); press(1, 1); pump(0, 250);
+    assert(keyPresses(4) == 1 && keyPresses(5) == 2);
+    // Suffixes work after parity changes, but neither parameter is a start.
+    bind(0, second + 4, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    bind(0, second + 1, 1); seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+    bind(0, second + 3, 1); seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+    // The last byte can hold a referenced empty sequence, including repeats.
+    reset(); bind(0, 127, CONFIG_MACRO_REPEAT ? 16 : 1); seal();
+    assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    press(0, 0); pump(0, 100); assert(count == 0);
+    // A final action can end at 126 with its sole terminator at 127.
+    reset(); activeConfig[125] = CONFIG_ACTION_KEY_TAP; activeConfig[126] = 4;
+    bind(0, 125, CONFIG_MACRO_REPEAT ? 2 : 1); seal();
+    assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    press(0, 0); pump(0, 100); assert(keyPresses(4) == (CONFIG_MACRO_REPEAT ? 2 : 1));
+#endif
 }
 static void testRepeatsAndOrdering(void) {
     for (uint8_t repeat = 1; repeat <= (CONFIG_MACRO_REPEAT ? 16 : 1); repeat++) {
@@ -218,7 +253,7 @@ static void testImmediateSteps(void) {
     assert(reports[1][0] == 5 && reports[1][1] == 0 && reports[2][3] == 4);
 }
 int main(void) {
-    testValidation(); testRepeatsAndOrdering(); testLongAndStrings();
+    testValidation(); testSingleByteTerminators(); testRepeatsAndOrdering(); testLongAndStrings();
     testTriggersAndCancellation(); testImmediateSteps(); testQueueAndChords(); testPause(); testHeldPointer();
     return 0;
 }

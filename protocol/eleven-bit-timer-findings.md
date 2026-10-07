@@ -6,7 +6,7 @@ needed. These measurements extend the [eight-bit investigation](six-byte-timer-i
 
 The measured scheduler has been promoted to production v10 in
 `src/timed_actions.inc`, with its high counter bytes in `src/actions.c` and the
-16 ms clock in the main sketch. The fractional counters remain enabled. The
+16ms clock in the main sketch. The fractional counters remain enabled. The
 [configuration-v10 specification](config-v10.md) defines the finalized layout,
 layer behavior and migration rules. The configurator now supports this format.
 Production v10 builds retain the measurements below.
@@ -56,7 +56,7 @@ actions. Its metadata uses every available bit:
 Intervals are 1–2,048 units of 4.096 seconds, preserving the maximum duration of
 8,388.608 seconds (2 h 19 min 48.608 s). Each timer retains its own fractional
 byte: a carry after 256 fine ticks advances its interval counter. Fine ticks now
-represent 16 ms, so restart alignment uses that quantum rather than a full
+represent 16ms, so restart alignment uses that quantum rather than a full
 4.096-second unit. Actual firing can also be delayed by polling, and this does
 not alter hardware clock accuracy.
 

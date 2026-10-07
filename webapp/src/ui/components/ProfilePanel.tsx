@@ -29,7 +29,7 @@ export function ProfilePanel() {
         </label>
         {p.chords.length > 0 && <label class="field field-wide">
           <span class="field-label">
-            Chord window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5} ms`}</output>
+            Chord window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5}ms`}</output>
           </span>
           <input type="range" min={0} max={15} step={1} value={p.chordWindow} onInput={(e) => updateProfile((d) => { d.chordWindow = Number((e.target as HTMLInputElement).value); }, 'chord-window')} />
           <span class="hint">

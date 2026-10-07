@@ -11,8 +11,8 @@ preview and all existing lighting behavior are preserved.
 | Initial combined implementation, acceleration on | 14,879 | 14,875 | -543 / -539 |
 | Optimized combined implementation, acceleration on | 14,667 | 14,665 | -331 / -329 |
 | Original optimized combined implementation, acceleration off | 14,325 | 14,323 | 11 / 13 |
-| Multi-click and 100 ms held scrolling, before final optimization | 14,365 | 14,361 | -29 / -25 |
-| Multi-click and 100 ms held scrolling, optimized (current default) | 14,325 | 14,321 | 11 / 15 |
+| Multi-click and 100ms held scrolling, before final optimization | 14,365 | 14,361 | -29 / -25 |
+| Multi-click and 100ms held scrolling, optimized (current default) | 14,325 | 14,321 | 11 / 15 |
 
 The original combined build adds seven persistent RAM bytes (four timer fractions and
 three consumer state bytes). RAM areas are PSEG 108, XSEG 526 / 517, DSEG 127,
@@ -23,8 +23,8 @@ The current default counts remaining clicks in the auxiliary nibble of the
 playback action copy, saving 26 flash bytes and removing the dedicated click
 counter. Replacing mouse-button checks with `(uint8_t)(param - 1) < 7` saves
 another 14 bytes with the same accepted masks. A separate one-byte internal-RAM
-clock gives held scrolling 100 ms between complete steps; pointer repeats retain
-8 ms. Current PSEG is 107 bytes, and stack reserve is 111 / 114 bytes. Both
+clock gives held scrolling 100ms between complete steps; pointer repeats retain
+8ms. Current PSEG is 107 bytes, and stack reserve is 111 / 114 bytes. Both
 hardware builds and host suites pass.
 
 Optimizations keep action types and stream contexts eight-bit, narrow consumer
@@ -81,7 +81,7 @@ seconds. Normal main-loop polling is much faster; arbitrarily blocked execution
 for a full wrap remains outside this clock representation's contract.
 
 Configuration stays five bytes per timed action, with 1–64 intervals of 131.072
-seconds and the same >2-hour maximum. Reset quantization is below 512 ms instead
+seconds and the same >2-hour maximum. Reset quantization is below 512ms instead
 of 131.072 seconds. Due-time ordering, resume/consume flags, periodic phases, and
 per-action reset flags are preserved.
 

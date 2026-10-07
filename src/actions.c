@@ -646,7 +646,8 @@ void actionsPoll(uint16_t now) {
       }
       if (macroNext) {
         currentFirst = activeConfig[macroNext];
-        currentSecond = activeConfig[macroNext + 1];
+        // A repeated empty macro may point to the sole terminator at byte 127.
+        if (currentFirst) currentSecond = activeConfig[macroNext + 1];
         macroNext += 2;
       }
     } else if (eventUsed) {

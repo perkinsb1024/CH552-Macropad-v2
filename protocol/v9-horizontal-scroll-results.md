@@ -4,7 +4,7 @@ Configuration format 9 adds auxiliary bit 3 to **Scroll** for **Horizontal**.
 Bit 2 continues to select **Hold**; bits 0–1 remain reserved. The first action
 byte is `07` (vertical tap), `47` (vertical hold), `87` (horizontal tap), or `C7`
 (horizontal hold). Both axes retain signed -127–127 steps and emit unit reports.
-Held repeats wait at least 100 ms after the previous complete step. Encoder
+Held repeats wait at least 100ms after the previous complete step. Encoder
 rotation and timed actions allow taps on either axis; holds still require a
 physical release.
 
@@ -48,7 +48,7 @@ Host regressions check all auxiliary nibbles, signed endpoints, both hardware
 layouts, rotation/hold restrictions, chords, timer slots, binary/JSON migration,
 mouse report packing and the descriptor's signed AC Pan field. Firmware action
 tests check both axes with uneven polling, timer wraparound and USB stalls,
-including the minimum 100 ms repeat interval.
+including the minimum 100ms repeat interval.
 
 Browser event capture at `wheel-debug.html` records both deltaX and deltaY for
 hardware testing. Physical horizontal scrolling and host compatibility still

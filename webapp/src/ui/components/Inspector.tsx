@@ -131,7 +131,9 @@ export function Inspector() {
     else update(next);
   };
 
-  const selectableActions = ACTION_DESCRIPTORS.filter(d => !macro || (d.type !== 'macro' && d.type !== 'none' && !d.needsRelease));
+  const selectableActions = ACTION_DESCRIPTORS.filter(d => macro
+    ? d.type !== 'macro' && d.type !== 'none' && !d.needsRelease
+    : d.type !== 'pause');
   const singleRun = action.type === 'macro' && macroSwitchesLayer(p.macros?.[action.macro]?.actions ?? []);
   const keyIndex = slot.kind === 'key' ? slot.index : null;
   const layer = p.layers[slot.layer]!;
@@ -170,17 +172,25 @@ export function Inspector() {
         <label class="field"><span class="field-label">Macro</span>
           <select aria-label="Macro" value={action.macro} onChange={e => { const index = Number((e.target as HTMLSelectElement).value); update({ ...action, macro: index, repeats: macroSwitchesLayer(p.macros?.[index]?.actions ?? []) ? 1 : action.repeats }); }}>
             {!p.macros?.[action.macro] && <option value={action.macro}>Choose a macro — add one in Macros</option>}
-            {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} · {macro.actions.length} step{macro.actions.length === 1 ? '' : 's'}</option>)}
+            {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} ({macro.actions.length} step{macro.actions.length === 1 ? '' : 's'})</option>)}
           </select>
         </label>
-        <label class="field"><span class="field-label">Repeat count</span>
-          <input type="number" aria-label="Repeat count" min={1} max={singleRun ? 1 : 16} value={action.repeats} onInput={e => update({ ...action, repeats: Math.max(1, Math.min(singleRun ? 1 : 16, Math.round(Number((e.target as HTMLInputElement).value) || 1))) })} />
-        </label>
+        <div class="field">
+          <span class="field-label">Repeat</span>
+          <div class="segmented" role="group" aria-label="Repeat">
+            <button type="button" class={action.repeats > 1 ? 'is-selected' : ''} aria-pressed={action.repeats > 1} disabled={singleRun} onClick={() => update({ ...action, repeats: singleRun ? 1 : Math.max(2, action.repeats) })}>On</button>
+            <button type="button" class={action.repeats === 1 ? 'is-selected' : ''} aria-pressed={action.repeats === 1} onClick={() => update({ ...action, repeats: 1 })}>Off</button>
+          </div>
+          {action.repeats > 1 && <label class="field macro-run-count-field">
+            <span class="field-label">Run count <output>{action.repeats}</output></span>
+            <input type="range" aria-label="Run count" min={2} max={16} step={1} disabled={singleRun} value={action.repeats} onInput={e => update({ ...action, repeats: singleRun ? 1 : Math.max(2, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value) || 2))) })} />
+          </label>}
+        </div>
       </>}
-      {singleRun && <p class="hint">This macro switches layers, so its repeat count must be 1.</p>}
-      {action.type === 'pause' && <label class="field"><span class="field-label">Pause duration <output>{action.ticks * 16} ms</output></span>
+      {singleRun && <p class="hint">This macro switches layers, so Repeat must be Off.</p>}
+      {action.type === 'pause' && <label class="field"><span class="field-label">Pause duration <output>{action.ticks * 16}ms</output></span>
         <input type="range" aria-label="Pause duration" min={0} max={255} value={action.ticks} onInput={e => update({ ...action, ticks: Number((e.target as HTMLInputElement).value) })} />
-        <span class="hint">16 ms steps. Add consecutive pauses for longer waits.</span>
+        <span class="hint">16ms steps. Add consecutive pauses for longer waits.</span>
       </label>}
       {action.type === 'ledControl' && <>
         <label class="field"><span class="field-label">LED command</span>
@@ -316,7 +326,7 @@ export function Inspector() {
               <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
             </div>
           </>}
-          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100 ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8 ms while held; release to stop.' : 'Sends one step per press.'}</span>
+          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8ms while held; release to stop.' : 'Sends one step per press.'}</span>
         </div>
       )}
 

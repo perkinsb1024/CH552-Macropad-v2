@@ -94,9 +94,17 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             // Macro steps use rotation=2, which prohibits nested invocations.
             if (rotation == 2 ||
                 (!CONFIG_MACRO_REPEAT && aux) || param < macros ||
-                param >= CONFIG_SIZE - (CONFIG_MACRO_STYLE == 1 ? 3 : 1)) return 0;
-            if ((param - macros) & (CONFIG_MACRO_STYLE == 1 ? 3 : 1)) return 0;
-            return 1;
+                param >= CONFIG_SIZE - (CONFIG_MACRO_STYLE == 1 ? 3 : 0)) return 0;
+#if CONFIG_MACRO_STYLE == 1
+            return !((param - macros) & 3);
+#else
+            // Zero terminators consume one byte; action parameters are not starts.
+            while (macros < param) {
+                if (validationImage[macros]) macros++;
+                macros++;
+            }
+            return macros == param;
+#endif
         case CONFIG_ACTION_LED_CONTROL:
             if (param >= CONFIG_LED_EFFECT_RESTORE) {
                 if (param == CONFIG_LED_EFFECT_RESTORE) return aux == 0;
@@ -244,10 +252,18 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
             return 0;
         }
     }
+#if CONFIG_MACRO_STYLE == 1
     for (offset = validationPool + validationUsed; offset < CONFIG_SIZE - 1; offset += 2) {
         if (!actionValid(offset, 2)) return 0;
     }
     if (offset < CONFIG_SIZE && validationImage[offset]) return 0;
+#else
+    for (offset = validationPool + validationUsed; offset < CONFIG_SIZE; offset++) {
+        if (!validationImage[offset]) continue;
+        if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) return 0;
+        offset++;
+    }
+#endif
     crc = configCrc(validationImage);
     return validationImage[6] == (uint8_t)crc && validationImage[7] == (uint8_t)(crc >> 8);
 }

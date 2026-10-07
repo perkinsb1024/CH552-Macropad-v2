@@ -64,7 +64,7 @@ export interface Profile {
   variant: Variant;
   transparentBlack: boolean;
   startupLayer: number;
-  /** Chord window in 5 ms units, 0–15. Zero disables chords. */
+  /** Chord window in 5ms units, 0–15. Zero disables chords. */
   chordWindow: number;
   /** Index of the rainbow phase spacing: 0°, ~30°, ~60°, ~150°. */
   rainbowPhase: number;

@@ -39,7 +39,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
     draft.chords = draft.chords.filter((chord) => chord.keyB < draft.layers[0]!.keys.length);
   });
   change('Startup layer', before.startupLayer, after.startupLayer, (n) => `Layer ${n + 1}`, (draft) => { draft.startupLayer = before.startupLayer; });
-  change('Chord window', before.chordWindow, after.chordWindow, (n) => n ? `${n * 5} ms` : 'Disabled', (draft) => { draft.chordWindow = before.chordWindow; });
+  change('Chord window', before.chordWindow, after.chordWindow, (n) => n ? `${n * 5}ms` : 'Disabled', (draft) => { draft.chordWindow = before.chordWindow; });
   change('Rainbow phase spacing', before.rainbowPhase, after.rainbowPhase, (v) => RAINBOW_PHASE_LABELS[v]!, (draft) => { draft.rainbowPhase = before.rainbowPhase; });
   change('Rainbow speed', before.rainbowSpeed, after.rainbowSpeed, (v) => RAINBOW_SPEED_LABELS[v] ?? 'Unknown', (draft) => { draft.rainbowSpeed = before.rainbowSpeed; });
   change('Transparent Off color', before.transparentBlack, after.transparentBlack, (v) => v ? 'Enabled' : 'Disabled', (draft) => { draft.transparentBlack = before.transparentBlack; });

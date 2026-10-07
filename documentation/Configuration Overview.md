@@ -546,7 +546,7 @@ While space is limited, the configuration format is extremely efficient and can 
 | Each six-key layer | 22 bytes, including all its regular input assignments, key colors, and layer options |
 | Each chord | 3 bytes, whether local or global |
 | Each timed action | 6 bytes, including its interval, options, and both action assignments |
-| Each macro | 2 bytes per step plus a 2-byte terminator; the final sequence can use the image boundary instead |
+| Each macro | 2 bytes per step plus a 1-byte terminator; the final sequence can use the image boundary instead |
 | Each different text phrase | One byte per character, plus one extra byte |
 
 Ordinary actions fit into the space already reserved for their layer, chord, or timer. For example, changing a key from **Nothing** to a keyboard shortcut, mouse action, or **LED control** does not need extra space. **Type text** adds the phrase's storage cost.

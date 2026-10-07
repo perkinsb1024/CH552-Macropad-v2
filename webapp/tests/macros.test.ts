@@ -33,7 +33,7 @@ it.each([0, 1] as const)('round-trips all invocation sites and repeated Spotligh
   const image = encodeProfile(p);
   expect(image[9]).toBe(0xff);
   expect(image[image[10]!]!).toBe(0x81);
-  expect(computeCapacity(p)).toMatchObject({ macros: 14, strings: 7, timedActions: 6 });
+  expect(computeCapacity(p)).toMatchObject({ macros: 12, strings: 7, timedActions: 6 });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
@@ -46,7 +46,7 @@ it.each([0, 1] as const)('fits the full macro tail and rejects an extra step on 
   p.macros = [{ actions: Array.from({ length: variant ? 52 : 48 }, () => tap) }];
   p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats: 16 };
   const image = encodeProfile(p);
-  expect(computeCapacity(p).remaining).toBe(variant ? 0 : 1);
+  expect(computeCapacity(p).remaining).toBe(0);
   expect(validator.accepts(image, variant)).toBe(true);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   p.macros[0]!.actions.push(tap); expect(() => encodeProfile(p)).toThrow();
@@ -73,8 +73,8 @@ it.each([2, 4, 8, 10, 0x46, 0x1c, 0x1d, 15])('rejects held or nested wire steps 
   const image = encodeProfile(oneLayer(0)); image.set([first, 1], 31); sealImage(image);
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);
 });
-it.each([0, 30, 32, 127, 128, 255])('rejects an invalid absolute reference %s', address => {
-  const image = encodeProfile(oneLayer(0)); image.set([15, address], 9); sealImage(image);
+it.each([0, 30, 32, 128, 255])('rejects an invalid absolute reference %s', address => {
+  const image = encodeProfile(oneLayer(0)); image.set([1, 4], 31); image.set([15, address], 9); sealImage(image);
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);
 });
 it('accepts suffix references and empty macros, including odd tail alignment', () => {
@@ -86,6 +86,38 @@ it('accepts suffix references and empty macros, including odd tail alignment', (
   const decoded = decodeImage(image); if (!decoded.ok) throw new Error(decoded.detail);
   expect(decoded.profile.macros![1]!.actions).toEqual([{ type: 'pause', ticks: 0 }]);
   expect(validator.accepts(encodeProfile(decoded.profile), 0)).toBe(true);
+});
+it.each([0, 1] as const)('packs single-byte terminators and checks every reference boundary on variant %s', variant => {
+  const p = oneLayer(variant);
+  p.macros = [{ actions: [tap] }, { actions: [{ type: 'pause', ticks: 0 }, { type: 'consumer', usage: 0xf0 }, tap] }, { actions: [] }];
+  p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats: 2 };
+  p.layers[0]!.keys[1] = { type: 'macro', macro: 1, repeats: 3 };
+  p.layers[0]!.encoderButton = { type: 'macro', macro: 2, repeats: 16 };
+  const image = encodeProfile(p), start = image[10]!;
+  expect([...image.slice(start, start + 11)]).toEqual([1, 4, 0, 0x20, 0, 7, 0xf0, 1, 4, 0, 0]);
+  expect(image[12]).toBe(start + 3);
+  expect(computeCapacity(p).macros).toBe(11);
+  expect(decodeImage(image)).toEqual({ ok: true, profile: p });
+  const parameters = [start + 1, start + 4, start + 6, start + 8];
+  for (let address = 0; address < 256; address++) {
+    const candidate = image.slice(); candidate[10] = address; sealImage(candidate);
+    const expected = address >= start && address < 128 && !parameters.includes(address);
+    expect(validator.accepts(candidate, variant), `firmware reference ${address}`).toBe(expected);
+    expect(decodeImage(candidate).ok, `decoder reference ${address}`).toBe(expected);
+  }
+});
+it.each([0, 1] as const)('uses byte 127 for an empty macro or a sole final terminator on variant %s', variant => {
+  const image = encodeProfile(oneLayer(variant));
+  image.set([0xff, 127], 9); sealImage(image);
+  expect(validator.accepts(image, variant)).toBe(true);
+  const empty = decodeImage(image);
+  expect(empty).toMatchObject({ ok: true, profile: { macros: [{ actions: [] }] } });
+  image.set([1, 4, 0], 125); image[10] = 125; sealImage(image);
+  expect(validator.accepts(image, variant)).toBe(true);
+  expect(decodeImage(image)).toMatchObject({ ok: true, profile: { macros: [{ actions: [tap] }] } });
+  image[127] = 0xf0; sealImage(image);
+  expect(validator.accepts(image, variant)).toBe(false);
+  expect(decodeImage(image).ok).toBe(false);
 });
 it.each([0, 17, -1, 1.5])('rejects invalid repeats %s', repeats => {
   const p = oneLayer(0); p.macros = [{ actions: [tap] }]; p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats };

@@ -20,7 +20,7 @@ export interface ActionDescriptor {
 
 export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'macro', code: ActionCode.Macro, label: 'Execute macro', group: 'Macros', needsRelease: false, hint: 'Run an ordered sequence 1–16 times. Define its steps in Macros.' },
-  { type: 'pause', code: ActionCode.Pause, label: 'Pause', group: 'Macros', needsRelease: false, hint: 'Wait 0–4080 ms in 16 ms steps before continuing queued playback.' },
+  { type: 'pause', code: ActionCode.Pause, label: 'Pause', group: 'Macros', needsRelease: false, hint: 'Wait up to 4 seconds before the next action' },
   { type: 'ledControl', code: ActionCode.LedControl, label: 'LED control', group: 'LED control', needsRelease: false, hint: 'Adjust global lighting at runtime; resets on configuration save or USB reset.' },
   { type: 'none', code: ActionCode.None, label: 'Nothing', group: 'None', needsRelease: false, hint: 'Leave this input unassigned.' },
   { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
@@ -117,7 +117,7 @@ export function mouseButtonNames(mask: number): string[] {
 export function summarize(action: Action): string {
   switch (action.type) {
     case 'macro': return `Macro ${action.macro + 1}${action.repeats > 1 ? ` × ${action.repeats}` : ''}`;
-    case 'pause': return `Pause ${action.ticks * 16} ms`;
+    case 'pause': return `Pause ${action.ticks * 16}ms`;
     case 'ledControl': return ledSummary(action.command, action.value, false, action.brightness);
     case 'none':
       return '—';

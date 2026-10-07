@@ -358,7 +358,7 @@ describe('decoder rejections', () => {
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
   });
-  it('chord window values 0–15 map to 0–75 ms', () => {
+  it('chord window values 0–15 map to 0–75ms', () => {
     for (let w = 0; w <= 15; w++) {
       const profile = defaultProfile(VARIANT_SIX_KEYS);
       profile.chordWindow = w;

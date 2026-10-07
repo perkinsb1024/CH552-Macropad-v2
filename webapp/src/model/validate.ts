@@ -34,7 +34,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (!Number.isInteger(action.macro) || action.macro < 0 || (ctx.macroCount !== undefined && action.macro >= ctx.macroCount)) return 'Choose an existing macro.';
       if (ctx.macros?.[action.macro] && macroSwitchesLayer(ctx.macros[action.macro]!.actions) && action.repeats !== 1) return 'Macros containing a layer switch must have a repeat count of 1.';
       return Number.isInteger(action.repeats) && action.repeats >= 1 && action.repeats <= 16 ? null : 'Repeat count must be 1–16.';
-    case 'pause': return Number.isInteger(action.ticks) && action.ticks >= 0 && action.ticks <= 255 ? null : 'Pause must be 0–255 ticks of 16 ms.';
+    case 'pause': return Number.isInteger(action.ticks) && action.ticks >= 0 && action.ticks <= 255 ? null : 'Pause must be 0–255 ticks of 16ms.';
     case 'ledControl': return ledProblem(action.command, action.value, action.brightness);
     case 'none':
       return null;
@@ -114,7 +114,7 @@ export function validateProfile(profile: Profile): Issue[] {
     issues.push({ where: 'Profile', message: `Startup layer ${profile.startupLayer + 1} does not exist.` });
   }
   if (!Number.isInteger(profile.chordWindow) || profile.chordWindow < 0 || profile.chordWindow > MAX_CHORD_WINDOW_UNITS) {
-    issues.push({ where: 'Profile', message: 'Chord window must be 0–75 ms in 5 ms steps.' });
+    issues.push({ where: 'Profile', message: 'Chord window must be 0–75ms in 5ms steps.' });
   }
 
   if (!Number.isInteger(profile.rainbowPhase) || profile.rainbowPhase < 0 || profile.rainbowPhase > 3) {

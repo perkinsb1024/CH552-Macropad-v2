@@ -55,9 +55,20 @@ it('prevents nested and held steps and edits invocation selection and repeats', 
   expect(canSwapSlots({ kind: 'key', layer: 0, index: 0 }, step)).toBe(false);
   selectedSlot.value = { kind: 'key', layer: 0, index: 1 };
   setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 1 });
-  const repeats = nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat count')!;
+  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')).toBeUndefined();
+  const repeatToggle = () => nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat')!;
+  const on = nodes(repeatToggle()).find(n => n.type === 'button' && n.props.children === 'On')!;
+  expect(on.props['aria-pressed']).toBe(false);
+  (on.props.onClick as () => void)();
+  expect(getAction(profile.value!, selectedSlot.value!)).toMatchObject({ repeats: 2 });
+  const repeats = nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')!;
+  expect(repeats.props).toMatchObject({ type: 'range', min: 2, max: 16 });
   (repeats.props.onInput as (e: unknown) => void)({ target: { value: '16' } });
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'macro', macro: 0, repeats: 16 });
+  const off = nodes(repeatToggle()).find(n => n.type === 'button' && n.props.children === 'Off')!;
+  (off.props.onClick as () => void)();
+  expect(getAction(profile.value!, selectedSlot.value!)).toMatchObject({ repeats: 1 });
+  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')).toBeUndefined();
 });
 it('clears removed macro bindings and renumbers surviving references across all sites', () => {
   start(); addMacro(); addMacro();
@@ -85,7 +96,7 @@ it('remaps macro layer targets, tracks edits, and clears a step to a zero pause'
   cutSelectedConfiguration();
   expect(profile.value!.macros![0]!.actions[0]).toEqual({ type: 'pause', ticks: 0 });
   expect(profileChanges(before, profile.value!).some(c => c.where === 'Macros')).toBe(true);
-  expect(computeCapacity(profile.value!).macros).toBe(4);
+  expect(computeCapacity(profile.value!).macros).toBe(3);
 });
 
 it('disables adding steps after a layer switch and explains the restriction in the sidebar', () => {
@@ -103,8 +114,10 @@ it('restricts repeats when selecting a layer-switching macro without silently ch
   setAction(selectedSlot.value!, { type: 'setLayer', layer: 0 });
   selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
   setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 16 });
-  const repeat = nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat count')!;
-  expect(repeat.props.max).toBe(1);
+  const repeat = nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')!;
+  expect(repeat.props.disabled).toBe(true);
+  const toggle = nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat')!;
+  expect(nodes(toggle).find(n => n.props.children === 'On')!.props.disabled).toBe(true);
   expect(repeat.props.value).toBe(16);
   (repeat.props.onInput as (e: unknown) => void)({ target: { value: '16' } });
   expect(getAction(profile.value!, selectedSlot.value)).toMatchObject({ repeats: 1 });

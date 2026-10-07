@@ -62,7 +62,10 @@ export function MacrosPanel() {
           return <div class={`macro-step ${selectedSlot.value?.kind === 'macro' && selectedSlot.value.index === index && selectedSlot.value.step === step ? 'is-selected' : ''}`}
             key={step} onDragOver={binding.onDragOver} onDrop={binding.onDrop}>
             {intent && intent !== 'swap' && <span class={`drop-line drop-line-${intent}`} aria-hidden="true" />}
-            <button key="action" data-clipboard-target data-slot={JSON.stringify(slot)} {...binding} aria-label={`Edit macro ${index + 1} step ${step + 1}`} onClick={() => { selectedSlot.value = slot; }}>
+            <button key="action" data-clipboard-target data-slot={JSON.stringify(slot)} {...binding} aria-label={`Edit macro ${index + 1} step ${step + 1}`} onClick={() => {
+              const selected = selectedSlot.value;
+              selectedSlot.value = selected?.kind === 'macro' && selected.index === index && selected.step === step ? null : slot;
+            }}>
               <span class="field-label">Step {step + 1}</span><ActionLabel action={action} />
             </button>
             <button key="remove" class="btn btn-icon btn-danger-muted" aria-label={`Remove step ${step + 1}`} onClick={() => {
@@ -83,6 +86,6 @@ export function MacrosPanel() {
       updateProfile(draft => { (draft.macros ??= []).push({ actions: [{ type: 'keyTap', usage: 4, modifiers: 0 }] }); });
       selectedSlot.value = { kind: 'macro', layer: 0, index: macros.length, step: 0 };
     }}><IconPlus /> Add macro</button>
-    <p class="hint">Steps use 2 bytes each plus a 2-byte terminator per macro. Held actions and nested macros are unavailable. A layer change cancels playback. Some actions wait for macro playback to finish, while others do not. View <a href="https://github.com/perkinsb1024/CH552-Macropad-v2/blob/main/documentation/Configuration%20Overview.md#macros" target="_blank" rel="noopener noreferrer">Configuration Overview</a> for more information. If the queue is full, newly triggered actions that need to wait (including other macros) are ignored.</p>
+    <p class="hint">Steps use 2 bytes each plus a 1-byte terminator per macro. Held actions and nested macros are unavailable. A layer change cancels playback. Some actions wait for macro playback to finish, while others do not. View <a href="https://github.com/perkinsb1024/CH552-Macropad-v2/blob/main/documentation/Configuration%20Overview.md#macros" target="_blank" rel="noopener noreferrer">Configuration Overview</a> for more information. If the queue is full, newly triggered actions that need to wait (including other macros) are ignored.</p>
   </details>;
 }

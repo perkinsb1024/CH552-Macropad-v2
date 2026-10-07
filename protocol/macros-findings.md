@@ -102,15 +102,15 @@ and intrinsic mouse click counts, on each iteration. Repeating a single action
 uses a one-action macro. It does not require duplicated configuration actions.
 
 **Pause** uses full first byte `0x20`, an unused auxiliary value of low-nibble
-**Nothing**. Its parameter is 0–255 units of 16 ms, allowing 0–4,080 ms. It reuses
+**Nothing**. Its parameter is 0–255 units of 16ms, allowing 0–4,080ms. It reuses
 the existing nonblocking deadline/phase state and adds no persistent RAM.
 
-I also built 1 ms and 256 ms quantum variants. The 1 ms choice is slightly smaller
-but caps a step at 255 ms; the 256 ms choice is coarse for short waits. The 16 ms
+I also built 1ms and 256ms quantum variants. The 1ms choice is slightly smaller
+but caps a step at 255ms; the 256ms choice is coarse for short waits. The 16ms
 choice provides useful precision and a four-second range, matching the existing
 fine timer quantum. Longer waits can use consecutive pause steps.
 
-The example is **Keyboard tap** with GUI+Space → **Pause** for 256 ms → **Type Text**
+The example is **Keyboard tap** with GUI+Space → **Pause** for 256ms → **Type Text**
 with `chrome` → **Keyboard tap** with Enter. It adds 17 configuration bytes:
 seven for `chrome\0` and ten for four steps plus their terminator. Changing the
 execution count adds no configuration bytes. Host tests verify the action order

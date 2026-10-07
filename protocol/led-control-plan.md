@@ -18,7 +18,7 @@ The encoding is straightforward. Fitting the implementation in program flash is 
 | Available capacity | Fixing the type to `0xF` leaves 12 bits: 16 auxiliary values × 256 parameters = 4,096 payload combinations. |
 | Reserved action | [config.h](../src/config.h) has no `CONFIG_ACTION_LED_CONTROL`; [config.c](../src/config.c), `actionValid()`, rejects type C through its default branch. The editor codec also rejects it. |
 | **Rainbow** phase | [CH552_Universal_Macropad.ino](../CH552_Universal_Macropad.ino) uses header byte 8 bits 4–5 to select hue spacing increments `0, 21, 42, 85`: **0°**, **30°**, **60°**, **120°**. This controls spacing between LEDs, not the current shared rainbow hue. |
-| **Rainbow speed** | Header byte 8 bits 6–7 select intervals `4, 6, 10, 18` ms: **Extra fast**, **Fast**, **Slow**, **Extra slow**. |
+| **Rainbow speed** | Header byte 8 bits 6–7 select intervals `4ms`, `6ms`, `10ms`, `18ms`: **Extra fast**, **Fast**, **Slow**, **Extra slow**. |
 | Indicator brightness | Each layer's option bit 0 selects bright or dim. **Dim** uses `dimIndicatorComponent(v) = (v >> 4) \| (v != 0)`, rather than a percentage setting. |
 | Indicator visibility | Layer option bits 2–3 select **None**, **Timed on**, **Blink** by layer, or **Always on**. Brightness and visibility are distinct. |
 | Pressed-key brightness | Ordinary pressed-key colors currently render at full brightness. There is no saved key-brightness setting. Palette 15 means **Off** for a key, but **Rainbow** for an enabled layer indicator. |
@@ -82,10 +82,10 @@ Action-type values and **LED command**-byte values are separate namespaces: **LE
 
 | Auxiliary value | Phase spacing | Speed | Interval / full cycle |
 | --- | --- | --- | --- |
-| `0x00` | **0°** | **Extra fast** | 4 ms / 1.024 s |
-| `0x01` | **30°** | **Fast** | 6 ms / 1.536 s |
-| `0x02` | **60°** | **Slow** | 10 ms / 2.560 s |
-| `0x03` | **120°** | **Extra slow** | 18 ms / 4.608 s |
+| `0x00` | **0°** | **Extra fast** | 4ms / 1.024 s |
+| `0x01` | **30°** | **Fast** | 6ms / 1.536 s |
+| `0x02` | **60°** | **Slow** | 10ms / 2.560 s |
+| `0x03` | **120°** | **Extra slow** | 18ms / 4.608 s |
 | `0xF` | **As configured** | **As configured** | Read the relevant saved header bits |
 
 User-facing phase labels are **0°**, **30°**, **60°**, and **120°**, without approximation marks. These are nominal labels: firmware hue increments remain `0, 21, 42, 85` on a 256-step cycle.

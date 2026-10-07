@@ -150,6 +150,6 @@ export function TimedActionsPanel() {
     </div>
     <button class="btn" disabled={!!unavailable} title={unavailable || 'Add a timed action'} onClick={add}><IconPlus /> Add timed action</button>
     {unavailable && <p class="hint">{unavailable}</p>}
-    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Each timer measures from its own start or restart, with less than 16 ms of clock quantization. Queued output may run later. Held actions are unavailable.</p>
+    <p class="hint">Timers repeat. Restarting on input makes them inactivity timers. Each timer measures from its own start or restart, with less than 16ms of clock quantization. Queued output may run later. Held actions are unavailable.</p>
   </details>;
 }

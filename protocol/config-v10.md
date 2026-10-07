@@ -86,11 +86,11 @@ The nine-byte header is:
 | 4 | **String**-pool length and timer count | Bits 0–6: used pool bytes<br>Bit 7: high bit of timer count |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | **Chord window** and rainbow settings | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra slow**) |
+| 8 | **Chord window** and rainbow settings | Bits 0–3: chord duration in 5ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra slow**) |
 
 Timer count is `(byte3 >> 6) | ((byte4 >> 7) << 2)` and must be 0–4.
 Layer and startup-layer indices are zero-based. The startup layer must exist.
-The chord window is 0–75 ms in 5 ms units; zero disables chord recognition.
+The chord window is 0–75ms in 5ms units; zero disables chord recognition.
 A second press must arrive strictly before the window expires to activate a
 mapped chord. The old auto-sleep experiment is not part of v10.
 
@@ -113,10 +113,10 @@ The frame interval is independent of phase spacing:
 
 | Speed bits | Setting | Hue step interval | Full 256-step cycle |
 | --- | --- | --- | --- |
-| `00` | **Extra fast** | 4 ms | 1.024 s |
-| `01` | **Fast** (default) | 6 ms | 1.536 s |
-| `10` | **Slow** | 10 ms | 2.560 s |
-| `11` | **Extra slow** | 18 ms | 4.608 s |
+| `00` | **Extra fast** | 4ms | 1.024 s |
+| `01` | **Fast** (default) | 6ms | 1.536 s |
+| `10` | **Slow** | 10ms | 2.560 s |
+| `11` | **Extra slow** | 18ms | 4.608 s |
 
 The starter profile and bundled JSON profiles encode **Fast** as `01`. JSON exports
 use `rainbowSpeed` with values `extra fast`, `fast`, `slow`, or `extra slow`; older files
@@ -178,10 +178,10 @@ including dimming and animated **Rainbow**. Without an always-on background it i
 
 **On for 1.5 seconds** displays the indicator continuously after a layer change.
 **Blink by layer number** displays one blink per one-based layer number, with
-250 ms lit and 250 ms dark phases. Both indications override all pressed-key
+250ms lit and 250ms dark phases. Both indications override all pressed-key
 colors throughout the animation; dark blink phases are fully dark. Each new
-layer change replaces the previous animation. Timing uses 2 ms ticks, so the
-first phase can be up to 1 ms shorter than its nominal duration.
+layer change replaces the previous animation. Timing uses 2ms ticks, so the
+first phase can be up to 1ms shorter than its nominal duration.
 
 Indicator color index 15 means animated **Rainbow** in **Always on**, **On for 1.5
 seconds**, and **Blink by layer number** modes, at the selected brightness. Numbered
@@ -289,7 +289,7 @@ negate any accepted delta.
 For X and Y movement, auxiliary bit 0 (record byte 0, bit 4) selects hold mode.
 Auxiliary value `0` sends one movement step per press or encoder detent.
 Value `1` sends an initial step and repeats the delta while the input is held,
-at an 8 ms interval when USB is ready and queued actions have finished.
+at an 8ms interval when USB is ready and queued actions have finished.
 Releasing a key, the encoder button, or either chord key stops new repeats.
 Held inputs retain their original bindings across layer changes, as other holds do.
 Repeat reports are skipped when USB is busy; they do not accumulate for later playback.
@@ -425,7 +425,7 @@ The editor's starter profile has two layers: **Mac shortcuts** followed by
 **Windows shortcuts**. Six-key pads use **Undo**, **Copy**, **Paste**, **Redo**, **Cut**,
 and **Select all**; three-key pads use the first three shortcuts on each layer.
 The layers use persistent **White** and **Yellow** lighting respectively, and the
-profile has a 40 ms chord window, **60°** rainbow spacing, **Fast** rainbow speed, and no chords, timers or strings.
+profile has a 40ms chord window, **60°** rainbow spacing, **Fast** rainbow speed, and no chords, timers or strings.
 
 ## Mouse clicks
 
@@ -448,7 +448,7 @@ slots; it does not need a physical release. A brief physical press plays the
 complete configured sequence.
 
 Each click is an ordinary mouse-button press followed by release. Presses last
-at least 8 ms, with a 200 ms pause after release before the next click. USB
+at least 8ms, with a 200ms pause after release before the next click. USB
 backpressure can lengthen these times. The host decides whether a sequence
 counts as a double-click or another multiple-click gesture. Keyboard, held mouse
 buttons and toggled mouse buttons retain their existing composition rules.
@@ -550,12 +550,12 @@ axes and pointer movement zero, so polling cannot repeat a scroll.
 
 Initial press sends one configured step. Holding a key, chord or encoder button
 repeats that step when action playback and the USB transport are idle, with at
-least 100 ms after the previous complete scroll step before repeating.
+least 100ms after the previous complete scroll step before repeating.
 Step 1 produces about ten wheel counts per second while held. Each configured
 step plays as individual signed unit wheel reports, so large steps can take
-longer and delay later actions. Repeat eligibility is checked on the shared 8 ms
+longer and delay later actions. Repeat eligibility is checked on the shared 8ms
 pointer polling cadence, so actual spacing may be slightly longer; pointer
-movement itself retains its 8 ms interval. Delayed repeats do not accumulate
+movement itself retains its 8ms interval. Delayed repeats do not accumulate
 for a catch-up burst.
 Release stops future repeats; already accepted steps finish. Multiple eligible
 held scroll bindings are visited in input-index order, matching pointer holds.
@@ -607,8 +607,8 @@ Timer actions and a consumed input leave an armed one-shot layer return intact.
 Encoder-hold bootloader detection remains available for consumed presses.
 
 Each timer retains an independent fractional byte. A carry of 256 fine ticks
-advances its interval age; each fine tick is 16 ms. Start/reset alignment error
-is less than approximately 16 ms early, separately from poll/queue delays and
+advances its interval age; each fine tick is 16ms. Start/reset alignment error
+is less than approximately 16ms early, separately from poll/queue delays and
 oscillator drift. The byte fine clock wraps every 4.096 seconds; poll gaps must
 remain below that duration.
 
@@ -643,7 +643,7 @@ Always-on effects persist until replaced, explicitly cleared, an actual layer
 change, or configuration application/USB reset. Selecting the already active
 layer leaves the effect intact. Key feedback can cover an always-on effect;
 blinking effects cover key feedback and include fully dark alternating phases.
-Each phase lasts 250 ms; when blinking finishes, normal LED rendering resumes
+Each phase lasts 250ms; when blinking finishes, normal LED rendering resumes
 without replaying the layer's blink/timed indication. **Rainbow** uses the current
 runtime speed and phase policies.
 

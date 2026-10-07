@@ -59,10 +59,10 @@ interval unit. Counter wrap therefore imposes different maximum gaps between pol
 
 | Interval bits | Fine-clock quantum | Poll gap must remain below |
 | --- | ---: | ---: |
-| 8 | 128 ms | 32.768 s |
-| 10 | 32 ms | 8.192 s |
-| 12 | 8 ms | 2.048 s |
-| 14 | 2 ms | 0.512 s |
+| 8 | 128ms | 32.768 s |
+| 10 | 32ms | 8.192 s |
+| 12 | 8ms | 2.048 s |
+| 14 | 2ms | 0.512 s |
 
 These are limits of the measured compact clock representation, not new guarantees
 about runtime latency. A production 14-bit design intended to tolerate longer
@@ -75,7 +75,7 @@ intrinsically cheaper than ten-bit counters.
 ### Alternative: spend the bits on range
 
 A second comparison keeps the eight-bit design's 32.768-second interval unit and
-128 ms fine clock. This preserves its 32.768-second polling-wrap tolerance and
+128ms fine clock. This preserves its 32.768-second polling-wrap tolerance and
 extends the maximum duration instead:
 
 | Interval bits | Maximum duration | Six-key flash | Three-key flash | Added flash on either board |

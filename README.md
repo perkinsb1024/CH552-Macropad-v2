@@ -77,7 +77,7 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v10 firmware files are available for [three-key](releases/ch552-macropad-3-key-30101c94.hex) and [six-key](releases/ch552-macropad-6-key-30101c94.hex) macropads, built from source revision `30101c94`. This version adds layer-specific **Timed actions** with 4.096-second interval steps and retains the per-timer 16 ms fractional clock. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v10 firmware files are available for [three-key](releases/ch552-macropad-3-key-30101c94.hex) and [six-key](releases/ch552-macropad-6-key-30101c94.hex) macropads, built from source revision `30101c94`. This version adds layer-specific **Timed actions** with 4.096-second interval steps and retains the per-timer 16ms fractional clock. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
 Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) to configure your macropad. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
 
@@ -222,13 +222,13 @@ No local web app installation is needed. Open the [Macropad Configurator](https:
 
 On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
 
-**Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100 ms interval. Horizontal scrolling requires v9 firmware.
+**Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100ms interval. Horizontal scrolling requires v9 firmware.
 
-**Macros** tie an ordered sequence to a key, encoder direction, chord or timer. Add a macro and its steps, then assign **Execute macro**, choose the macro and set **Repeat count** from 1–16. **Pause** waits 0–4080 ms in 16 ms increments; consecutive pauses allow longer waits. For example: **Key tap** GUI+Space → **Pause** 256 ms → **Type text** `chrome` → **Key tap** Enter. Application timing depends on the host, so adjust pauses as needed.
+**Macros** tie an ordered sequence to a key, encoder direction, chord or timer. Add a macro and its steps, then assign **Execute macro**, choose the macro and set **Repeat count** from 1–16. **Pause** waits 0–4080ms in 16ms increments; consecutive pauses allow longer waits. For example: **Key tap** GUI+Space → **Pause** 256ms → **Type text** `chrome` → **Key tap** Enter. Application timing depends on the host, so adjust pauses as needed.
 
 Definitions allocate storage only when present: two bytes per step plus a two-byte terminator (the last sequence can use the image boundary). Repeats cost no extra configuration bytes. Strings share the normal pool. Held actions and nested macros are unavailable. Layer switches must be the final step, and macros containing them must have **Repeat count** set to 1. Playback streams steps through one active macro instead of filling the eight-event queue; later queued actions wait, and new invocations are dropped if that queue fills. Immediate actions may interleave, and an effective layer change cancels playback.
 
-Configuration format 11 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16 ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
+Configuration format 11 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
