@@ -205,6 +205,17 @@ button, input, select, textarea {
 .btn-icon {
   padding: 7px;
 }
+.btn-danger-muted {
+  color: var(--fg-muted);
+  background: transparent;
+  border-color: transparent;
+}
+.btn-danger-muted:hover:not(:disabled),
+.btn-danger-muted:focus-visible:not(:disabled) {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+}
 .btn-small {
   padding: 4px 9px;
   font-size: 12.5px;
@@ -862,47 +873,20 @@ output {
   display: none;
 }
 @media (min-width: 1081px) {
+  .column-main {
+    padding-bottom: 4px;
+  }
   .column-side {
     position: sticky;
-    top: var(--sidebar-top, calc(var(--topbar-height, 64px) + 18px));
+    top: var(--sidebar-top, var(--topbar-height, 64px));
+    margin-top: -18px;
   }
   .sidebar-scroll {
-    max-height: var(--sidebar-height, calc(100dvh - var(--sidebar-top, calc(var(--topbar-height, 64px) + 18px)) - 18px));
+    max-height: var(--sidebar-height, calc(100dvh - var(--sidebar-top, var(--topbar-height, 64px))));
     overflow-y: auto;
     scrollbar-gutter: stable;
-  }
-  .column-side::before,
-  .column-side::after {
-    content: '';
-    position: absolute;
-    left: 0px;
-    right: 0px;
-    height: 16px;
-    background: linear-gradient(to bottom, rgb(23 32 51 / 24%), rgb(23 32 51 / 8%) 45%, transparent);
-    mask-image: linear-gradient(to right, transparent, black 7px, black calc(100% - 5px), transparent);
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .column-side::before {
-    top: 0;
-    border-radius: 0 0 8px 8px;
-  }
-  .column-side::after {
-    bottom: 0;
-    border-radius: 8px 8px 0 0;
-    background: linear-gradient(to top, rgb(23 32 51 / 24%), rgb(23 32 51 / 8%) 45%, transparent);
-  }
-  .column-side[data-more-above="false"]::before {
-    clip-path: inset(0 round var(--radius) var(--radius) 0 0);
-  }
-  .column-side[data-more-below="false"]::after {
-    clip-path: inset(0 round 0 0 var(--radius) var(--radius));
-  }
-  .column-side[data-more-above="true"]::before,
-  .column-side[data-more-below="true"]::after {
-    opacity: 1;
+    padding-top: 18px;
+    padding-bottom: var(--sidebar-bottom-padding, 22px);
   }
   .sidebar-scroll-arrow {
     display: grid;
@@ -949,6 +933,15 @@ output {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+.layer-chords-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+@media (min-width: 721px) {
+  .layer-chords-row:has(> .layer-options[open]) > .chords-panel[open] {
+    align-self: stretch;
+  }
 }
 @media (max-width: 1080px) {
   .workspace {
@@ -1397,7 +1390,7 @@ output {
 }
 .chord.is-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .chord.has-problem {
   border-color: var(--danger);
@@ -1568,6 +1561,17 @@ output {
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
+}
+.layer-indicator-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.layer-indicator-controls .color-preview-actions {
+  padding-top: 0;
+  border-top: 0;
 }
 .color-preview-actions .btn {
   padding: 8px 12px;
@@ -2062,17 +2066,17 @@ output {
 }
 
 /* Global timer triggers reuse the action inspector. */
-.timed-actions > summary { display: grid; grid-template-columns: 1fr auto; align-items: center; cursor: pointer; list-style: none; margin-bottom: 0; }
-.timed-actions > summary::-webkit-details-marker { display: none; }
-.timed-actions > summary h2 { grid-column: 1; }
-.timed-actions > summary .muted { grid-column: 1; }
-.timed-actions > summary > svg { grid-column: 2; grid-row: 1 / 3; flex-shrink: 0; transition: transform 150ms ease; transform: rotate(180deg); }
-.timed-actions[open] > summary { margin-bottom: 12px; }
-.timed-actions[open] > summary > svg { transform: rotate(0deg); }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings) > summary { display: grid; grid-template-columns: 1fr auto; align-items: center; cursor: pointer; list-style: none; margin-bottom: 0; }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings) > summary::-webkit-details-marker { display: none; }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings) > summary h2 { grid-column: 1; }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings) > summary .muted { grid-column: 1; }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings) > summary > svg { grid-column: 2; grid-row: 1 / 3; flex-shrink: 0; transition: transform 150ms ease; transform: rotate(0deg); }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings)[open] > summary { margin-bottom: 12px; }
+:is(.timed-actions, .macros-panel, .chords-panel, .layer-options, .profile-settings)[open] > summary > svg { transform: rotate(180deg); }
 .timer-list { display: grid; gap: 12px; margin-bottom: 12px; }
 .timer-row { padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
 .timer-row .card-head { margin-bottom: 8px; }
-.timer-interval { padding-top: 12px; }
+.timer-interval { padding-block: 20px 16px; gap: 12px; }
 .timer-reset { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 13px; }
 .timer-action { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-elev); color: var(--fg); cursor: pointer; text-align: left; }
 .timer-action.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -2277,7 +2281,36 @@ output {
 
 /* Macros share the existing timer binding/editor controls. */
 .seg-macros { background: #b87be7; }
-.macro-step { display: flex; gap: .5rem; align-items: center; }
-.macro-step > .timer-action { flex: 1; min-width: 0; }
-.macro-step-controls { display: flex; gap: .25rem; }
-@media (max-width: 520px) { .macro-step { flex-wrap: wrap; } .macro-step-controls { margin-left: auto; } }
+/* Keep the delete control within the step outline and leave room for insertion markers. */
+.macro-step { display: flex; gap: 4px; align-items: center; position: relative; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-elev); padding-right: 4px; margin-bottom: 12px; }
+.macro-step.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.macro-step > .timer-action { flex: 1; min-width: 0; flex-direction: row; align-items: center; gap: 12px; padding: 8px 10px; border: 0; background: transparent; }
+.macro-step > .timer-action > .field-label { flex-shrink: 0; }
+.macro-step > .timer-action.is-selected { box-shadow: none; }
+.macro-step > .drop-line { left: 0; right: 0; height: 3px; }
+.macro-step > .drop-line-before { top: -7px; transform: translateY(-50%); }
+.macro-step > .drop-line-after { bottom: -7px; transform: translateY(50%); }
+
+.shortcut-library-scroll-shadow { position: relative; min-height: 0; }
+.shortcut-library-scroll-shadow::before,
+.shortcut-library-scroll-shadow::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 16px; z-index: 1;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s ease;
+  mask-image: linear-gradient(to right, transparent, black 7px, black calc(100% - 5px), transparent);
+}
+.shortcut-library-scroll-shadow::before { top: 0; border-radius: 0 0 8px 8px; background: linear-gradient(to bottom, rgb(23 32 51 / 24%), rgb(23 32 51 / 8%) 45%, transparent); }
+.shortcut-library-scroll-shadow::after { bottom: 0; border-radius: 8px 8px 0 0; background: linear-gradient(to top, rgb(23 32 51 / 24%), rgb(23 32 51 / 8%) 45%, transparent); }
+.shortcut-library-scroll-shadow[data-more-above="true"]::before,
+.shortcut-library-scroll-shadow[data-more-below="true"]::after { opacity: 1; }
+
+.timer-settings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.timer-settings .field { min-width: 0; }
+.timer-settings > .field:last-child { justify-self: end; align-items: flex-end; max-width: 100%; text-align: right; }
+.timer-settings .segmented { max-width: 100%; }
+.timer-settings .segmented button { min-width: 0; flex: 1; }
+
+.layer-options { container: layer-options / inline-size; }
+.layer-options .palette { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+@container layer-options (min-width: 720px) {
+  .layer-options .palette { grid-template-columns: repeat(16, minmax(0, 1fr)); }
+}

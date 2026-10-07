@@ -24,6 +24,11 @@ export function navigateToSlot(slot: Slot): void {
     .find(element => element.dataset.slot === JSON.stringify(slot)) ?? null);
 }
 
+export function navigateToMacro(index: number): void {
+  selectedSlot.value = null;
+  revealTarget(() => document.querySelector<HTMLElement>(`[data-macro="${index}"]`));
+}
+
 export function navigateToLayer(layer: number): void {
   selectedLayer.value = layer;
   selectedSlot.value = null;

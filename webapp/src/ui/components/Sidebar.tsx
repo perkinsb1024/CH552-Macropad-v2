@@ -14,13 +14,17 @@ export function Sidebar({ children }: { children: ComponentChildren }) {
     const footer = document.querySelector<HTMLElement>('.footer');
     const workspace = sidebar.closest<HTMLElement>('.workspace');
     const update = () => {
-      const top = (header?.getBoundingClientRect().height ?? 64) + 18;
+      const top = header?.getBoundingClientRect().height ?? 64;
       sidebar.style.setProperty('--sidebar-top', `${top}px`);
       // Use the full viewport until the footer arrives, then shrink the scroll
       // region so the sticky sidebar stays below the header at the page end.
       const bottomSpace = workspace ? parseFloat(getComputedStyle(workspace).paddingBottom) || 0 : 0;
-      const bottom = Math.min(window.innerHeight - 18,
-        footer ? footer.getBoundingClientRect().top - bottomSpace : Infinity);
+      const footerBoundary = footer ? footer.getBoundingClientRect().top - bottomSpace : Infinity;
+      const bottom = Math.min(window.innerHeight, footerBoundary);
+      // Put the bottom gap inside the scrollable content so it is revealed
+      // only at the end, while unfinished content reaches the viewport edge.
+      const restingBottom = Math.min(window.innerHeight - 18, footerBoundary);
+      sidebar.style.setProperty('--sidebar-bottom-padding', `${4 + bottom - restingBottom}px`);
       sidebar.style.setProperty('--sidebar-height', `${Math.max(0, bottom - top)}px`);
       sidebar.dataset.moreAbove = String(scroll.scrollTop > 1);
       sidebar.dataset.moreBelow = String(scroll.scrollHeight - scroll.clientHeight - scroll.scrollTop > 1);

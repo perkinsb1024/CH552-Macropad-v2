@@ -7,7 +7,10 @@ import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
 import { addChord, capacity, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, removeChord, selectedLayer, selectedSlot, setChordGlobal, slotDrop, swapSlotActions } from '../store';
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
-import { IconGlobe, IconPlus, IconTrash } from './Icons';
+import { IconChevron, IconGlobe, IconPlus, IconTrash } from './Icons';
+
+// Initialize once so native details preserves manual collapse across edits.
+const initializedChordSections = new WeakSet<HTMLDetailsElement>();
 
 export function ChordPanel() {
   const p = profile.value!;
@@ -41,11 +44,16 @@ export function ChordPanel() {
   };
 
   return (
-    <section class="card">
-      <header class="card-head">
-        <h2>Chords</h2>
-        <span class="muted">Two keys pressed together</span>
-      </header>
+    <details class="card chords-panel" ref={element => {
+      if (element && !initializedChordSections.has(element)) {
+        element.open = true;
+        initializedChordSections.add(element);
+      }
+    }}>
+      <summary class="card-head">
+        <h2>Chords ({chords.length} on this layer)</h2>
+        <IconChevron />
+      </summary>
       {chords.length === 0 && <p class="empty">No chords on this layer. Each chord uses 3 bytes of device storage.</p>}
       {chords.length > 0 && (
         <ul class="chord-list" onDragOver={(event) => {
@@ -123,6 +131,6 @@ export function ChordPanel() {
         </div>
       ) : <p class="hint">{addUnavailableReasons.join(' ')}</p>}
       {p.chordWindow === 0 && chords.length > 0 && <p class="hint warn">The chord window is set to off, so these chords will not trigger.</p>}
-    </section>
+    </details>
   );
 }

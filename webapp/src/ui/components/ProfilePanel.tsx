@@ -1,5 +1,6 @@
 import { DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior } from '../../model/constants';
 import { baseline, layerName, profile, updateProfile } from '../store';
+import { IconChevron } from './Icons';
 
 const PHASE_LABELS = ['All LEDs together', 'Gentle color wave', 'Rainbow sweep', 'Scattered colors'];
 
@@ -12,20 +13,21 @@ export function ProfilePanel() {
   const showOffBehavior = p.layers.some((layer) => layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn) &&
     p.layers.some((layer) => layer.leds.includes(15));
   return (
-    <section class="card">
-      <header class="card-head">
-        <h2>Profile</h2>
+    <details class="card profile-settings">
+      <summary class="card-head">
+        <h2>Profile Settings</h2>
         <span class="muted">Applies to every layer</span>
-      </header>
+        <IconChevron />
+      </summary>
       <div class="field-grid">
-        <label class="field">
+        <label class="field field-wide">
           <span class="field-label">Startup layer</span>
           <select value={p.startupLayer} onChange={(e) => updateProfile((d) => { d.startupLayer = Number((e.target as HTMLSelectElement).value); })}>
             {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}</option>)}
             {p.startupLayer >= p.layers.length && <option value={p.startupLayer}>Layer {p.startupLayer + 1} (missing)</option>}
           </select>
         </label>
-        <label class="field field-wide">
+        {p.chords.length > 0 && <label class="field field-wide">
           <span class="field-label">
             Chord window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5} ms`}</output>
           </span>
@@ -35,7 +37,7 @@ export function ProfilePanel() {
               ? 'Chord recognition is disabled. Saved chords are kept but never trigger, and keys act immediately.'
               : `A key that belongs to a chord waits up to ${p.chordWindow * 5}ms for its partner before acting alone. Keys without chords are not delayed.`}
           </span>
-        </label>
+        </label>}
         {showRainbowSettings && <div class="field">
           <label class="field-label" htmlFor="rainbow-phase">Rainbow phase spacing</label>
           <select id="rainbow-phase" value={p.rainbowPhase} onChange={(e) => updateProfile((d) => { d.rainbowPhase = Number((e.target as HTMLSelectElement).value); })}>
@@ -75,6 +77,6 @@ export function ProfilePanel() {
           </span>
         </div>}
       </div>
-    </section>
+    </details>
   );
 }

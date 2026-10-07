@@ -60,8 +60,14 @@ it('edits interval and reset flag, and removes a timer without leaving a stale s
   const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
   expect(input.props).toMatchObject({ type: 'range', min: 1, max: 2048, step: 1 });
   (input.props.onInput as (e: unknown) => void)({ target: { value: '55' } });
-  const checkbox = nodes(TimedActionsPanel()).find(n => n.props.type === 'checkbox')!;
-  (checkbox.props.onChange as (e: unknown) => void)({ target: { checked: false } });
+  const reset = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 reset timer on input')!;
+  const choices = nodes(reset).filter(n => n.type === 'button');
+  expect(choices.map(n => n.props['aria-pressed'])).toEqual([true, false]);
+  click(choices[1]!);
+  const updated = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 reset timer on input')!;
+  expect(nodes(updated).filter(n => n.type === 'button').map(n => n.props['aria-pressed'])).toEqual([false, true]);
+  undo(); expect(profile.value!.timedActions![0]!.resetOnInput).toBe(true);
+  redo();
   expect(profile.value!.timedActions![0]).toMatchObject({ ticks: 55, resetOnInput: false });
   click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove timer 1')!);
   expect(selectedSlot.value).toMatchObject({ index: 0 });
@@ -119,7 +125,7 @@ it('clamps edits and provides whole-number durations', () => {
 it('edits consume independently from restart, and undo restores it', () => {
   start(); add();
   const boxes = nodes(TimedActionsPanel()).filter(n => n.props.type === 'checkbox');
-  (boxes[1]!.props.onChange as (e: unknown) => void)({ target: { checked: true } });
+  (boxes[0]!.props.onChange as (e: unknown) => void)({ target: { checked: true } });
   expect(profile.value!.timedActions![0]).toMatchObject({ consumeInput: true, resetOnInput: true });
   undo(); expect(profile.value!.timedActions![0]!.consumeInput).toBe(false);
   redo(); expect(profile.value!.timedActions![0]!.consumeInput).toBe(true);

@@ -126,9 +126,9 @@ export function App() {
                 <li><span class="swatch swatch-chord" /> Key that also participates in a chord</li>
               </ul>
             </section>
-            <div class="two-up">
-              <ChordPanel />
+            <div class="two-up layer-chords-row">
               <LayerOptions />
+              <ChordPanel />
             </div>
             <MacrosPanel />
             <TimedActionsPanel />

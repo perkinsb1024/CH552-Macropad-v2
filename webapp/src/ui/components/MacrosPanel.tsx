@@ -1,7 +1,7 @@
 import { computeCapacity } from '../../model/capacity';
 import { macroSwitchesLayer, removeMacro } from '../../model/macros';
 import type { Slot } from '../../model/types';
-import { capacity, profile, selectedSlot, updateProfile } from '../store';
+import { canInsertSlot, capacity, draggedSlot, insertSlotAction, profile, selectedSlot, slotDrop, updateProfile } from '../store';
 import { ActionLabel } from './ActionLabel';
 import { IconChevron, IconPlus, IconTrash } from './Icons';
 import { timedBindingDrag } from './TimedActionsPanel';
@@ -9,12 +9,24 @@ import { timedBindingDrag } from './TimedActionsPanel';
 export function MacrosPanel() {
   const p = profile.value!;
   const macros = p.macros ?? [];
+  const gapTarget = (event: DragEvent, index: number) => {
+    let closest: { slot: Slot; position: 'before' | 'after'; distance: number } | null = null;
+    const rows = (event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.macro-step');
+    rows.forEach((row, step) => {
+      const rect = row.getBoundingClientRect();
+      for (const position of ['before', 'after'] as const) {
+        const distance = Math.abs(event.clientY - (position === 'before' ? rect.top : rect.bottom));
+        if (!closest || distance < closest.distance) closest = { slot: { kind: 'macro', layer: 0, index, step }, position, distance };
+      }
+    });
+    return closest as { slot: Slot; position: 'before' | 'after'; distance: number } | null;
+  };
   const canAddStep = (index: number) => !macroSwitchesLayer(macros[index]!.actions) && computeCapacity({ ...p, macros: macros.map((macro, i) => i === index ? { actions: [...macro.actions, { type: 'pause', ticks: 0 }] } : macro) }).remaining >= 0;
   return <details class="card macros-panel">
-    <summary class="card-head"><h2>Macros</h2><span class="muted">Ordered actions · {macros.length}</span><IconChevron /></summary>
-    <p class="hint">Add steps, then assign Execute macro to a key, encoder, chord, or timer. Each invocation can repeat 1–16 times, or once if the macro switches layers. Pauses give applications time to respond.</p>
+    <summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
+    <p class="hint">Add steps, then assign <strong>Execute macro</strong> to a key, encoder, chord, or timer. Each invocation can repeat 1–16 times, or once if the macro switches layers. Pauses give applications time to respond.</p>
     <div class="timer-list">
-      {macros.map((macro, index) => <article class="timer-row" key={index}>
+      {macros.map((macro, index) => <article class="timer-row" data-macro={index} tabIndex={-1} key={index}>
         <header class="card-head"><strong>Macro {index + 1}</strong>
           <button class="btn btn-icon btn-danger" aria-label={`Remove macro ${index + 1} and its bindings`} title="Remove macro and clear its bindings" onClick={() => {
             updateProfile(draft => removeMacro(draft, index));
@@ -24,30 +36,43 @@ export function MacrosPanel() {
         </header>
         {macroSwitchesLayer(macro.actions) && <p class="hint">A layer switch must be the final step, and this macro must run once. Remove the layer switch to add more steps. Changing layers also cancels playback if triggered outside the macro.</p>}
         {!macro.actions.length && <p class="empty">No steps yet.</p>}
+        <div class="macro-steps" onDragOver={(event) => {
+          if ((event.target as HTMLElement).closest('.macro-step')) return;
+          const source = draggedSlot.value;
+          const target = gapTarget(event, index);
+          if (source && target && canInsertSlot(source, target.slot, target.position)) {
+            event.preventDefault();
+            slotDrop.value = { slot: target.slot, position: target.position };
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+          } else slotDrop.value = null;
+        }} onDrop={(event) => {
+          if ((event.target as HTMLElement).closest('.macro-step')) return;
+          event.preventDefault();
+          const source = draggedSlot.value;
+          const target = gapTarget(event, index);
+          if (source && target) insertSlotAction(source, target.slot, target.position);
+          draggedSlot.value = null;
+          slotDrop.value = null;
+        }}>
         {macro.actions.map((action, step) => {
           const slot: Slot = { kind: 'macro', layer: 0, index, step };
-          const move = (direction: number) => {
-            updateProfile(draft => {
-              const actions = draft.macros![index]!.actions;
-              [actions[step], actions[step + direction]] = [actions[step + direction]!, actions[step]!];
-            });
-            selectedSlot.value = { ...slot, step: step + direction };
-          };
-          return <div class="macro-step" key={step}>
-            <button data-clipboard-target data-slot={JSON.stringify(slot)} {...timedBindingDrag(slot)} aria-label={`Edit macro ${index + 1} step ${step + 1}`} onClick={() => { selectedSlot.value = slot; }}>
+          const binding = timedBindingDrag(slot, true);
+          const drop = slotDrop.value;
+          const intent = drop?.slot.kind === 'macro' && drop.slot.index === index && drop.slot.step === step ? drop.position : null;
+          return <div class={`macro-step ${selectedSlot.value?.kind === 'macro' && selectedSlot.value.index === index && selectedSlot.value.step === step ? 'is-selected' : ''}`}
+            key={step} onDragOver={binding.onDragOver} onDrop={binding.onDrop}>
+            {intent && intent !== 'swap' && <span class={`drop-line drop-line-${intent}`} aria-hidden="true" />}
+            <button key="action" data-clipboard-target data-slot={JSON.stringify(slot)} {...binding} aria-label={`Edit macro ${index + 1} step ${step + 1}`} onClick={() => { selectedSlot.value = slot; }}>
               <span class="field-label">Step {step + 1}</span><ActionLabel action={action} />
             </button>
-            <div class="macro-step-controls">
-              <button class="btn btn-icon" aria-label={`Move step ${step + 1} up`} disabled={!step} onClick={() => move(-1)}>↑</button>
-              <button class="btn btn-icon" aria-label={`Move step ${step + 1} down`} disabled={step === macro.actions.length - 1} onClick={() => move(1)}>↓</button>
-              <button class="btn btn-icon btn-danger" aria-label={`Remove step ${step + 1}`} onClick={() => {
-                updateProfile(draft => { draft.macros![index]!.actions.splice(step, 1); });
-                const selected = selectedSlot.value;
-                if (selected?.kind === 'macro' && selected.index === index) selectedSlot.value = selected.step === step ? null : selected.step > step ? { ...selected, step: selected.step - 1 } : selected;
-              }}><IconTrash /></button>
-            </div>
+            <button key="remove" class="btn btn-icon btn-danger-muted" aria-label={`Remove step ${step + 1}`} onClick={() => {
+              updateProfile(draft => { draft.macros![index]!.actions.splice(step, 1); });
+              const selected = selectedSlot.value;
+              if (selected?.kind === 'macro' && selected.index === index) selectedSlot.value = selected.step === step ? null : selected.step > step ? { ...selected, step: selected.step - 1 } : selected;
+            }}><IconTrash /></button>
           </div>;
         })}
+        </div>
         <button class="btn" disabled={!canAddStep(index)} onClick={() => {
           updateProfile(draft => { draft.macros![index]!.actions.push({ type: 'keyTap', usage: 4, modifiers: 0 }); });
           selectedSlot.value = { kind: 'macro', layer: 0, index, step: macro.actions.length };
@@ -58,6 +83,6 @@ export function MacrosPanel() {
       updateProfile(draft => { (draft.macros ??= []).push({ actions: [{ type: 'keyTap', usage: 4, modifiers: 0 }] }); });
       selectedSlot.value = { kind: 'macro', layer: 0, index: macros.length, step: 0 };
     }}><IconPlus /> Add macro</button>
-    <p class="hint">Steps use 2 bytes each plus a 2-byte terminator per macro, sharing the 128-byte profile. Held actions and nested macros are unavailable. A layer change cancels playback. Other queued actions wait for the active macro; immediate actions can interleave. If the queue fills, new invocations are dropped.</p>
+    <p class="hint">Steps use 2 bytes each plus a 2-byte terminator per macro. Held actions and nested macros are unavailable. A layer change cancels playback. Some actions wait for macro playback to finish, while others do not. View <a href="https://github.com/perkinsb1024/CH552-Macropad-v2/blob/main/documentation/Configuration%20Overview.md#macros" target="_blank" rel="noopener noreferrer">Configuration Overview</a> for more information. If the queue is full, newly triggered actions that need to wait (including other macros) are ignored.</p>
   </details>;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { filterShortcuts, type ShortcutOS } from '../../model/shortcuts';
 import { draggedShortcut, endShortcutDrag, startShortcutDrag } from '../drag';
 import { IconChevron, IconSearch } from './Icons';
@@ -14,6 +14,21 @@ export function Shortcuts() {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const shortcuts = filterShortcuts(os, query);
+  const libraryRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const library = libraryRef.current;
+    const wrapper = library?.parentElement;
+    if (!library || !wrapper) return;
+    const update = () => {
+      wrapper.dataset.moreAbove = String(library.scrollTop > 1);
+      wrapper.dataset.moreBelow = String(library.scrollHeight - library.clientHeight - library.scrollTop > 1);
+    };
+    library.addEventListener('scroll', update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(library);
+    update();
+    return () => { library.removeEventListener('scroll', update); observer.disconnect(); };
+  }, [expanded, os, query]);
   const showTmuxHint = draggedShortcut.value?.tags.includes('tmux')
     || (shortcuts.length > 0 && shortcuts.every(shortcut => shortcut.tags.includes('tmux')));
   return (
@@ -36,7 +51,7 @@ export function Shortcuts() {
           <input type="search" aria-label="Search shortcuts" placeholder="Search shortcuts…" value={query}
             onInput={(event) => setQuery((event.target as HTMLInputElement).value)} />
         </div>
-        <div class="shortcut-library" role="region" aria-label="Shortcut actions" tabIndex={0}>
+        <div class="shortcut-library-scroll-shadow"><div ref={libraryRef} class="shortcut-library" role="region" aria-label="Shortcut actions" tabIndex={0}>
           {shortcuts.map((shortcut) => (
             <div key={shortcut.id} class="shortcut-preset" draggable
               title={[shortcut.binding, shortcut.note].filter(Boolean).join(' — ')}
@@ -44,6 +59,7 @@ export function Shortcuts() {
               <span>{shortcut.name}</span>
             </div>
           ))}
+        </div>
         </div>
         {showTmuxHint && <p class="hint" role="status">tmux commands send only the key after the prefix. Send Prefix (Ctrl+B) first, usually before each command. Custom tmux bindings may differ.</p>}
         {shortcuts.length === 0 && <p class="empty" role="status">No shortcuts match your search.</p>}

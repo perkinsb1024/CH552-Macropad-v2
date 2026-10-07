@@ -1,3 +1,4 @@
+import { untriggeredMacros } from '../src/model/macros';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { encodeProfile } from '../src/codec/encode';
@@ -167,4 +168,20 @@ it('blocks repeats at every invocation site after editing a macro to switch laye
   expect(() => importProfile(exportProfile(p, {}))).toThrow(/repeat count of 1/);
   p.macros[0]!.actions.pop();
   expect(validateProfile(p)).toEqual([]);
+});
+
+it('warns only about macros without bindings across keys, encoder inputs, chords, and both timer actions', () => {
+  const p = defaultProfile(0);
+  p.macros = Array.from({ length: 8 }, () => ({ actions: [tap] }));
+  const binding = (macro: number): Action => ({ type: 'macro', macro, repeats: 1 });
+  p.layers[0]!.keys[0] = binding(0);
+  p.layers[0]!.encoderButton = binding(1);
+  p.layers[0]!.clockwise = binding(2);
+  p.layers[0]!.counterclockwise = binding(3);
+  p.chords = [{ layer: 0, keyA: 0, keyB: 1, action: binding(4) }];
+  p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: binding(5), resumeAction: binding(6) }];
+  expect(untriggeredMacros(p)).toEqual([7]);
+  expect(validateProfile(p)).toEqual([]);
+  p.layers[0]!.keys[1] = binding(7);
+  expect(untriggeredMacros(p)).toEqual([]);
 });

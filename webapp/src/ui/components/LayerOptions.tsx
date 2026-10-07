@@ -3,6 +3,9 @@ import { PALETTE } from '../../model/palette';
 import { bootloaderWarnings, connection, profile, selectedLayer, updateProfile } from '../store';
 
 import { ColorPreview } from './ColorPreview';
+import { IconChevron } from './Icons';
+
+const initializedLayerOptions = new WeakSet<HTMLDetailsElement>();
 
 const BEHAVIORS = [
   { value: LayerIndicatorBehavior.None, label: 'Do not indicate' },
@@ -22,13 +25,19 @@ export function LayerOptions() {
   const toggle = (key: 'bootloaderFromRun') => (e: Event) =>
     updateProfile((d) => { d.layers[li]![key] = (e.target as HTMLInputElement).checked; });
   return (
-    <section class="card">
-      <header class="card-head">
-        <h2>Layer options</h2>
-      </header>
+    <details class="card layer-options" ref={element => {
+      if (element && !initializedLayerOptions.has(element)) {
+        element.open = true;
+        initializedLayerOptions.add(element);
+      }
+    }}>
+      <summary class="card-head">
+        <h2>Layer Options</h2>
+        <IconChevron />
+      </summary>
       <div class="field layer-indicator-options">
         <label class="field" htmlFor="layer-indicator-behavior">
-          <span class="field-label">Layer selection LEDs</span>
+          <span class="field-label">Layer indicator mode</span>
           <select
             id="layer-indicator-behavior"
             value={layer.indicatorBehavior}
@@ -72,21 +81,23 @@ export function LayerOptions() {
                 );
               })}
             </div>
-            <div class="segmented" role="group" aria-label="Layer indicator brightness">
-              <button
-                type="button"
-                class={layer.indicatorFullBrightness ? 'is-selected' : ''}
-                aria-pressed={layer.indicatorFullBrightness}
-                onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = true; })}
-              >Full Brightness</button>
-              <button
-                type="button"
-                class={!layer.indicatorFullBrightness ? 'is-selected' : ''}
-                aria-pressed={!layer.indicatorFullBrightness}
-                onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = false; })}
-              >Dim</button>
+            <div class="layer-indicator-controls">
+              <div class="segmented" role="group" aria-label="Layer indicator brightness">
+                <button
+                  type="button"
+                  class={layer.indicatorFullBrightness ? 'is-selected' : ''}
+                  aria-pressed={layer.indicatorFullBrightness}
+                  onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = true; })}
+                >Full Brightness</button>
+                <button
+                  type="button"
+                  class={!layer.indicatorFullBrightness ? 'is-selected' : ''}
+                  aria-pressed={!layer.indicatorFullBrightness}
+                  onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = false; })}
+                >Dim</button>
+              </div>
+              <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={rainbow} />
             </div>
-            <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={rainbow} />
           </div>
         )}
       </div>
@@ -102,6 +113,6 @@ export function LayerOptions() {
         </label>
         {bootloaderWarning && <p class="hint warn" role="status">{bootloaderWarning.message}</p>}
       </details>
-    </section>
+    </details>
   );
 }

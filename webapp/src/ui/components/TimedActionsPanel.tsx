@@ -1,21 +1,21 @@
 import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
-import { canSwapSlots, capacity, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
-import { canApplyShortcut, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
+import { canInsertSlot, insertSlotAction, canSwapSlots, capacity, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
+import { canApplyShortcut, dropPosition, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { ActionLabel } from './ActionLabel';
 import { IconChevron, IconPlus, IconTrash } from './Icons';
 
 // Let native details retain the user's choice across configuration edits.
 const initializedResumeSections = new WeakSet<HTMLDetailsElement>();
 
-export function timedBindingDrag(slot: Slot) {
+export function timedBindingDrag(slot: Slot, insertion = false) {
   const same = (other: Slot | null) => other !== null && JSON.stringify(other) === JSON.stringify(slot);
   const invalid = draggedShortcut.value ? !canApplyShortcut(draggedShortcut.value, slot)
     : draggedSlot.value && !same(draggedSlot.value) && !canSwapSlots(draggedSlot.value, slot);
   const end = () => { draggedSlot.value = null; slotDrop.value = null; };
   return {
     draggable: true,
-    class: `timer-action ${same(selectedSlot.value) ? 'is-selected' : ''} ${same(draggedSlot.value) ? 'is-dragging' : ''} ${same(slotDrop.value?.slot ?? null) ? 'is-drop-target' : ''} ${invalid ? 'drag-invalid' : ''}`,
+    class: `timer-action ${same(selectedSlot.value) ? 'is-selected' : ''} ${same(draggedSlot.value) ? 'is-dragging' : ''} ${same(slotDrop.value?.slot ?? null) && slotDrop.value?.position === 'swap' ? 'is-drop-target' : ''} ${invalid ? 'drag-invalid' : ''}`,
     onDragStart: (event: DragEvent) => {
       setRoundedDragImage(event);
       endShortcutDrag();
@@ -28,8 +28,9 @@ export function timedBindingDrag(slot: Slot) {
       if (shortcutDragOver(event, slot)) return;
       event.stopPropagation();
       const source = draggedSlot.value;
-      const valid = source && canSwapSlots(source, slot);
-      slotDrop.value = valid ? { slot, position: 'swap' } : null;
+      const position = insertion && source?.kind === 'macro' && slot.kind === 'macro' && source.index === slot.index ? dropPosition(event, 'vertical') : 'swap';
+      const valid = source && (position === 'swap' ? canSwapSlots(source, slot) : canInsertSlot(source, slot, position));
+      slotDrop.value = valid ? { slot, position } : null;
       if (valid) event.preventDefault();
       if (event.dataTransfer) event.dataTransfer.dropEffect = valid ? 'move' : 'none';
     },
@@ -37,7 +38,12 @@ export function timedBindingDrag(slot: Slot) {
       if (shortcutDrop(event, slot)) return;
       event.preventDefault();
       event.stopPropagation();
-      if (draggedSlot.value) swapSlotActions(draggedSlot.value, slot);
+      const source = draggedSlot.value;
+      const position = slotDrop.value?.position ?? 'swap';
+      if (source) {
+        if (position === 'swap') swapSlotActions(source, slot);
+        else insertSlotAction(source, slot, position);
+      }
       end();
     },
   };
@@ -71,7 +77,7 @@ export function TimedActionsPanel() {
     selectedSlot.value = { kind: 'timed', layer: 0, index: timers.length, resume: false };
   };
   return <details class="card timed-actions">
-    <summary class="card-head"><h2>Timed actions</h2><span class="muted">Global or per layer · {timers.length}/{MAX_TIMED_ACTIONS}</span><IconChevron /></summary>
+    <summary class="card-head"><h2>Timed Actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2><IconChevron /></summary>
     {!timers.length && <p class="empty">Repeat an action on a timer, or after inactivity. Each timer uses 6 bytes.</p>}
     <div class="timer-list">
       {timers.map((timer, index) => {
@@ -85,6 +91,7 @@ export function TimedActionsPanel() {
               if (slot?.kind === 'timed') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
             }}><IconTrash /></button>
           </header>
+          <div class="timer-settings">
           <label class="field"><span class="field-label">Run on</span>
             <select aria-label={`Timer ${index + 1} layer`} value={timer.layer === undefined ? 'global' : String(timer.layer)} onChange={(event) => {
               const value = (event.target as HTMLSelectElement).value;
@@ -98,6 +105,15 @@ export function TimedActionsPanel() {
               {p.layers.map((_, layer) => <option value={String(layer)}>Layer {layer + 1}</option>)}
             </select>
           </label>
+          <div class="field"><span class="field-label">Reset timer on input</span>
+            <div class="segmented" role="group" aria-label={`Timer ${index + 1} reset timer on input`}>
+              {[true, false].map(reset => <button type="button" class={timer.resetOnInput === reset ? 'is-selected' : ''}
+                aria-pressed={timer.resetOnInput === reset} onClick={() => {
+                  updateProfile(draft => { draft.timedActions![index]!.resetOnInput = reset; });
+                }}>{reset ? 'Yes' : 'No'}</button>)}
+            </div>
+          </div>
+          </div>
           {timer.layer !== undefined && <p class="hint">Runs while its assigned layer is active. Changing layers restarts its interval. An armed next-input action remains available on any layer.</p>}
           <label class="field timer-interval"><span class="field-label">Interval <output>{approximateDuration(timer.ticks)}</output></span>
             <input type="range" min={1} max={MAX_TIMED_TICKS} step={1} value={timer.ticks} aria-label={`Timer ${index + 1} interval ticks`} onInput={(event) => {
@@ -107,10 +123,6 @@ export function TimedActionsPanel() {
               updateProfile((draft) => { draft.timedActions![index]!.ticks = ticks; }, `timer:${index}:ticks`);
             }} />
           </label>
-          <label class="timer-reset"><input type="checkbox" checked={timer.resetOnInput} onChange={(event) => {
-            const reset = (event.target as HTMLInputElement).checked;
-            updateProfile((draft) => { draft.timedActions![index]!.resetOnInput = reset; });
-          }} /> Restart on key / encoder input</label>
           <button data-clipboard-target data-slot={JSON.stringify(select(false))} {...timedBindingDrag(select(false))} aria-label={`Edit timer ${index + 1} action`} aria-pressed={active(false)} onClick={() => { selectedSlot.value = select(false); }}>
             <span class="field-label">When timer fires</span><ActionLabel action={timer.action} />
           </button>

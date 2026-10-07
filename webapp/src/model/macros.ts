@@ -29,3 +29,14 @@ export function removeMacro(profile: Profile, index: number): void {
     timer.resumeAction = shift(timer.resumeAction);
   }
 }
+
+/** Definitions without an Execute macro binding anywhere in the profile. */
+export function untriggeredMacros(profile: Profile): number[] {
+  const actions = [
+    ...profile.layers.flatMap(layer => [...layer.keys, layer.encoderButton, layer.clockwise, layer.counterclockwise]),
+    ...profile.chords.map(chord => chord.action),
+    ...(profile.timedActions ?? []).flatMap(timer => [timer.action, timer.resumeAction]),
+  ];
+  const used = new Set(actions.filter(action => action.type === 'macro').map(action => action.macro));
+  return (profile.macros ?? []).flatMap((_, index) => used.has(index) ? [] : [index]);
+}

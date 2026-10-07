@@ -1,3 +1,4 @@
+import { untriggeredMacros } from '../model/macros';
 import { computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
@@ -121,6 +122,7 @@ export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(p
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
 export const bootloaderWarnings = computed(() => (profile.value ? encoderBootloaderWarnings(profile.value) : []));
+export const unusedMacros = computed(() => profile.value ? untriggeredMacros(profile.value) : []);
 export const timerWarnings = computed(() => (profile.value ? timedToggleWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
 export const dirty = computed(() => {
@@ -288,7 +290,8 @@ function isRotationSlot(slot: Slot): boolean {
 
 function slotOrder(p: Profile, slot: Slot): Slot[] | null {
   if (!p.layers[slot.layer]) return null;
-  if (slot.kind === 'timed' || slot.kind === 'macro') return null;
+  if (slot.kind === 'timed') return null;
+  if (slot.kind === 'macro') return p.macros?.[slot.index]?.actions.map((_, step) => ({ ...slot, step })) ?? null;
   if (slot.kind === 'key') return p.layers[slot.layer]!.keys.map((_, index) => ({ kind: 'key', layer: slot.layer, index }));
   if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB || Number(!!a.global) - Number(!!b.global))

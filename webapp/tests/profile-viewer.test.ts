@@ -7,7 +7,7 @@ import { draftKey, storeDraft } from '../src/io/drafts';
 import { connection, connectSimulator, disconnect, dialog, profile, selectedLayer, viewerMode } from '../src/ui/store';
 import { followDeviceLayer } from '../src/ui/profileViewer';
 import { DeviceView } from '../src/ui/components/DeviceView';
-import { ProfileViewer, ViewerChords, ViewerTimers } from '../src/ui/components/ProfileViewer';
+import { ProfileViewer, ViewerChords, ViewerMacros, ViewerTimers } from '../src/ui/components/ProfileViewer';
 
 vi.mock('preact/hooks', async importOriginal => ({
   ...await importOriginal<typeof import('preact/hooks')>(),
@@ -142,4 +142,12 @@ it('filters local chords with the viewed layer and keeps global chords and all t
     expect(nodes(ViewerTimers()).some(n => ['input', 'button', 'select'].includes(String(n.type)))).toBe(false);
   }
   expect(encodeProfile(p)).toHaveLength(128);
+});
+
+it('shows macro definitions and their ordered steps in Live View without editing controls', () => {
+  profile.value = defaultProfile(0);
+  profile.value.macros = [{ actions: [{ type: 'pause', ticks: 16 }, { type: 'keyTap', usage: 4, modifiers: 0 }] }];
+  expect(text(ViewerMacros())).toContain('Macro 1');
+  expect(nodes(ViewerMacros()).filter(n => n.type === 'li')).toHaveLength(2);
+  expect(nodes(ViewerMacros()).some(n => ['input', 'button', 'select'].includes(String(n.type)))).toBe(false);
 });

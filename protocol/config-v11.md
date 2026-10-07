@@ -123,7 +123,7 @@ it writes one `00 00` terminator per macro. The final nonempty macro may omit it
 terminator when its last step reaches byte 126 or 127. **Device storage** accounts
 for the same boundary optimization. Macro strings share the ordinary string pool.
 
-**Macros** supports adding/removing definitions and steps, moving steps up/down,
+**Macros** supports adding/removing definitions and steps, dragging steps to insert or swap,
 selecting steps in the common **Action editor**, and drag/clipboard action swaps.
 **Execute macro** exposes **Macro** and **Repeat count**; **Pause duration** uses
 16 ms increments. Deleting a macro clears its invocations and renumbers later

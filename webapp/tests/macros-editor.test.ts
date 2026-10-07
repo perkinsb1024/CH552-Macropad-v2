@@ -4,7 +4,7 @@ import { Inspector } from '../src/ui/components/Inspector';
 import { defaultProfile } from '../src/model/defaults';
 import { profileChanges } from '../src/model/changes';
 import { computeCapacity } from '../src/model/capacity';
-import { profile, selectedSlot, setAction, getAction, undo, redo, updateProfile, insertLayer, removeLayer, canSwapSlots, clearSelectedAction, cutSelectedConfiguration } from '../src/ui/store';
+import { profile, selectedSlot, setAction, getAction, undo, redo, updateProfile, insertLayer, removeLayer, canSwapSlots, draggedSlot, slotDrop, clearSelectedAction, cutSelectedConfiguration } from '../src/ui/store';
 vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 type Node = { type: unknown; props: Record<string, unknown> };
 function nodes(v: unknown): Node[] {
@@ -33,7 +33,14 @@ it('adds steps, edits through the inspector, reorders, deletes, and supports und
   const add = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add step'))!;
   (add.props.onClick as () => void)();
   expect(profile.value!.macros![0]!.actions).toHaveLength(2);
-  click('Move step 2 up'); expect(profile.value!.macros![0]!.actions[1]!.type).toBe('pause');
+  draggedSlot.value = selectedSlot.value;
+  const target = nodes(MacrosPanel()).find(n => n.props['aria-label'] === 'Edit macro 1 step 1')!;
+  const event = { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientY: 1,
+    currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 100 }) } };
+  (target.props.onDragOver as (event: unknown) => void)(event);
+  expect(slotDrop.value?.position).toBe('before');
+  (target.props.onDrop as (event: unknown) => void)(event);
+  expect(profile.value!.macros![0]!.actions[1]!.type).toBe('pause');
   expect(selectedSlot.value).toMatchObject({ step: 0 });
   click('Remove step 1'); expect(selectedSlot.value).toBeNull();
   undo(); expect(profile.value!.macros![0]!.actions).toHaveLength(2);
@@ -105,4 +112,46 @@ it('restricts repeats when selecting a layer-switching macro without silently ch
   const select = nodes(Inspector()).find(n => n.props['aria-label'] === 'Macro')!;
   (select.props.onChange as (e: unknown) => void)({ target: { value: '0' } });
   expect(getAction(profile.value!, selectedSlot.value)).toMatchObject({ repeats: 1 });
+});
+
+it('inserts a step across multiple rows instead of swapping and restores it with undo', () => {
+  start();
+  updateProfile(p => { p.macros = [{ actions: [4, 5, 6, 7].map(usage => ({ type: 'keyTap', usage, modifiers: 0 })) }]; });
+  const before = structuredClone(profile.value);
+  draggedSlot.value = { kind: 'macro', layer: 0, index: 0, step: 3 };
+  const target = nodes(MacrosPanel()).find(n => n.props['aria-label'] === 'Edit macro 1 step 1')!;
+  const event = { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientY: 1,
+    currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 100 }) } };
+  (target.props.onDragOver as (event: unknown) => void)(event);
+  (target.props.onDrop as (event: unknown) => void)(event);
+  expect(profile.value!.macros![0]!.actions).toEqual([7, 4, 5, 6].map(usage => ({ type: 'keyTap', usage, modifiers: 0 })));
+  expect(selectedSlot.value).toMatchObject({ step: 0 });
+  undo(); expect(profile.value).toEqual(before);
+});
+
+it('inserts macro steps when dropped in the gap between rows', () => {
+  start();
+  updateProfile(p => { p.macros = [{ actions: [4, 5, 6, 7].map(usage => ({ type: 'keyTap', usage, modifiers: 0 })) }]; });
+  const before = structuredClone(profile.value);
+  draggedSlot.value = { kind: 'macro', layer: 0, index: 0, step: 3 };
+  const container = nodes(MacrosPanel()).find(n => n.props.class === 'macro-steps')!;
+  const event = {
+    preventDefault: vi.fn(),
+    target: { closest: () => null },
+    clientY: 46,
+    dataTransfer: { dropEffect: 'none' },
+    currentTarget: { querySelectorAll: () => [0, 1, 2, 3].map(step => ({
+      getBoundingClientRect: () => ({ top: step * 52, bottom: step * 52 + 40 }),
+    })) },
+  };
+  (container.props.onDragOver as (event: unknown) => void)(event);
+  expect(event.preventDefault).toHaveBeenCalled();
+  expect(event.dataTransfer.dropEffect).toBe('move');
+  expect(slotDrop.value).toMatchObject({ slot: { step: 0 }, position: 'after' });
+  (container.props.onDrop as (event: unknown) => void)(event);
+  expect(profile.value!.macros![0]!.actions).toEqual([4, 7, 5, 6].map(usage => ({ type: 'keyTap', usage, modifiers: 0 })));
+  expect(selectedSlot.value).toMatchObject({ step: 1 });
+  expect(draggedSlot.value).toBeNull();
+  expect(slotDrop.value).toBeNull();
+  undo(); expect(profile.value).toEqual(before);
 });

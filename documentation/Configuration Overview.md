@@ -263,7 +263,7 @@ You can add up to four timed actions, depending on remaining configuration stora
 
 1. Click **Add timed action**
 2. Choose **All layers** or a specific layer in **Run on**, then set **Interval** with the slider
-3. Choose whether to enable **Restart on key / encoder input**
+3. Set **Reset timer on input** to **Yes** or **No**
 4. Click **When timer fires**, then choose its action in the **Action editor**
 5. Optionally expand **On next input** and configure a follow-up action and **Consume this input**
 6. Save to the device
@@ -272,8 +272,8 @@ You can add up to four timed actions, depending on remaining configuration stora
 
 | Setting | Result |
 | --- | --- |
-| **Restart on key / encoder input** off | Repeats at the selected interval, even while you use the macropad |
-| **Restart on key / encoder input** on | Resets the timer whenever you press a macropad key, press the wheel button, or turn the wheel. Useful for actions based on inactivity |
+| **Reset timer on input** set to **No** | Repeats at the selected interval, even while you use the macropad |
+| **Reset timer on input** set to **Yes** | Resets the timer whenever you press a macropad key, press the wheel button, or turn the wheel. Useful for actions based on inactivity |
 
 “Input” means activity on the macropad. Using your computer's regular keyboard or mouse does not restart these timers. Keeping a button held only resets the timer when you first press the button.
 
@@ -465,7 +465,7 @@ v10 release firmware uses the frozen v10 editor and does not support them.
 
 1. Open **Macros** and choose **Add macro**
 2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence
-3. Use the arrow controls to change step order, or the trash control to remove a step
+3. Drag a step to the top or bottom edge of another step to insert it there, or to its center to swap. Use the trash control inside a step to remove it
 4. Assign **Execute macro** to a key, wheel input, chord or timer, choose **Macro**, and set **Repeat count** from 1–16
 5. Check **Device storage**, then **Save to device**
 
@@ -630,7 +630,7 @@ If you start from the two-layer starter, customize its existing layers instead o
 ### Create a Reminder to Take a Break
 
 1. Click **Add timed action**. Adjust the **Interval** slider to roughly one hour (879 ticks, or 3600.384 seconds)
-2. Leave **Restart on key / encoder input** off for an hourly reminder. Turn it on if you want the reminder only after and hour of macropad inactivity
+2. Leave **Reset timer on input** set to **No** for an hourly reminder. Choose **Yes** if you want the reminder only after an hour of macropad inactivity
 3. Select **When timer fires → LED control → Set all LEDs → Always on**. Choose **Amber** and **Full Brightness**
 4. Expand **On next input**, select its action, and choose **LED control → Set all LEDs → As configured**
 5. Enable **Consume this input** if you want the next device interaction after the alert to only dismiss the reminder instead of firing its usual action

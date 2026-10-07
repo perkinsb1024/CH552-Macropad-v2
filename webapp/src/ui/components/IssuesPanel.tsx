@@ -1,5 +1,5 @@
-import { bootloaderWarnings, issues, layerChangeWarnings, reachabilityWarnings, timerWarnings } from '../store';
-import { navigateToLayer, navigateToSlot } from '../navigation';
+import { bootloaderWarnings, issues, layerChangeWarnings, reachabilityWarnings, timerWarnings, unusedMacros } from '../store';
+import { navigateToLayer, navigateToMacro, navigateToSlot } from '../navigation';
 import { IconChevron, IconWarning } from './Icons';
 
 export function IssuesPanel() {
@@ -7,8 +7,9 @@ export function IssuesPanel() {
   const warnings = reachabilityWarnings.value;
   const layerWarnings = layerChangeWarnings.value;
   const encoderWarnings = bootloaderWarnings.value;
+  const unused = unusedMacros.value;
   const toggles = timerWarnings.value;
-  if (!list.length && !warnings.length && !layerWarnings.length && !encoderWarnings.length && !toggles.length) return null;
+  if (!list.length && !warnings.length && !layerWarnings.length && !encoderWarnings.length && !toggles.length && !unused.length) return null;
   return (
     <>
       {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
@@ -29,6 +30,14 @@ export function IssuesPanel() {
             </li>
           ))}
         </ul>
+      </details>}
+      {unused.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
+        <summary class="card-head"><h2><IconWarning /> Macros without triggers</h2><span class="warn">{unused.length}</span><IconChevron /></summary>
+        <p class="hint">These warnings do not block saving or upload.</p>
+        <ul>{unused.map(index => <li key={index}>
+          <button class="link" onClick={() => navigateToMacro(index)}>Macro {index + 1}</button>
+          <span>No triggering action is assigned. Assign <strong>Execute macro</strong> to a key, encoder, chord, or timer to run it.</span>
+        </li>)}</ul>
       </details>}
       {toggles.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
         <summary class="card-head">

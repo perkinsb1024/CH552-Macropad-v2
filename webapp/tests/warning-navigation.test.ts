@@ -1,11 +1,12 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { navigateToLayer, navigateToSlot } from '../src/ui/navigation';
+import { navigateToLayer, navigateToMacro, navigateToSlot } from '../src/ui/navigation';
 import { selectedLayer, selectedSlot } from '../src/ui/store';
 import type { Slot } from '../src/model/types';
 
 afterEach(() => { vi.unstubAllGlobals(); selectedLayer.value = 0; selectedSlot.value = null; });
 
 it.each([
+  { kind: 'macro', layer: 0, index: 1, step: 2 },
   { kind: 'timed', layer: 0, index: 1, resume: false },
   { kind: 'timed', layer: 0, index: 1, resume: true },
   { kind: 'key', layer: 2, index: 3 },
@@ -41,5 +42,16 @@ it('scrolls to the device view for a layer warning without selecting a binding',
   expect(selectedLayer.value).toBe(2);
   expect(selectedSlot.value).toBeNull();
   expect(document.querySelector).toHaveBeenCalledWith('.card-device');
+  expect(target.scrollIntoView).toHaveBeenCalledOnce();
+});
+
+it('reveals an unused macro even when it has no steps', () => {
+  const details = { open: false, parentElement: null };
+  const target = { closest: () => details, focus: vi.fn(), scrollIntoView: vi.fn() };
+  vi.stubGlobal('window', { requestAnimationFrame: (callback: () => void) => callback() });
+  vi.stubGlobal('document', { querySelector: vi.fn(() => target) });
+  navigateToMacro(1);
+  expect(document.querySelector).toHaveBeenCalledWith('[data-macro="1"]');
+  expect(details.open).toBe(true);
   expect(target.scrollIntoView).toHaveBeenCalledOnce();
 });

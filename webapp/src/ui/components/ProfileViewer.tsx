@@ -6,23 +6,24 @@ import { ArchivedFirmwareNotice } from './ArchivedFirmwareNotice';
 import { DeviceView } from './DeviceView';
 import { TopBar } from './TopBar';
 import { Toasts } from './Toasts';
-import { TIMED_TICK_SECONDS } from '../../model/constants';
+import { MAX_TIMED_ACTIONS, TIMED_TICK_SECONDS } from '../../model/constants';
 import { duration } from './TimedActionsPanel';
 
 export function ViewerChords() {
   const p = profile.value!;
   const chords = p.chords.filter(c => c.global || c.layer === selectedLayer.value)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB);
+  if (!chords.length) return null;
   return <section class="card viewer-bindings">
     <header class="card-head"><h2>Chords</h2><span class="muted">Two keys together</span></header>
-    {!chords.length ? <p class="muted">No chords on this layer.</p> : <ul class="viewer-binding-list">
+    <ul class="viewer-binding-list">
       {chords.map(c => <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`}>
         <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
         <ActionLabel action={c.action} />
         {c.global && <span class="tab-badge">all layers</span>}
       </li>)}
-    </ul>}
-    {p.chordWindow === 0 && chords.length > 0 && <p class="hint warn">Chords are disabled in this profile.</p>}
+    </ul>
+    {p.chordWindow === 0 && <p class="hint warn">Chords are disabled in this profile.</p>}
   </section>;
 }
 
@@ -30,7 +31,7 @@ export function ViewerTimers() {
   const timers = profile.value!.timedActions ?? [];
   if (!timers.length) return null;
   return <section class="card viewer-bindings">
-    <header class="card-head"><h2>Timed actions</h2><span class="muted">Global or per layer</span></header>
+    <header class="card-head"><h2>Timed actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2></header>
     <ul class="viewer-binding-list viewer-timers">
       {timers.map((timer, index) => <li key={index}>
         <div><strong>Timer {index + 1}</strong><span class="muted">{timer.layer === undefined ? 'All layers' : layerName(timer.layer)}</span><span class="muted">
@@ -49,7 +50,7 @@ export function ViewerTimers() {
 export function ViewerMacros() {
   const macros = profile.value!.macros ?? [];
   if (!macros.length) return null;
-  return <section class="card viewer-bindings"><header class="card-head"><h2>Macros</h2></header>
+  return <section class="card viewer-bindings"><header class="card-head"><h2>Macros ({macros.length})</h2></header>
     {macros.map((macro, index) => <div><h3>Macro {index + 1}</h3><ol>{macro.actions.map(action => <li><ActionLabel action={action} /></li>)}</ol></div>)}
   </section>;
 }
@@ -92,7 +93,7 @@ export function ProfileViewer() {
             </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
           </div>}
           <DeviceView readOnly />
-          <p class="muted viewer-indicator">Layer indicator: {indicatorMode}</p>
+          <p class="muted viewer-indicator">Layer indicator: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
         </section>
         <div class="viewer-extras"><ViewerChords /><ViewerTimers /><ViewerMacros /></div>
       </>}

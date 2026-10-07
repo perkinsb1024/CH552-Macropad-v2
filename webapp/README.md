@@ -151,7 +151,7 @@ with an approximate duration shown in hours, minutes and seconds as needed.
 only on its assigned layer; actual layer transitions reset scoped intervals but
 preserve armed **On next input** actions. Global timer phases continue.
 
-**Restart on key / encoder input** is enabled by default; **Consume this input**
+**Reset timer on input** defaults to **Yes**; **Consume this input**
 is disabled by default. Optional next-input actions run once after firing,
 including after leaving the assigned layer. Consumption suppresses the normal
 physical binding even with no next-input action. Each timer retains an independent
