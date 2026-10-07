@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "programmer.h"
 
+#define DRIVE_VOLUME_LABEL "CH552 FWUP "
+
 enum { DRIVE_SECTOR = 512, DRIVE_SECTORS = 512, DRIVE_BYTES = DRIVE_SECTOR * DRIVE_SECTORS,
        DRIVE_FAT_SECTORS = 2, DRIVE_ROOT = 5, DRIVE_DATA = 13 };
 typedef enum { IMAGE_MISSING, IMAGE_INVALID, IMAGE_VALID } image_result_t;

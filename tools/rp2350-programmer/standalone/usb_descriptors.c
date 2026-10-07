@@ -36,13 +36,13 @@ const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     return descriptor;
   }
   switch (index) {
-    case 2: text = "CH552 Macropad Programmer"; break;
+    case 2: text = "CH552 FW UPDATER"; break;
     case 3:
       pico_get_unique_board_id_string(serial, sizeof(serial));
       text = serial;
       break;
     case 4: text = "Programmer diagnostics"; break;
-    case 5: text = "Macropad firmware drive"; break;
+    case 5: text = "CH552 FW UPDATER"; break;
     default: return NULL;
   }
   size_t len = strlen(text);

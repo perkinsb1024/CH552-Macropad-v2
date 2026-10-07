@@ -56,8 +56,16 @@ static void prepare_hex(void) {
 }
 int main(void) {
   memset(fake_flash, 255, sizeof(fake_flash));
-  firmware_drive_init(); finish_save(); prepare_hex();
+  firmware_drive_init(); finish_save();
+  // Simulate a snapshot saved by the previous firmware, including its HEX.
+  read_disk();
+  memcpy(disk + 43, "MACROPAD   ", 11); write_sector(0);
+  memcpy(disk + DRIVE_ROOT * 512, "MACROPAD   ", 11); write_sector(DRIVE_ROOT);
+  prepare_hex();
   firmware_drive_init(); assert(!firmware_drive_pending() && drive_result == IMAGE_VALID);
+  read_disk();
+  assert(!memcmp(disk + 43, DRIVE_VOLUME_LABEL, 11));
+  assert(!memcmp(disk + DRIVE_ROOT * 512, DRIVE_VOLUME_LABEL, 11));
   unsigned before = writes;
   read_disk(); disk[39] ^= 1; write_sector(0); // Mount-related boot metadata.
   assert(!firmware_drive_pending());

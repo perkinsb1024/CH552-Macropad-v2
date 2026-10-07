@@ -12,10 +12,10 @@ void image_drive_format(uint8_t *d) {
   put16(d + 17, 128); put16(d + 19, DRIVE_SECTORS); d[21] = 0xf8;
   put16(d + 22, DRIVE_FAT_SECTORS); put16(d + 24, 1); put16(d + 26, 1);
   d[38] = 0x29; memcpy(d + 39, "UMAC", 4);
-  memcpy(d + 43, "MACROPAD   ", 11); memcpy(d + 54, "FAT12   ", 8);
+  memcpy(d + 43, DRIVE_VOLUME_LABEL, 11); memcpy(d + 54, "FAT12   ", 8);
   d[510] = 0x55; d[511] = 0xaa;
   for (unsigned i = 1; i <= 3; i += 2) { d[i * 512] = 0xf8; d[i * 512 + 1] = 255; d[i * 512 + 2] = 255; }
-  memcpy(d + DRIVE_ROOT * 512, "MACROPAD   ", 11); d[DRIVE_ROOT * 512 + 11] = 8;
+  memcpy(d + DRIVE_ROOT * 512, DRIVE_VOLUME_LABEL, 11); d[DRIVE_ROOT * 512 + 11] = 8;
 }
 static unsigned next_cluster(const uint8_t *fat, unsigned c) {
   unsigned offset = c + c / 2;

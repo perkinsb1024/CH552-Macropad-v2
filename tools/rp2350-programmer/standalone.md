@@ -18,8 +18,8 @@ written or erased by the programming routine.
    **BOOT** to enter the RP2350's UF2 drive. Alternatively hold **BOOT**, press
    and release **RESET**, then release **BOOT**.
 2. Copy `ch552_programmer.uf2` to that drive. The adapter reboots and presents
-   the **MACROPAD** firmware drive and a serial diagnostics interface.
-3. Copy one macropad `.hex` file to the top level of **MACROPAD**. Long filenames
+   the **CH552 FWUP** firmware drive and a serial diagnostics interface.
+3. Copy one macropad `.hex` file to the top level of **CH552 FWUP**. Long filenames
    are accepted; serial diagnostics display the filesystem's short filename.
    Remove any previous HEX first. Hidden/system files, AppleDouble metadata,
    subdirectories, and files with other extensions are ignored. Multiple visible
@@ -28,7 +28,7 @@ written or erased by the programming routine.
    means the full HEX passed validation and its disk snapshot was saved to flash. A new
    adapter initially has an empty drive and blinks orange. Invalid firmware
    blinks red; replace it with a valid HEX and wait for blinking green.
-5. Eject **MACROPAD** before unplugging USB-C. A flush/eject request waits for
+5. Eject **CH552 FWUP** before unplugging USB-C. A flush/eject request waits for
    outstanding firmware saves to finish. The saved firmware survives resets
    and power loss, so subsequent use can be powered by a USB-C power brick.
 

@@ -47,6 +47,16 @@ static void inspect_disk(void) {
 void firmware_drive_init(void) {
   locked = failed = inspect_pending = false;
   dirty = !drive_store_init(&store, (const uint8_t *)(XIP_BASE + STORE_BASE), disk);
+  // Rename the previous default on restored snapshots without erasing the HEX.
+  // These metadata changes persist with the next firmware save.
+  if (!memcmp(disk + 43, "MACROPAD   ", 11))
+    memcpy(disk + 43, DRIVE_VOLUME_LABEL, 11);
+  for (unsigned i = 0; i < 128; i++) {
+    uint8_t *entry = disk + DRIVE_ROOT * DRIVE_SECTOR + i * 32;
+    if (!entry[0]) break;
+    if (entry[11] == 8 && !memcmp(entry, "MACROPAD   ", 11))
+      memcpy(entry, DRIVE_VOLUME_LABEL, 11);
+  }
   last_write = to_ms_since_boot(get_absolute_time());
   validate();
 }
@@ -65,7 +75,7 @@ bool firmware_drive_lock(void) {
   locked = true; return true;
 }
 void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor[8], uint8_t product[16], uint8_t revision[4]) {
-  (void)lun; memcpy(vendor, "MACROPAD", 8); memcpy(product, "Firmware drive  ", 16); memcpy(revision, "0300", 4);
+  (void)lun; memcpy(vendor, "MACROPAD", 8); memcpy(product, "CH552 FW UPDATER ", 16); memcpy(revision, "0300", 4);
 }
 bool tud_msc_test_unit_ready_cb(uint8_t lun) { (void)lun; return true; }
 void tud_msc_capacity_cb(uint8_t lun, uint32_t *count, uint16_t *size) {
