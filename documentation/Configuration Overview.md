@@ -18,11 +18,12 @@ This guide covers the current configurator and its supported three-key and six-k
 8. [Timed Actions and Reminders](#timed-actions-and-reminders)
 9. [LED Colors and Effects](#led-colors-and-effects)
 10. [**Shortcuts**, **Copy** and **Paste**, and Drag and Drop](#shortcuts-copy-and-paste-and-drag-and-drop)
-11. [The 128-Byte Configuration Size Limit](#the-128-byte-configuration-size-limit)
-12. [Save, Back Up, and Restore](#save-back-up-and-restore)
-13. [Example Configurations](#example-configurations)
-14. [Troubleshooting](#troubleshooting)
-15. [Advanced: Gotchas and things to watch out for with Timed Actions](#timed-action-gotchas)
+11. [**Macros**](#macros)
+12. [The 128-Byte Configuration Size Limit](#the-128-byte-configuration-size-limit)
+13. [Save, Back Up, and Restore](#save-back-up-and-restore)
+14. [Example Configurations](#example-configurations)
+15. [Troubleshooting](#troubleshooting)
+16. [Advanced: Gotchas and things to watch out for with Timed Actions](#timed-action-gotchas)
 
 ## Get Connected—or Try a Virtual Macropad
 
@@ -130,7 +131,7 @@ Mouse button actions offer **Left**, **Middle**, and **Right**. You can select m
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
 slot when you switch to **Single** or **Double** and back. The duration hint is rounded
 to one decimal: about 0.4 seconds for three clicks and 3.1 seconds for sixteen.
-Each press lasts at least 8 ms, with a 200 ms pause between clicks; USB delays can
+Each press lasts at least 8ms, with a 200ms pause between clicks; USB delays can
 extend the sequence. Subsequent queued actions wait for it to finish, while holds,
 media controls and layer/LED actions use independent handling. Your computer
 decides whether the sequence is recognized as a double-click or another gesture.
@@ -143,7 +144,7 @@ testing; the modal warns if you have unsaved changes.
 
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held
-scrolling waits at least 100 ms after the complete previous step and repeats when
+scrolling waits at least 100ms after the complete previous step and repeats when
 playback and USB output are idle (about ten steps per second at step 1); release stops
 new repeats, while an accepted step finishes. Wheel rotation and timers send one
 step each time they run. Pointer speed and scroll distance can vary with your
@@ -245,7 +246,7 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 
 ### Chord Timing
 
-The **Chord window** in **Profile** is how long the first key waits for its partner. It ranges from 5–75 milliseconds, in steps of 5; the starter setting is 40 ms, or four one-hundredths of a second.
+The **Chord window** in **Profile** is how long the first key waits for its partner. It ranges from 5–75 milliseconds, in steps of 5; the starter setting is 40ms, or four one-hundredths of a second.
 
 - A larger window makes chords easier to press but adds a small delay to individual keys that belong to a chord
 - A smaller window makes those individual keys respond sooner, but requires more nearly simultaneous presses
@@ -279,7 +280,7 @@ You can add up to four timed actions, depending on remaining configuration stora
 The interval uses steps of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds.
 Use the slider to select the interval; its label shows the approximate duration
 in hours, minutes and seconds as needed. Each timer measures from its own last start or restart,
-with less than 16 ms of early clock quantization. A one-step interval becomes
+with less than 16ms of early clock quantization. A one-step interval becomes
 due about 4.080–4.096 seconds after its reset. Polling, queued output and the
 device clock can add timing error. Each timer uses six bytes of device storage.
 
@@ -459,7 +460,7 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are available with v11 firmware and its matching configurator. The bundled
+Macros are available starting with v11 firmware and its matching configurator. The bundled
 v10 release firmware uses the frozen v10 editor and does not support them.
 
 1. Open **Macros** and choose **Add macro**
@@ -468,22 +469,50 @@ v10 release firmware uses the frozen v10 editor and does not support them.
 4. Assign **Execute macro** to a key, wheel input, chord or timer, choose **Macro**, and set **Repeat count** from 1–16
 5. Check **Device storage**, then **Save to device**
 
-For opening Chrome through Spotlight, use **Key tap** GUI+Space, **Pause** 256 ms,
-**Type text** `chrome`, then **Key tap** Enter. **Pause duration** adjusts in 16 ms
-steps up to 4080 ms; add successive pauses for longer waits. Tune the delay on
-your computer because applications take different amounts of time to open.
+For opening Chrome through Spotlight (on MacOS), use these steps:
 
-A macro can contain as many steps as fit the shared configuration budget. Held
-actions and nested **Execute macro** steps are unavailable. **Nothing** ends a
-stored sequence, so clearing an editable step makes it a zero-duration **Pause**.
-Deleting a macro clears its bindings and renumbers later macro references;
-undo restores both. Moving layers updates explicit targets in macro steps.
+| Step | Action | Setting |
+| --- | --- | --- |
+| 1 | **Key tap** | **GUI (Win / Cmd)** + **Space** |
+| 2 | **Pause** | 256ms |
+| 3 | **Type text** | `chrome` |
+| 4 | **Key tap** | **Enter** |
 
-Releasing the trigger lets playback finish. Queued actions wait behind the
-active macro; immediate lighting, layer, mouse-toggle and media actions can
-interleave. An effective layer change cancels the remaining sequence, including
-when a step itself changes layers. Avoid triggering long macros faster than they
-finish: the eight-entry event queue can fill, causing new invocations to drop.
+**Pause duration** adjusts in 16ms
+steps up to 4 seconds. You can add successive pauses for if you need longer waits.
+Tune the delay on your computer because applications take different amounts of time to open.
+
+A macro can contain as many steps as fit within your [configuration budget](#the-128-byte-configuration-size-limit). Held
+actions and nested **Execute macro** steps are unavailable. Deleting a macro clears
+its bindings and renumbers later macro references. **Undo** restores both.
+Moving layers updates explicit targets in macro steps.
+
+**Note:** Internally, a **Nothing** action signifies the end of a macro, so it is
+unavailable for normal use within a macro. If you delete the action from a macro step,
+it will be replaced with a 0-duration pause.
+
+A macro continues running even after the key that triggered it is released. If you trigger
+another action while a macro is running, some actions wait for the macro to finish, while others act immediately:
+
+| Behavior | Actions triggered while a macro is running |
+| --- | --- |
+| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X** and **Move pointer Y** set to **Tap**, and another **Execute macro** |
+| Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
+
+Held scrolling and held pointer movement wait until playback and USB output are
+idle before sending movement. "Immediately" means the action does not wait for
+the macro to finish; normal USB and host delays still apply. The macro's own
+steps always run in their listed order.
+
+Changing the active layer cancels the rest of the macro and clears waiting
+actions. This also applies to a layer-switching step inside a macro: the layer
+changes, but later steps and remaining repeats do not run. Selecting the layer
+that is already active does not cancel playback.
+
+Waiting actions share an eight-entry queue. Each macro invocation uses one
+entry, regardless of its step or repeat count. If the queue is full, newly
+triggered actions that need to wait are ignored. Avoid triggering long macros
+faster than they finish.
 
 ## The 128-Byte Configuration Size Limit
 
@@ -610,7 +639,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10/v11 clock quantization is less than 16 ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10/v11 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |

@@ -60,7 +60,7 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
-| [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - **Execute macro** uses action type `0xF` (earlier types `0x5–0xF` shift to `0x4–0xE` during migration) |
+| [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
 | [v8](protocol/config-v8.md) | - Maximum **Timed action** error is improved from ~131s to 512ms<br> - **Media / system hold** keeps a consumer control held until release (useful for brightness and volume)<br> - **Scroll** gains **Hold**, with 100ms between repeated step groups<br> - **Mouse click** supports 1–16 clicks through **Single / Double / Custom**, replacing the separate **Mouse double-click** action. |
@@ -72,9 +72,6 @@ Below are the the primary firmware features added with each version
 | [v2](protocol/config-v2.md) | - **Full Brightness** / **Dim** layer indicators<br> - Global chords<br> - Signed **Relative layer** steps and one-shot layer switching<br> - Held pointer movement<br> - On-device color previews<br> - *This was the first format with a published firmware release and archived configurator* |
 | v1 (initial prototype) | - Browser configuration over WebHID, with profiles saved on the device<br> - Up to four layers<br> - Independent key, wheel-button and wheel-direction bindings<br> - Two-key chords<br> - Keyboard, mouse, media and **Type text** actions<br> - Per-key colors and layer indications, including **Rainbow** lighting. |
 
-Older firmware uses its matching [archived configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/).
-The current editor can import older profiles and migrate them before saving v11.
-
 ## How to Compile the Firmware
 
 > [!NOTE]
@@ -82,7 +79,7 @@ The current editor can import older profiles and migrate them before saving v11.
 >
 > Pre-built v10 firmware files are available for [three-key](releases/ch552-macropad-3-key-30101c94.hex) and [six-key](releases/ch552-macropad-6-key-30101c94.hex) macropads, built from source revision `30101c94`. This version adds layer-specific **Timed actions** with 4.096-second interval steps and retains the per-timer 16 ms fractional clock. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the frozen [v10 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v10/) with these v10 releases. Current source builds and the active editor use v11; macros require compiling that source until a v11 release is published. The frozen [v9 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v9/) remains available for devices running v9 firmware. Back up your profile before updating; v10 leaves old flash intact, but inputs stay inactive until the editor migrates and saves the profile as v10. Legacy timer durations are preserved exactly. Each timer needs one additional configuration byte, so a full migrated profile may require an explicit storage reduction before saving.
+Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) to configure your macropad. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -141,27 +138,13 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current v11 source builds, in bytes:
+Memory in the current firmware, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash used / 14,336 | 14,300 | 14,304 |
 | Flash remaining | 36 | 32 |
-| External RAM allocated (ordinary XSEG) | 360 | 369 |
-| Absolute active configuration at `0x300` | 128 | 128 |
-| Paged external RAM | 108 | 108 |
-| Total application external RAM | 596 | 605 |
-| Occupied internal RAM | 176 | 179 |
+| External RAM allocated (XSEG + absolute) | 488 | 497 |
 | Stack available (linker reserve) | 80 | 77 |
-
-These stack capacities exceed the v10 reserves by two bytes. Runtime stack high-water and macro/OS behavior still need v11 hardware validation. The optimization record is in [macro findings](protocol/macros-findings.md) and [final implementation notes](protocol/macros-implementation.md). USB DMA reserves another 148 external bytes.
-
-Hardware validation under heavy workloads (using firmware v7) recorded a peak stack usage of only 36 bytes (which occurred during boot, USB set up and initialization).
-The [stack validation instructions and diagnostic code](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v7/Stack%20Test/README.md) are available on the `validation/stack-usage-test-v7` branch.
-The [v10 stack sanity check](https://github.com/perkinsb1024/CH552-Macropad-v2/blob/validation/stack-usage-test-v10/Stack%20Test/README.md)
-and diagnostic artifacts are preserved on `validation/stack-usage-test-v10`.
-The six-key sanity test observed a maximum of 39 stack bytes under heavy loads,
-leaving 36 of its 75-byte stack capacity untouched.
 
 ### Build Release HEX Files for Both Variants
 
@@ -241,7 +224,7 @@ On first use, or when the saved profile is invalid, the keys and encoder stay in
 
 **Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100 ms interval. Horizontal scrolling requires v9 firmware.
 
-**Macros** tie an ordered sequence to a key, encoder direction, chord or timer. Add a macro and its steps, then assign **Execute macro**, choose the macro and set **Repeat count** from 1–16. **Pause** waits 0–4080 ms in 16 ms increments; consecutive pauses allow longer waits. For example: **Key tap** GUI+Space → **Pause** 256 ms → **Type text** `chrome` → **Key tap** Enter. Application timing depends on the host, so adjust pauses during hardware validation.
+**Macros** tie an ordered sequence to a key, encoder direction, chord or timer. Add a macro and its steps, then assign **Execute macro**, choose the macro and set **Repeat count** from 1–16. **Pause** waits 0–4080 ms in 16 ms increments; consecutive pauses allow longer waits. For example: **Key tap** GUI+Space → **Pause** 256 ms → **Type text** `chrome` → **Key tap** Enter. Application timing depends on the host, so adjust pauses as needed.
 
 Definitions allocate storage only when present: two bytes per step plus a two-byte terminator (the last sequence can use the image boundary). Repeats cost no extra configuration bytes. Strings share the normal pool. Held actions and nested macros are unavailable. Playback streams steps through one active macro instead of filling the eight-event queue; later queued actions wait, and new invocations are dropped if that queue fills. Immediate actions may interleave, and an effective layer change cancels playback.
 
@@ -254,8 +237,7 @@ until their physical input releases. **Scroll** offers **Tap/Hold** on keys, cho
 the wheel button; rotation and timers remain single steps. Release stops new
 scroll repeats while already accepted steps finish. Held scrolling waits at
 least 100ms after each complete step, giving about ten steps per second at
-step 1; pointer holds retain their 8ms interval. Acceleration is available
-only on its [separate experiment branch](protocol/v8-scroll-experiment.md).
+step 1; pointer holds retain their 8ms interval.
 
 **Mouse click** offers **Single / Double / Custom**. **Custom** shows a slider for
 3–16 clicks. The selected mouse buttons are pressed and released for each click,
@@ -271,11 +253,7 @@ use independent handling. Legacy double-click bindings (v7 and earlier) migrate 
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor reads binary formats 2–10, JSON versions 1–10, and older drafts while
-preserving bindings and metadata. Old **Type Text** records become current text records,
-never **Consumer Hold**. Firmware accepts only v11; read/import the old profile and
-explicitly save it to reactivate inputs. Older firmware uses frozen format 2–9
-editors under `versions/format-vN/`. Legacy timer intervals retain their exact duration; a profile that exceeds 128 bytes after migration remains editable but must be reduced before saving. V10 migration remaps action codes without increasing profile size. See [configuration format 11](protocol/config-v11.md).
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 11](protocol/config-v11.md) for the complete format reference.
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
