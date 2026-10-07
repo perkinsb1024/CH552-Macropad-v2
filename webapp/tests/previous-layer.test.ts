@@ -52,8 +52,8 @@ function expectPreviousTargets(p: Profile) {
 
 it.each([0, 1] as const)('round-trips previous targets in every binding with firmware validation on variant %s', variant => {
   const p = populated(variant);
-  expect(encodeAction(previous, new Map())).toEqual([0x0a, 0xff]);
-  expect(encodeAction(oneShot, new Map())).toEqual([0x1a, 0xff]);
+  expect(encodeAction(previous, new Map())).toEqual([0x09, 0xff]);
+  expect(encodeAction(oneShot, new Map())).toEqual([0x19, 0xff]);
   const image = encodeProfile(p);
   expect(validator.accepts(image, variant)).toBe(true);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });

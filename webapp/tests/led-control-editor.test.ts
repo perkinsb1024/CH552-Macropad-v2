@@ -125,7 +125,7 @@ it('offers one Blink mode and a 1–8 count slider, preserving color and dim bri
     (slider.props.onInput as (e: unknown) => void)({ target: { value: String(count) } });
     const action = profile.value!.layers[0]!.keys[0]!;
     expect(action).toEqual({ type: 'ledControl', command: `effectBlink${count}`, value: 4, brightness: 'dim' });
-    expect(encodeAction(action, new Map())).toEqual([0x4f, 0x91 + count]);
+    expect(encodeAction(action, new Map())).toEqual([0x4e, 0x91 + count]);
     expect(blinkSlider()!.props.value).toBe(count);
     expect(nodes(Inspector()).filter(n => n.type === 'output').some(n =>
       JSON.stringify(n.props.children) === JSON.stringify([count, ' ', count === 1 ? 'time' : 'times']))).toBe(true);

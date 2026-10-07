@@ -271,9 +271,10 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       consumerFirst = first;
       consumerSecond = second;
       // A tap interrupts a held usage with a release before its fresh press.
-      if (first & 1) consumerReleasePending = 0;
+      // Format 11 consumer codes are tap=7 (odd), hold=8 (even).
+      if (!(first & 1)) consumerReleasePending = 0;
       else if (consumerOwner) consumerReleasePending = 1;
-      consumerOwner = (first & 1) ? input + 1 : 0;
+      consumerOwner = !(first & 1) ? input + 1 : 0;
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
       layerSelectionPending = 1;

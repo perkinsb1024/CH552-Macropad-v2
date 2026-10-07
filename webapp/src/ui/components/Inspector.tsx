@@ -14,7 +14,7 @@ import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 import { ScrollTest } from './ScrollTest';
 
-const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control'] as const;
+const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
 
 function MouseButtons({ value, onChange }: { value: number; onChange(v: number): void }) {
   const buttons = [
@@ -76,9 +76,10 @@ export function Inspector() {
   const slot = selectedSlot.value;
   const action = p && slot ? getAction(p, slot) : undefined;
   const timed = slot?.kind === 'timed';
-  const rotation = slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
+  const macro = slot?.kind === 'macro';
+  const rotation = slot?.kind === 'macro' || slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
   const layerCount = p?.layers.length ?? 0;
-  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed }) : null;
+  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed, macro, macroCount: p?.macros?.length ?? 0 }) : null;
   const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   const custom = useMemo(() => (action?.type === 'consumer' || action?.type === 'consumerHold') && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
   const savedStrings = useMemo(() => {
@@ -95,6 +96,7 @@ export function Inspector() {
     }
     p.chords.forEach((chord) => add(chord.action));
     p.timedActions?.forEach((timer) => { add(timer.action); add(timer.resumeAction); });
+    p.macros?.forEach(macro => macro.actions.forEach(add));
     return [...strings];
   }, [p]);
 
@@ -102,7 +104,7 @@ export function Inspector() {
     return (
       <section class="card inspector inspector-empty">
         <h2>Action editor</h2>
-        <p class="muted">Select a key, the encoder, a chord, or a timed action on the left to edit what it does.</p>
+        <p class="muted">Select a key, the encoder, a chord, a timed action, or a macro step on the left to edit what it does.</p>
       </section>
     );
   }
@@ -128,6 +130,7 @@ export function Inspector() {
     else update(next);
   };
 
+  const selectableActions = ACTION_DESCRIPTORS.filter(d => !macro || (d.type !== 'macro' && d.type !== 'none' && !d.needsRelease));
   const keyIndex = slot.kind === 'key' ? slot.index : null;
   const layer = p.layers[slot.layer]!;
 
@@ -135,8 +138,8 @@ export function Inspector() {
     <section class="card inspector">
       <header class="card-head">
         <div class="inspector-title">
-          <h2>{slot.kind === 'timed' ? slotLabel(slot) : slotLabel(slot).split(' · ')[1]}</h2>
-          <span class="muted">{slot.kind === 'timed' ? 'Across all layers' : layerName(slot.layer)}</span>
+          <h2>{slot.kind === 'timed' || slot.kind === 'macro' ? slotLabel(slot) : slotLabel(slot).split(' · ')[1]}</h2>
+          <span class="muted">{slot.kind === 'timed' || slot.kind === 'macro' ? 'Across all layers' : layerName(slot.layer)}</span>
         </div>
         {slot.kind === 'chord' && (
           <button class="btn btn-icon btn-ghost" aria-label="Remove chord" onClick={() => removeChord(slot)}><IconTrash /></button>
@@ -147,9 +150,9 @@ export function Inspector() {
         <span class="field-label">Action</span>
         <select value={action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
           {!actionDescriptor && <option value={action.type} disabled>Unsupported saved action</option>}
-          {GROUPS.map((group) => (
+          {GROUPS.filter(group => selectableActions.some(d => d.group === group)).map((group) => (
             <optgroup key={group} label={group}>
-              {ACTION_DESCRIPTORS.filter((d) => d.group === group).map((d) => (
+              {selectableActions.filter(d => d.group === group).map((d) => (
                 <option key={d.type} value={d.type} disabled={rotation && d.needsRelease}>
                   {d.label}{rotation && d.needsRelease ? ' (buttons only)' : ''}
                 </option>
@@ -160,6 +163,21 @@ export function Inspector() {
         <span class="hint">{actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
       </label>
 
+      {action.type === 'macro' && <>
+        <label class="field"><span class="field-label">Macro</span>
+          <select aria-label="Macro" value={action.macro} onChange={e => update({ ...action, macro: Number((e.target as HTMLSelectElement).value) })}>
+            {!p.macros?.[action.macro] && <option value={action.macro}>Choose a macro — add one in Macros</option>}
+            {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} · {macro.actions.length} step{macro.actions.length === 1 ? '' : 's'}</option>)}
+          </select>
+        </label>
+        <label class="field"><span class="field-label">Repeat count</span>
+          <input type="number" aria-label="Repeat count" min={1} max={16} value={action.repeats} onInput={e => update({ ...action, repeats: Math.max(1, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value) || 1))) })} />
+        </label>
+      </>}
+      {action.type === 'pause' && <label class="field"><span class="field-label">Pause duration <output>{action.ticks * 16} ms</output></span>
+        <input type="range" aria-label="Pause duration" min={0} max={255} value={action.ticks} onInput={e => update({ ...action, ticks: Number((e.target as HTMLInputElement).value) })} />
+        <span class="hint">16 ms steps. Add consecutive pauses for longer waits.</span>
+      </label>}
       {action.type === 'ledControl' && <>
         <label class="field"><span class="field-label">LED command</span>
           <select value={isLedEffect(action.command) ? 'temporaryEffect' : action.command} onChange={(e) => {

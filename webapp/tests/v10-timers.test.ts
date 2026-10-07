@@ -1,3 +1,4 @@
+import { legacyV10Codes } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
@@ -27,6 +28,7 @@ function fullLegacy() {
   const p = defaultProfile(0);
   p.layers[0]!.keys[0] = { type: 'string', text: 'x'.repeat(54) };
   const image = encodeProfile(p);
+  legacyV10Codes(image);
   image.copyWithin(73, 53, 108); image.fill(0, 53, 73);
   image[2] = 9; image[4] = image[4]! | 128;
   for (let i = 0; i < 4; i++) image.set([63 | ((i & 1) ? 128 : 0) | ((i & 2) ? 64 : 0), 0x10, 0, 0, 0], 53 + 5 * i);
@@ -90,7 +92,7 @@ it('preserves full v9 images, blocks oversized writes, and allows an explicit re
   profile.value!.timedActions!.forEach(t => { t.action = { type: 'string', text: 'x'.repeat(50) }; });
   profile.value = structuredClone(profile.value!);
   expect(canSave.value).toBe(true);
-  await save(); expect((await c.connection.client.readFlash())[2]).toBe(10);
+  await save(); expect((await c.connection.client.readFlash())[2]).toBe(11);
 });
 
 it.each([0, 1] as const)('uploads and reads back scoped maximum intervals on variant %s', async variant => {

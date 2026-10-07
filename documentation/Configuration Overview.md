@@ -457,6 +457,34 @@ Layer moves carry their bindings, colors, options, and attached chords. The conf
 
 An invalid destination is not accepted. In particular, a swap must leave both inputs with allowed actions: you cannot swap a hold action into a timer or wheel-turn input. Use copy and paste when you want a duplicate rather than a swap.
 
+## Macros
+
+Macros are available with v11 firmware and its matching configurator. The bundled
+v10 release firmware uses the frozen v10 editor and does not support them.
+
+1. Open **Macros** and choose **Add macro**
+2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence
+3. Use the arrow controls to change step order, or the trash control to remove a step
+4. Assign **Execute macro** to a key, wheel input, chord or timer, choose **Macro**, and set **Repeat count** from 1–16
+5. Check **Device storage**, then **Save to device**
+
+For opening Chrome through Spotlight, use **Key tap** GUI+Space, **Pause** 256 ms,
+**Type text** `chrome`, then **Key tap** Enter. **Pause duration** adjusts in 16 ms
+steps up to 4080 ms; add successive pauses for longer waits. Tune the delay on
+your computer because applications take different amounts of time to open.
+
+A macro can contain as many steps as fit the shared configuration budget. Held
+actions and nested **Execute macro** steps are unavailable. **Nothing** ends a
+stored sequence, so clearing an editable step makes it a zero-duration **Pause**.
+Deleting a macro clears its bindings and renumbers later macro references;
+undo restores both. Moving layers updates explicit targets in macro steps.
+
+Releasing the trigger lets playback finish. Queued actions wait behind the
+active macro; immediate lighting, layer, mouse-toggle and media actions can
+interleave. An effective layer change cancels the remaining sequence, including
+when a step itself changes layers. Avoid triggering long macros faster than they
+finish: the eight-entry event queue can fill, causing new invocations to drop.
+
 ## The 128-Byte Configuration Size Limit
 
 The microchip this macropad is based on has only 128 bytes of space that can be used to save your entire device profile.
@@ -474,11 +502,12 @@ While space is limited, the configuration format is extremely efficient and can 
 | Each six-key layer | 22 bytes, including all its regular input assignments, key colors, and layer options |
 | Each chord | 3 bytes, whether local or global |
 | Each timed action | 6 bytes, including its interval, options, and both action assignments |
+| Each macro | 2 bytes per step plus a 2-byte terminator; the final sequence can use the image boundary instead |
 | Each different text phrase | One byte per character, plus one extra byte |
 
 Ordinary actions fit into the space already reserved for their layer, chord, or timer. For example, changing a key from **Nothing** to a keyboard shortcut, mouse action, or **LED control** does not need extra space. **Type text** adds the phrase's storage cost.
 
-The starter two-layer profile uses 39 bytes on a three-key pad or 53 bytes on a six-key pad, leaving 89 or 75 bytes respectively for all additional layers, chords, timers, or saved text.
+The starter two-layer profile uses 39 bytes on a three-key pad or 53 bytes on a six-key pad, leaving 89 or 75 bytes respectively for all additional layers, chords, timers, macros, or saved text.
 
 ### Make the Most of the Space
 
@@ -486,6 +515,8 @@ The starter two-layer profile uses 39 bytes on a three-key pad or 53 bytes on a 
 - Keep text phrases short. Spaces, tabs, and line breaks count too
 - Reuse identical text. Assigning the exact same phrase to several inputs stores it only once; changing its capitalization or punctuation makes it a different phrase
 - Use a global chord for an action you want on every layer, instead of adding identical local chords to each layer
+- Reuse a macro from multiple triggers, or repeat its sequence without duplicating steps
+- Remove unused macros with their trash controls
 - Remove unused chords and timers with their trash buttons. Setting their actions to **Nothing** keeps the chord or timer and its storage cost
 - Remove unused layers. Clearing a layer's inputs does not reduce the layer's fixed cost
 - Review storage after adding a new layer, because that copies local chords and may add more than just the layer's basic cost
@@ -579,7 +610,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10 clock quantization is less than 16 ms early. Earlier firmware has coarser timing; use matching v10 firmware and review the rounded interval |
+| A reminder fires earlier than expected | v10/v11 clock quantization is less than 16 ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |

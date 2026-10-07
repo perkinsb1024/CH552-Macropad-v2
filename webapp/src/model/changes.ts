@@ -61,6 +61,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
         }
         draft.chords.forEach((chord) => { chord.action = shift(chord.action); });
         draft.timedActions?.forEach((timer) => { timer.action = shift(timer.action); timer.resumeAction = shift(timer.resumeAction); });
+        draft.macros?.forEach(macro => { macro.actions = macro.actions.map(shift); });
         if (draft.startupLayer > i) draft.startupLayer--;
         else if (draft.startupLayer === i) draft.startupLayer = Math.min(i, draft.layers.length - 1);
       } });
@@ -123,6 +124,13 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
     changes.push({ where: 'Timed actions', before: describe(before), after: describe(after), undo: (draft) => {
       if (before.timedActions) draft.timedActions = structuredClone(before.timedActions);
       else delete draft.timedActions;
+    } });
+  }
+  if (JSON.stringify(before.macros ?? []) !== JSON.stringify(after.macros ?? [])) {
+    const describe = (p: Profile) => (p.macros ?? []).map((macro, i) => `${i + 1}: ${macro.actions.map(actionName).join(' → ') || 'Empty'}`).join(' · ') || 'None';
+    changes.push({ where: 'Macros', before: describe(before), after: describe(after), undo: draft => {
+      if (before.macros) draft.macros = structuredClone(before.macros);
+      else delete draft.macros;
     } });
   }
   return changes;

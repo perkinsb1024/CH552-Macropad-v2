@@ -1,3 +1,4 @@
+import { legacyV10Codes } from './legacy-image';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { defaultProfile } from '../src/model/defaults';
@@ -14,7 +15,7 @@ afterAll(() => validator.close());
 it.each([0, 1] as const)('validates every scroll auxiliary nibble and signed endpoint on variant %s', variant => {
   for (const rotation of [false, true]) for (let aux = 0; aux < 16; aux++) for (const delta of [-128, -127, -1, 1, 127]) {
     const image = encodeProfile(defaultProfile(variant));
-    image.set([(aux << 4) | 7, delta & 255], rotation ? (variant ? 17 : 23) : 9);
+    image.set([(aux << 4) | 6, delta & 255], rotation ? (variant ? 17 : 23) : 9);
     sealImage(image);
     const expected = !(aux & 3) && !(rotation && (aux & 4)) && delta !== -128;
     expect(decodeImage(image).ok, `aux=${aux}, rotation=${rotation}, delta=${delta}`).toBe(expected);
@@ -33,8 +34,8 @@ it.each([0, 1] as const)('round-trips horizontal buttons, chords, rotation and b
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: hold }];
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: tap, resumeAction: tap }];
   const image = encodeProfile(p);
-  expect(image[2]).toBe(10);
-  expect(image[9]).toBe(0xc7);
+  expect(image[2]).toBe(11);
+  expect(image[9]).toBe(0xc6);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
@@ -52,7 +53,7 @@ it.each([0, 1] as const)('migrates v8 vertical hold and multi-click without alte
   const p = defaultProfile(variant);
   p.layers[0]!.keys[0] = { type: 'scroll', delta: 2, hold: true };
   p.layers[0]!.keys[1] = { type: 'mouseClick', buttons: 1, clicks: 16 };
-  const latest = encodeProfile(p), old = latest.slice(); old[2] = 8; sealImage(old);
+  const latest = encodeProfile(p), old = latest.slice(); legacyV10Codes(old); old[2] = 8; sealImage(old);
   expect(decodeImage(old)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(old, variant)).toBe(false);
   const decoded = decodeImage(old); if (!decoded.ok) throw new Error(decoded.detail);

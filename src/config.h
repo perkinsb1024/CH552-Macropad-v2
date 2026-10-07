@@ -5,7 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Experimental v11 adds macros; v12 is the fixed-pair comparison encoding.
+// Format 11: dynamic macros, repeats and pauses. Comparison switches are
+// retained for the reproducible experiment harness (fixed pairs use v12).
 #define CONFIG_VERSION (CONFIG_MACRO_STYLE == 1 ? 12 : 11)
 // Experiment: 1 = fixed pairs; 2 = NUL-terminated dynamic sequences.
 #ifndef CONFIG_MACRO_STYLE
@@ -48,11 +49,10 @@
 #define CONFIG_ACTION_KEY_TAP          0x1
 #define CONFIG_ACTION_KEY_HOLD         0x2
 #define CONFIG_ACTION_MOUSE_CLICK      0x3
-#define CONFIG_ACTION_MACRO            0x4
 // Mouse click auxiliary encodes click count minus one.
-#define CONFIG_ACTION_MOUSE_HOLD       0x5
-#define CONFIG_ACTION_MOUSE_TOGGLE     0x6
-#define CONFIG_ACTION_SCROLL           0x7
+#define CONFIG_ACTION_MOUSE_HOLD       0x4
+#define CONFIG_ACTION_MOUSE_TOGGLE     0x5
+#define CONFIG_ACTION_SCROLL           0x6
 #define CONFIG_SCROLL_HOLD             0x40
 #define CONFIG_SCROLL_HORIZONTAL       0x80
 #define CONFIG_SCROLL_MODE_MASK        0x30
@@ -80,17 +80,18 @@
 #if CONFIG_SCROLL_SLOW_X < 1 || CONFIG_SCROLL_SLOW_X > 8 || CONFIG_SCROLL_FAST_X < 1 || CONFIG_SCROLL_FAST_X > 8 || CONFIG_SCROLL_SLOW_Y < 1 || CONFIG_SCROLL_SLOW_Y > 8 || CONFIG_SCROLL_FAST_Y < 1 || CONFIG_SCROLL_FAST_Y > 8
 #error Scroll acceleration X/Y presets must be in the range 1-8
 #endif
-#define CONFIG_ACTION_CONSUMER         0x8
-#define CONFIG_ACTION_CONSUMER_HOLD    0x9
+#define CONFIG_ACTION_CONSUMER         0x7
+#define CONFIG_ACTION_CONSUMER_HOLD    0x8
 // Full first byte: type None with auxiliary value 1.
 #define CONFIG_ACTION_STRING           0x10
 #define CONFIG_ACTION_PAUSE            0x20 // Parameter: 16 ms units, 0-255.
-#define CONFIG_ACTION_SET_LAYER        0xA
-#define CONFIG_ACTION_MOMENTARY_LAYER  0xB
-#define CONFIG_ACTION_RELATIVE_LAYER   0xC
-#define CONFIG_ACTION_MOUSE_X          0xD
-#define CONFIG_ACTION_MOUSE_Y          0xE
-#define CONFIG_ACTION_LED_CONTROL      0xF
+#define CONFIG_ACTION_SET_LAYER        0x9
+#define CONFIG_ACTION_MOMENTARY_LAYER  0xA
+#define CONFIG_ACTION_RELATIVE_LAYER   0xB
+#define CONFIG_ACTION_MOUSE_X          0xC
+#define CONFIG_ACTION_MOUSE_Y          0xD
+#define CONFIG_ACTION_LED_CONTROL      0xE
+#define CONFIG_ACTION_MACRO            0xF
 
 // LED command byte; the auxiliary nibble carries its value.
 #define CONFIG_LED_PHASE_SET       0x00

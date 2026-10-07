@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v9 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v11 editor. `../public/versions/format-v3/` preserves the production build of the experimentation branch's original revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -56,3 +56,9 @@ The frozen v8 editor and live view are in `../public/versions/format-v8/`. They
 retain the v8 draft namespace and support published v8 firmware. The manifest
 records source revision and file hashes; archive banners were added to HTML, and a relative uploader link forwards to
 the shared uploader. The bundled JavaScript remains unchanged.
+
+The frozen v10 editor/live view is in `../public/versions/format-v10/`, built from
+`38e5816` before any v11 web changes. Its v10 draft namespace and encoding remain
+unchanged. Both HTML entry points have a banner and relative latest-editor link;
+the uploader redirects to the shared uploader, which still bundles v10 firmware.
+The manifest hashes assets, source maps, screenshots, favicon and entry points.

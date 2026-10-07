@@ -154,7 +154,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -211,6 +211,7 @@ export function getAction(p: Profile, slot: Slot): Action | undefined {
   const layer = p.layers[slot.layer];
   if (!layer) return undefined;
   switch (slot.kind) {
+    case 'macro': return p.macros?.[slot.index]?.actions[slot.step];
     case 'timed':
       return p.timedActions?.[slot.index]?.[slot.resume ? 'resumeAction' : 'action'];
     case 'key':
@@ -234,7 +235,7 @@ export function clearSelectedAction(): void {
   if (!action) return;
   if (action.type !== 'none') {
     rememberAction(slot, action);
-    setAction(slot, { type: 'none' });
+    setAction(slot, slot.kind === 'macro' ? { type: 'pause', ticks: 0 } : { type: 'none' });
   } else if (slot.kind === 'key') {
     updateProfile((draft) => { draft.layers[slot.layer]!.leds[slot.index] = 15; });
   }
@@ -246,6 +247,11 @@ export function setAction(slot: Slot, action: Action): void {
     const layer = draft.layers[slot.layer];
     if (!layer) return;
     switch (slot.kind) {
+      case 'macro': {
+        const macro = draft.macros?.[slot.index];
+        if (macro) macro.actions[slot.step] = action;
+        break;
+      }
       case 'timed': {
         const timer = draft.timedActions?.[slot.index];
         if (timer) timer[slot.resume ? 'resumeAction' : 'action'] = action;
@@ -282,7 +288,7 @@ function isRotationSlot(slot: Slot): boolean {
 
 function slotOrder(p: Profile, slot: Slot): Slot[] | null {
   if (!p.layers[slot.layer]) return null;
-  if (slot.kind === 'timed') return null;
+  if (slot.kind === 'timed' || slot.kind === 'macro') return null;
   if (slot.kind === 'key') return p.layers[slot.layer]!.keys.map((_, index) => ({ kind: 'key', layer: slot.layer, index }));
   if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB || Number(!!a.global) - Number(!!b.global))
@@ -310,6 +316,11 @@ function putAction(p: Profile, slot: Slot, action: Action): void {
   const layer = p.layers[slot.layer];
   if (!layer) return;
   switch (slot.kind) {
+    case 'macro': {
+      const macro = p.macros?.[slot.index];
+      if (macro) macro.actions[slot.step] = action;
+      break;
+    }
     case 'timed': {
       const timer = p.timedActions?.[slot.index];
       if (timer) timer[slot.resume ? 'resumeAction' : 'action'] = action;
@@ -356,7 +367,7 @@ export function cutSelectedConfiguration(): void {
   if (!action) return;
   rememberAction(slot, action);
   updateProfile((draft) => {
-    putAction(draft, slot, { type: 'none' });
+    putAction(draft, slot, slot.kind === 'macro' ? { type: 'pause', ticks: 0 } : { type: 'none' });
     if (slot.kind === 'key') draft.layers[slot.layer]!.leds[slot.index] = 15;
   });
   notifyActionClipboard('Cut', action, slot);
@@ -372,7 +383,7 @@ export function pasteSelectedConfiguration(text: string): boolean {
     copied = JSON.parse(text);
     if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || copied.version !== 1 || !copied.action) return false;
     if (copied.led !== undefined && (!Number.isInteger(copied.led) || copied.led < 0 || copied.led > 15)) return false;
-    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed' });
+    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed', macro: slot.kind === 'macro', macroCount: p.macros?.length ?? 0 });
     if (problem) {
       notify('error', `Cannot paste here: ${problem}`);
       return true;
@@ -397,8 +408,8 @@ export function canSwapSlots(source: Slot, target: Slot): boolean {
   const sourceAction = getAction(p, source);
   const targetAction = getAction(p, target);
   if (!sourceAction || !targetAction) return false;
-  return !(isRotationSlot(target) && actionNeedsRelease(sourceAction)) &&
-    !(isRotationSlot(source) && actionNeedsRelease(targetAction));
+  const allowed = (action: Action, slot: Slot) => !actionProblem(action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), macro: slot.kind === 'macro', macroCount: p.macros?.length ?? 0 });
+  return allowed(sourceAction, target) && allowed(targetAction, source);
 }
 
 export function canInsertSlot(source: Slot, target: Slot, position: 'before' | 'after'): boolean {
@@ -482,10 +493,11 @@ function applyLayerOrder(order: number[]): void {
       timer.action = updateTarget(timer.action); timer.resumeAction = updateTarget(timer.resumeAction);
       if (timer.layer !== undefined) timer.layer = remap(timer.layer);
     }
+    for (const macro of draft.macros ?? []) macro.actions = macro.actions.map(updateTarget);
     draft.startupLayer = remap(draft.startupLayer);
   });
   selectedLayer.value = remap(selectedLayer.value);
-  if (selectedSlot.value) selectedSlot.value = { ...selectedSlot.value, layer: remap(selectedSlot.value.layer) } as Slot;
+  if (selectedSlot.value && selectedSlot.value.kind !== 'macro') selectedSlot.value = { ...selectedSlot.value, layer: remap(selectedSlot.value.layer) } as Slot;
 }
 
 export function canInsertLayer(source: number, target: number, position: 'before' | 'after'): boolean {
@@ -605,6 +617,7 @@ export function layerReferences(p: Profile, layer: number): { actions: number; c
     visit(timer.action); visit(timer.resumeAction);
     if (timer.layer === layer) actions++;
   }
+  for (const macro of p.macros ?? []) macro.actions.forEach(visit);
   return { actions, chords: p.chords.filter((c) => !c.global && c.layer === layer).length };
 }
 
@@ -639,6 +652,7 @@ export function removeLayer(layer: number): void {
       if (timer.layer === layer) timer.layer = -1; // Require explicit reassignment; preserve both actions.
       else if (timer.layer !== undefined && timer.layer > layer) timer.layer--;
     }
+    for (const macro of draft.macros ?? []) macro.actions = macro.actions.map(shift);
     if (draft.startupLayer > layer) draft.startupLayer--;
     else if (draft.startupLayer === layer) draft.startupLayer = 0;
   });

@@ -84,7 +84,7 @@ static void testValidation(void) {
         activeConfig[start] = (first & 0xF0) | CONFIG_ACTION_MACRO;
         activeConfig[start + 1] = second; seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     }
-    const uint8_t holds[] = {2, 5, 9, 0xB, 0x47, 0x1D, 0x1E};
+    const uint8_t holds[] = {CONFIG_ACTION_KEY_HOLD, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_CONSUMER_HOLD, CONFIG_ACTION_MOMENTARY_LAYER, CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y};
     for (unsigned i = 0; i < sizeof holds; i++) {
         activeConfig[start] = holds[i]; activeConfig[start + 1] = 1;
         seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));

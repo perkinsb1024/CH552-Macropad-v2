@@ -8,6 +8,7 @@ import { Welcome } from './components/Welcome';
 import { ProfilePanel } from './components/ProfilePanel';
 import { LayerTabs } from './components/LayerTabs';
 import { DeviceView } from './components/DeviceView';
+import { MacrosPanel } from './components/MacrosPanel';
 import { TimedActionsPanel } from './components/TimedActionsPanel';
 import { ChordPanel } from './components/ChordPanel';
 import { LayerOptions } from './components/LayerOptions';
@@ -129,6 +130,7 @@ export function App() {
               <ChordPanel />
               <LayerOptions />
             </div>
+            <MacrosPanel />
             <TimedActionsPanel />
           </div>
           <Sidebar>

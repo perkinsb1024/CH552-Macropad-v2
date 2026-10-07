@@ -14,9 +14,15 @@ import { sealImage } from './crc16';
 export class EncodeError extends Error {}
 
 /** Encodes one two-byte action record. */
-export function encodeAction(action: Action, stringOffsets: Map<string, number>): [number, number] {
+export function encodeAction(action: Action, stringOffsets: Map<string, number>, macroOffsets: number[] = []): [number, number] {
   const code = descriptor(action.type).code;
   switch (action.type) {
+    case 'macro': {
+      const offset = macroOffsets[action.macro];
+      if (offset === undefined) throw new EncodeError('Macro not present in layout.');
+      return [ActionCode.Macro | ((action.repeats - 1) << 4), offset];
+    }
+    case 'pause': return [ActionCode.Pause, action.ticks];
     case 'ledControl': {
       const problem = ledProblem(action.command, action.value, action.brightness);
       if (problem) throw new EncodeError(problem);
@@ -75,6 +81,12 @@ export function encodeProfile(profile: Profile): Uint8Array {
   }
 
   const chords = sortedChords(profile);
+  let macroEnd = HEADER_SIZE + size * profile.layers.length + CHORD_ENTRY_SIZE * chords.length + TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0) + poolLength;
+  const macroOffsets = (profile.macros ?? []).map(macro => {
+    const start = macroEnd;
+    macroEnd += 2 * macro.actions.length + 2;
+    return start;
+  });
   image[0] = 0x4d; // M
   image[1] = 0x50; // P
   image[2] = FORMAT_VERSION;
@@ -90,7 +102,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
     const base = HEADER_SIZE + size * li;
     const records = [...layer.keys, layer.encoderButton, layer.clockwise, layer.counterclockwise];
     records.forEach((action, i) => {
-      const [b0, b1] = encodeAction(action, offsets);
+      const [b0, b1] = encodeAction(action, offsets, macroOffsets);
       image[base + 2 * i] = b0;
       image[base + 2 * i + 1] = b1;
     });
@@ -108,7 +120,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   let offset = HEADER_SIZE + size * profile.layers.length;
   for (const chord of chords) {
     image[offset] = chordId(chord.layer, chord.keyA, chord.keyB, keys, chord.global);
-    const [b0, b1] = encodeAction(chord.action, offsets);
+    const [b0, b1] = encodeAction(chord.action, offsets, macroOffsets);
     image[offset + 1] = b0;
     image[offset + 2] = b1;
     offset += CHORD_ENTRY_SIZE;
@@ -116,8 +128,8 @@ export function encodeProfile(profile: Profile): Uint8Array {
 
   for (const timer of timers) {
     image[offset] = (timer.ticks - 1) & 255;
-    image.set(encodeAction(timer.action, offsets), offset + 1);
-    image.set(encodeAction(timer.resumeAction, offsets), offset + 3);
+    image.set(encodeAction(timer.action, offsets, macroOffsets), offset + 1);
+    image.set(encodeAction(timer.resumeAction, offsets, macroOffsets), offset + 3);
     image[offset + 5] = ((timer.ticks - 1) >> 8) << 3 | (timer.layer === undefined ? 0 : timer.layer + 1)
       | (timer.consumeInput ? 64 : 0) | (timer.resetOnInput ? 128 : 0);
     offset += TIMED_ENTRY_SIZE;
@@ -126,6 +138,14 @@ export function encodeProfile(profile: Profile): Uint8Array {
   for (const text of pool) {
     for (let i = 0; i < text.length; i++) image[offset++] = text.charCodeAt(i);
     image[offset++] = 0;
+  }
+
+  for (const macro of profile.macros ?? []) {
+    for (const action of macro.actions) {
+      image.set(encodeAction(action, offsets, macroOffsets), offset);
+      offset += 2;
+    }
+    if (offset + 1 < IMAGE_SIZE) { image[offset++] = 0; image[offset++] = 0; }
   }
 
   sealImage(image);

@@ -14,14 +14,14 @@ static void testTimedLighting(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     uint8_t offset = configTimedOffset();
     activeConfig[3] = 1 << 6;
-    activeConfig[9] = 0x1F; // The waking key explicitly selects dim key feedback.
+    activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); // The waking key explicitly selects dim key feedback.
     activeConfig[10] = CONFIG_LED_KEY_SET;
     activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
     activeConfig[offset] = 0; activeConfig[offset + 5] = 128; // Inactivity, one coarse tick.
-    activeConfig[offset + 1] = 0x3F;
+    activeConfig[offset + 1] = (0x30 | CONFIG_ACTION_LED_CONTROL);
     activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
 #if CONFIG_TIMED_RESUME
-    activeConfig[offset + 3] = 0xFF;
+    activeConfig[offset + 3] = (0xF0 | CONFIG_ACTION_LED_CONTROL);
     activeConfig[offset + 4] = CONFIG_LED_BOTH_SET;
 #endif
     activeConfigValid = 1;
@@ -96,14 +96,14 @@ static void testConsumedPhysicalInput(void) {
     uint8_t offset = configTimedOffset();
     activeConfig[offset] = 0; activeConfig[offset + 5] = 128;
     activeConfig[offset + 5] |= CONFIG_TIMED_CONSUME;
-    activeConfig[offset + 1] = 0x3F;
+    activeConfig[offset + 1] = (0x30 | CONFIG_ACTION_LED_CONTROL);
     activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
-    activeConfig[offset + 3] = 0xFF;
+    activeConfig[offset + 3] = (0xF0 | CONFIG_ACTION_LED_CONTROL);
     activeConfig[offset + 4] = CONFIG_LED_BOTH_SET;
-    activeConfig[9] = 0x1F; activeConfig[10] = CONFIG_LED_KEY_SET;
+    activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[10] = CONFIG_LED_KEY_SET;
     uint8_t encoder = 9 + 2 * NUM_LEDS;
-    activeConfig[encoder] = 0x1F; activeConfig[encoder + 1] = CONFIG_LED_KEY_SET;
-    activeConfig[encoder + 2] = 0x1F; activeConfig[encoder + 3] = CONFIG_LED_KEY_SET;
+    activeConfig[encoder] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[encoder + 1] = CONFIG_LED_KEY_SET;
+    activeConfig[encoder + 2] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[encoder + 3] = CONFIG_LED_KEY_SET;
     P1 = P3 = 0xFF;
     activeConfigValid = 1;
     previewOptions = 0;
@@ -281,8 +281,8 @@ static void testTemporaryEffects(void) {
     uint8_t timer = configTimedOffset();
     activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
-    activeConfig[timer + 1] = 0xFF; activeConfig[timer + 2] = CONFIG_LED_EFFECT_ON;
-    activeConfig[timer + 3] = 0x0F; activeConfig[timer + 4] = CONFIG_LED_EFFECT_RESTORE;
+    activeConfig[timer + 1] = (0xF0 | CONFIG_ACTION_LED_CONTROL); activeConfig[timer + 2] = CONFIG_LED_EFFECT_ON;
+    activeConfig[timer + 3] = (0x00 | CONFIG_ACTION_LED_CONTROL); activeConfig[timer + 4] = CONFIG_LED_EFFECT_RESTORE;
     P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
     advanceTimedTo(4096); assert(previewOptions == 0xFF);
     uint8_t before = frameCount;

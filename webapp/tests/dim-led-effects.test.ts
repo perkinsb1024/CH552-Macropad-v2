@@ -28,7 +28,7 @@ it.each([0, 1] as const)('round-trips all dim colors and modes against firmware 
       p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: false, action }];
       p.timedActions = [{ ticks: 1, resetOnInput: true, consumeInput: true, action, resumeAction: action }];
       const image = encodeProfile(p);
-      expect(encodeAction(action, new Map())).toEqual([color << 4 | 0xf, spec.code | 0x10]);
+      expect(encodeAction(action, new Map())).toEqual([color << 4 | 0xe, spec.code | 0x10]);
       expect(validator.accepts(image, variant)).toBe(true);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(importProfile(exportProfile(p)).profile).toEqual(p);
@@ -90,7 +90,7 @@ it('rejects malformed brightness, brightness on restore/ordinary commands, and r
     expect(() => importProfile(JSON.stringify(json))).toThrow();
   }
   const image = encodeProfile(defaultProfile(0));
-  image[9] = 0x0f; image[10] = 0x90; sealImage(image);
+  image[9] = 0x0e; image[10] = 0x90; sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
   expect(validator.accepts(image, 0)).toBe(false);
   image[10] = 0x91; image[2] = 6; sealImage(image);

@@ -219,7 +219,7 @@ static void testMultiClick(void) {
                     activeConfig[offset + 1] = buttons;
                     seal();
                     assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
-                    activeConfig[offset] = (aux << 4) | 0x4;
+                    activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MACRO;
                     seal();
                     assert(!configValid(activeConfig, variant));
                 }
@@ -269,7 +269,7 @@ static void testActions(void) {
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();
-        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != 0x4));
+        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO));
     }
         testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;

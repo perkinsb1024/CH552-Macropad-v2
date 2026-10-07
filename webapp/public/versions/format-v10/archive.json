@@ -1,0 +1,21 @@
+{
+  "formatVersion": 10,
+  "sourceCommit": "38e58160566974dbdbc072cf721d9cd2d57b12cc",
+  "changes": [
+    "Frozen v10 editor and live view; HTML archive banner and shared uploader redirect."
+  ],
+  "validation": "TypeScript, production build and archive verification passed before v11 web edits.",
+  "sha256": {
+    "assets/configurator-DUczCe4d.js.map": "4572962acb472a827e4667fdeaae8ee61047067b3d97ffdd7d1caa2d97ff0d09",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-Cqmos3gi.css": "f0ad32d0d24776bdd085493d488f0906ec542055d88d738ce271723a3248e7b4",
+    "assets/main-D0bGHbud.js": "9f0cdba1064817d168eaed088584b596effb12f3976ceba3cbf4145862d3ce69",
+    "assets/main-D0bGHbud.js.map": "eb891e8cf51b78549509de096705cabe034d894e2846398b20ac057db985f2f6",
+    "assets/viewer-DUczCe4d.js.map": "6d7c18d9fb0e23d39a186478f33e9de884840d89d744db97f8a6b988e98e3125",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "bd53ebe3b1597e788b2cc7d5e0b8f2777bbf9e85dca6016431fc0e232788df89",
+    "liveView/index.html": "0389cf5b79e5ff1207be41c17968fe8888c7210527a47ce2c55487c2dcf54127",
+    "webUploader/index.html": "48b018d9d7e7c8fe2109c6f710aee098890a62a27e530ec9eeebe85a68dda44f"
+  }
+}

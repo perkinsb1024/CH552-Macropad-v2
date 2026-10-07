@@ -2274,3 +2274,10 @@ output {
     font-size: 9px;
   }
 }
+
+/* Macros share the existing timer binding/editor controls. */
+.seg-macros { background: #b87be7; }
+.macro-step { display: flex; gap: .5rem; align-items: center; }
+.macro-step > .timer-action { flex: 1; min-width: 0; }
+.macro-step-controls { display: flex; gap: .25rem; }
+@media (max-width: 520px) { .macro-step { flex-wrap: wrap; } .macro-step-controls { margin-left: auto; } }

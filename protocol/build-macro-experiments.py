@@ -13,6 +13,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "4647e6d"
+PROTOTYPE = "38e5816"
 CASES = {
     "baseline": (0, 0, 0),
     "pair": (1, 0, 0),
@@ -120,10 +121,10 @@ def prepare(source, case):
         with tarfile.open(fileobj=io.BytesIO(data)) as archive:
             archive.extractall(source)
     else:
-        shutil.copytree(ROOT / "src", source / "src")
-        shutil.copytree(ROOT / "tests", source / "tests")
-        for name in ("CH552_Universal_Macropad.ino", "platformio.ini"):
-            shutil.copyfile(ROOT / name, source / name)
+        data = subprocess.check_output(["git", "archive", PROTOTYPE, "src", "tests",
+                                        "CH552_Universal_Macropad.ino", "platformio.ini"], cwd=ROOT)
+        with tarfile.open(fileobj=io.BytesIO(data)) as archive:
+            archive.extractall(source)
         style, repeat, pause = CASES[case]
         with (source / "platformio.ini").open("a") as f:
             f.write(f"\nbuild_flags = -DCONFIG_MACRO_STYLE={style} -DCONFIG_MACRO_REPEAT={repeat} -DCONFIG_MACRO_PAUSE={pause}\n")

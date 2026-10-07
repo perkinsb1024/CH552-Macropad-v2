@@ -1,16 +1,18 @@
 # Intro
-Information on this page is based on [configuration format v8](../protocol/config-v8.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Consumer Hold** and held scrolling still use two-byte action records, so capacity is unchanged from v7.
+Information on this page is based on [configuration format v11](../protocol/config-v11.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Consumer Hold** and held scrolling still use two-byte action records, so capacity is unchanged from v7.
 
-Each count is the total number of assignable physical-input action slots across all configured layers, with no timed actions configured. Encoder wheel actions count clockwise and counterclockwise separately. **Chords** are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
+Each count is the total number of assignable physical-input action slots across all configured layers, with no timed actions or macros configured. Encoder wheel actions count clockwise and counterclockwise separately. **Chords** are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
 
 With the exception of the [Optimal Layout](#optimal-layout-for-maximum-assignable-action-slots) these calculations assume all chords are layer-specific; global chords are not included.
 Maximums assume no text strings and that all chords are layer-specific chords - global chords reduce storage required, but also reduce maximum distinct actions. Assignments used to switch layers count toward these totals. If you use layer-specific actions to transition layers, you will need at least `LAYER_COUNT` actions to reach all layers, but you can optimize this by using a global chord with a **Relative Layer: +1** action to increase the maximum assignable action slots.
 
-The 128-byte image uses a 9-byte header, 15 bytes per 3-key layer or 22 bytes per 6-key layer (including LED settings), 3 bytes per chord, and 5 bytes per timed action. There are 3 possible chords per 3-key layer and 15 per 6-key layer.
+The 128-byte image uses a 9-byte header, 15 bytes per 3-key layer or 22 bytes per 6-key layer (including LED settings), 3 bytes per chord, and 6 bytes per timed action. There are 3 possible chords per 3-key layer and 15 per 6-key layer.
 
 `Maximum chords = min(key pairs × layers, floor((128 − 9 − layer bytes × layers) / 3))`
 
-Timers are optional and do not reserve storage when absent, so all numeric tables below remain unchanged from v5/v6. Each configured timer subtracts 5 bytes from the shared chord/text budget and provides two separate action records (expiry and next input). These are excluded from the physical-input totals. With timers and strings, subtract `5 × timer count + string-pool bytes` from the formula numerator above.
+Timers are optional and do not reserve storage when absent, so all numeric tables below remain unchanged from v5/v6. Each configured timer subtracts 6 bytes from the shared chord/text budget and provides two separate action records (expiry and next input). These are excluded from the physical-input totals. With timers and strings, subtract `6 × timer count + string-pool bytes + macro bytes` from the formula numerator above.
+
+Macros are optional. Each step uses two bytes and each definition normally adds a two-byte terminator; the final definition can use the image boundary instead. Repeats add no definition bytes. Macro steps are not extra physical-input slots.
 
 Text actions also need string-pool storage: each distinct string uses one byte per character plus a terminating byte. That storage counts against the maximum chord count. Unassigned keys and encoder actions still occupy their fixed layer slots.
 

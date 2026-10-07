@@ -8,7 +8,7 @@ import { IconChevron, IconPlus, IconTrash } from './Icons';
 // Let native details retain the user's choice across configuration edits.
 const initializedResumeSections = new WeakSet<HTMLDetailsElement>();
 
-function timedBindingDrag(slot: Slot) {
+export function timedBindingDrag(slot: Slot) {
   const same = (other: Slot | null) => other !== null && JSON.stringify(other) === JSON.stringify(slot);
   const invalid = draggedShortcut.value ? !canApplyShortcut(draggedShortcut.value, slot)
     : draggedSlot.value && !same(draggedSlot.value) && !canSwapSlots(draggedSlot.value, slot);

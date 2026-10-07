@@ -1,4 +1,4 @@
-import { legacyActionCodes, legacyTextCodes } from './legacy-image';
+import { legacyActionCodes, legacyTextCodes, legacyV10Codes } from './legacy-image';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { siteUrl } from '../src/site';
 import { encodeProfile } from '../src/codec/encode';
@@ -22,9 +22,10 @@ function legacyImage() {
 }
 
 describe('device profile migration', () => {
-  it.each([2, 3, 4, 5, 6, 7, 8, 9])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
+  it.each([2, 3, 4, 5, 6, 7, 8, 9, 10])('loads format %s flash on new firmware and saves the upgraded profile only on request', async (version) => {
     const legacy = version >= 6 ? encodeProfile(defaultProfile(0)) : legacyImage();
     if (version >= 6 && version < 8) legacyTextCodes(legacy);
+    if (version >= 8) legacyV10Codes(legacy);
     legacy[2] = version;
     if (version === 5) legacy[8] = 0x68;
     sealImage(legacy);
@@ -46,11 +47,11 @@ describe('device profile migration', () => {
     expect(device.flash).toEqual(legacy);
     expect(canSave.value).toBe(true);
     await save();
-    expect(device.flash[2]).toBe(10);
+    expect(device.flash[2]).toBe(11);
     expect(device.flashValid).toBe(true);
   });
 
-  it.each([2, 3, 4, 5, 6, 7, 8, 9])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
+  it.each([2, 3, 4, 5, 6, 7, 8, 9, 10])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
     const originalGetInfo = ConfigClient.prototype.getInfo;
     vi.spyOn(ConfigClient.prototype, 'getInfo').mockImplementation(async function (this: ConfigClient) {
       return { ...await originalGetInfo.call(this), formatVersion: version };

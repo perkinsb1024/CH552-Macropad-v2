@@ -1,5 +1,12 @@
 # Macro feasibility and implementation experiments
 
+This investigation records prototype revision `38e5816`, including its initial
+macro type `0x4`. Final v11 uses **Execute macro** at `0xF` and shifts previous
+`0x5–0xF` actions down one; its source/editor implementation and latest memory
+measurements are in [macros-implementation.md](macros-implementation.md). The
+historical tables and failed probes below are retained for pre-release review.
+
+
 The recommended design supports dynamically stored sequences, 1–16 executions
 per trigger, and **Pause** steps. It fits both CH552 variants without removing
 an existing feature. Linker stack capacity increases from 75/78 to 77/80 bytes,
@@ -218,7 +225,7 @@ Run:
 python3 protocol/build-macro-experiments.py
 ```
 
-The script snapshots source into temporary directories and builds both variants
+The script snapshots prototype `38e5816` and baseline `4647e6d` into temporary directories and builds both variants
 for nine designs, including the v10 baseline and the expected unaligned overflow.
 It runs the complete ordinary host suite for each design. Counted sequences use
 an additional dedicated wire-format probe; fixed/terminated sequences use the
@@ -239,7 +246,7 @@ Earlier optimization snapshots: `/private/tmp/macropad-macros-71gdjd2l/`.
 Temporary artifacts may be cleaned by the OS; the committed harness and
 measurement JSON preserve the final comparison recipe and results.
 
-The next product step is the v11 configurator: macro definitions/editor, action
+At the end of this investigation, the next product step was the v11 configurator: macro definitions/editor, action
 selector, capacity calculation, address remapping, import/export and migration,
 reachability/warnings, and matching hardware/OS validation. The existing v10
 editor and checked-in uploader/release files are untouched by this investigation.

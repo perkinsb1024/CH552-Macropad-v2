@@ -44,7 +44,7 @@ it.each([0, 1] as const)('round-trips Consumer Hold endpoints and high usage bit
     const p = defaultProfile(variant);
     p.layers[0]!.keys[0] = { type: 'consumerHold', usage };
     const image = encodeProfile(p);
-    expect([...image.slice(9, 11)]).toEqual([((usage >> 8) << 4) | 9, usage & 255]);
+    expect([...image.slice(9, 11)]).toEqual([((usage >> 8) << 4) | 8, usage & 255]);
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
     expect(validator.accepts(image, variant)).toBe(true);
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
@@ -60,21 +60,21 @@ it.each([0, 1] as const)('round-trips held scrolling on keys, chords and wheel p
   p.layers[0]!.encoderButton = hold;
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: false, action: hold }];
   const image = encodeProfile(p);
-  expect([...image.slice(9, 11)]).toEqual([0x47, 0x81]);
+  expect([...image.slice(9, 11)]).toEqual([0x46, 0x81]);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
   expect(summarize(hold)).toBe('Scroll up 127 (hold)');
 });
 
-it.each([[0x04, 1], [0x14, 1], [0xF4, 7], [0x20, 0], [0, 1], [0x10, 0], [9, 0], [0x17, 1], [0x27, 1], [0x97, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
+it.each([[0x0f, 1], [0x14, 1], [0xF4, 7], [0x30, 0], [0, 1], [0x10, 0], [8, 0], [0x16, 1], [0x26, 1], [0x96, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
   const image = encodeProfile(defaultProfile(0));
   image.set([first, second], 9); sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
   expect(validator.accepts(image, 0)).toBe(false);
 });
 
-it.each([0x09, 0x47])('rejects release-dependent encoding %s on rotation and both timer slots', first => {
+it.each([0x08, 0x46])('rejects release-dependent encoding %s on rotation and both timer slots', first => {
   const p = defaultProfile(0);
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: { type: 'none' }, resumeAction: { type: 'none' } }];
   for (const offset of [23, 25, 54, 56]) {
@@ -144,6 +144,7 @@ it.each([2, 3, 4, 5, 6, 7])('migrates format %s double clicks to the v8 click en
   p.layers[0]!.encoderButton = { type: 'none' };
   const image = encodeProfile(p);
   if (version < 6) legacyActionCodes(image);
+  else legacyTextCodes(image);
   image[2] = version;
   image[9] = 4;
   if (version < 5) image[8] = image[8]! & 15;

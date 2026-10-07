@@ -2,6 +2,8 @@ import type { LedBrightness, LedCommand, LedValue } from './ledControl';
 import type { LayerIndicatorBehavior, Variant } from './constants';
 
 export type Action =
+  | { type: 'macro'; macro: number; repeats: number }
+  | { type: 'pause'; ticks: number }
   | { type: 'ledControl'; command: LedCommand; value: LedValue; brightness?: LedBrightness }
   | { type: 'none' }
   | { type: 'keyTap'; usage: number; modifiers: number }
@@ -71,10 +73,12 @@ export interface Profile {
   layers: Layer[];
   chords: Chord[];
   timedActions?: TimedAction[];
+  macros?: { actions: Action[] }[];
 }
 
 /** Identifies one editable binding slot within a profile. */
 export type Slot =
+  | { kind: 'macro'; layer: number; index: number; step: number }
   | { kind: 'timed'; layer: number; index: number; resume: boolean }
   | { kind: 'key'; layer: number; index: number }
   | { kind: 'encoderButton'; layer: number }

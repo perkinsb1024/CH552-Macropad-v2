@@ -13,7 +13,7 @@ describe('LED control format 7', () => {
     const image = encodeProfile(defaultProfile(variant));
     let accepted = 0;
     for (let command = 0; command < 256; command++) for (let nibble = 0; nibble < 16; nibble++) {
-      image[9] = nibble << 4 | 15; image[10] = command; sealImage(image);
+      image[9] = nibble << 4 | 14; image[10] = command; sealImage(image);
       const spec = ledCommandFromCode(command);
       const value = command >= 0x80 ? nibble : spec?.relative ? nibble < 8 ? nibble : nibble - 16 : nibble === 15 ? 'asConfigured' : nibble;
       const valid = !!spec && !ledProblem(spec.command, value);
@@ -39,11 +39,11 @@ describe('LED control format 7', () => {
     const p = defaultProfile(1);
     p.layers[0]!.keys[0] = { type: 'ledControl', command: 'brightnessBothSet', value: 'asConfigured' };
     p.layers[0]!.encoderButton = { type: 'ledControl', command: 'commonPresetToggle', value: 3 };
-    expect(encodeAction(p.layers[0]!.encoderButton, new Map())).toEqual([0x3f, 0x0d]);
+    expect(encodeAction(p.layers[0]!.encoderButton, new Map())).toEqual([0x3e, 0x0d]);
     p.layers[0]!.clockwise = { type: 'ledControl', command: 'commonPresetRelative', value: 1 };
     p.layers[0]!.counterclockwise = { type: 'ledControl', command: 'commonPresetRelative', value: -1 };
     p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: { type: 'ledControl', command: 'commonPresetSet', value: 3 } }];
-    expect(encodeAction(p.layers[0]!.keys[0]!, new Map())).toEqual([0xff, 8]);
+    expect(encodeAction(p.layers[0]!.keys[0]!, new Map())).toEqual([0xfe, 8]);
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
     expect(decodeImage(encodeProfile(p))).toEqual({ ok: true, profile: p });
     const old = JSON.parse(exportProfile(p)); old.version = 5;

@@ -43,13 +43,22 @@ function decodeText(pool: PoolView, offset: number): Action | string {
 
 function decodeAction(b0: number, b1: number, layers: number, rotation: boolean, pool: PoolView, version: number): Action | string {
   let type = b0 & 15;
+  if (version < 11 && type === 4) {
+    if (version >= 8) return 'Reserved action type 4';
+    return b0 >> 4 || b1 < 1 || b1 > 7 ? 'Invalid mouse button mask' : { type: 'mouseClick', buttons: b1, clicks: 2 };
+  }
   if (version < 6) {
     if (type === 12) return 'Reserved action type in older format';
     if (type >= 13) type--;
   }
+  if (version < 11 && type >= 5) type--;
   const aux = b0 >> 4;
   const nonZeroAux = aux !== 0;
   switch (type) {
+    case ActionCode.Macro: {
+      const start = pool.start + pool.used;
+      return b1 < start || b1 > 126 || ((b1 - start) & 1) ? 'Invalid macro offset' : { type: 'macro', macro: b1, repeats: aux + 1 };
+    }
     case ActionCode.LedControl: {
       const spec = ledCommandFromCode(b1);
       if (!spec || (version < 7 && b1 >= 0x80)) return 'Unknown LED command';
@@ -59,6 +68,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
         ...(b1 >= 0x91 && b1 <= 0x99 ? { brightness: 'dim' as const } : {}) };
     }
     case ActionCode.None:
+      if (version >= 11 && aux === 2) return { type: 'pause', ticks: b1 };
       if (version >= 8 && aux === 1) return decodeText(pool, b1);
       return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
     case ActionCode.RelativeLayer: {
@@ -73,10 +83,6 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     case ActionCode.MouseClick:
       if ((version < 8 && nonZeroAux) || b1 < 1 || b1 > 7) return 'Invalid mouse click settings';
       return { type: 'mouseClick', buttons: b1, ...(aux ? { clicks: aux + 1 } : {}) };
-    case ActionCode.LegacyMouseDouble:
-      if (version >= 8) return 'Reserved action type 4';
-      if (nonZeroAux || b1 < 1 || b1 > 7) return 'Invalid mouse button mask';
-      return { type: 'mouseClick', buttons: b1, clicks: 2 };
     case ActionCode.MouseHold:
     case ActionCode.MouseToggle:
       if (rotation && type === ActionCode.MouseHold) return 'Mouse hold bound to rotation';
@@ -124,7 +130,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
@@ -157,7 +163,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const c = image[poolStart + i]!;
     if (c !== 0 && c !== 9 && c !== 10 && (c < 32 || c > 126)) return fail('malformed', `Unsupported string byte 0x${c.toString(16)} in pool.`);
   }
-  for (let i = end; i < IMAGE_SIZE; i++) {
+  for (let i = end; image[2]! < 11 && i < IMAGE_SIZE; i++) {
     if (image[i] !== 0) return fail('malformed', `Non-zero padding at byte ${i}.`);
   }
 
@@ -225,10 +231,39 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       ...(scope ? { layer: scope - 1 } : {}), consumeInput: !!(metadata & 64), resetOnInput: !!(metadata & 128), action, resumeAction });
   }
 
+  const macros: { actions: Action[] }[] = [];
+  if (image[2]! >= 11) {
+    const steps = new Map<number, Action>();
+    const starts = new Set<number>();
+    let beginning = true;
+    let offset = end;
+    for (; offset + 1 < IMAGE_SIZE; offset += 2) {
+      const step = decodeAction(image[offset]!, image[offset + 1]!, layerCount, true, pool, image[2]!);
+      if (typeof step === 'string' || step.type === 'macro') return fail('malformed', `Macro tail at byte ${offset}: ${typeof step === 'string' ? step : 'Nested macro'}.`);
+      steps.set(offset, step);
+      if (step.type === 'none') beginning = true;
+      else if (beginning) { starts.add(offset); beginning = false; }
+    }
+    if (offset < IMAGE_SIZE && image[offset]) return fail('malformed', 'Non-zero unpaired macro byte.');
+    const bindings = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action), ...timedActions.flatMap(t => [t.action, t.resumeAction])];
+    for (const action of bindings) if (action.type === 'macro') starts.add(action.macro);
+    const addresses = [...starts].sort((a, b) => a - b);
+    for (const address of addresses) {
+      const actions: Action[] = [];
+      for (let cursor = address; cursor + 1 < IMAGE_SIZE; cursor += 2) {
+        const step = steps.get(cursor)!;
+        if (step.type === 'none') break;
+        actions.push({ ...step });
+      }
+      macros.push({ actions });
+    }
+    for (const action of bindings) if (action.type === 'macro') action.macro = addresses.indexOf(action.macro);
+  }
+
   if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');
 
   return {
     ok: true,
-    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, rainbowSpeed: configurableRainbow ? image[8]! >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED, layers, chords, ...(timedActions.length ? { timedActions } : {}) },
+    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, rainbowSpeed: configurableRainbow ? image[8]! >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED, layers, chords, ...(timedActions.length ? { timedActions } : {}), ...(macros.length ? { macros } : {}) },
   };
 }

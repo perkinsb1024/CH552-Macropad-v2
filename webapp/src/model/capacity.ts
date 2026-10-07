@@ -8,13 +8,14 @@ export interface Capacity {
   chords: number;
   strings: number;
   timedActions: number;
+  macros: number;
   used: number;
   remaining: number;
   /** Distinct strings in pool order. */
   pool: string[];
 }
 
-/** Every string action in canonical pool order: layers (inputs in record order), then chords by identifier. */
+/** Every string action in canonical pool order: layers (inputs in record order), then chords by identifier, timers, and macro steps. */
 export function stringActionsInOrder(profile: Profile): string[] {
   const out: string[] = [];
   const visit = (a: Action) => {
@@ -28,6 +29,7 @@ export function stringActionsInOrder(profile: Profile): string[] {
   }
   for (const chord of sortedChords(profile)) visit(chord.action);
   for (const timer of profile.timedActions ?? []) { visit(timer.action); visit(timer.resumeAction); }
+  for (const macro of profile.macros ?? []) macro.actions.forEach(visit);
   return out;
 }
 
@@ -55,6 +57,10 @@ export function computeCapacity(profile: Profile): Capacity {
   const chords = CHORD_ENTRY_SIZE * profile.chords.length;
   const strings = pool.reduce((sum, s) => sum + encodedLength(s), 0);
   const timedActions = TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0);
-  const used = header + layers + chords + timedActions + strings;
-  return { header, layers, chords, timedActions, strings, used, remaining: IMAGE_SIZE - used, pool };
+  let macros = (profile.macros ?? []).reduce((sum, macro) => sum + 2 * macro.actions.length + 2, 0);
+  const withTerminators = header + layers + chords + timedActions + strings + macros;
+  // The image boundary itself terminates the final nonempty sequence.
+  if (profile.macros?.at(-1)?.actions.length && (withTerminators === 129 || withTerminators === 130)) macros -= 2;
+  const used = header + layers + chords + timedActions + strings + macros;
+  return { header, layers, chords, timedActions, macros, strings, used, remaining: IMAGE_SIZE - used, pool };
 }

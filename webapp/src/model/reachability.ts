@@ -67,6 +67,21 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
       next.base = next.oneShotReturn;
       next.oneShotReturn = -1;
     }
+    if (action.type === 'macro') {
+      const macro = profile.macros?.[action.macro];
+      if (!macro) return next;
+      let running = next;
+      for (let repeat = 0; repeat < Math.min(16, action.repeats); repeat++) {
+        for (const step of macro.actions) {
+          if (step.type === 'macro') return; // Malformed editor state: never recurse.
+          const advanced = transition(running, step, true);
+          if (!advanced) return;
+          if (effectiveLayer(advanced) !== effectiveLayer(running)) return advanced;
+          running = advanced;
+        }
+      }
+      return running;
+    }
     let target: number;
     if (action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') {
       if (!Number.isInteger(action.offset) || action.offset < -6 || action.offset > 6) return;

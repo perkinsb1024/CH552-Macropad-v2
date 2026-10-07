@@ -46,6 +46,14 @@ export function ViewerTimers() {
   </section>;
 }
 
+export function ViewerMacros() {
+  const macros = profile.value!.macros ?? [];
+  if (!macros.length) return null;
+  return <section class="card viewer-bindings"><header class="card-head"><h2>Macros</h2></header>
+    {macros.map((macro, index) => <div><h3>Macro {index + 1}</h3><ol>{macro.actions.map(action => <li><ActionLabel action={action} /></li>)}</ol></div>)}
+  </section>;
+}
+
 export function ProfileViewer() {
   useEffect(followDeviceLayer, []);
   useEffect(() => {
@@ -86,7 +94,7 @@ export function ProfileViewer() {
           <DeviceView readOnly />
           <p class="muted viewer-indicator">Layer indicator: {indicatorMode}</p>
         </section>
-        <div class="viewer-extras"><ViewerChords /><ViewerTimers /></div>
+        <div class="viewer-extras"><ViewerChords /><ViewerTimers /><ViewerMacros /></div>
       </>}
     </main>
     <Toasts />

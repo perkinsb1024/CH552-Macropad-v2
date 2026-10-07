@@ -28,7 +28,7 @@ describe('default profile image headers', () => {
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[2]).toBe(10);
+    expect(upgraded[2]).toBe(11);
     expect(upgraded[8]).toBe(legacy[8]! | 0x60);
     expect([...upgraded.subarray(9)]).toEqual([...encodeProfile(profile).subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
@@ -45,12 +45,12 @@ describe('default profile image headers', () => {
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 0A 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 0B 01 00 00');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 0A 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 0B 01 00 01');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -77,6 +77,8 @@ describe('default profile image headers', () => {
 
 describe('every action type round-trips', () => {
   const samples: Action[] = [
+    { type: 'macro', macro: 0, repeats: 1 },
+    { type: 'pause', ticks: 255 },
     { type: 'none' },
     { type: 'keyTap', usage: 0x04, modifiers: 0 },
     { type: 'keyTap', usage: 0, modifiers: 15 },
@@ -114,6 +116,7 @@ describe('every action type round-trips', () => {
     for (let start = 0; start < samples.length; start += 24) {
       const profile = defaultProfile(VARIANT_SIX_KEYS);
       profile.layers = [0, 1, 2, 3].map(() => emptyLayer(VARIANT_SIX_KEYS));
+      profile.macros = [{ actions: [{ type: 'keyTap', usage: 4, modifiers: 0 }] }];
       samples.slice(start, start + 24).forEach((a, i) => {
         profile.layers[Math.floor(i / 6)]!.keys[i % 6] = a;
       });
@@ -126,6 +129,7 @@ describe('every action type round-trips', () => {
   it('blank actions are valid for buttons', () => {
     for (const d of ACTION_DESCRIPTORS) {
       const profile = defaultProfile(VARIANT_SIX_KEYS);
+      profile.macros = [{ actions: [] }];
       profile.layers[0]!.keys[0] = blankAction(d.type);
       expect(validateProfile(profile)).toEqual([]);
     }
@@ -137,12 +141,12 @@ describe('pointer hold auxiliary bit', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1 };
     let image = encodeProfile(profile);
-    expect([...image.subarray(9, 11)]).toEqual([0x0d, 0xff]);
+    expect([...image.subarray(9, 11)]).toEqual([0x0c, 0xff]);
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
-    expect([...image.subarray(9, 11)]).toEqual([0x1d, 0xff]);
-    expect(image[2]).toBe(10);
-    image[9] = 0x2d;
+    expect([...image.subarray(9, 11)]).toEqual([0x1c, 0xff]);
+    expect(image[2]).toBe(11);
+    image[9] = 0x2c;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
   });
@@ -151,7 +155,7 @@ describe('pointer hold auxiliary bit', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers[0]!.clockwise = { type: 'mouseY', delta: 1 };
     const image = encodeProfile(profile);
-    image[23] = 0x1e;
+    image[23] = 0x1d;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
     profile.layers[0]!.clockwise = { type: 'mouseY', delta: 1, hold: true };
@@ -174,7 +178,7 @@ describe('relative layer action', () => {
       const profile = defaultProfile(VARIANT_SIX_KEYS);
       profile.layers[0]!.keys[0] = { type: 'relativeLayer', offset };
       const image = encodeProfile(profile);
-      expect(image[9]).toBe(0x0c);
+      expect(image[9]).toBe(0x0b);
       expect(image[10]).toBe(offset & 0xff);
       const decoded = decodeImage(image);
       expect(decoded.ok && decoded.profile.layers[0]!.keys[0]).toEqual({ type: 'relativeLayer', offset });
@@ -183,7 +187,7 @@ describe('relative layer action', () => {
   it('rejects offsets outside -6 through 6', () => {
     for (const byte of [7, 0xf9]) {
       const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-      image[9] = 0x0c;
+      image[9] = 0x0b;
       image[10] = byte;
       sealImage(image);
       expect(decodeImage(image).ok).toBe(false);
@@ -207,7 +211,7 @@ describe('rotation restrictions', () => {
   });
   it('decoder rejects hold on rotation', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    image[23] = 0x05; // clockwise → mouse hold
+    image[23] = 0x04; // clockwise → mouse hold
     image[24] = 1;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -312,7 +316,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 11;
+    image[2] = 12;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });

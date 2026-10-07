@@ -13,6 +13,8 @@ export interface ActionContext {
   /** Encoder rotation: actions needing a physical release are not allowed. */
   rotation: boolean;
   timed?: boolean;
+  macro?: boolean;
+  macroCount?: number;
 }
 
 /** Returns a problem description, or null when the action is legal in this context. */
@@ -23,7 +25,13 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     const label = action.type === 'scroll' ? 'Scroll hold' : action.type === 'mouseX' || action.type === 'mouseY' ? 'Pointer hold' : actionDescriptor.label;
     return `${label} needs a release and cannot be bound to ${ctx.timed ? 'a timed action' : 'rotation'}.`;
   }
+  if (ctx.macro && (action.type === 'macro' || action.type === 'none')) return 'Macro steps cannot execute another macro or be Nothing. Use Pause for a delay.';
+  if (ctx.macro && actionNeedsRelease(action)) return 'Macro steps cannot require a physical release.';
   switch (action.type) {
+    case 'macro':
+      if (!Number.isInteger(action.macro) || action.macro < 0 || (ctx.macroCount !== undefined && action.macro >= ctx.macroCount)) return 'Choose an existing macro.';
+      return Number.isInteger(action.repeats) && action.repeats >= 1 && action.repeats <= 16 ? null : 'Repeat count must be 1–16.';
+    case 'pause': return Number.isInteger(action.ticks) && action.ticks >= 0 && action.ticks <= 255 ? null : 'Pause must be 0–255 ticks of 16 ms.';
     case 'ledControl': return ledProblem(action.command, action.value, action.brightness);
     case 'none':
       return null;
@@ -72,6 +80,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
 export function slotLabel(slot: Slot): string {
   const layer = `Layer ${slot.layer + 1}`;
   switch (slot.kind) {
+    case 'macro': return `Macro ${slot.index + 1} · Step ${slot.step + 1}`;
     case 'timed':
       return `Timed action ${slot.index + 1}${slot.resume ? ' · Resume' : ''}`;
     case 'key':
@@ -129,7 +138,7 @@ export function validateProfile(profile: Profile): Issue[] {
       if (!Number.isInteger(led) || led < 0 || led > 15) issues.push({ where: `Layer ${li + 1} · LED ${i + 1}`, message: 'Palette index must be 0–15.' });
     });
     const check = (action: Action, slot: Slot, rotation: boolean) => {
-      const problem = actionProblem(action, { layerCount, rotation });
+      const problem = actionProblem(action, { layerCount, rotation, macroCount: profile.macros?.length ?? 0 });
       if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
     };
     layer.keys.forEach((a, i) => check(a, { kind: 'key', layer: li, index: i }, false));
@@ -159,7 +168,7 @@ export function validateProfile(profile: Profile): Issue[] {
       if (globalPairs.has(pair)) issues.push({ where, message: 'Only one global chord can use this key pair.', slot });
       globalPairs.add(pair);
     }
-    const problem = actionProblem(chord.action, { layerCount, rotation: false });
+    const problem = actionProblem(chord.action, { layerCount, rotation: false, macroCount: profile.macros?.length ?? 0 });
     if (problem) issues.push({ where, message: problem, slot });
   }
 
@@ -177,14 +186,21 @@ export function validateProfile(profile: Profile): Issue[] {
     for (const resume of [false, true]) {
       const slot: Slot = { kind: 'timed', layer: 0, index, resume };
       const action = resume ? timer.resumeAction : timer.action;
-      const problem = action ? actionProblem(action, { layerCount, rotation: false, timed: true }) : 'Choose an action.';
+      const problem = action ? actionProblem(action, { layerCount, rotation: false, timed: true, macroCount: profile.macros?.length ?? 0 }) : 'Choose an action.';
       if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
     }
   });
 
+  for (const [index, macro] of (profile.macros ?? []).entries()) {
+    macro.actions.forEach((action, step) => {
+      const slot: Slot = { kind: 'macro', layer: 0, index, step };
+      const problem = actionProblem(action, { layerCount, rotation: false, macro: true });
+      if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
+    });
+  }
   const capacity = computeCapacity(profile);
   if (capacity.remaining < 0) {
-    issues.push({ where: 'Storage', message: `Profile needs ${capacity.used} bytes but the device holds 128. Remove ${-capacity.remaining} byte${capacity.remaining === -1 ? '' : 's'} of timers, chords or text.` });
+    issues.push({ where: 'Storage', message: `Profile needs ${capacity.used} bytes but the device holds 128. Remove ${-capacity.remaining} byte${capacity.remaining === -1 ? '' : 's'} of macros, timers, chords or text.` });
   }
   return issues;
 }

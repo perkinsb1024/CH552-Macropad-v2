@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 **Universal Macropad**. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v10.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v11.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -97,7 +97,7 @@ when webapp changes are pushed to `main`, or when run manually. In the repositor
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
 
-The active format 10 editor is served at the project site's root. Frozen
+The active format 11 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -111,10 +111,11 @@ is rebuilt from dependencies in CI.
 - `versions/format-v5/` serves the frozen v5 editor from the revision recorded in its manifest.
 - `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
 - `versions/format-v8/` serves the frozen published-v8 editor and live view, with provenance in its manifest.
+- `versions/format-v10/` serves the frozen v10 editor and live view built before v11 changes.
 - `versions/format-v9/` serves the frozen v9 editor and live view built before the v10 changes.
 - `versions/format-v7/` serves the frozen v7 editor and live view from commit `196e81e`.
 
-The footer links to the archive list. Detecting format 2–9 firmware presents a
+The footer links to the archive list. Detecting format 2–10 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -122,13 +123,13 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5/v6/v7/v8/v9 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10 drafts without overwriting or clearing the archived namespace.
 
-Version 2–9 binary profiles, version 1–9 JSON files, and older drafts can still be
-migrated into the active format 10 editor after a firmware upgrade. Bindings and
+Version 2–10 binary profiles, version 1–10 JSON files, and older drafts can still be
+migrated into the active format 11 editor after a firmware upgrade. Bindings and
 colors are preserved; **Blink once** becomes the timed indication and transparency
 defaults to off. **Rainbow phase spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to store v10. Older stored profiles remain readable but inactive until saved as v10.
+through the active editor to store v11. Older stored profiles remain readable but inactive until saved as v11.
 
 **LED control** bindings expose existing LED commands plus **Set all LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
@@ -182,10 +183,10 @@ preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
 visits. Repeating a persistent **Previous layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
-The protocol simulator accepts only valid v10 profiles and round-trips the new
+The protocol simulator accepts only valid v11 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Hardware testing remains necessary for those effects. Bundled `../profiles/*.json`
-files use v7 JSON and are migrated to v10, then checked against the firmware parser in the regression suite.
+files use v7 JSON and are migrated to v11, then checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
 
@@ -205,7 +206,7 @@ and media controls. Acceleration is not part of this merged build.
 v8 writes **Type Text** with first byte `0x10`; old type-9 text is decoded according
 to its source version before re-encoding. **None** remains `00 00`. Binary, JSON,
 draft and raw-device migration cover every binding location, including timers.
-Legacy firmware connects through its frozen editor, while old flash on v10 can
+Legacy firmware connects through its frozen editor, while old flash on v11 can
 be read and migrated without being automatically overwritten.
 
 ## Mouse Clicks (v8+)
@@ -238,13 +239,13 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 The release HEX files and bundled uploader use v10 firmware from revision
 `30101c94`: [three-key](../releases/ch552-macropad-3-key-30101c94.hex) and
-[six-key](../releases/ch552-macropad-6-key-30101c94.hex). Use the latest editor
-with these releases. The full v10 hardware suite passed; the six-key stack sanity
+[six-key](../releases/ch552-macropad-6-key-30101c94.hex). Use the frozen v10 editor
+with these releases. Current source/editor use v11; no v11 release has been generated. The full v10 hardware suite passed; the six-key stack sanity
 check observed 39 bytes used out of 75 available. Frozen editors remain available
 for older firmware, including format-v9. The old-firmware warning links to both
 the matching archive and the firmware updater. Back up older profiles before
 updating, then load and explicitly save them with the latest editor to migrate
-to v10. Migration preserves timer durations; oversized profiles remain editable
+to v11. Migration preserves timer durations; oversized profiles remain editable
 but must be reduced before saving.
 
 ## Horizontal Scrolling (v9)
@@ -268,3 +269,37 @@ open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**
 next to its click counter, so held and toggled outputs can be checked. Releases
 outside the test area are tracked; leaving the browser clears the display until
 another mouse event reports its current button state.
+
+## Macros (v11)
+
+**Macros** adds numbered definitions with ordered steps. Select a step to use the
+common **Action editor**; move it up/down, swap/clipboard compatible actions, or
+remove it. **Execute macro** selects a definition and **Repeat count** (1–16).
+**Pause duration** is 0–4080 ms in 16 ms increments. Held actions, nested macros
+and **Nothing** steps are unavailable. Deleting a macro clears its bindings and
+renumbers later references; undo restores both. The live viewer lists its steps.
+
+JSON v11 adds optional `macros: [{ actions: [...] }]`, invocation
+`{ type: "macro", macro: 0, repeats: 1 }`, and pause `{ type: "pause", ticks: 16 }`.
+Macro indices are zero-based. On every encode, definitions follow the shared
+string pool and indices become absolute addresses. No reserved macro storage,
+count or directory is needed. **Device storage** counts two bytes per step plus
+two per terminator, omitting the last terminator at an exact image boundary.
+Macro text is deduplicated with text in all other bindings. Definitions fit the
+same shared 128 bytes as layers, chords and six-byte timers.
+
+The decoder remaps v10 action types `0x5–0xF` to v11 `0x4–0xE` in every binding;
+**Execute macro** becomes `0xF`. It retains auxiliary values and parameters.
+V10 profile migration needs no additional bytes. Older text/double-click action
+maps and five-byte timers still migrate according to their source version.
+V11 drafts recover older drafts without modifying their namespaces. Oversized
+imports remain editable/exportable and saving is blocked until repaired.
+
+One macro streams from the active image; its invocation consumes one event slot.
+Long sequences delay later queued output. Overflow drops complete invocations,
+never a partial expansion. Physical/timer immediate actions can interleave;
+effective layer changes, configuration application and USB reset cancel playback.
+Macro mouse toggles share a private ownership lane; held actions retain their
+physical ownership. Layer-route analysis follows steps until cancellation.
+See [the complete v11 reference](../protocol/config-v11.md) and
+[implementation and optimization notes](../protocol/macros-implementation.md).

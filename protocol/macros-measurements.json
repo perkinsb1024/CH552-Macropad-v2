@@ -1184,5 +1184,34 @@
         "ERROR: Insufficient ROM/EPROM/FLASH memory."
       ]
     }
+  ],
+  "prototype_revision": "38e5816",
+  "final_v11": [
+    {
+      "variant": 0,
+      "format": 11,
+      "macro_action": 15,
+      "flash": 14304,
+      "spare": 32,
+      "internal": 179,
+      "stack": 77,
+      "paged": 108,
+      "external": 369,
+      "absolute": 128,
+      "external_total": 605
+    },
+    {
+      "variant": 1,
+      "format": 11,
+      "macro_action": 15,
+      "flash": 14300,
+      "spare": 36,
+      "internal": 176,
+      "stack": 80,
+      "paged": 108,
+      "external": 360,
+      "absolute": 128,
+      "external_total": 596
+    }
   ]
 }

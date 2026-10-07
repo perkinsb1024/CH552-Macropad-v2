@@ -12,13 +12,15 @@ export interface ActionDescriptor {
   type: ActionType;
   code: ActionCode;
   label: string;
-  group: 'Keyboard' | 'Mouse' | 'Media' | 'Text' | 'Layers' | 'LED control' | 'None';
+  group: 'Keyboard' | 'Mouse' | 'Media' | 'Text' | 'Layers' | 'LED control' | 'None' | 'Macros';
   /** Whether the action needs a physical release, and so cannot be bound to rotation. */
   needsRelease: boolean;
   hint: string;
 }
 
 export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
+  { type: 'macro', code: ActionCode.Macro, label: 'Execute macro', group: 'Macros', needsRelease: false, hint: 'Run an ordered sequence 1–16 times. Define its steps in Macros.' },
+  { type: 'pause', code: ActionCode.Pause, label: 'Pause', group: 'Macros', needsRelease: false, hint: 'Wait 0–4080 ms in 16 ms steps before continuing queued playback.' },
   { type: 'ledControl', code: ActionCode.LedControl, label: 'LED control', group: 'LED control', needsRelease: false, hint: 'Adjust global lighting at runtime; resets on configuration save or USB reset.' },
   { type: 'none', code: ActionCode.None, label: 'Nothing', group: 'None', needsRelease: false, hint: 'Leave this input unassigned.' },
   { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
@@ -63,6 +65,8 @@ export function relativeTargetLayer(source: number, offset: number, layerCount: 
 /** A fresh, valid instance of the given action type. */
 export function blankAction(type: ActionType): Action {
   switch (type) {
+    case 'macro': return { type, macro: 0, repeats: 1 };
+    case 'pause': return { type, ticks: 16 };
     case 'ledControl': return { type, command: 'commonPresetRelative', value: 1 };
     case 'none':
       return { type };
@@ -112,6 +116,8 @@ export function mouseButtonNames(mask: number): string[] {
 /** Short label used on key caps and lists. */
 export function summarize(action: Action): string {
   switch (action.type) {
+    case 'macro': return `Macro ${action.macro + 1}${action.repeats > 1 ? ` × ${action.repeats}` : ''}`;
+    case 'pause': return `Pause ${action.ticks * 16} ms`;
     case 'ledControl': return ledSummary(action.command, action.value, false, action.brightness);
     case 'none':
       return '—';

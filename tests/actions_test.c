@@ -692,7 +692,7 @@ static void testRolloverAndSequence(void) {
     assert(reports[count - 1][8] == 0x0A); // Seventh enters the free slot.
 
     reset();
-    activeConfig[9] = 0x18; // Consumer usage 0x1E9
+    activeConfig[9] = 0x10 | CONFIG_ACTION_CONSUMER; // Consumer usage 0x1E9
     activeConfig[10] = 0xE9;
     actionsPress(0, 0);
     actionsPoll(0);
@@ -1267,9 +1267,9 @@ static void testHighLayerActions(void) {
 
 static void testLedDispatch(void) {
     reset();
-    activeConfig[9] = 0x1F; activeConfig[10] = CONFIG_LED_PRESET_RELATIVE;
-    activeConfig[23] = 0x9F; activeConfig[24] = CONFIG_LED_PHASE_RELATIVE;
-    activeConfig[25] = 0x7F; activeConfig[26] = CONFIG_LED_SPEED_RELATIVE;
+    activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[10] = CONFIG_LED_PRESET_RELATIVE;
+    activeConfig[23] = (0x90 | CONFIG_ACTION_LED_CONTROL); activeConfig[24] = CONFIG_LED_PHASE_RELATIVE;
+    activeConfig[25] = (0x70 | CONFIG_ACTION_LED_CONTROL); activeConfig[26] = CONFIG_LED_SPEED_RELATIVE;
     blocked = 1;
     actionsPress(0, 0);
     assert(ledCalls == 1 && ledCommand == CONFIG_LED_PRESET_RELATIVE && ledValue == 1 && count == 0);
@@ -1287,7 +1287,7 @@ static void testLedDispatch(void) {
     activeConfig[3] = 1; activeConfig[5] = 2; activeConfig[8] = 8;
     activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
     activeConfig[53] = 0x15; // Keys 1+2, layer 1.
-    activeConfig[54] = 0xFF; activeConfig[55] = CONFIG_LED_BOTH_SET;
+    activeConfig[54] = 0xF0 | CONFIG_ACTION_LED_CONTROL; activeConfig[55] = CONFIG_LED_BOTH_SET;
     actionsInit();
     blocked = 1;
     actionsPress(0, 0); actionsRelease(0);
@@ -1363,7 +1363,7 @@ static void testConsumeWake(void) {
     // Consuming the wake binding must not consume an already-armed one-shot layer.
     reset();
     activeConfig[3] = 1 | (1 << 6);
-    activeConfig[9] = 0x1A; activeConfig[10] = 1;
+    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
     activeConfig[33] = CONFIG_ACTION_KEY_TAP; activeConfig[34] = 4;
     timer = configTimedOffset();
     activeConfig[timer + 5] = CONFIG_TIMED_CONSUME;
@@ -1397,11 +1397,11 @@ int main(void) {
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
 #if CONFIG_TIMED_RESUME
-    activeConfig[timer + 3] = 0xFF;
+    activeConfig[timer + 3] = 0xF0 | CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 4] = CONFIG_LED_INDICATOR_SET;
 #endif
     activeConfig[timer + CONFIG_TIMED_SIZE] = 1; activeConfig[timer + CONFIG_TIMED_SIZE + 5] = 128; // Every two ticks, reset on input.
-    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = 0x1F;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = (0x10 | CONFIG_ACTION_LED_CONTROL);
     activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
     actionsTimedReset(254);
     actionsTimedPoll(254);
@@ -1439,7 +1439,7 @@ int main(void) {
     reset();
     activeConfig[3] = 1 | (1 << 6); // Two layers, one timer.
     memset(activeConfig + 31, 0, 22);
-    activeConfig[9] = 0x1A;
+    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER;
     activeConfig[10] = 1;
     activeConfig[33] = CONFIG_ACTION_KEY_TAP;
     activeConfig[34] = 4;
@@ -1475,7 +1475,7 @@ int main(void) {
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
     activeConfig[timer + CONFIG_TIMED_SIZE] = 2; activeConfig[timer + CONFIG_TIMED_SIZE + 5] = 128;
-    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = 0x1F;
+    activeConfig[timer + CONFIG_TIMED_SIZE + 1] = (0x10 | CONFIG_ACTION_LED_CONTROL);
     activeConfig[timer + CONFIG_TIMED_SIZE + 2] = CONFIG_LED_KEY_SET;
     actionsTimedReset(0);
     actionsTimedPoll(1);

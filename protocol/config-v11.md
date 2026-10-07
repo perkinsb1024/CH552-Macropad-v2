@@ -14,11 +14,11 @@
 | Palette version | 3 |
 | HID transport version | 1 |
 
-This is the standalone wire reference for the recommended experimental firmware
-on `experiment/macros`: variable sequences, 1–16 repeats, and **Pause** support.
-It is a firmware prototype. The existing web configurator and bundled releases
-remain format 10 and cannot edit or save these macros. No v11 JSON/draft schema
-or editor has been implemented. UI names below identify action behavior.
+This standalone reference specifies format 11 firmware and its web configurator:
+dynamically stored macros, 1–16 executions per invocation, and **Pause** actions.
+Timed actions use six bytes each. The checked-in release HEX files and bundled
+uploader firmware remain v10; v11 is ready for hardware validation on
+`experiment/macros`, with no v11 release generated.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -32,16 +32,115 @@ version 1. The recommended firmware accepts only v11. Older DataFlash remains
 readable and unchanged, with physical inputs inactive until a valid v11 image
 is explicitly uploaded. Updating firmware does not migrate or erase a profile.
 
-To migrate a validated v10 binary without macros, retain its header fields,
-layers, chords, timers and strings; zero every byte after the used string pool;
-change byte 2 to 11; then recalculate the CRC defined below. V10's ignored padding
-must be cleared before it can become v11's macro tail. Back up the original first.
-The current editor does not perform this migration. Older source formats require
-their own action decoding before producing the complete layout defined here.
+The editor reads binary formats 2–11 and JSON versions 1–11, decodes actions
+using the source version, then encodes only v11. For v10, old low-nibble types
+`0x5–0xF` become `0x4–0xE`; high auxiliary bits and parameters keep their meanings.
+Old type `0xF` is **LED control**, never **Execute macro**. Remap every layer input,
+chord action, expiry action and next-input action. Header fields, six-byte timer
+intervals/scopes, layer settings, colors and strings are preserved. Rebuild the
+canonical string pool, clear the remaining tail, set byte 2 to 11 and recompute
+CRC. V11 migration from v10 adds no configuration bytes when no macros are defined.
 
-The comparison harness also builds a fixed-pair format 12 and a counted format 13.
-Their wire encodings differ; they are separate experiments, not v11 variants
-that can be interchanged with the recommended firmware.
+For formats 2–5, decode their original relative/pointer action allocation first.
+For formats 2–7, old type 4 is a double click and old type 9 is text. For formats
+8–10, type 4 is reserved and type 9 is **Consumer hold**. Existing click counts,
+consumer usages and scroll axis/hold flags survive migration. Binary formats 2–4
+lack rainbow settings and default to phase **60°** and speed **Fast**. Binary v5
+zero speed bits still select **Extra fast**. JSON accepts historical speed names
+`double`, `normal`, `half`, `quarter` at indices 0–3, and phase `120` as an alias
+for `150`. JSON before v5 defaults phase to **60°**; absent speed defaults **Fast**.
+
+V7–v9 five-byte timer records become six-byte records: multiply their 1–64 ticks
+by 32 exactly to preserve durations, retain both actions and flags, and omit scope
+for global operation. V10/v11 ticks are never scaled. If migration exceeds 128
+bytes, preserve all actions, allow JSON export/editing, and block saving until
+the user reduces storage. No automatic timer/text deletion occurs.
+
+Export a JSON/raw backup with the matching editor before updating firmware.
+Read/import the profile after updating, then explicitly **Save to device** to
+reactivate inputs. Firmware never migrates flash on its own. The active editor
+links older firmware to frozen configurators for formats 2–10 and does not read
+or write their profiles through a v11 connection.
+
+## JSON, drafts and editor behavior
+
+Exports identify `format: "universal-macropad-profile"` and `version: 11`.
+`variant` is `six-key` or `three-key`; `startupLayer` is zero-based;
+`transparentBlack` is boolean; `chordWindowMs` is 0–75 in steps of 5;
+`rainbowPhaseDegrees` is 0, 30, 60 or 150; `rainbowSpeed` is `extra fast`, `fast`,
+`slow` or `extra slow`. `layers` contains the physical `keys` list,
+`encoderButton`, `clockwise`, `counterclockwise`, palette-name `leds`, boolean
+`bootloaderFromRun`, numeric `indicatorBehavior` (0–3), `indicatorColor` (0–15),
+and boolean `indicatorFullBrightness`. `chords` contains zero-based `layer`,
+`keys: [keyA, keyB]`, boolean `global` and `action`. Optional `localMetadata`
+contains `profileName` and `layerNames`; annotations do not reach the device.
+
+Optional `timedActions` is a list of at most four entries. Each has `ticks`
+(1–2048), boolean `resetOnInput`, boolean `consumeInput`, `action`, `resumeAction`,
+and optional zero-based `layer`. Omit `layer` for **All layers**. Each entry uses
+six device bytes. Layer reordering updates explicit targets and timer scope;
+removing a scoped layer preserves the timer with an invalid scope until reassigned.
+
+Optional `macros` is an ordered list of `{ "actions": [...] }` objects. Its
+zero-based array index is the editor macro number minus one. An invocation is
+`{ "type": "macro", "macro": 0, "repeats": 1 }`, with an existing macro index and
+1–16 repeats (JSON import defaults omitted repeats to 1). A pause is
+`{ "type": "pause", "ticks": 16 }`, with 0–255 ticks of 16 ms. These names and
+fields are semantic JSON, independent of on-device action numbering/addresses.
+Macros/pauses in JSON versions before 11 reject. Nested invocations, held actions
+and **Nothing** steps reject; **Nothing** is a wire terminator, so use a zero
+**Pause** for an editable no-output step. Empty definitions are allowed.
+
+Other action JSON objects use `type` plus the following fields:
+
+| Types | Fields |
+| --- | --- |
+| `none` | None |
+| `keyTap`, `keyHold` | `usage` (supported raw key usage), `modifiers` (0–15) |
+| `mouseClick` | `buttons` (1–7), optional `clicks` (1–16, default 1) |
+| `mouseHold`, `mouseToggle` | `buttons` (1–7) |
+| `scroll` | `delta` (-127–127), optional boolean `hold`, optional boolean `horizontal` |
+| `mouseX`, `mouseY` | `delta` (-127–127), optional boolean `hold` |
+| `consumer`, `consumerHold` | `usage` (1–4095) |
+| `string` | `text` (printable ASCII, tab or newline) |
+| `setLayer`, `oneShotSetLayer`, `momentaryLayer` | `layer` (zero-based target; 255 only for the first two) |
+| `relativeLayer`, `oneShotRelativeLayer` | `offset` (-6–6) |
+| `ledControl` | `command`, `value` (number or `asConfigured`), optional `brightness: "dim"` for temporary effects |
+
+LED command names are `rainbowPhaseSet`, `rainbowPhaseRelative`, `rainbowSpeedSet`,
+`rainbowSpeedRelative`, `brightnessIndicatorSet`, `brightnessIndicatorRelative`,
+`brightnessKeySet`, `brightnessKeyRelative`, `brightnessBothSet`,
+`brightnessBothRelative`, `restoreAll`, `commonPresetSet`, `commonPresetRelative`,
+`commonPresetToggle`, `effectRestore`, `effectOn`, and `effectBlink1`–`effectBlink8`.
+Their command/value validation is specified in the LED section below. The editor
+also rejects zero-delta movement and a keyboard action with neither key nor modifier;
+firmware accepts those no-output records. Text imports normalize CRLF/CR to LF.
+
+The editor lays out every macro in list order after the deduplicated string
+pool. It resolves indices to absolute byte addresses on every encode, so changes
+to layers, chords, timers, text and steps cannot leave stale pointers. Normally
+it writes one `00 00` terminator per macro. The final nonempty macro may omit its
+terminator when its last step reaches byte 126 or 127. **Device storage** accounts
+for the same boundary optimization. Macro strings share the ordinary string pool.
+
+**Macros** supports adding/removing definitions and steps, moving steps up/down,
+selecting steps in the common **Action editor**, and drag/clipboard action swaps.
+**Execute macro** exposes **Macro** and **Repeat count**; **Pause duration** uses
+16 ms increments. Deleting a macro clears its invocations and renumbers later
+references. Undo restores both definitions and bindings. Moving/removing layers
+updates explicit targets in macro steps. Layer-route analysis follows macro
+steps only until their first effective layer change, where firmware cancels them.
+The live viewer lists macro steps without edit controls.
+
+Binary readback discovers nonempty sequences and referenced empty/suffix
+sequences in ascending address order. Ordinal numbers may change if unreferenced
+empty definitions disappear; their absence has no device behavior. A noncanonical
+shared suffix becomes its own editable definition, so normalization may need
+more storage; oversized readbacks remain editable/exportable until reduced.
+
+V11 drafts use `universal-macropad:format-v11:` and recover v10 and older drafts
+without changing their original namespaces. Source-version migration runs once;
+current JSON/drafts retain v11 timer units. Oversized drafts remain editable.
 
 ## Header and rainbow settings
 
@@ -55,7 +154,7 @@ The nine-byte header is:
 | 4 | **String**-pool length and timer count | Bits 0–6: used pool bytes<br>Bit 7: high bit of timer count |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | **Chord window** and rainbow settings | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `11` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra fast**, `01` = **Fast**, `11` = **Slow**, `11` = **Extra slow**) |
+| 8 | **Chord window** and rainbow settings | Bits 0–3: chord duration in 5 ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra slow**) |
 
 Timer count is `(byte3 >> 6) | ((byte4 >> 7) << 2)` and must be 0–4.
 Layer and startup-layer indices are zero-based. The startup layer must exist.
@@ -84,7 +183,7 @@ The frame interval is independent of phase spacing:
 | --- | --- | --- | --- |
 | `00` | **Extra fast** | 4 ms | 1.024 s |
 | `01` | **Fast** (default) | 6 ms | 1.536 s |
-| `11` | **Slow** | 10 ms | 2.560 s |
+| `10` | **Slow** | 10 ms | 2.560 s |
 | `11` | **Extra slow** | 18 ms | 4.608 s |
 
 Spacing applies to every layer's rainbow indication, including timed and blinking
@@ -187,18 +286,18 @@ The action types are:
 | 1 | **Keyboard tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
 | 2 | **Keyboard hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
 | 3 | **Mouse click** | **Click count** minus one (`0`–`15` = 1–16 clicks) | Button mask 1–7 |
-| 4 | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
-| 5 | **Mouse hold** | `0` | Button mask 1–7 |
-| 6 | **Mouse toggle** | `0` | Button mask 1–7 |
-| 7 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
-| 8 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
-| 9 | **Consumer hold** | High four bits of the usage | Low eight bits of the usage; button release ends the hold |
-| A | **Set layer** | `0` for persistent; `1` for one-shot | Layer index, or `0xFF` for previous persistent layer |
-| B | **Momentary layer** | `0` | Layer index |
-| C | **Relative layer** | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -6 to +6; added to the selected base-layer index with wraparound. `0` has no effect. |
-| D | **Mouse X movement** | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
-| E | **Mouse Y movement** | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
-| F | **LED control** | Value or signed step (see below) | Full command byte (see below) |
+| 4 | **Mouse hold** | `0` | Button mask 1–7 |
+| 5 | **Mouse toggle** | `0` | Button mask 1–7 |
+| 6 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
+| 7 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
+| 8 | **Consumer hold** | High four bits of the usage | Low eight bits of the usage; button release ends the hold |
+| 9 | **Set layer** | `0` for persistent; `1` for one-shot | Layer index, or `0xFF` for previous persistent layer |
+| A | **Momentary layer** | `0` | Layer index |
+| B | **Relative layer** | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -6 to +6; added to the selected base-layer index with wraparound. `0` has no effect. |
+| C | **Mouse X movement** | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
+| D | **Mouse Y movement** | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
+| E | **LED control** | Value or signed step (see below) | Full command byte (see below) |
+| F | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
 
 Keyboard modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**, and `8` = **GUI**;
 combine them with bitwise OR. Mouse button bits are `1` = **Left**, `2` = **Right**,
@@ -207,10 +306,10 @@ accept nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Type Text** 
 point to the start of a complete NULL-terminated pool string, including for
 empty text. Type 0 auxiliary values other than 0, 1 and 2 reject.
 
-For action A and C, auxiliary value `0` changes the selected base layer
+For action 9 and B, auxiliary value `0` changes the selected base layer
 persistently. Auxiliary value `1` makes that layer active for the next input
 action, then returns to the previously selected base layer. Other auxiliary
-values are invalid. 
+values are invalid.
 
 **Set layer** parameter `0xFF` (255) selects the previous persistent base layer.
 Both persistent and one-shot forms support this target; **Momentary layer**
@@ -242,8 +341,8 @@ at an 8 ms interval when USB is ready and queued actions have finished.
 Releasing a key, the encoder button, or either chord key stops new repeats.
 Held inputs retain their original bindings across layer changes, as other holds do.
 Repeat reports are skipped when USB is busy; they do not accumulate for later playback.
-Auxiliary values 2–15 are invalid. **Tap** and hold action encodings are unchanged
-from the corresponding version 2 extension.
+Auxiliary values 2–15 are invalid. Format 11 shifts both movement type codes;
+their auxiliary/parameter encodings retain the same meaning.
 
 Rotation bindings cannot use **Keyboard hold**, **Mouse hold**, **Consumer Hold**,
 **Scroll Hold**, **Momentary layer**, or X/Y movement in hold mode. Timed expiry and
@@ -252,9 +351,9 @@ For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
 With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for **Keyboard hold** actions).
 
-## LED control action F
+## LED control action E
 
-Record byte 0 is `(value << 4) | 0xF`; byte 1 is the full command ID.
+Record byte 0 is `(value << 4) | 0xE`; byte 1 is the full command ID.
 For commands `00`–`0D`, the `0xF` absolute sentinel means **As configured** (the earlier proposed `0xFF`
 value occupies only four bits here). Relative values use four-bit two's complement:
 `1..7` represent +1..+7 and `9..F` represent -7..-1. Zero and -8 are invalid.
@@ -368,7 +467,7 @@ values. Only palette indices are stored in the configuration image.
 `((clicks - 1) << 4) | 0x03`; the second byte is the mouse button mask.
 For example, `[0x03, 0x01]` is one left click, `[0x13, 0x01]` is two left clicks,
 and `[0xF3, 0x01]` is sixteen left clicks. Counts 1–16 require no additional
-configuration bytes. Type `0x4` is **Execute macro**, defined below.
+configuration bytes. Type `0xF` is **Execute macro**, defined below.
 
 The nominal duration is `(8 * clicks + 200 * (clicks - 1)) / 1000` seconds,
 before additional transport/playback latency.
@@ -392,13 +491,13 @@ Held outputs, consumer controls, and layer/LED actions use independent handling.
 | **Nothing** | `0x00` | `0x00` |
 | **Type Text** | `0x10` | Offset of a complete NULL-terminated string in the shared pool |
 | **Pause** | `0x20` | Duration in 16 ms units, 0–255 |
-| **Execute macro** | `0x04 \| ((repeats - 1) << 4)` | Absolute address of a macro step |
-| **Consumer Tap** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
-| **Consumer Hold** | `0x09 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
-| **Scroll Tap** | `0x07` | Signed wheel step, -127–127 |
-| **Scroll Hold** | `0x47` | Signed vertical wheel step, -127–127 |
-| **Scroll Tap**, **Horizontal** | `0x87` | Signed horizontal step, -127–127 |
-| **Scroll Hold**, **Horizontal** | `0xC7` | Signed horizontal step, -127–127 |
+| **Execute macro** | `0x0F \| ((repeats - 1) << 4)` | Absolute address of a macro step |
+| **Consumer Tap** | `0x07 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
+| **Consumer Hold** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
+| **Scroll Tap** | `0x06` | Signed wheel step, -127–127 |
+| **Scroll Hold** | `0x46` | Signed vertical wheel step, -127–127 |
+| **Scroll Tap**, **Horizontal** | `0x86` | Signed horizontal step, -127–127 |
+| **Scroll Hold**, **Horizontal** | `0xC6` | Signed horizontal step, -127–127 |
 
 **Type Text** shares low-nibble type 0 with **Nothing**: auxiliary 0 is **Nothing** and must
 have parameter 0; auxiliary 1 is **Type Text**, and auxiliary 2 is **Pause**. Other auxiliary values reject. Empty
@@ -414,7 +513,7 @@ horizontal scrolling. Only auxiliary values 0, 4, 8 and 12 are accepted. Acceler
 and reject. **Hold** rejects on rotation and both timer action slots. -128 rejects;
 zero is a firmware no-op, although the editor asks for a nonzero step.
 
-Type `0x3` encodes **Mouse click** and type `0x4` encodes **Execute macro**. A full first byte
+Type `0x3` encodes **Mouse click** and type `0xF` encodes **Execute macro**. A full first byte
 of `0x10` for **Type Text** uses low-nibble type 0 with auxiliary value 1.
 
 ## Consumer ownership and release
@@ -578,7 +677,7 @@ byte. With no macros the tail is zero padding. A sequence is a run of ordinary
 two-byte action records. `00 00` ends it. Reaching image byte 127 or 128 also ends
 it when fewer than two bytes remain. A final unpaired byte must be zero.
 
-**Execute macro** is `((repeats - 1) << 4) | 0x04`, followed by its absolute start
+**Execute macro** is `((repeats - 1) << 4) | 0x0F`, followed by its absolute start
 address. Repeats range from 1 through 16. The address must satisfy all of:
 
 - `macroStart <= address < 127`;
@@ -651,10 +750,10 @@ Example, with a single six-key layer and no chords/timers: store `chrome\0` at
 00 00   End sequence
 ```
 
-Bind a trigger to `04 26` (one execution, absolute address `0x26` = 38).
+Bind a trigger to `0F 26` (one execution, absolute address `0x26` = 38).
 The layer binding itself already occupies its normal two bytes; added data is
 7 string bytes plus 10 macro bytes. Repeating once costs no extra data; two
-executions change the binding to `14 26`. UI automation timing is application-
+executions change the binding to `1F 26`. UI automation timing is application-
 dependent; the example's delay has host-test coverage, not an OS-level guarantee.
 
 A standalone sequence of N steps normally costs `2*N + 2` bytes. Adjacent macros
@@ -832,8 +931,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,306 | 30 | 108 | 369 | 128 | 77 |
-| Three keys | 14,302 | 34 | 108 | 360 | 128 | 80 |
+| Six keys | 14,304 | 32 | 108 | 369 | 128 | 77 |
+| Three keys | 14,300 | 36 | 108 | 360 | 128 | 80 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -844,4 +943,12 @@ not rely on the ordinary XSEG startup clear loop.
 Stack figures are linker-reserved capacities, two bytes higher than the v10
 baseline on each board. No v11 hardware stack high-water or physical macro/OS
 validation has been performed. Reproduce measurements and the complete host
-regressions with `python3 protocol/build-macro-experiments.py`.
+regressions with `python3 tests/run_host_tests.py` and temporary native builds:
+
+```sh
+python3 pio-platform/build_firmware.py build . /private/tmp/macropad-v11-six 24000000 148 14336 0
+python3 pio-platform/build_firmware.py build . /private/tmp/macropad-v11-three 24000000 148 14336 1
+```
+
+These commands do not generate releases. See [macros-findings.md](macros-findings.md) for optimization details and
+[macros-implementation.md](macros-implementation.md) for final validation.
