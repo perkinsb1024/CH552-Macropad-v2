@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { filterShortcuts, type ShortcutOS } from '../../model/shortcuts';
-import { endShortcutDrag, startShortcutDrag } from '../drag';
+import { draggedShortcut, endShortcutDrag, startShortcutDrag } from '../drag';
 import { IconChevron, IconSearch } from './Icons';
 
 const FILTERS = [
@@ -14,6 +14,8 @@ export function Shortcuts() {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const shortcuts = filterShortcuts(os, query);
+  const showTmuxHint = draggedShortcut.value?.tags.includes('tmux')
+    || (shortcuts.length > 0 && shortcuts.every(shortcut => shortcut.tags.includes('tmux')));
   return (
     <section class="card shortcuts" aria-labelledby="shortcuts-title">
       <h2 id="shortcuts-title">
@@ -37,12 +39,13 @@ export function Shortcuts() {
         <div class="shortcut-library" role="region" aria-label="Shortcut actions" tabIndex={0}>
           {shortcuts.map((shortcut) => (
             <div key={shortcut.id} class="shortcut-preset" draggable
-              title={shortcut.binding}
+              title={[shortcut.binding, shortcut.note].filter(Boolean).join(' — ')}
               onDragStart={(event) => startShortcutDrag(event, shortcut)} onDragEnd={endShortcutDrag}>
               <span>{shortcut.name}</span>
             </div>
           ))}
         </div>
+        {showTmuxHint && <p class="hint" role="status">tmux commands send only the key after the prefix. Send Prefix (Ctrl+B) first, usually before each command. Custom tmux bindings may differ.</p>}
         {shortcuts.length === 0 && <p class="empty" role="status">No shortcuts match your search.</p>}
         <p class="hint">Drag a shortcut onto a key, encoder input, chord, or timed action.</p>
       </div>

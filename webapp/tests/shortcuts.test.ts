@@ -67,6 +67,25 @@ describe('shortcut library', () => {
     expect(preset('markdown-code-block').action).toEqual({ type: 'string', text: '```\n\n```' });
     expect(preset('vim-save').action).toEqual({ type: 'string', text: ':w\n' });
   });
+
+  it('offers shared tmux command keys separately from the prefix with correct punctuation and modifiers', () => {
+    const tmux = filterShortcuts('mac', 'tmux');
+    expect(filterShortcuts('windows', 'tmux')).toEqual(tmux);
+    const preset = (id: string) => tmux.find(shortcut => shortcut.id === id)!;
+    expect(preset('tmux-prefix').action).toEqual({ type: 'keyTap', usage: 5, modifiers: MOD_CTRL });
+    expect(preset('tmux-new-window').action).toEqual({ type: 'keyTap', usage: 6, modifiers: 0 });
+    expect(preset('tmux-split-pane-left-right').action).toEqual({ type: 'keyTap', usage: 0x22, modifiers: 2 });
+    expect(preset('tmux-split-pane-top-bottom').action).toEqual({ type: 'keyTap', usage: 0x34, modifiers: 2 });
+    expect(preset('tmux-command-prompt').action).toEqual({ type: 'keyTap', usage: 0x33, modifiers: 2 });
+    expect(preset('tmux-resize-pane-left-1-cell').action).toEqual({ type: 'keyTap', usage: 0x50, modifiers: MOD_CTRL });
+    expect(preset('tmux-resize-pane-left-5-cells').action).toEqual({ type: 'keyTap', usage: 0x50, modifiers: 4 });
+    expect(tmux.filter(shortcut => /^tmux: Select window \d$/.test(shortcut.name))).toHaveLength(10);
+    for (const shortcut of tmux.filter(shortcut => shortcut.id !== 'tmux-prefix')) {
+      expect(shortcut.name).not.toContain('(after prefix)');
+      expect(shortcut.note).toContain('Sends only the command key');
+      expect(shortcut.action.type).toBe('keyTap');
+    }
+  });
 });
 
 describe('shortcut assignment', () => {

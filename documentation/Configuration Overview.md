@@ -407,7 +407,7 @@ Finishing or clearing an effect returns to normal lighting without replaying the
 
 ### Use the Shortcut Library
 
-Expand **Shortcuts**, select **Mac** or **Windows**, and search for an action name or application. The library includes everyday editing, browser controls, window management, screenshots, media keys, standard keyboard keys, and application-specific shortcuts for Word, Google Docs, PowerPoint, VS Code, and Vim, plus short text snippets.
+Expand **Shortcuts**, select **Mac** or **Windows**, and search for an action name or application. The library includes everyday editing, browser controls, window management, screenshots, media keys, standard keyboard keys, and application-specific shortcuts for Word, Google Docs, PowerPoint, VS Code, Vim, and tmux, plus short text snippets.
 
 ![Shortcut library filtered to copy actions, with Mac and Windows choices and matching presets](../images/configuration-overview/05-shortcuts.png)
 

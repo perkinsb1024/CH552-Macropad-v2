@@ -268,6 +268,38 @@ export const SHORTCUTS: readonly Shortcut[] = [
     tags: [...BOTH, 'Visual Studio Code', 'VS Code', 'Programming', 'Debugging'], binding: binding!, action: keyboardAction(binding!),
   })),
 
+  {
+    id: 'tmux-prefix', name: 'tmux: Prefix (Ctrl+B)',
+    tags: [...BOTH, 'tmux', 'Terminal', 'Keyboard', 'Prefix'], binding: 'Ctrl+B',
+    note: 'Default tmux prefix. Send it before a command key; customized tmux bindings may differ.',
+    action: keyboardAction('Ctrl+B'),
+  },
+  ...([
+    ['New window', 'C'], ['Next window', 'N'], ['Previous window', 'P'],
+    ['Last window', 'L'], ['Choose window', 'W'], ['Rename window', ','],
+    ['Split pane left/right', 'Shift+5'], ['Split pane top/bottom', "Shift+'"],
+    ['Next pane', 'O'], ['Last pane', ';'], ['Show pane numbers', 'Q'],
+    ['Toggle pane zoom', 'Z'], ['Next pane layout', 'Space'],
+    ['Break pane into window', 'Shift+1'], ['Swap pane with previous', 'Shift+['],
+    ['Swap pane with next', 'Shift+]'], ['Close pane (confirm)', 'X'],
+    ['Close window (confirm)', 'Shift+7'], ['Choose session', 'S'],
+    ['Rename session', 'Shift+4'], ['Detach client', 'D'],
+    ['Copy mode', '['], ['Paste buffer', ']'], ['Command prompt', 'Shift+;'],
+    ['List key bindings', 'Shift+/'],
+    ...Array.from({ length: 10 }, (_, i): Entry => [`Select window ${i}`, `${i}`]),
+    ...['Left', 'Right', 'Up', 'Down'].flatMap((direction): Entry[] => [
+      [`Select pane ${direction.toLowerCase()}`, direction],
+      [`Resize pane ${direction.toLowerCase()} (1 cell)`, `Ctrl+${direction}`],
+      [`Resize pane ${direction.toLowerCase()} (5 cells)`, `Alt+${direction}`],
+    ]),
+  ] satisfies Entry[]).map(([name, binding]): Shortcut => ({
+    id: slug(`tmux-${name}`), name: `tmux: ${name}`,
+    tags: [...BOTH, 'tmux', 'Terminal', 'Keyboard', 'After prefix'],
+    binding: `After prefix: ${binding}`,
+    note: 'Sends only the command key. Press the tmux prefix first (default Ctrl+B), usually before each command. Uses default tmux bindings and a US keyboard layout.',
+    action: keyboardAction(binding),
+  })),
+
   ...snippets('Markdown', [
     ['Inline code markers', '``'], ['Code block', '```\n\n```'], ['Code fence (opening)', '```\n'],
     ['Block quote', '> '], ['Nested block quote', '> > '], ['Bulleted list', '- '], ['Numbered list', '1. '],
