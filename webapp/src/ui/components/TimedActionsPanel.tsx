@@ -111,7 +111,7 @@ export function TimedActionsPanel() {
             const reset = (event.target as HTMLInputElement).checked;
             updateProfile((draft) => { draft.timedActions![index]!.resetOnInput = reset; });
           }} /> Restart on key / encoder input</label>
-          <button data-clipboard-target {...timedBindingDrag(select(false))} aria-label={`Edit timer ${index + 1} action`} aria-pressed={active(false)} onClick={() => { selectedSlot.value = select(false); }}>
+          <button data-clipboard-target data-slot={JSON.stringify(select(false))} {...timedBindingDrag(select(false))} aria-label={`Edit timer ${index + 1} action`} aria-pressed={active(false)} onClick={() => { selectedSlot.value = select(false); }}>
             <span class="field-label">When timer fires</span><ActionLabel action={timer.action} />
           </button>
           <details class="timer-resume" ref={(element) => {
@@ -124,7 +124,7 @@ export function TimedActionsPanel() {
           }}>
             <summary>On next input <span class="muted">{timer.resumeAction.type === 'none' ? '(optional)' : '· assigned'}</span></summary>
             <p class="hint">Runs once on the next key press, encoder button press, or completed encoder turn after this timer fires.</p>
-            <button data-clipboard-target {...timedBindingDrag(select(true))} aria-label={`Edit timer ${index + 1} resume action`} aria-pressed={active(true)} onClick={() => { selectedSlot.value = select(true); }}>
+            <button data-clipboard-target data-slot={JSON.stringify(select(true))} {...timedBindingDrag(select(true))} aria-label={`Edit timer ${index + 1} resume action`} aria-pressed={active(true)} onClick={() => { selectedSlot.value = select(true); }}>
               <ActionLabel action={timer.resumeAction} />
             </button>
             <label class="timer-reset"><input type="checkbox" checked={timer.consumeInput} onChange={(event) => {

@@ -78,7 +78,7 @@ export function ChordPanel() {
             const intent = slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : null;
             return (
               <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
-                <button data-clipboard-target class="chord-main" onClick={() => { selectedSlot.value = JSON.stringify(selectedSlot.value) === JSON.stringify(slot) ? null : slot; }} draggable onDragStart={(event) => { setRoundedDragImage(event); endShortcutDrag(); draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
+                <button data-clipboard-target data-slot={JSON.stringify(slot)} class="chord-main" onClick={() => { selectedSlot.value = JSON.stringify(selectedSlot.value) === JSON.stringify(slot) ? null : slot; }} draggable onDragStart={(event) => { setRoundedDragImage(event); endShortcutDrag(); draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
                   if (shortcutDragOver(event, slot)) return;
                   const source = draggedSlot.value;
                   const position = source?.kind === 'timed' ? 'swap' : dropPosition(event, 'vertical');

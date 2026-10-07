@@ -1928,6 +1928,46 @@ output {
   max-height: calc(100dvh - 40px);
   overflow-y: auto;
 }
+[data-slot], .card-device {
+  scroll-margin-block: calc(var(--topbar-height, 64px) + 16px) 16px;
+}
+.dialog-permission-help {
+  width: min(680px, 100%);
+  height: clamp(600px, 75dvh, 1024px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.permission-help ol {
+  padding-left: 22px;
+}
+.permission-help li, .permission-help h3, .permission-help p, .permission-help details {
+  margin-top: 16px;
+}
+.permission-help details {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.permission-help summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.permission-help img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 10px;
+}
+.permission-help .permission-prompt {
+  max-width: 529px;
+}
+.permission-help pre {
+  overflow-x: auto;
+  padding: 12px;
+  margin-top: 10px;
+  background: var(--bg);
+  border-radius: 8px;
+}
 .dialog-json {
   display: block;
   width: 100%;

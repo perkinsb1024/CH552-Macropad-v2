@@ -8,6 +8,7 @@ import { chordSlot, matchesChord } from '../model/chords';
 import { actionProblem, slotLabel, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
 import { encoderBootloaderWarnings, selfReferentialLayerWarnings } from '../model/layerWarnings';
+import { timedToggleWarnings } from '../model/timedWarnings';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
 import { decodeImage, peekHeader, type DecodeResult } from '../codec/decode';
@@ -120,6 +121,7 @@ export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(p
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
 export const bootloaderWarnings = computed(() => (profile.value ? encoderBootloaderWarnings(profile.value) : []));
+export const timerWarnings = computed(() => (profile.value ? timedToggleWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
 export const dirty = computed(() => {
   if (!profile.value) return false;
@@ -168,6 +170,7 @@ export function dismissToast(id: number): void {
 export interface DialogSpec {
   title: string;
   body: string;
+  inputMonitoringHelp?: boolean;
   comparison?: { device: Profile; editor: Profile; editorLabel?: string };
   textInput?: { label: string; placeholder: string; onInput: (text: string) => void };
   actions: Array<{ label: string; tone?: 'primary' | 'danger' | 'neutral'; onSelect: () => void }>;
@@ -180,6 +183,15 @@ export function ask(spec: DialogSpec): void {
 
 export function closeDialog(): void {
   dialog.value = null;
+}
+
+export function showInputMonitoringHelp(): void {
+  ask({
+    title: 'Macropad connection & permissions',
+    body: 'Connecting needs both browser permission and access to the HID device. Choose your operating system below for help with “Failed to open the device.”',
+    inputMonitoringHelp: true,
+    actions: [{ label: 'Close', tone: 'neutral', onSelect: closeDialog }],
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -757,6 +769,7 @@ export async function connectHid(): Promise<void> {
     transport = await WebHidTransport.request();
   } catch (error) {
     notify('error', `Device selection failed: ${(error as Error).message}`);
+    if (/Mac/.test(navigator.platform) && /failed to open the device/i.test((error as Error).message)) showInputMonitoringHelp();
     return;
   }
   if (!transport) return; // user cancelled the chooser

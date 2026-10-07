@@ -25,7 +25,7 @@ export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
   const warnings: Issue[] = [];
   const layerCount = profile.layers.length;
   const check = (action: Action, slot: Slot, source = slot.layer, rotation = false) => {
-    if (actionProblem(action, { layerCount, rotation })) return;
+    if (actionProblem(action, { layerCount, rotation, timed: slot.kind === 'timed' })) return;
     let target: number;
     switch (action.type) {
       case 'setLayer':
@@ -71,5 +71,15 @@ export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
       check(chord.action, slot, source);
     }
   }
+  profile.timedActions?.forEach((timer, index) => {
+    if (timer.layer !== undefined && (!Number.isInteger(timer.layer) || timer.layer < 0 || timer.layer >= layerCount)) return;
+    for (let source = 0; source < layerCount; source++) {
+      if (timer.layer === undefined || timer.layer === source) {
+        check(timer.action, { kind: 'timed', layer: 0, index, resume: false }, source);
+      }
+      // Once armed, the next-input action can run on any layer.
+      check(timer.resumeAction, { kind: 'timed', layer: 0, index, resume: true }, source);
+    }
+  });
   return warnings;
 }

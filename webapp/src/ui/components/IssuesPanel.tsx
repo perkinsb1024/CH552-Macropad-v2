@@ -1,4 +1,5 @@
-import { bootloaderWarnings, issues, layerChangeWarnings, reachabilityWarnings, selectedLayer, selectedSlot } from '../store';
+import { bootloaderWarnings, issues, layerChangeWarnings, reachabilityWarnings, timerWarnings } from '../store';
+import { navigateToLayer, navigateToSlot } from '../navigation';
 import { IconChevron, IconWarning } from './Icons';
 
 export function IssuesPanel() {
@@ -6,7 +7,8 @@ export function IssuesPanel() {
   const warnings = reachabilityWarnings.value;
   const layerWarnings = layerChangeWarnings.value;
   const encoderWarnings = bootloaderWarnings.value;
-  if (!list.length && !warnings.length && !layerWarnings.length && !encoderWarnings.length) return null;
+  const toggles = timerWarnings.value;
+  if (!list.length && !warnings.length && !layerWarnings.length && !encoderWarnings.length && !toggles.length) return null;
   return (
     <>
       {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
@@ -19,11 +21,27 @@ export function IssuesPanel() {
           {list.map((issue, i) => (
             <li key={i}>
               {issue.slot ? (
-                <button class="link" onClick={() => { selectedLayer.value = issue.slot!.layer; selectedSlot.value = issue.slot!; }}>{issue.where}</button>
+                <button class="link" onClick={() => navigateToSlot(issue.slot!)}>{issue.where}</button>
               ) : (
                 <strong>{issue.where}</strong>
               )}
               <span>{issue.message}</span>
+            </li>
+          ))}
+        </ul>
+      </details>}
+      {toggles.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
+        <summary class="card-head">
+          <h2><IconWarning /> Repeating toggle actions</h2>
+          <span class="warn">{toggles.length}</span>
+          <IconChevron />
+        </summary>
+        <p class="hint">These timers alternate states each time they fire. This does not block saving or upload.</p>
+        <ul>
+          {toggles.map((warning, i) => (
+            <li key={i}>
+              <button class="link" onClick={() => navigateToSlot(warning.slot!)}>{warning.where}</button>
+              <span>{warning.message}</span>
             </li>
           ))}
         </ul>
@@ -38,7 +56,7 @@ export function IssuesPanel() {
         <ul>
           {encoderWarnings.map((warning, i) => (
             <li key={i}>
-              <button class="link" onClick={() => { selectedLayer.value = warning.slot!.layer; selectedSlot.value = warning.slot!; }}>{warning.where}</button>
+              <button class="link" onClick={() => navigateToSlot(warning.slot!)}>{warning.where}</button>
               <span>{warning.message}</span>
             </li>
           ))}
@@ -54,7 +72,7 @@ export function IssuesPanel() {
         <ul>
           {layerWarnings.map((warning, i) => (
             <li key={i}>
-              <button class="link" onClick={() => { selectedLayer.value = warning.slot!.layer; selectedSlot.value = warning.slot!; }}>{warning.where}</button>
+              <button class="link" onClick={() => navigateToSlot(warning.slot!)}>{warning.where}</button>
               <span>{warning.message}</span>
             </li>
           ))}
@@ -70,7 +88,7 @@ export function IssuesPanel() {
         <ul>
           {warnings.map((warning, i) => (
             <li key={i}>
-              <button class="link" onClick={() => { selectedLayer.value = warning.layer; selectedSlot.value = null; }}>{`Layer ${warning.layer + 1}`}</button>
+              <button class="link" onClick={() => navigateToLayer(warning.layer)}>{`Layer ${warning.layer + 1}`}</button>
               <span>{warning.message}</span>
             </li>
           ))}
