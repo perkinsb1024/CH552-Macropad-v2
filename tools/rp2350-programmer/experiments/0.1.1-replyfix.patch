@@ -1,0 +1,40 @@
+--- reconstructed-0.1.1/probe_protocol.c
++++ replyfix/probe_protocol.c
+@@ -63,12 +63,17 @@
+ }
+ 
+ static bool valid_reply(const uint8_t *data, size_t len, uint8_t command, size_t min) {
+-  return data && len >= min && len <= 64 && data[0] == command && data[1] == 0 &&
++  // Byte 1 is not a reliable status field for these read replies. Validate the
++  // command, declared payload length, and command-specific payload instead.
++  return data && len >= min && len <= 64 && data[0] == command &&
+     le16(data + 2) >= min - 4 && (size_t)le16(data + 2) <= len - 4;
+ }
+ 
+ bool probe_parse_detect(const uint8_t *data, size_t len) {
+-  return valid_reply(data, len, 0xa1, 6) && data[4] == 0x52 && data[5] == 0x11;
++  // Real captures returned A1 9F 02 00 52 11 and A1 9D 02 00 52 11.
++  // Upstream readers likewise identify using payload bytes, not header byte 1.
++  return data && len == 6 && data[0] == 0xa1 && le16(data + 2) == 2 &&
++    data[4] == 0x52 && data[5] == 0x11;
+ }
+ 
+ bool probe_parse_info(const uint8_t *data, size_t len, probe_info_t *out) {
+--- reconstructed-0.1.1/CMakeLists.txt
++++ replyfix/CMakeLists.txt
+@@ -26,7 +26,7 @@
+ add_executable(ch552_probe main.c usb_descriptors.c probe_protocol.c)
+ target_include_directories(ch552_probe PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+ target_compile_definitions(ch552_probe PRIVATE
+-  PROBE_VERSION="${PROJECT_VERSION}-reconstructed"
++  PROBE_VERSION="${PROJECT_VERSION}-reconstructed-replyfix"
+   PIO_USB_DP_PIN_DEFAULT=12
+   PICO_STACK_SIZE=0x1000
+ )
+@@ -36,5 +36,5 @@
+ pico_enable_stdio_uart(ch552_probe 0)
+ pico_enable_stdio_usb(ch552_probe 0)
+ pico_set_program_name(ch552_probe "CH552 read-only probe")
+-pico_set_program_version(ch552_probe ${PROJECT_VERSION}-reconstructed)
++pico_set_program_version(ch552_probe ${PROJECT_VERSION}-reconstructed-replyfix)
+ pico_add_extra_outputs(ch552_probe)

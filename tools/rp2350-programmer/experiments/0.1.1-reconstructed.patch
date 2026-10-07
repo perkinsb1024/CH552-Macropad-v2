@@ -1,0 +1,118 @@
+--- firmware/main.c
++++ reconstructed/main.c
+@@ -5,9 +5,7 @@
+ 
+ #include "hardware/clocks.h"
+ #include "hardware/watchdog.h"
+-#include "hardware/structs/powman.h"
+ #include "pico/bootrom.h"
+-#include "pico/rand.h"
+ #include "pico/stdlib.h"
+ #include "pio_usb.h"
+ #include "tusb.h"
+@@ -26,8 +24,6 @@
+ static state_t state;
+ static uint32_t deadline;
+ static bool host_started;
+-static uint32_t boot_id, reset_raw;
+-static bool reset_watchdog;
+ static uint8_t target;
+ static probe_endpoints_t endpoints;
+ static uint8_t rx[512] __attribute__((aligned(4)));
+@@ -260,28 +256,9 @@
+ }
+ 
+ static void status(void) {
+-  // Nominal DVDD thresholds from POWMAN BOD.VSEL; reserved encodings stay unknown.
+-  static const char *const bod_mv[] = {
+-    "473", "516", "559", "602", "645", "688", "731", "774", "817",
+-    "860", "903", "946", "989", "1032", "1075", "1118", "1161", "1204"
+-  };
+-  const uint32_t bod = powman_hw->bod;
+-  const unsigned vsel = (bod & POWMAN_BOD_VSEL_BITS) >> POWMAN_BOD_VSEL_LSB;
+   log_event("status", ",\"protocol\":1,\"version\":\"%s\",\"board\":\"waveshare_rp2350_usb_a\","
+     "\"dp\":12,\"dm\":13,\"clock_khz\":120000,\"host_started\":%s,\"read_only\":true,"
+-    "\"dropped_logs\":%u,\"boot_id\":\"%08lx\",\"reset_raw\":%lu,"
+-    "\"reset_brownout\":%s,\"reset_power_on\":%s,\"reset_run_pin\":%s,\"reset_watchdog\":%s,"
+-    "\"bod_raw\":%lu,\"bod_enabled\":%s,\"bod_vsel\":%u,\"bod_threshold_mv\":%s,"
+-    "\"dp_level\":%u,\"dm_level\":%u",
+-    PROBE_VERSION, host_started ? "true" : "false", dropped,
+-    (unsigned long)boot_id, (unsigned long)reset_raw,
+-    reset_raw & POWMAN_CHIP_RESET_HAD_BOR_BITS ? "true" : "false",
+-    reset_raw & POWMAN_CHIP_RESET_HAD_POR_BITS ? "true" : "false",
+-    reset_raw & POWMAN_CHIP_RESET_HAD_RUN_LOW_BITS ? "true" : "false",
+-    reset_watchdog ? "true" : "false", (unsigned long)bod,
+-    bod & POWMAN_BOD_EN_BITS ? "true" : "false", vsel,
+-    vsel < sizeof(bod_mv) / sizeof(bod_mv[0]) ? bod_mv[vsel] : "null",
+-    (unsigned)gpio_get(DP_PIN), (unsigned)gpio_get(DM_PIN));
++    "\"dropped_logs\":%u", PROBE_VERSION, host_started ? "true" : "false", dropped);
+ }
+ 
+ static void command(char *line) {
+@@ -317,9 +294,7 @@
+     }
+     state = ARMED;
+     deadline = now_ms() + (uint32_t)delay;
+-    log_event("armed", ",\"delay_ms\":%lu,\"instruction\":\"Plug the macropad into USB-A now\","
+-      "\"dp_level\":%u,\"dm_level\":%u", delay,
+-      (unsigned)gpio_get(DP_PIN), (unsigned)gpio_get(DM_PIN));
++    log_event("armed", ",\"delay_ms\":%lu,\"instruction\":\"Plug the macropad into USB-A now\"", delay);
+     return;
+   }
+   log_event("error", ",\"reason\":\"unknown_command\"");
+@@ -347,15 +322,6 @@
+ }
+ 
+ int main(void) {
+-  // Snapshot hardware evidence before application initialization. Read only.
+-  reset_raw = powman_hw->chip_reset;
+-  reset_watchdog = watchdog_caused_reboot();
+-  boot_id = get_rand_32();
+-  // Match the operator's hub trials: VSEL 10 = nominal 0.903V on DVDD.
+-  // POWMAN writes require the password; keep detection enabled throughout.
+-  powman_hw->bod = POWMAN_PASSWORD_BITS | (10u << POWMAN_BOD_VSEL_LSB) |
+-                   POWMAN_BOD_EN_BITS;
+-  sleep_us(50); // Allow more than the specified 30us maximum programming delay.
+   set_sys_clock_khz(120000, true); // PIO USB requires a multiple of 12MHz.
+   gpio_init(DP_PIN);
+   gpio_init(DM_PIN);
+@@ -373,8 +339,7 @@
+       state = ENUMERATING;
+       deadline = now_ms() + ENUM_MS;
+       host_started = true;
+-      log_event("host_start", ",\"enumeration_timeout_ms\":%u,\"dp_level\":%u,\"dm_level\":%u",
+-        ENUM_MS, (unsigned)gpio_get(DP_PIN), (unsigned)gpio_get(DM_PIN));
++      log_event("host_start", ",\"enumeration_timeout_ms\":%u", ENUM_MS);
+       pio_usb_configuration_t cfg = PIO_USB_DEFAULT_CONFIG;
+       cfg.pin_dp = DP_PIN;
+       cfg.pinout = PIO_USB_PINOUT_DPDM;
+--- firmware/CMakeLists.txt
++++ reconstructed/CMakeLists.txt
+@@ -16,7 +16,7 @@
+ endif()
+ 
+ include("${PICO_SDK_PATH}/external/pico_sdk_import.cmake")
+-project(ch552_probe VERSION 0.1.6 LANGUAGES C CXX ASM)
++project(ch552_probe VERSION 0.1.1 LANGUAGES C CXX ASM)
+ set(CMAKE_C_STANDARD 11)
+ pico_sdk_init()
+ if(NOT TARGET tinyusb_pico_pio_usb)
+@@ -26,15 +26,15 @@
+ add_executable(ch552_probe main.c usb_descriptors.c probe_protocol.c)
+ target_include_directories(ch552_probe PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+ target_compile_definitions(ch552_probe PRIVATE
+-  PROBE_VERSION="${PROJECT_VERSION}"
++  PROBE_VERSION="${PROJECT_VERSION}-reconstructed"
+   PIO_USB_DP_PIN_DEFAULT=12
+   PICO_STACK_SIZE=0x1000
+ )
+ target_compile_options(ch552_probe PRIVATE -Wall -Wextra)
+-target_link_libraries(ch552_probe PRIVATE pico_stdlib pico_unique_id pico_rand hardware_watchdog
++target_link_libraries(ch552_probe PRIVATE pico_stdlib pico_unique_id hardware_watchdog
+   tinyusb_device tinyusb_host tinyusb_pico_pio_usb)
+ pico_enable_stdio_uart(ch552_probe 0)
+ pico_enable_stdio_usb(ch552_probe 0)
+ pico_set_program_name(ch552_probe "CH552 read-only probe")
+-pico_set_program_version(ch552_probe ${PROJECT_VERSION})
++pico_set_program_version(ch552_probe ${PROJECT_VERSION}-reconstructed)
+ pico_add_extra_outputs(ch552_probe)

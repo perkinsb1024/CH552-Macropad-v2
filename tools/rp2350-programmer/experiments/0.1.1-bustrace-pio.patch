@@ -1,0 +1,51 @@
+--- upstream/src/pio_usb_host.c
++++ traced/src/pio_usb_host.c
+@@ -18,6 +18,8 @@
+ #include "pio_usb.h"
+ #include "pio_usb_ll.h"
+ #include "usb_crc.h"
++#include "probe_bus_trace.h"
++volatile probe_bus_trace_t probe_bus_trace;
+ 
+ enum {
+   TRANSACTION_MAX_RETRY = 3, // Number of times to retry a failed transaction
+@@ -545,6 +547,26 @@
+ 
+   int receive_len = pio_usb_bus_receive_packet_and_handshake(pp, USB_PID_ACK);
+   uint8_t const receive_pid = pp->usb_rx_buffer[1];
++
++  // Diagnostic only, after receive/handshake; no logging or protocol changes in IRQ.
++  if (ep->ep_num == 0x82) {
++    probe_bus_trace.polls++;
++    if (receive_len >= 0) {
++      if (!probe_bus_trace.first_len) {
++        uint32_t n = (uint32_t)receive_len;
++        if (n > sizeof(probe_bus_trace.first_data)) n = sizeof(probe_bus_trace.first_data);
++        probe_bus_trace.first_pid = receive_pid;
++        probe_bus_trace.first_expected = expect_pid;
++        for (uint32_t i = 0; i < n; i++)
++          probe_bus_trace.first_data[i] = pp->usb_rx_buffer[2 + i];
++        probe_bus_trace.first_len = n;
++      }
++      if (receive_pid == expect_pid) probe_bus_trace.matched++;
++      else probe_bus_trace.mismatches++;
++    } else if (receive_pid == USB_PID_NAK) probe_bus_trace.naks++;
++    else if (receive_pid == USB_PID_STALL) probe_bus_trace.stalls++;
++    else probe_bus_trace.errors++;
++  }
+ 
+   if (receive_len >= 0) {
+     if (receive_pid == expect_pid) {
+--- /dev/null
++++ traced/src/probe_bus_trace.h
+@@ -0,0 +1,10 @@
++#ifndef PROBE_BUS_TRACE_H
++#define PROBE_BUS_TRACE_H
++#include <stdint.h>
++typedef struct {
++  uint32_t polls, matched, mismatches, naks, stalls, errors;
++  uint32_t first_len, first_pid, first_expected;
++  uint8_t first_data[64];
++} probe_bus_trace_t;
++extern volatile probe_bus_trace_t probe_bus_trace;
++#endif

@@ -1,0 +1,34 @@
+--- reconstructed-0.1.1/probe_protocol.c
++++ detectfix/probe_protocol.c
+@@ -68,7 +68,12 @@
+ }
+ 
+ bool probe_parse_detect(const uint8_t *data, size_t len) {
+-  return valid_reply(data, len, 0xa1, 6) && data[4] == 0x52 && data[5] == 0x11;
++  // A1's second byte is not uniformly zero: the real CH552 wildcard-detect
++  // capture returned A1 9F 02 00 52 11. Accept only observed header variants;
++  // do not relax A7 or substitute this byte for the actual chip/family fields.
++  return data && len == 6 && data[0] == 0xa1 &&
++    (data[1] == 0 || data[1] == 0x9f) && le16(data + 2) == 2 &&
++    data[4] == 0x52 && data[5] == 0x11;
+ }
+ 
+ bool probe_parse_info(const uint8_t *data, size_t len, probe_info_t *out) {
+--- reconstructed-0.1.1/CMakeLists.txt
++++ detectfix/CMakeLists.txt
+@@ -26,7 +26,7 @@
+ add_executable(ch552_probe main.c usb_descriptors.c probe_protocol.c)
+ target_include_directories(ch552_probe PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+ target_compile_definitions(ch552_probe PRIVATE
+-  PROBE_VERSION="${PROJECT_VERSION}-reconstructed"
++  PROBE_VERSION="${PROJECT_VERSION}-reconstructed-detectfix"
+   PIO_USB_DP_PIN_DEFAULT=12
+   PICO_STACK_SIZE=0x1000
+ )
+@@ -36,5 +36,5 @@
+ pico_enable_stdio_uart(ch552_probe 0)
+ pico_enable_stdio_usb(ch552_probe 0)
+ pico_set_program_name(ch552_probe "CH552 read-only probe")
+-pico_set_program_version(ch552_probe ${PROJECT_VERSION}-reconstructed)
++pico_set_program_version(ch552_probe ${PROJECT_VERSION}-reconstructed-detectfix)
+ pico_add_extra_outputs(ch552_probe)
