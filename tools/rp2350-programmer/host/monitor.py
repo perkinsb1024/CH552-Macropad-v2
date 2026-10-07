@@ -39,7 +39,12 @@ def capture(port, log, timeout=120, report=print):
                 if event.get("state") == "done" and event.get("phase") == "done":
                     return event
                 if event.get("state") == "idle":
-                    report("Press BOOT on the RP2350, then plug the three-key pad in during cyan.")
+                    if event.get("storage_pending"):
+                        report("Firmware drive is saving; wait for blinking green.")
+                    elif event.get("image_status") in ("missing", "invalid"):
+                        report("Load one valid macropad HEX: " + event.get("image_error", ""))
+                    else:
+                        report("Press BOOT on the RP2350, then plug the macropad in during cyan.")
             elif validated and name == "program_completed":
                 if (event.get("state") != "done" or event.get("verified_bytes") != 0x3800 or
                         event.get("reboot_sent") is not True):
@@ -47,7 +52,7 @@ def capture(port, log, timeout=120, report=print):
                 return event
             elif validated and name == "failed":
                 raise ProbeError(event.get("reason", "Programming failed"))
-            elif validated and name == "ready":
+            elif validated and name in ("ready", "startup"):
                 raise ProbeError("Adapter restarted during monitoring")
     finally:
         console.close()

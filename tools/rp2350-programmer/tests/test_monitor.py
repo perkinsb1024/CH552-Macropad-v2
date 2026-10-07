@@ -67,7 +67,7 @@ class MonitorTests(unittest.TestCase):
     def test_failure_and_incomplete_success_never_pass(self):
         for terminal in ({"event": "failed", "reason": "write_failed"},
                          {"event": "program_completed", "state": "done", "verified_bytes": 56,
-                          "reboot_sent": True}, {"event": "ready"}):
+                          "reboot_sent": True}, {"event": "ready"}, {"event": "startup"}):
             with self.subTest(terminal=terminal):
                 result, _ = self.run_monitor([self.status(), terminal])
                 self.assertIsInstance(result, probe.ProbeError)

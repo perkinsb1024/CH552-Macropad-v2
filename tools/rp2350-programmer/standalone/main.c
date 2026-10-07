@@ -13,7 +13,7 @@
 #include "probe_protocol.h"
 #include "programmer.h"
 #include "board_status.h"
-#include "embedded_image.h"
+#include "firmware_drive.h"
 
 enum { HOST_PORT = 1, DP_PIN = 12, DM_PIN = 13, ENUM_MS = 10000,
        XFER_MS = 2000, COMMAND_GAP_MS = 20, INSERT_MS = 2000 };
@@ -305,18 +305,21 @@ static void status(void) {
   log_event("status", ",\"protocol\":2,\"version\":\"%s\",\"board\":\"waveshare_rp2350_usb_a\","
     "\"mode\":\"standalone_programmer\",\"read_only\":false,\"host_started\":%s,"
     "\"phase\":\"%s\",\"offset\":%u,\"last_error\":\"%s\",\"dropped_logs\":%u,"
-    "\"image\":\"%s\",\"image_sha256\":\"%s\",\"image_bytes\":%u,\"keys\":3,"
+    "\"image\":\"%s\",\"image_crc32\":\"%08lx\",\"image_bytes\":%u,\"keys\":%u,\"image_status\":\"%s\",\"image_error\":\"%s\",\"storage_pending\":%s,"
     "\"config_format\":%u", PROBE_VERSION, host_started ? "true" : "false",
     program_stage_name(programmer.stage), (unsigned)programmer.offset, last_error, dropped,
-    IMAGE_NAME, IMAGE_SHA256, PROGRAM_LIMIT, IMAGE_CONFIG_FORMAT);
+    drive_info.name, (unsigned long)drive_crc, PROGRAM_LIMIT, drive_info.keys,
+    drive_result == IMAGE_VALID ? "valid" : drive_result == IMAGE_INVALID ? "invalid" : "missing",
+    drive_info.error, firmware_drive_pending() ? "true" : "false", drive_info.format);
 }
 
 static void arm(void) {
-  if (state != IDLE || host_started) return;
+  if (state != IDLE || host_started || !firmware_drive_lock()) return;
+  if (!program_init(&programmer, drive_image, sizeof(drive_image), drive_crc)) { fail(programmer.error); return; }
   state = ARMED;
   deadline = now_ms() + INSERT_MS;
   board_color(0, 24, 24);
-  log_event("armed", ",\"delay_ms\":%u,\"instruction\":\"Plug in the three-key macropad now\"", INSERT_MS);
+  log_event("armed", ",\"delay_ms\":%u,\"instruction\":\"Plug in the macropad now\"", INSERT_MS);
 }
 
 static void command(char *line) {
@@ -329,6 +332,9 @@ static void command(char *line) {
   // Resetting during a flash could strand partially programmed code.
   if (active() || state == ARMED) {
     log_event("error", ",\"reason\":\"programming_busy\""); return;
+  }
+  if (firmware_drive_pending() && (!strcmp(line, "reset") || !strcmp(line, "bootsel"))) {
+    log_event("error", ",\"reason\":\"storage_busy\""); return;
   }
   if (!strcmp(line, "reset")) { watchdog_reboot(0, 0, 50); return; }
   if (!strcmp(line, "bootsel")) { reset_usb_boot(0, 0); return; }
@@ -367,25 +373,31 @@ int main(void) {
   const tusb_rhport_init_t device_init = {.role = TUSB_ROLE_DEVICE, .speed = TUSB_SPEED_FULL};
   if (!tusb_init(0, &device_init)) panic("USB device init failed");
   board_status_init();
-  if (!program_init(&programmer, firmware_image, sizeof(firmware_image), IMAGE_CRC32)) {
-    fail(programmer.error);
-  } else {
-    board_color(0, 0, 24);
-    log_event("ready", ",\"protocol\":2,\"version\":\"%s\",\"read_only\":false,"
-      "\"instruction\":\"Press BOOT, then plug in the three-key macropad during cyan\"", PROBE_VERSION);
-  }
+  firmware_drive_init();
+  log_event("startup", ",\"protocol\":2,\"version\":\"%s\",\"read_only\":false", PROBE_VERSION);
+  static int last_image_state = -1;
   static uint32_t button_tick;
   static unsigned pressed_samples;
-  static bool ready_lit = true;
   while (true) {
     tud_task_ext(0, false);
     console_poll();
+    if (state == IDLE) {
+      firmware_drive_poll(now_ms());
+      int image_state = firmware_drive_pending() ? 3 : (int)drive_result;
+      if (image_state != last_image_state) { last_image_state = image_state; status(); }
+    }
     if (state == IDLE && (uint32_t)(now_ms() - button_tick) >= 10) {
       button_tick = now_ms();
       bool lit = (button_tick / 250) % 2 == 0;
-      if (lit != ready_lit) { board_color(0, 0, lit ? 24 : 0); ready_lit = lit; }
+      // Blue means copying/saving; green is only shown after durable validation.
+      bool pending = firmware_drive_pending();
+      if (!lit) board_color(0, 0, 0);
+      else if (pending) board_color(0, 0, 24);
+      else if (drive_result == IMAGE_MISSING) board_color(32, 6, 0);
+      else if (drive_result == IMAGE_INVALID) board_color(32, 0, 0);
+      else board_color(0, 24, 0);
       if (board_boot_pressed()) pressed_samples++; else pressed_samples = 0;
-      if (pressed_samples >= 3) arm();
+      if (pressed_samples == 3) arm();
     }
     if (state == ARMED && (int32_t)(now_ms() - deadline) >= 0) {
       board_color(32, 24, 0);
