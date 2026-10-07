@@ -1,5 +1,5 @@
 import { computeCapacity } from '../../model/capacity';
-import { removeMacro } from '../../model/macros';
+import { macroSwitchesLayer, removeMacro } from '../../model/macros';
 import type { Slot } from '../../model/types';
 import { capacity, profile, selectedSlot, updateProfile } from '../store';
 import { ActionLabel } from './ActionLabel';
@@ -9,10 +9,10 @@ import { timedBindingDrag } from './TimedActionsPanel';
 export function MacrosPanel() {
   const p = profile.value!;
   const macros = p.macros ?? [];
-  const canAddStep = (index: number) => computeCapacity({ ...p, macros: macros.map((macro, i) => i === index ? { actions: [...macro.actions, { type: 'pause', ticks: 0 }] } : macro) }).remaining >= 0;
+  const canAddStep = (index: number) => !macroSwitchesLayer(macros[index]!.actions) && computeCapacity({ ...p, macros: macros.map((macro, i) => i === index ? { actions: [...macro.actions, { type: 'pause', ticks: 0 }] } : macro) }).remaining >= 0;
   return <details class="card macros-panel">
     <summary class="card-head"><h2>Macros</h2><span class="muted">Ordered actions · {macros.length}</span><IconChevron /></summary>
-    <p class="hint">Add steps, then assign Execute macro to a key, encoder, chord, or timer. Each invocation can repeat 1–16 times. Pauses give applications time to respond.</p>
+    <p class="hint">Add steps, then assign Execute macro to a key, encoder, chord, or timer. Each invocation can repeat 1–16 times, or once if the macro switches layers. Pauses give applications time to respond.</p>
     <div class="timer-list">
       {macros.map((macro, index) => <article class="timer-row" key={index}>
         <header class="card-head"><strong>Macro {index + 1}</strong>
@@ -22,6 +22,7 @@ export function MacrosPanel() {
             if (slot?.kind === 'macro') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
           }}><IconTrash /></button>
         </header>
+        {macroSwitchesLayer(macro.actions) && <p class="hint">A layer switch must be the final step, and this macro must run once. Remove the layer switch to add more steps. Changing layers also cancels playback if triggered outside the macro.</p>}
         {!macro.actions.length && <p class="empty">No steps yet.</p>}
         {macro.actions.map((action, step) => {
           const slot: Slot = { kind: 'macro', layer: 0, index, step };

@@ -487,25 +487,40 @@ actions and nested **Execute macro** steps are unavailable. Deleting a macro cle
 its bindings and renumbers later macro references. **Undo** restores both.
 Moving layers updates explicit targets in macro steps.
 
+Switching layers immediately cancels any currently-running macros. This includes
+layer-switching actions that occur within the macro itself. Therefore, any layer-switching
+actions must be the final step, and that macro must have **Repeat count** set to 1.
+This applies to **Switch to layer** and **Relative layer**, including their one-shot variants,
+even if the target layer is already active. **Add step** is disabled while a
+layer-switching action is present. Remove that action to extend the sequence,
+then add it back at the end. Reordering, pasting or editing steps into an invalid
+order blocks saving until you fix it.
+
+For example, a tmux command-mode macro can prepare both tmux and your macropad:
+
+| Step | Action | Setting |
+| --- | --- | --- |
+| 1 | **Key tap** | **Ctrl** + **B** (tmux's default command prefix) |
+| 2 | **Switch to layer** | The layer containing your tmux command shortcuts |
+
+Assign this macro to a button with **Repeat count** set to 1. After pressing it,
+the next macropad input uses your tmux command layer.
+
 **Note:** Internally, a **Nothing** action signifies the end of a macro, so it is
 unavailable for normal use within a macro. If you delete the action from a macro step,
 it will be replaced with a 0-duration pause.
 
-A macro continues running even after the key that triggered it is released. If you trigger
-another action while a macro is running, some actions wait for the macro to finish, while others act immediately:
+A macro continues running even after the key that triggered it is released and its steps
+always run in order. If you trigger another action while a macro is still running,
+some actions wait for the macro to finish, while others act immediately:
 
 | Behavior | Actions triggered while a macro is running |
 | --- | --- |
 | Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X** and **Move pointer Y** set to **Tap**, and another **Execute macro** |
 | Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
 
-Held scrolling and held pointer movement wait until playback and USB output are
-idle before sending movement. "Immediately" means the action does not wait for
-the macro to finish; normal USB and host delays still apply. The macro's own
-steps always run in their listed order.
-
 Changing the active layer cancels the rest of the macro and clears waiting
-actions. This also applies to a layer-switching step inside a macro: the layer
+actions. *This also applies to a layer-switching step inside a macro:* the layer
 changes, but later steps and remaining repeats do not run. Selecting the layer
 that is already active does not cancel playback.
 

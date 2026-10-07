@@ -276,7 +276,14 @@ another mouse event reports its current button state.
 common **Action editor**; move it up/down, swap/clipboard compatible actions, or
 remove it. **Execute macro** selects a definition and **Repeat count** (1–16).
 **Pause duration** is 0–4080 ms in 16 ms increments. Held actions, nested macros
-and **Nothing** steps are unavailable. Deleting a macro clears its bindings and
+and **Nothing** steps are unavailable. Layer switches (absolute, relative and
+one-shot) must be the final step, even if their target is already active, and
+invocations of these macros must have **Repeat count** set to 1. **Add step** is
+disabled while a layer switch is present; the panel and sidebar explain the rule.
+Profile validation blocks saving invalid step order or repeat counts across all
+binding sites, including timers and their follow-ups. JSON imports reject these
+invalid configurations. Firmware behavior is unchanged: external layer changes
+still cancel active macros. Deleting a macro clears its bindings and
 renumbers later references; undo restores both. The live viewer lists its steps.
 
 JSON v11 adds optional `macros: [{ actions: [...] }]`, invocation

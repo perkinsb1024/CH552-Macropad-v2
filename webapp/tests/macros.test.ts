@@ -133,3 +133,38 @@ it('recognizes macro layer routes and stops at the first effective layer change'
   expect(warnings.some(w => w.layer === 1 && w.message.includes('cannot be reached'))).toBe(false);
   expect(warnings.some(w => w.layer === 2 && w.message.includes('cannot be reached'))).toBe(true);
 });
+
+it.each<Action>([
+  { type: 'setLayer', layer: 0 }, { type: 'setLayer', layer: 255 },
+  { type: 'oneShotSetLayer', layer: 0 }, { type: 'relativeLayer', offset: 0 },
+  { type: 'oneShotRelativeLayer', offset: 1 },
+])('requires even potentially self-targeting layer switches to finish a macro: %j', change => {
+  const p = defaultProfile(0);
+  p.macros = [{ actions: [tap, change] }];
+  p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats: 1 };
+  expect(validateProfile(p)).toEqual([]);
+  expect(() => encodeProfile(p)).not.toThrow();
+  p.macros[0]!.actions.push({ type: 'pause', ticks: 0 });
+  expect(validateProfile(p).some(i => i.slot?.kind === 'macro' && i.message.includes('final macro step'))).toBe(true);
+  expect(() => encodeProfile(p)).toThrow(/final macro step/);
+  expect(() => importProfile(exportProfile(p, {}))).toThrow(/final macro step/);
+});
+
+it('blocks repeats at every invocation site after editing a macro to switch layers', () => {
+  const p = defaultProfile(0);
+  const invoke: Action = { type: 'macro', macro: 0, repeats: 2 };
+  p.macros = [{ actions: [tap] }];
+  p.layers[0]!.keys[0] = invoke;
+  p.layers[0]!.encoderButton = invoke;
+  p.layers[0]!.clockwise = invoke;
+  p.layers[0]!.counterclockwise = invoke;
+  p.chords = [{ layer: 0, keyA: 0, keyB: 1, action: invoke }];
+  p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: invoke, resumeAction: invoke }];
+  expect(validateProfile(p)).toEqual([]);
+  p.macros[0]!.actions.push({ type: 'setLayer', layer: 0 });
+  expect(validateProfile(p).filter(i => i.message.includes('repeat count of 1'))).toHaveLength(7);
+  expect(() => encodeProfile(p)).toThrow(/repeat count of 1/);
+  expect(() => importProfile(exportProfile(p, {}))).toThrow(/repeat count of 1/);
+  p.macros[0]!.actions.pop();
+  expect(validateProfile(p)).toEqual([]);
+});

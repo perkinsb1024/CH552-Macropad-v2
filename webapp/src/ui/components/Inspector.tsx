@@ -7,6 +7,7 @@ import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER, keyCount, maxLay
 import { PALETTE } from '../../model/palette';
 import { normalizeText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
+import { isMacroLayerSwitch, macroSwitchesLayer } from '../../model/macros';
 import { actionProblem, slotLabel } from '../../model/validate';
 import { getAction, layerName, profile, rememberedAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
 import { ColorPreview } from './ColorPreview';
@@ -79,7 +80,7 @@ export function Inspector() {
   const macro = slot?.kind === 'macro';
   const rotation = slot?.kind === 'macro' || slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
   const layerCount = p?.layers.length ?? 0;
-  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed, macro, macroCount: p?.macros?.length ?? 0 }) : null;
+  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed, macro, macros: p?.macros, macroCount: p?.macros?.length ?? 0 }) : null;
   const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   const custom = useMemo(() => (action?.type === 'consumer' || action?.type === 'consumerHold') && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
   const savedStrings = useMemo(() => {
@@ -131,6 +132,7 @@ export function Inspector() {
   };
 
   const selectableActions = ACTION_DESCRIPTORS.filter(d => !macro || (d.type !== 'macro' && d.type !== 'none' && !d.needsRelease));
+  const singleRun = action.type === 'macro' && macroSwitchesLayer(p.macros?.[action.macro]?.actions ?? []);
   const keyIndex = slot.kind === 'key' ? slot.index : null;
   const layer = p.layers[slot.layer]!;
 
@@ -163,17 +165,19 @@ export function Inspector() {
         <span class="hint">{actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
       </label>
 
+      {macro && isMacroLayerSwitch(action) && <p class="hint">A layer switch must be the final macro step. Macros containing a layer switch must run once, even if the target layer is already active.</p>}
       {action.type === 'macro' && <>
         <label class="field"><span class="field-label">Macro</span>
-          <select aria-label="Macro" value={action.macro} onChange={e => update({ ...action, macro: Number((e.target as HTMLSelectElement).value) })}>
+          <select aria-label="Macro" value={action.macro} onChange={e => { const index = Number((e.target as HTMLSelectElement).value); update({ ...action, macro: index, repeats: macroSwitchesLayer(p.macros?.[index]?.actions ?? []) ? 1 : action.repeats }); }}>
             {!p.macros?.[action.macro] && <option value={action.macro}>Choose a macro — add one in Macros</option>}
             {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} · {macro.actions.length} step{macro.actions.length === 1 ? '' : 's'}</option>)}
           </select>
         </label>
         <label class="field"><span class="field-label">Repeat count</span>
-          <input type="number" aria-label="Repeat count" min={1} max={16} value={action.repeats} onInput={e => update({ ...action, repeats: Math.max(1, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value) || 1))) })} />
+          <input type="number" aria-label="Repeat count" min={1} max={singleRun ? 1 : 16} value={action.repeats} onInput={e => update({ ...action, repeats: Math.max(1, Math.min(singleRun ? 1 : 16, Math.round(Number((e.target as HTMLInputElement).value) || 1))) })} />
         </label>
       </>}
+      {singleRun && <p class="hint">This macro switches layers, so its repeat count must be 1.</p>}
       {action.type === 'pause' && <label class="field"><span class="field-label">Pause duration <output>{action.ticks * 16} ms</output></span>
         <input type="range" aria-label="Pause duration" min={0} max={255} value={action.ticks} onInput={e => update({ ...action, ticks: Number((e.target as HTMLInputElement).value) })} />
         <span class="hint">16 ms steps. Add consecutive pauses for longer waits.</span>
@@ -275,7 +279,7 @@ export function Inspector() {
           </div>
           {(action.clicks ?? 1) >= 3 && <label class="field click-count-field">
             <span class="field-label">Click count <output>{action.clicks}</output></span>
-            <input type="range" min={3} max={16} step={1} value={action.clicks} aria-label="Click count" onInput={(e) => update({ ...action, clicks: Math.max(3, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value)))) })} />
+            <input type="range" min={3} max={16} step={1} value={action.clicks} aria-label="Click count" onInput={(e) => update({ ...action, clicks: Math.max(3, Math.min(singleRun ? 1 : 16, Math.round(Number((e.target as HTMLInputElement).value)))) })} />
             <span class="hint">This click action will take about {(((action.clicks ?? 1) * 8 + ((action.clicks ?? 1) - 1) * 200) / 1000).toFixed(1)} seconds, delaying subsequent queued actions.</span>
           </label>}
         </div>

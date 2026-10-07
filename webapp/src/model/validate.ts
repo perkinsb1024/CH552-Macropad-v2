@@ -4,6 +4,7 @@ import { MAX_CHORD_WINDOW_UNITS, maxLayers, keyCount } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { isSupportedUsage } from '../keys/keyboard';
 import { describeCharacter, invalidCharacters } from './strings';
+import { isMacroLayerSwitch, macroSwitchesLayer } from './macros';
 import { computeCapacity } from './capacity';
 import { chordSlot } from './chords';
 import { ACTION_DESCRIPTORS, actionNeedsRelease, isPreviousLayer } from './actions';
@@ -15,6 +16,7 @@ export interface ActionContext {
   timed?: boolean;
   macro?: boolean;
   macroCount?: number;
+  macros?: Profile['macros'];
 }
 
 /** Returns a problem description, or null when the action is legal in this context. */
@@ -30,6 +32,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
   switch (action.type) {
     case 'macro':
       if (!Number.isInteger(action.macro) || action.macro < 0 || (ctx.macroCount !== undefined && action.macro >= ctx.macroCount)) return 'Choose an existing macro.';
+      if (ctx.macros?.[action.macro] && macroSwitchesLayer(ctx.macros[action.macro]!.actions) && action.repeats !== 1) return 'Macros containing a layer switch must have a repeat count of 1.';
       return Number.isInteger(action.repeats) && action.repeats >= 1 && action.repeats <= 16 ? null : 'Repeat count must be 1–16.';
     case 'pause': return Number.isInteger(action.ticks) && action.ticks >= 0 && action.ticks <= 255 ? null : 'Pause must be 0–255 ticks of 16 ms.';
     case 'ledControl': return ledProblem(action.command, action.value, action.brightness);
@@ -138,7 +141,7 @@ export function validateProfile(profile: Profile): Issue[] {
       if (!Number.isInteger(led) || led < 0 || led > 15) issues.push({ where: `Layer ${li + 1} · LED ${i + 1}`, message: 'Palette index must be 0–15.' });
     });
     const check = (action: Action, slot: Slot, rotation: boolean) => {
-      const problem = actionProblem(action, { layerCount, rotation, macroCount: profile.macros?.length ?? 0 });
+      const problem = actionProblem(action, { layerCount, rotation, macroCount: profile.macros?.length ?? 0, macros: profile.macros });
       if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
     };
     layer.keys.forEach((a, i) => check(a, { kind: 'key', layer: li, index: i }, false));
@@ -168,7 +171,7 @@ export function validateProfile(profile: Profile): Issue[] {
       if (globalPairs.has(pair)) issues.push({ where, message: 'Only one global chord can use this key pair.', slot });
       globalPairs.add(pair);
     }
-    const problem = actionProblem(chord.action, { layerCount, rotation: false, macroCount: profile.macros?.length ?? 0 });
+    const problem = actionProblem(chord.action, { layerCount, rotation: false, macroCount: profile.macros?.length ?? 0, macros: profile.macros });
     if (problem) issues.push({ where, message: problem, slot });
   }
 
@@ -186,7 +189,7 @@ export function validateProfile(profile: Profile): Issue[] {
     for (const resume of [false, true]) {
       const slot: Slot = { kind: 'timed', layer: 0, index, resume };
       const action = resume ? timer.resumeAction : timer.action;
-      const problem = action ? actionProblem(action, { layerCount, rotation: false, timed: true, macroCount: profile.macros?.length ?? 0 }) : 'Choose an action.';
+      const problem = action ? actionProblem(action, { layerCount, rotation: false, timed: true, macroCount: profile.macros?.length ?? 0, macros: profile.macros }) : 'Choose an action.';
       if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
     }
   });
@@ -194,7 +197,9 @@ export function validateProfile(profile: Profile): Issue[] {
   for (const [index, macro] of (profile.macros ?? []).entries()) {
     macro.actions.forEach((action, step) => {
       const slot: Slot = { kind: 'macro', layer: 0, index, step };
-      const problem = actionProblem(action, { layerCount, rotation: false, macro: true });
+      const problem = isMacroLayerSwitch(action) && step !== macro.actions.length - 1
+        ? 'A layer switch must be the final macro step. Move it to the end or remove the later steps.'
+        : actionProblem(action, { layerCount, rotation: false, macro: true });
       if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });
     });
   }

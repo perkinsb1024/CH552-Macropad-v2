@@ -1,5 +1,15 @@
 import type { Action, Profile } from './types';
 
+/** Layer switches must finish a macro, regardless of its invocation layer. */
+export function isMacroLayerSwitch(action: Action): boolean {
+  return action.type === 'setLayer' || action.type === 'oneShotSetLayer'
+    || action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer';
+}
+
+export function macroSwitchesLayer(actions: Action[]): boolean {
+  return actions.some(isMacroLayerSwitch);
+}
+
 /** Apply a reference edit everywhere an invocation can be bound. */
 export function removeMacro(profile: Profile, index: number): void {
   profile.macros?.splice(index, 1);

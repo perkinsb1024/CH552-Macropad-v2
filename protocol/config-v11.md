@@ -130,6 +130,16 @@ selecting steps in the common **Action editor**, and drag/clipboard action swaps
 references. Undo restores both definitions and bindings. Moving/removing layers
 updates explicit targets in macro steps. Layer-route analysis follows macro
 steps only until their first effective layer change, where firmware cancels them.
+The editor requires every layer-switching step (**Switch to layer**, **Relative layer**,
+and their one-shot variants) to be the final step, regardless of the invocation
+layer or whether the target is already active. Any invocation of such a macro
+must have **Repeat count** 1. **Add step** is disabled while a layer switch is
+present, and validation blocks saving invalid ordering or repeat counts at all
+binding sites. JSON import enforces the same rules. These are editor constraints;
+the wire encoding and firmware validation still accept the broader sequences
+and repeat counts described below. Firmware still cancels playback on an actual
+effective-layer change.
+
 The live viewer lists macro steps without edit controls.
 
 Binary readback discovers nonempty sequences and referenced empty/suffix

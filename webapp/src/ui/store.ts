@@ -383,7 +383,7 @@ export function pasteSelectedConfiguration(text: string): boolean {
     copied = JSON.parse(text);
     if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || copied.version !== 1 || !copied.action) return false;
     if (copied.led !== undefined && (!Number.isInteger(copied.led) || copied.led < 0 || copied.led > 15)) return false;
-    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed', macro: slot.kind === 'macro', macroCount: p.macros?.length ?? 0 });
+    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed', macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
     if (problem) {
       notify('error', `Cannot paste here: ${problem}`);
       return true;
@@ -408,7 +408,7 @@ export function canSwapSlots(source: Slot, target: Slot): boolean {
   const sourceAction = getAction(p, source);
   const targetAction = getAction(p, target);
   if (!sourceAction || !targetAction) return false;
-  const allowed = (action: Action, slot: Slot) => !actionProblem(action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), macro: slot.kind === 'macro', macroCount: p.macros?.length ?? 0 });
+  const allowed = (action: Action, slot: Slot) => !actionProblem(action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
   return allowed(sourceAction, target) && allowed(targetAction, source);
 }
 

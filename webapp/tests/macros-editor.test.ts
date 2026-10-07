@@ -80,3 +80,29 @@ it('remaps macro layer targets, tracks edits, and clears a step to a zero pause'
   expect(profileChanges(before, profile.value!).some(c => c.where === 'Macros')).toBe(true);
   expect(computeCapacity(profile.value!).macros).toBe(4);
 });
+
+it('disables adding steps after a layer switch and explains the restriction in the sidebar', () => {
+  start(); addMacro();
+  setAction(selectedSlot.value!, { type: 'oneShotRelativeLayer', offset: 0 });
+  const add = () => nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add step'))!;
+  expect(add().props.disabled).toBe(true);
+  expect(JSON.stringify(nodes(Inspector()).filter(n => n.type === 'p').map(n => n.props.children))).toContain('final macro step');
+  clearSelectedAction();
+  expect(add().props.disabled).toBe(false);
+});
+
+it('restricts repeats when selecting a layer-switching macro without silently changing existing bindings', () => {
+  start(); addMacro();
+  setAction(selectedSlot.value!, { type: 'setLayer', layer: 0 });
+  selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
+  setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 16 });
+  const repeat = nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat count')!;
+  expect(repeat.props.max).toBe(1);
+  expect(repeat.props.value).toBe(16);
+  (repeat.props.onInput as (e: unknown) => void)({ target: { value: '16' } });
+  expect(getAction(profile.value!, selectedSlot.value)).toMatchObject({ repeats: 1 });
+  setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 16 });
+  const select = nodes(Inspector()).find(n => n.props['aria-label'] === 'Macro')!;
+  (select.props.onChange as (e: unknown) => void)({ target: { value: '0' } });
+  expect(getAction(profile.value!, selectedSlot.value)).toMatchObject({ repeats: 1 });
+});

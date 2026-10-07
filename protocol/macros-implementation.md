@@ -131,3 +131,14 @@ OS readiness delays for Spotlight/typing, consumer releases and held-output
 coexistence under USB backpressure, long/repeated macros with later queued input,
 queue-drop counters, layer/reset cancellation and migration of real v10 flash.
 The existing v10 stack measurement does not establish the new runtime peak.
+
+## Configurator layer-switch restrictions
+
+Layer-switching actions must finish a macro, including absolute/relative and
+one-shot variants even when their target might already be active. Every
+invocation of such a macro must use repeat count 1. The editor disables **Add
+step**, explains the rule in the panel/sidebar, and blocks saving invalid
+ordering or repeat counts. JSON import applies the same validation. Existing
+invalid device profiles remain editable for repair. This is a configurator-only
+restriction; firmware, binary encoding, flash, RAM and stack capacity are unchanged.
+A separately triggered layer change still cancels an active macro.
