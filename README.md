@@ -87,7 +87,7 @@ Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
-A [beta browser firmware installer](webUploader/README.md) is also available as a prototype for desktop Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup; hardware flashing is still being validated.
+A [beta browser firmware installer](webUploader/README.md) is also available for Chrome or Edge on Windows, macOS, and Linux. Its documentation includes USB driver and permission setup. Hardware flashing is confirmed working on MacOS.
 
 ### 1. Install the Tools
 
@@ -146,7 +146,7 @@ Memory in the current firmware, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 8 | 4 |
+| Flash remaining | 56 | 52 |
 | External RAM allocated (XSEG + absolute) | 488 | 497 |
 | Stack available (linker reserve) | 82 | 79 |
 

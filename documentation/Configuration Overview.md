@@ -203,9 +203,9 @@ Choose **Nothing** to leave an input unassigned. A numbered key can still have a
 
 Think of a layer as another page of buttons on the same macropad. **Layer 1** might contain editing shortcuts, while **Layer 2** controls music. The same key can copy on one layer and mute on another. The most common example of keyboard layers is the **Shift** or Caps Lock key. Think of the lowercase letters and numbers as one layer, while pressing shift or caps lock activates a second layer containing the uppercase letters and punctuation. **Shift** is a momentary layer change, while caps lock is persistent. Both types of layer changes ([and more!](#choose-how-to-switch-layers)) are supported by this macropad.
 
-A layer contains all numbered-key actions and key-press colors, the wheel button and both turn actions, and its layer options. **Chords** can belong to a layer or apply globally to all layers. Timers are always global.
+A layer contains all numbered-key actions and key-press colors, the wheel button and both turn actions, and its layer options. **Chords** and **Timed actions** can belong to a layer or apply globally to all layers
 
-You can have up to seven layers on a three-key macropad, or five on a six-key macropad, unless you are using optional features like chords and text strings, which will reduce the available space for layers.
+You can have up to seven layers on a three-key macropad, or five on a six-key macropad, unless you are using optional features like **Chords** and text strings, which will reduce the available space for layers.
 
 ### Add, Edit, and Remove Layers
 
