@@ -1,4 +1,4 @@
-# Macropad configuration image, version 11
+# Macropad Configuration Image, Version 11
 
 | Image property | Value |
 | --- | --- |
@@ -17,8 +17,8 @@
 This standalone reference specifies format 11 firmware and its web configurator:
 dynamically stored macros, 1–16 executions per invocation, and **Pause** actions.
 Timed actions use six bytes each. The checked-in release HEX files and bundled
-uploader firmware remain v10; v11 is ready for hardware validation on
-`experiment/macros`, with no v11 release generated.
+uploader firmware remain v10, with no v11 release generated. Firmware hardware
+testing has been completed on both three-key and six-key macropads.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -26,7 +26,7 @@ retain their stated validation rules. The tail after strings now contains
 validated two-byte actions and single-byte zero terminators/padding; arbitrary
 legacy padding is no longer ignored.
 
-## Version and migration
+## Version and Migration
 
 Header byte 2 is `11`. GET_INFO advertises configuration format 11 and transport
 version 1. The recommended firmware accepts only v11. Older DataFlash remains
@@ -63,7 +63,7 @@ reactivate inputs. Firmware never migrates flash on its own. The active editor
 links older firmware to frozen configurators for formats 2–10 and does not read
 or write their profiles through a v11 connection.
 
-## JSON, drafts and editor behavior
+## JSON, Drafts and Editor Behavior
 
 Exports identify `format: "universal-macropad-profile"` and `version: 11`.
 `variant` is `six-key` or `three-key`; `startupLayer` is zero-based;
@@ -153,7 +153,7 @@ V11 drafts use `universal-macropad:format-v11:` and recover v10 and older drafts
 without changing their original namespaces. Source-version migration runs once;
 current JSON/drafts retain v11 timer units. Oversized drafts remain editable.
 
-## Header and rainbow settings
+## Header and Rainbow Settings
 
 The nine-byte header is:
 
@@ -212,7 +212,7 @@ setting before previewing it. Bits 0–3 still control chords independently.
 | Final XOR | `0x0000` |
 | Covered bytes, in order | 0–5, then 8–127 (skip the stored CRC at 6–7) |
 
-## Layers and LED behavior
+## Layers and LED Behavior
 
 Layers begin at image byte 9. Layer `n` starts at byte `9 + n × layer size`,
 with `n` starting at zero. Byte ranges below are relative to the start of a
@@ -255,7 +255,7 @@ blinks alternate between animated **Rainbow** and fully dark phases. Per-key ind
 changes whether it obscures an idle background. USB color preview retains its
 separate solid-**Off** versus **Rainbow** selection.
 
-## Chords and shared string pool
+## Chords and Shared String Pool
 
 After the layers come the configured chords, each three bytes. Byte ranges
 below are relative to the start of a chord.
@@ -279,7 +279,7 @@ strictly ascending. Multiple actions may share one string.
 | **String** encoding | Zero-terminated printable US ASCII (`0x20`–`0x7E`), tab (`0x09`), or LF (`0x0A`) |
 | Action offset | Zero-based byte offset from the start of the pool; must point to a string start |
 
-## Action records
+## Action Records
 
 | Action byte | Field | Encoding |
 | --- | --- | --- |
@@ -316,6 +316,13 @@ and `4` = **Middle**; any nonzero combination up to `7` is valid. Consumer actio
 accept nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Type Text** must
 point to the start of a complete NULL-terminated pool string, including for
 empty text. Type 0 auxiliary values other than 0, 1 and 2 reject.
+
+**Type Text** uses the US keyboard layout. Each character is pressed for at least
+8ms, then released. After the release report drains, playback waits 32ms before
+continuing, including after tabs, newlines and the final character. USB and
+main-loop delays can lengthen these times. Inputs, timers and LEDs continue to
+be serviced; later queued actions wait for text playback to finish. Applications
+may still require an explicit **Pause** before Enter in a macro.
 
 For action 9 and B, auxiliary value `0` changes the selected base layer
 persistently. Auxiliary value `1` makes that layer active for the next input
@@ -362,7 +369,7 @@ For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
 With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for **Keyboard hold** actions).
 
-## LED control action E
+## LED Control Action E
 
 Record byte 0 is `(value << 4) | 0xE`; byte 1 is the full command ID.
 For commands `00`–`0D`, the `0xF` absolute sentinel means **As configured** (the earlier proposed `0xFF`
@@ -446,7 +453,7 @@ Hardware preview, invalid-config feedback, and bootloader feedback bypass overri
 preview uses saved phase/speed. Common presets restore brightness only; Restore all
 also restores phase and speed.
 
-## Palette and starter profile
+## Palette and Starter Profile
 
 Palette version 3 uses the following colors. The representative hex values are
 the web editor's display colors, chosen to resemble the firmware LEDs on
@@ -472,7 +479,7 @@ values. Only palette indices are stored in the configuration image.
 | 14 | `(255, 255, 255)` | `#FFFFFF` | **White** | ![White](swatches/14.svg) |
 | 15 | `(0, 0, 0)` | `#000000` | **Off** | ![Off](swatches/15.svg) |
 
-## Mouse clicks
+## Mouse Clicks
 
 **Mouse click** uses type `0x3` for every click count. The first byte is
 `((clicks - 1) << 4) | 0x03`; the second byte is the mouse button mask.
@@ -494,7 +501,7 @@ buttons and toggled mouse buttons retain their existing composition rules.
 The sequence occupies the queued playback lane, delaying later queued actions.
 Held outputs, consumer controls, and layer/LED actions use independent handling.
 
-## Action encoding examples
+## Action Encoding Examples
 
 | Action | First byte | Second byte |
 | --- | --- | --- |
@@ -516,7 +523,7 @@ text still requires a valid pool offset pointing at a NULL byte.
 These are two-byte binding records; the macro tail instead uses a single `00`
 terminator with no parameter, as specified under Macros and pauses.
 
-**Consumer Hold** occupies low-nibble type 9, directly after **Consumer Tap** (type 8).
+**Consumer Hold** occupies low-nibble type 8, directly after **Consumer Tap** (type 7).
 Both retain nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Hold** is
 allowed on keys, encoder press and chords, but rejects on wheel rotation and on
 both timer action slots. It adds no configuration bytes.
@@ -529,7 +536,7 @@ zero is a firmware no-op, although the editor asks for a nonzero step.
 Type `0x3` encodes **Mouse click** and type `0xF` encodes **Execute macro**. A full first byte
 of `0x10` for **Type Text** uses low-nibble type 0 with auxiliary value 1.
 
-## Consumer ownership and release
+## Consumer Ownership and Release
 
 The most recent consumer action wins, consistently for hold-over-hold and
 tap-over-hold. Previous still-held usages are *not restored*. A newer tap
@@ -546,7 +553,7 @@ releases retry until accepted. Configuration clearing releases consumer output.
 USB report-generation changes reassert the winning hold. Sustained usages use
 host/application repeat behavior; firmware does not synthesize repeated taps.
 
-## Scroll axis and HID reports
+## Scroll Axis and HID Reports
 
 The **Scroll axis** control offers **Vertical** and **Horizontal**. A clear
 auxiliary bit 3 selects vertical; a set bit selects horizontal. **Scroll direction**
@@ -580,7 +587,7 @@ AC Pan with logical range -1 to +1, preserving the report's existing size.
 GET_REPORT and idle reports contain the held mouse buttons with both scroll
 axes and pointer movement zero, so polling cannot repeat a scroll.
 
-## Held scrolling
+## Held Scrolling
 
 Initial press sends one configured step. Holding a key, chord or encoder button
 repeats that step when action playback and the USB transport are idle, with at
@@ -596,7 +603,7 @@ held scroll bindings are visited in input-index order, matching pointer holds.
 Bindings survive layer changes until release. **Scroll** acceleration was investigated,
 but remains disabled in v11. Reserved acceleration bits reject during validation.
 
-## Timed actions
+## Timed Actions
 
 After the layers and sorted three-byte chords come up to four timed actions in
 stored order, followed by the shared string pool. Each timer occupies six bytes:
@@ -618,7 +625,7 @@ with rotation: no action requiring physical release may be stored in either
 slot. Action codes, text addressing and parameter validation are specified in the
 action-record sections above.
 
-### Runtime behavior
+### Runtime Behavior
 
 Global timers count regardless of the effective layer. A scoped timer counts
 only on its assigned effective layer. Every actual effective-layer transition
@@ -655,7 +662,7 @@ accumulate an unbounded backlog. Periodic firing preserves fractional phase;
 input/configuration resets clear it. Configuration application and USB reset
 clear pending follow-ups and restart timer state.
 
-## Temporary LED effects
+## Temporary LED Effects
 
 Temporary-effect command IDs select **As configured**, **Always on**, or **Blink**
 with 1–8 flashes, using the complete LED command table above.
@@ -682,7 +689,7 @@ To turn LEDs fully off after inactivity, use the existing **Both off** brightnes
 preset and restore brightness on next input; effect swatches intentionally have
 **Rainbow** rather than an **Off** color.
 
-## Macros and pauses
+## Macros and Pauses
 
 The macro tail begins at `macroStart = stringPoolStart + poolBytes`. There is no
 macro count, directory, fixed slot allocation, presence flag, or extra header
@@ -785,7 +792,7 @@ terminator if it completely fills the 128-byte configuration space. With one lay
 chords or timers, at most 48 steps fit on six-key hardware or 52 on three-key
 hardware. More layers and other dynamic data share the same 128-byte budget.
 
-## Storage and verification
+## Storage and Verification
 
 The image order is header → layers → sorted chords → timers in stored order →
 shared string pool → macro sequences / zero padding. Section starts are:
@@ -811,7 +818,7 @@ bindings and macro steps. All 128 bytes remain available. Every trailing action
 is validated as a macro step, single zero bytes act as terminators/padding, and all
 trailing bytes remain CRC-covered.
 
-## HID configuration protocol
+## HID Configuration Protocol
 
 The v11 configuration uses the following transport-v1 protocol. The shared
 [HID transport reference](hid-v1.md) also contains historical format notes;
@@ -948,14 +955,14 @@ GET_IDLE and SET_IDLE support report IDs 1, 2, and 5, plus report ID 0 to set
 all three idle rates. Idle rates use the standard four millisecond units, and
 the scheduler sends unchanged reports when their configured interval expires.
 
-## Builds and measurements
+## Builds and Measurements
 
 Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,308 | 28 | 108 | 369 | 128 | 79 |
-| Three keys | 14,304 | 32 | 108 | 360 | 128 | 82 |
+| Six keys | 14,332 | 4 | 108 | 369 | 128 | 79 |
+| Three keys | 14,328 | 8 | 108 | 360 | 128 | 82 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -964,8 +971,8 @@ loads all 128 bytes from DataFlash before any image use; absolute storage does
 not rely on the ordinary XSEG startup clear loop.
 
 Stack figures are linker-reserved capacities, four bytes higher than the v10
-baseline on each board. No v11 hardware stack high-water or physical macro/OS
-validation has been performed. Reproduce measurements and the complete host
+baseline on each board. Firmware hardware testing has been completed on both
+three-key and six-key macropads. Reproduce measurements and the complete host
 regressions with `python3 tests/run_host_tests.py` and temporary native builds:
 
 ```sh

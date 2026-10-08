@@ -1,4 +1,4 @@
-# Macropad HID transport, version 1
+# Macropad HID Transport, Version 1
 
 The USB device retains VID `0x1209` and PID `0xC55D`. Its product string is
 `Universal Macropad`. Keyboard and mouse reports use IDs 1 and 2; consumer
@@ -27,6 +27,13 @@ interrupt IN. SET_REPORT must include report ID 3 and exactly 32 USB bytes.
 Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
+
+Format 11 reports action mask `0xFFFF`. **Execute macro** uses type `0xF`,
+**LED control** uses type `0xE`, **Consumer tap** uses type `0x7`, and
+**Consumer hold** uses type `0x8`. **Type text** and **Pause** use full first
+bytes `0x10` and `0x20`, sharing low-nibble type 0 with **Nothing**. The format
+version identifies the action map; the mask alone is insufficient. See the
+standalone [configuration format 11 reference](config-v11.md).
 
 Formats 8–10 report action mask `0xFFEF`: mouse clicks use type 3 with auxiliary
 count minus one, and type 4 is reserved. Its configuration version identifies
@@ -108,9 +115,12 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 Format 7 adds timer records and temporary LED-control commands without changing
 transport v1. See [config-v7.md](config-v7.md). V7 firmware accepts format 6 images, which its editor can migrate before saving
-v7. Current v10 firmware accepts only format 10; the current editor migrates older
-profiles before saving v10. Format 10 changes timer records without changing the
-HID transport or action mask.
+v7. Current v11 firmware accepts only format 11; the current editor migrates older
+profiles before explicitly saving v11. Firmware updates leave older DataFlash
+profiles unchanged, with inputs inactive until a valid v11 profile is saved.
+Format 10 changes timer records without changing the HID transport or action
+mask. Format 11 adds macros and pauses and remaps action types without changing
+the transport version or GET_INFO layout.
 
 In format 9, mouse report ID 2 adds horizontal AC Pan in two formerly padding
 bits (payload byte 0, bits 6–7, signed -1 to +1). Buttons occupy bits 0–2,

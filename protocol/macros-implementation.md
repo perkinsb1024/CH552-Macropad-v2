@@ -1,20 +1,20 @@
-# Final v11 macro implementation and validation
+# Final v11 Macro Implementation and Validation
 
 The dynamic, repeated, paused path is implemented in firmware and the web
-configurator on `experiment/macros`. The standalone final wire/editor reference
+configurator. The standalone final wire/editor reference
 is [config-v11.md](config-v11.md). The original comparison results and all
 retained/rejected optimization work are in [macros-findings.md](macros-findings.md)
 and [macros-measurements.json](macros-measurements.json).
 
-## Final memory measurements
+## Final Memory Measurements
 
 SDCC 4.2.2 build.13407_4, 24 MHz, 148 USB DMA bytes, actual 14,336-byte
 application limit. Native outputs are temporary; releases are unchanged.
 
 | Resource, bytes | Six-key | Three-key |
 | --- | ---: | ---: |
-| Flash used | 14,308 | 14,304 |
-| Flash remaining | 28 | 32 |
+| Flash used | 14,332 | 14,328 |
+| Flash remaining | 4 | 8 |
 | Occupied internal RAM (including register banks/overlays) | 177 | 174 |
 | Paged external RAM | 108 | 108 |
 | Ordinary XSEG | 369 | 360 |
@@ -23,14 +23,16 @@ application limit. Native outputs are temporary; releases are unchanged.
 | USB DMA, additional | 148 | 148 |
 | Linker stack capacity | 79 | 82 |
 
-Single-byte macro terminators add four flash bytes on each board relative to
+The fixed 32ms wait after each text character adds 24 flash bytes per board
+without changing RAM allocation or stack capacity. Before that change,
+single-byte macro terminators added four flash bytes on each board relative to
 the earlier two-byte-terminator implementation (14,304/14,300 bytes). Validator
 allocation frees two internal RAM bytes, increasing linker stack capacity from
 77/80 to 79/82 bytes; external RAM is unchanged.
 The change remains in unreleased configuration format 11.
 Compared with v10 baseline `4647e6d`, stack capacity increases by four bytes on
 each board and allocated application xRAM increases by one byte. Stack capacity
-is not a runtime high-water measurement; v11's hardware peak is still unknown.
+is a linker reserve rather than a runtime high-water measurement.
 
 The active image occupies `0x300–0x37F` and is absent from XSEG's reported size.
 The layout guard checks its exact address, hardware bounds and overlap with
@@ -39,7 +41,7 @@ is `0x100–0x267`. Both leave 128 physical xRAM bytes above the active image.
 The zeroing loop does not initialize absolute storage; `protocolInit` loads all
 128 bytes before image use. Preserve that initialization contract if relocating it.
 
-## Retained implementation choices
+## Retained Implementation Choices
 
 - No macro count, directory or permanently reserved definition slots. Definitions
   occupy the tail after strings. Each step costs two bytes; a single zero byte ends the
@@ -75,7 +77,7 @@ harness pins prototype `38e5816` and baseline `4647e6d`; subsequent product edit
 cannot silently change those historical results. The initial local type-4 macro
 encoding is relevant only to those experiment artifacts. Final v11 uses type F.
 
-## Web configuration and migration
+## Web Configuration and Migration
 
 The final action map shifts old types 5–F down one; **Execute macro** is F,
 **LED control** is E, and **Pause** is full byte 20. The decoder interprets the
@@ -104,7 +106,7 @@ checksums. Older firmware redirects to matching archives. The uploader build
 still bundles the existing v10 release files and now links them to the v10
 archive. No firmware release-generation command was run.
 
-## Verification and reproduction
+## Verification and Reproduction
 
 ```sh
 python3 tests/run_host_tests.py
@@ -130,15 +132,12 @@ suite also passes AddressSanitizer and UndefinedBehaviorSanitizer on both boards
 Chrome visual validation used a separate six-key simulator tab: added a macro,
 selected **Pause**, verified the 256ms slider and storage accounting, assigned
 **Execute macro** to a key, entered 16 repeats, and saved/read back all 128 bytes.
-No physical macropad was modified during this task.
+The project owner subsequently completed firmware hardware testing on both
+three-key and six-key macropads, and confirmed reliable Codex text entry with
+the fixed 32ms character pause. General firmware hardware testing is normally
+sufficient; stack high-water measurements are not required for every build.
 
-Hardware validation remains: both board geometries, actual stack high-water,
-OS readiness delays for Spotlight/typing, consumer releases and held-output
-coexistence under USB backpressure, long/repeated macros with later queued input,
-queue-drop counters, layer/reset cancellation and migration of real v10 flash.
-The existing v10 stack measurement does not establish the new runtime peak.
-
-## Configurator layer-switch restrictions
+## Configurator Layer-Switch Restrictions
 
 Layer-switching actions must finish a macro, including absolute/relative and
 one-shot variants even when their target might already be active. Every

@@ -24,6 +24,24 @@ npm run build      # typecheck + production build into dist/
 npm run preview    # serve dist/ locally
 ```
 
+## Linux Device Access
+
+Linux may list the macropad in the browser chooser but deny access to its
+`hidraw` device. The configurator's connection help includes the same setup:
+create `/etc/udev/rules.d/70-ch552-macropad.rules` using an administrator text
+editor, with this line:
+
+```udev
+SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="c55d", MODE="0666"
+```
+
+This grants all local users read/write access to this macropad's HID interfaces.
+On shared systems, ask your administrator for a group-restricted rule instead.
+Run `sudo udevadm control --reload-rules`, unplug and reconnect the macropad,
+then try **Connect macropad** again. A sandboxed browser package may also need
+its device permissions adjusted. These permissions apply to the running firmware;
+see the [installer's Linux setup](../webUploader/README.md#linux) for bootloader access.
+
 ## Trying It without Hardware
 
 The current editor waits for **Connect macropad** before opening hardware, even if
@@ -185,7 +203,7 @@ Return-path warnings explain that this target depends on runtime history.
 
 The protocol simulator accepts only valid v11 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
-Hardware testing remains necessary for those effects. Bundled `../profiles/*.json`
+Firmware hardware testing has been completed on both three-key and six-key macropads. Bundled `../profiles/*.json`
 files use v7 JSON and are migrated to v11, then checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
@@ -291,7 +309,7 @@ JSON v11 adds optional `macros: [{ actions: [...] }]`, invocation
 Macro indices are zero-based. On every encode, definitions follow the shared
 string pool and indices become absolute addresses. No reserved macro storage,
 count or directory is needed. **Device storage** counts two bytes per step plus
-two per terminator, omitting the last terminator at an exact image boundary.
+one per terminator, omitting the last terminator at an exact image boundary.
 Macro text is deduplicated with text in all other bindings. Definitions fit the
 same shared 128 bytes as layers, chords and six-byte timers.
 

@@ -23,7 +23,7 @@ This guide covers the current configurator and its supported three-key and six-k
 13. [Save, Back Up, and Restore](#save-back-up-and-restore)
 14. [Example Configurations](#example-configurations)
 15. [Troubleshooting](#troubleshooting)
-16. [Advanced: Gotchas and things to watch out for with Timed Actions](#timed-action-gotchas)
+16. [Advanced: Gotchas and Things to Watch Out for with Timed Actions](#timed-action-gotchas)
 
 ## Get Connected—or Try a Virtual Macropad
 
@@ -181,7 +181,9 @@ Supported text includes ordinary English letters, numbers, spaces, standard punc
 
 Text is typed using the US keyboard layout. A different keyboard layout on your computer may produce different characters. Line breaks act like **Enter** and tabs act like Tab, so be careful when using them. They may submit a form or move to another field depending on where you type.
 
-The **Text** field shows its storage cost. **Reuse an existing string…** lets you select text already used elsewhere in your profile. Identical text does not use additional storage, even when several controls use it. See [the storage limit](#the-128-byte-limit) before adding long phrases.
+**Type text** waits 32ms after each character's key release before continuing, including after tabs, newlines and the final character. Inputs and USB continue to be serviced during the wait. Applications may still need an explicit **Pause** before Enter in a macro.
+
+The **Text** field shows its storage cost. **Reuse an existing string…** lets you select text already used elsewhere in your profile. Identical text does not use additional storage, even when several controls use it. See [the storage limit](#the-128-byte-configuration-size-limit) before adding long phrases.
 
 > [!WARNING]
 > While it is technically possible to use the **Type text** feature to save and enter your password, you should *never* do this. This device does not feature any encryption or protection. Anyone with access to this device would have access to your password. This is the job of a password manager.
@@ -300,17 +302,17 @@ After a timer has fired, its optional **On next input** action runs once when yo
 
 This follow-up does not stop the repeating timer. Multiple timers can be waiting for the same next input, so plan their actions together. Both timer action slots support actions that do not need a release, including text, media controls, layer changes, mouse steps, and LED controls.
 
-For a complete lighting reminder, see [the example configuration](#a-repeating-lighting-reminder).
+For a complete lighting reminder, see [the example configuration](#create-a-reminder-to-take-a-break).
 
-For interactions between multiple timers and layer changes, see [Gotchas and things to watch out for with Timed Actions](#timed-action-gotchas) at the end of this guide. Expand the section to read it.
+For interactions between multiple timers and layer changes, see [Gotchas and Things to Watch Out for with Timed Actions](#timed-action-gotchas) at the end of this guide. Expand the section to read it.
 
 ## LED Colors and Effects
 
 There are three main ways to use lighting: a color when a key is pressed, a layer indicator, and an **LED control** action that changes lighting during use.
 
-The fixed color palette offers **Red**, **Coral**, **Orange**, **Amber**, **Yellow**, **Green**, **Leaf**, **Teal**, **Cyan**, **Azure**, **Blue**, **Violet**, **Magenta**, **Rose**, and **White**. The final swatch is **Off** for key key-press colors, or **Rainbow** for layer indicators and temporary effects. Custom colors are not available.
+The fixed color palette offers **Red**, **Coral**, **Orange**, **Amber**, **Yellow**, **Green**, **Leaf**, **Teal**, **Cyan**, **Azure**, **Blue**, **Violet**, **Magenta**, **Rose**, and **White**. The final swatch is **Off** for key-press colors, or **Rainbow** for layer indicators and temporary effects. Custom colors are not available.
 
-### Key Key-Press Colors
+### Key-Press Colors
 
 Select a numbered key, then choose **LED color on key press** in the **Action editor**. **Apply to layer** copies that color to every numbered key on the current layer; it leaves their actions unchanged. key-press colors always use full brightness (unless altered by an [**LED Control** command](#led-control-actions-during-use)).
 
@@ -322,12 +324,12 @@ In **Layer options**, set **Layer selection LEDs**:
 
 | Mode | What you see |
 | --- | --- |
-| **Do not indicate** | No layer indication; key key-press colors can still work |
+| **Do not indicate** | No layer indication; key-press colors can still work |
 | **On for 1.5 seconds** | Shows the chosen layer color or rainbow briefly when selecting the layer |
 | **Blink by layer number** | Blinks once for **Layer 1**, twice for **Layer 2**, and so on. Each blink is a quarter-second on and a quarter-second off |
 | **Always on** | Idle keys show the layer color or rainbow; pressed keys show their individual key-press colors |
 
-Choose the **Layer indicator color** and **Full Brightness** or **Dim**. The timed and blinking indications temporarily cover key key-press colors. The always-on background allows key key-press colors to show over it.
+Choose the **Layer indicator color** and **Full Brightness** or **Dim**. The timed and blinking indications temporarily cover key-press colors. The always-on background allows key-press colors to show over it.
 
 ### Rainbow Settings and an Off Key
 
@@ -342,7 +344,7 @@ When a layer uses a rainbow indicator, **Profile** shows settings to adjust the 
 
 **Rainbow speed** offers **Extra fast**, **Fast**, **Slow**, and **Extra slow**. These settings apply across layers. Save changes before expecting device color previews to use the new speed or spacing. An [**LED control** action](#led-control-actions-during-use) can also change them during use.
 
-If you combine an **Always on** layer indicator with an **Off** key key-press color, **Profile** offers **For key LEDs, “Off” means**:
+If you combine an **Always on** layer indicator with an **Off** key-press color, **Profile** offers **For key LEDs, “Off” means**:
 
 - **Transparent:** pressing an **Off**-colored key leaves the idle background visible
 - **Black:** pressing it makes that key go dark over the always-on background
@@ -433,7 +435,7 @@ Check the **Action editor** afterward to see the assigned combination or text. A
 
 **Copy**, cut and paste act on the highlighted input, even after you click another control such as its LED color. If you are typing in a text box or have ordinary page text selected, the shortcuts work on that text instead. Clicking anywhere clears existing page-text selection; dragging to select new text still lets you copy that text. A toast confirms the action and the trigger it was copied or cut from, or pasted to. Copying one action is different from **Export to Clipboard**, which copies the entire profile for backup.
 
-Copying or cutting a numbered key also includes its key-press color. Pasting it onto another numbered key transfers that color; pasting onto a wheel input, chord, or timer transfers only the action. Cutting clears the original action and turns its key key-press color **Off**.
+Copying or cutting a numbered key also includes its key-press color. Pasting it onto another numbered key transfers that color; pasting onto a wheel input, chord, or timer transfers only the action. Cutting clears the original action and turns its key-press color **Off**.
 
 Delete or Backspace first changes the selected action to **Nothing**. On a numbered key whose action is already **Nothing**, another press turns its key-press color **Off**. Clearing a chord action does not **delete** the chord; use its trash button to remove the chord and reclaim its storage.
 
@@ -636,7 +638,7 @@ If you start from the two-layer starter, customize its existing layers instead o
 5. Enable **Consume this input** if you want the next device interaction after the alert to only dismiss the reminder instead of firing its usual action
 6. Save. The reminder turns the LEDs amber; your next macropad input clears the effect
 
-The first reminder may arrive about two minutes early because of the timer's shared clock. If you prefer an alert that clears itself, choose **Blink** and a blink count instead of **Always on**. A layer change also clears an always-on temporary effect.
+Each timer has less than 16ms of early clock quantization; firmware polling, queued output and USB delays can make the reminder arrive later. If you prefer an alert that clears itself, choose **Blink** and a blink count instead of **Always on**. A layer change also clears an always-on temporary effect.
 
 ## Troubleshooting
 
@@ -666,7 +668,7 @@ The first reminder may arrive about two minutes early because of the timer's sha
 <a name="timed-action-gotchas"></a>
 
 <details>
-<summary><strong>Advanced: Gotchas and things to watch out for with Timed Actions</strong></summary>
+<summary><strong>Advanced: Gotchas and Things to Watch Out for with Timed Actions</strong></summary>
 
 **Timed actions** and their **On next input** actions are complicated and when you have more than one defined, they can interact in unexpected ways. The following setups are allowed, but their interactions can produce results you did not intend. Pay particular attention to one-shot layer returns and note that layer changes preserve armed **On next input** actions while resetting layer-specific intervals. Layer changes still cancel queued playback.
 
