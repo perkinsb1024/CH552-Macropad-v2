@@ -105,3 +105,23 @@ The build requires exactly one generated HEX per variant in `releases/` (includi
 macOS hardware installation has been tested and verified. Windows and Linux hardware installation remain unverified. This macOS result does not establish coverage of every board variant or bootloader version, or profile preservation on untested setups.
 
 Automated tests exercise the patched routine with a simulated USB bootloader, including real HEX files, verification command selection, failure responses, and timeouts. They do not establish hardware compatibility. Before recommending this installer for general use, test each supported OS, both board variants, the bootloader versions in use, reconnection after failure, and preservation of bootloader access and saved profiles.
+
+## Previous Firmware Releases
+
+The collapsed **Previous firmware releases (advanced)** selector offers every
+previous three-key/six-key release preserved in main history, including multiple
+builds of the same format. The default remains the latest pair in `releases/`.
+Changing release or board variant clears the installation confirmation; changing
+board variant returns to the latest release. Downloads and installation use the
+selected entry's SHA-256, size, variant and matching configurator link.
+
+`firmware-history/` contains 30 exact historical HEX files for formats 2–10, with
+release commits and SHA-256 checksums in `index.json`. These are recovered files,
+not regenerated builds. Early firmware constructs **GET_INFO** without a constant
+identity record; its format metadata comes from `src/config.h` at the recorded
+release commit. Later formats are also checked against the HEX identity.
+The build bundles these copies without depending on Git history at deployment.
+
+Back up profiles before downgrading. A newer on-device format can remain inactive
+until a compatible profile is saved; the older editor may not migrate newer
+features. Firmware installation itself preserves DataFlash.

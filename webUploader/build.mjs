@@ -58,13 +58,30 @@ ${core}
     const image = parseHex(content.toString('utf8'));
     firmware.push({ keys, name, bytes: image.length, formatVersion: firmwareFormat(image, keys), sha256: createHash('sha256').update(content).digest('hex') });
   }
+  const historicalRoot = join(root, 'firmware-history');
+  const archive = JSON.parse(await readFile(join(historicalRoot, 'index.json'), 'utf8'));
+  const previousFirmware = [];
+  for (const entry of archive.firmware) {
+    const match = /^ch552-macropad-(3|6)-key-([a-f0-9]+)\.hex$/.exec(entry.name);
+    if (!match || !Number.isInteger(entry.formatVersion) || entry.formatVersion < 2 || entry.formatVersion > Math.max(...firmware.map(f => f.formatVersion))) throw new Error('Invalid historical firmware metadata.');
+    const keys = Number(match[1]);
+    const content = await readFile(join(historicalRoot, entry.name));
+    const digest = createHash('sha256').update(content).digest('hex');
+    if (digest !== entry.sha256) throw new Error(`Historical firmware changed: ${entry.name}`);
+    const image = parseHex(content.toString('utf8'));
+    // Early releases construct GET_INFO byte by byte rather than storing UMAC.
+    // Their format comes from the recorded release commit's src/config.h.
+    if (entry.formatVersion >= 6 && firmwareFormat(image, keys) !== entry.formatVersion) throw new Error(`Historical format mismatch: ${entry.name}`);
+    previousFirmware.push({ ...entry, keys, bytes: image.length });
+  }
   await mkdir(join(output, 'firmware'), { recursive: true });
   // Only clean generated firmware files so old releases do not linger in local builds.
   for (const name of await readdir(join(output, 'firmware'))) {
     if (name.endsWith('.hex')) await rm(join(output, 'firmware', name));
   }
   for (const entry of firmware) await cp(join(releases, entry.name), join(output, 'firmware', entry.name));
-  for (const name of ['index.html', 'style.css', 'app.mjs', 'bootloader.mjs', 'hex.mjs', 'firmware-format.mjs']) await cp(join(root, 'src', name), join(output, name));
+  for (const entry of previousFirmware) await cp(join(historicalRoot, entry.name), join(output, 'firmware', entry.name));
+  for (const name of ['index.html', 'style.css', 'app.mjs', 'bootloader.mjs', 'hex.mjs', 'firmware-format.mjs', 'firmware-list.mjs']) await cp(join(root, 'src', name), join(output, name));
   await writeFile(join(output, 'upstream-patched.mjs'), factory);
   await cp(join(upstream, 'LICENSE'), join(output, 'upstream-LICENSE.txt'));
   await cp(join(root, 'README.md'), join(output, 'README.md'));
@@ -74,6 +91,6 @@ ${core}
   const constants = await readFile(resolve(root, '../webapp/src/model/constants.ts'), 'utf8');
   const currentFormatVersion = Number(/FORMAT_VERSION\s*=\s*(\d+)/.exec(constants)?.[1]);
   if (!currentFormatVersion) throw new Error('Cannot identify current configurator format.');
-  await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, currentFormatVersion, firmware }, null, 2) + '\n');
+  await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, currentFormatVersion, firmware, previousFirmware }, null, 2) + '\n');
   console.log(`Built beta uploader: ${output}\nUpstream: ${revision}\nFirmware: ${firmware.map(f => f.name).join(', ')}`);
 } finally { await rm(temporary, { recursive: true, force: true }); }

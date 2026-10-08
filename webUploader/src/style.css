@@ -43,3 +43,7 @@ footer { padding: 8px 0 24px; line-height: 1.7; }
   pre { background: #111620; }
 }
 @media (max-width: 480px) { main { margin-top: 20px; padding: 0 12px; } section { padding: 16px; } h1 { font-size: 24px; } }
+
+.advanced-firmware { margin-top: 14px; color: var(--muted); font-size: 13px; }
+.advanced-firmware summary { font-weight: 400; }
+.advanced-firmware select { width: 100%; }

@@ -1,0 +1,215 @@
+{
+  "origin": "Published releases from main history; exact original HEX contents.",
+  "firmware": [
+    {
+      "name": "ch552-macropad-3-key-04c8f60d.hex",
+      "releaseCommit": "f562cced0a46844e7de2d70bc304e6fb7bc81490",
+      "sourceRevision": "04c8f60d",
+      "sha256": "9d1e091b4d75319bcb5eb6849039e054177100c02b2cda9e42f9206b7f7eb0e4",
+      "formatVersion": 2
+    },
+    {
+      "name": "ch552-macropad-3-key-21d59349.hex",
+      "releaseCommit": "395b3e3fb1256e292045f429b54e0913f9ee4bf8",
+      "sourceRevision": "21d59349",
+      "sha256": "ca2f270e210fcf0c4ac1ff4f8d7c1a58d0f3fc032ccb31ad97a3f0f32684e6cc",
+      "formatVersion": 5
+    },
+    {
+      "name": "ch552-macropad-3-key-289e0482.hex",
+      "releaseCommit": "d0f5abb75a3af0e53506c040cb4abaabb71ca9b9",
+      "sourceRevision": "289e0482",
+      "sha256": "fc1c822049dd44b90b1f2543d748de92074bf6862caeaf1058385ab07b74d7f8",
+      "formatVersion": 4
+    },
+    {
+      "name": "ch552-macropad-3-key-30101c94.hex",
+      "releaseCommit": "de16df69095ce82a9943dfdfae70f8bd054c3577",
+      "sourceRevision": "30101c94",
+      "sha256": "12c00480382d6c82596bc10359793faccb2aa0f183eaee570a7ccf424c1be67c",
+      "formatVersion": 10
+    },
+    {
+      "name": "ch552-macropad-3-key-306fcbab.hex",
+      "releaseCommit": "94d335874910c89b7751b5e976eaa48aa2828a5e",
+      "sourceRevision": "306fcbab",
+      "sha256": "adb85cbc8e563df0cdd499620b62ba8208f656a4353c89f4e86a99c1d881463f",
+      "formatVersion": 3
+    },
+    {
+      "name": "ch552-macropad-3-key-38068aa6.hex",
+      "releaseCommit": "369183662353e9e378681d8b49697a1685a099d2",
+      "sourceRevision": "38068aa6",
+      "sha256": "cc9365693b040020c1380c8f4536d7dffd610957f72a779a05826d22df82f49c",
+      "formatVersion": 3
+    },
+    {
+      "name": "ch552-macropad-3-key-39188996.hex",
+      "releaseCommit": "8bf4839cf64b094c284c7f86e719e30f61739411",
+      "sourceRevision": "39188996",
+      "sha256": "ca2f270e210fcf0c4ac1ff4f8d7c1a58d0f3fc032ccb31ad97a3f0f32684e6cc",
+      "formatVersion": 5
+    },
+    {
+      "name": "ch552-macropad-3-key-3ee03bf5.hex",
+      "releaseCommit": "417f276fda788f71dfcd38d781ddc67306988739",
+      "sourceRevision": "3ee03bf5",
+      "sha256": "7aa03375225108d34ecc5ad766319317be7281cc918a6f28d2493e6c160007e2",
+      "formatVersion": 2
+    },
+    {
+      "name": "ch552-macropad-3-key-63e67919.hex",
+      "releaseCommit": "1e63e0cb49611bcc8accdfce42e064a09d170ac4",
+      "sourceRevision": "63e67919",
+      "sha256": "4f1df0d278b42af5014bea831e5c8c4e1f810ebc042da9d6e76491e0f2651f47",
+      "formatVersion": 7
+    },
+    {
+      "name": "ch552-macropad-3-key-646c1f97.hex",
+      "releaseCommit": "6899f7982f45f7e0035f45f6fbe13be10b5ff313",
+      "sourceRevision": "646c1f97",
+      "sha256": "6e62e52bfa2acb6119e065ce210a853d3a6aab422b4d7a5fd91bacbab5b75ee6",
+      "formatVersion": 3
+    },
+    {
+      "name": "ch552-macropad-3-key-8339b59a.hex",
+      "releaseCommit": "573aef06cbc248767a514b296c87bc8cc9f3ba75",
+      "sourceRevision": "8339b59a",
+      "sha256": "6709fbe19349ee14f9c0fd80b498f4a255fb40e68bda515c6573f568aa00689e",
+      "formatVersion": 9
+    },
+    {
+      "name": "ch552-macropad-3-key-9d761312.hex",
+      "releaseCommit": "e88c92c4d7ab8a1727fa48843db0b818b4e7d6b0",
+      "sourceRevision": "9d761312",
+      "sha256": "db2951b83058a7a6c77e883abb90c60ecafd3483784e4443fb59f31ccceb87fe",
+      "formatVersion": 6
+    },
+    {
+      "name": "ch552-macropad-3-key-b02a6bf8.hex",
+      "releaseCommit": "75b3a4f96395885fca0865d51cb2f38c03b7667d",
+      "sourceRevision": "b02a6bf8",
+      "sha256": "1e53bf4eea91e650a0bad018a9b2300ac001b3ad3667fcebcb85d7b9ded71ef2",
+      "formatVersion": 6
+    },
+    {
+      "name": "ch552-macropad-3-key-b5053698.hex",
+      "releaseCommit": "856f84155f375f480146d51e2f8ee22d056a7453",
+      "sourceRevision": "b5053698",
+      "sha256": "850ec083551c6c45ca644f383d16a5550bfcdd69d704c02b823c37b47ba1a768",
+      "formatVersion": 8
+    },
+    {
+      "name": "ch552-macropad-3-key-ed572b98.hex",
+      "releaseCommit": "cd70c395813bce922447581c6cd5f9ef8d6328bc",
+      "sourceRevision": "ed572b98",
+      "sha256": "70ba025c552cac01e65f6920c2e196b98c6b682e6b36798cce8e379ca5957730",
+      "formatVersion": 7
+    },
+    {
+      "name": "ch552-macropad-6-key-04c8f60d.hex",
+      "releaseCommit": "f562cced0a46844e7de2d70bc304e6fb7bc81490",
+      "sourceRevision": "04c8f60d",
+      "sha256": "5fc4b9407e4d64fbb72cb3fad5c963e46e4b6ff964d9a69f6ce425b54e2facf9",
+      "formatVersion": 2
+    },
+    {
+      "name": "ch552-macropad-6-key-21d59349.hex",
+      "releaseCommit": "395b3e3fb1256e292045f429b54e0913f9ee4bf8",
+      "sourceRevision": "21d59349",
+      "sha256": "e6082e50c6a486844b08fe550838566b150e71b02c48023443f6c303b96dd3a8",
+      "formatVersion": 5
+    },
+    {
+      "name": "ch552-macropad-6-key-289e0482.hex",
+      "releaseCommit": "d0f5abb75a3af0e53506c040cb4abaabb71ca9b9",
+      "sourceRevision": "289e0482",
+      "sha256": "ddc611686e7b347fc12d32dce90d745da1f5fb314fdac74baf55cf5c2af19f93",
+      "formatVersion": 4
+    },
+    {
+      "name": "ch552-macropad-6-key-30101c94.hex",
+      "releaseCommit": "de16df69095ce82a9943dfdfae70f8bd054c3577",
+      "sourceRevision": "30101c94",
+      "sha256": "4023b8aee729d9e528c50945d200664c5e2321f116dfc33cc86f8ef23da2ad0f",
+      "formatVersion": 10
+    },
+    {
+      "name": "ch552-macropad-6-key-306fcbab.hex",
+      "releaseCommit": "94d335874910c89b7751b5e976eaa48aa2828a5e",
+      "sourceRevision": "306fcbab",
+      "sha256": "8c868940a518a03acf54fd824c1c50e94957b2cc40aadacb081a24311e3fd159",
+      "formatVersion": 3
+    },
+    {
+      "name": "ch552-macropad-6-key-38068aa6.hex",
+      "releaseCommit": "369183662353e9e378681d8b49697a1685a099d2",
+      "sourceRevision": "38068aa6",
+      "sha256": "fcadbcc2a74878c26b2c781a34bb8991c57eb7530f704cb85f6b66506ba69aa5",
+      "formatVersion": 3
+    },
+    {
+      "name": "ch552-macropad-6-key-39188996.hex",
+      "releaseCommit": "8bf4839cf64b094c284c7f86e719e30f61739411",
+      "sourceRevision": "39188996",
+      "sha256": "e6082e50c6a486844b08fe550838566b150e71b02c48023443f6c303b96dd3a8",
+      "formatVersion": 5
+    },
+    {
+      "name": "ch552-macropad-6-key-3ee03bf5.hex",
+      "releaseCommit": "417f276fda788f71dfcd38d781ddc67306988739",
+      "sourceRevision": "3ee03bf5",
+      "sha256": "653f033917594840756ab922366d92c13ad1b0aabc58fe9df213dd6e1cb09e0a",
+      "formatVersion": 2
+    },
+    {
+      "name": "ch552-macropad-6-key-63e67919.hex",
+      "releaseCommit": "1e63e0cb49611bcc8accdfce42e064a09d170ac4",
+      "sourceRevision": "63e67919",
+      "sha256": "3fecd4329b5fcf14f7c615a685b0349806f7ba7068cebbafab824e1d005d38f7",
+      "formatVersion": 7
+    },
+    {
+      "name": "ch552-macropad-6-key-646c1f97.hex",
+      "releaseCommit": "6899f7982f45f7e0035f45f6fbe13be10b5ff313",
+      "sourceRevision": "646c1f97",
+      "sha256": "0fc3c03607ac32529e193fb781a7b03528d5a56efa50afbc409142ebc46bb896",
+      "formatVersion": 3
+    },
+    {
+      "name": "ch552-macropad-6-key-8339b59a.hex",
+      "releaseCommit": "573aef06cbc248767a514b296c87bc8cc9f3ba75",
+      "sourceRevision": "8339b59a",
+      "sha256": "71d3ff4dd658ceb2e36405cb4d3e797be6ed90fbb255ad15babc50fa4f29a1a4",
+      "formatVersion": 9
+    },
+    {
+      "name": "ch552-macropad-6-key-9d761312.hex",
+      "releaseCommit": "e88c92c4d7ab8a1727fa48843db0b818b4e7d6b0",
+      "sourceRevision": "9d761312",
+      "sha256": "c0850ed75a8ae34c491d0cd17e8f1def08af1dc2fb85f7a10e0a6722e539b497",
+      "formatVersion": 6
+    },
+    {
+      "name": "ch552-macropad-6-key-b02a6bf8.hex",
+      "releaseCommit": "75b3a4f96395885fca0865d51cb2f38c03b7667d",
+      "sourceRevision": "b02a6bf8",
+      "sha256": "a56a552a7ef5a24fa72947c1559d90e11d19b07eae4ce1467de2492459c80fbf",
+      "formatVersion": 6
+    },
+    {
+      "name": "ch552-macropad-6-key-b5053698.hex",
+      "releaseCommit": "856f84155f375f480146d51e2f8ee22d056a7453",
+      "sourceRevision": "b5053698",
+      "sha256": "51599db9da69a595d77e118acee1006238d86bac924a81a7c7e845e72359dad8",
+      "formatVersion": 8
+    },
+    {
+      "name": "ch552-macropad-6-key-ed572b98.hex",
+      "releaseCommit": "cd70c395813bce922447581c6cd5f9ef8d6328bc",
+      "sourceRevision": "ed572b98",
+      "sha256": "fd11bc853c034675d9c483df308d31342a792c160e977dd18e4a98bb5c3717c1",
+      "formatVersion": 7
+    }
+  ]
+}

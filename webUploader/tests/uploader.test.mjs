@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { firmwareChoices, selectedFirmware } from '../src/firmware-list.mjs';
 import { Ch552Bootloader } from '../dist/bootloader.mjs';
 import { parseHex, CODE_LIMIT } from '../src/hex.mjs';
 import { firmwareFormat, configuratorPath } from '../src/firmware-format.mjs';
@@ -119,6 +121,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     handlers = {};
     children = [];
     append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
     setAttribute(name, value) { this.attributes[name] = value; }
     addEventListener(name, handler) { this.handlers[name] = handler; }
     async emit(name) { await this.handlers[name](); }
@@ -166,6 +169,14 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.equal(element('install').disabled, true);
     assert.equal(buttons[1].attributes['aria-pressed'], 'true');
     assert.match(element('firmware-info').textContent, /6-key/);
+    const previous = manifest.previousFirmware.find(entry => entry.keys === 6 && entry.formatVersion === 9);
+    const selector = element('firmware-release');
+    confirmation.checked = true;
+    selector.value = previous.name; await selector.emit('change');
+    assert.equal(confirmation.checked, false);
+    assert.equal(element('install').disabled, true);
+    assert.match(element('firmware-info').textContent, new RegExp(previous.sourceRevision));
+    assert.equal(element('download').download, previous.name);
     // Even a directly invoked click cannot erase flash without confirmation.
     await element('install').emit('click');
     assert.equal(device.commands.some(p => p[0] === 0xa4), false);
@@ -188,7 +199,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     await element('install').emit('click');
     assert.equal(element('status').textContent, 'Firmware programmed and verified.');
     const successLink = element('status').children.find(child => typeof child !== 'string');
-    assert.equal(successLink.href, expectedConfiguratorPath(manifest.firmware.find(entry => entry.keys === 6).formatVersion));
+    assert.equal(successLink.href, expectedConfiguratorPath(previous.formatVersion));
     assert.equal(successLink.textContent, 'Open the macropad configurator to load or save your profile');
   } finally {
     for (const [key, descriptor] of Object.entries(originals)) {
@@ -255,7 +266,7 @@ test('reboot requires a connection and closes the session even if the restart tr
   assert.equal(device.commands.some(p => [0xa4, 0xa5, 0xa6].includes(p[0])), false);
 });
 
-for (const entry of manifest.firmware) {
+for (const entry of [...manifest.firmware, ...manifest.previousFirmware]) {
   test(`${entry.keys}-key release is bundled intact and genuinely verified with A6 packets`, async () => {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
     assert.equal(createHash('sha256').update(content).digest('hex'), entry.sha256);
@@ -380,4 +391,36 @@ test('validates HEX boundaries, checksums, overlap, EOF, and FF alignment paddin
 test('the beta UI includes platform sources and the published source/license', async () => {
   const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8');
   for (const text of ['Beta', 'Windows', 'macOS', 'Linux', 'zadig.akeo.ie', 'MODE="0660"', 'udevadm.html', 'upstream-LICENSE.txt', 'verification-fix.patch']) assert.ok(html.includes(text), text);
+});
+
+
+test('all historical releases match their exact committed HEX, metadata and checksums', async () => {
+  const source = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
+  assert.equal(source.firmware.length, 30);
+  assert.equal(manifest.previousFirmware.length, source.firmware.length);
+  for (const entry of manifest.previousFirmware) {
+    const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
+    const recorded = execFileSync('git', ['show', `${entry.releaseCommit}:releases/${entry.name}`]);
+    assert.deepEqual(content, recorded);
+    assert.equal(createHash('sha256').update(content).digest('hex'), entry.sha256);
+    assert.equal(parseHex(content.toString()).length, entry.bytes);
+    const header = execFileSync('git', ['show', `${entry.releaseCommit}:src/config.h`], { encoding: 'utf8' });
+    assert.equal(Number(/#define CONFIG_VERSION\s+(\d+)/.exec(header)[1]), entry.formatVersion);
+    assert.equal(configuratorPath(entry.formatVersion, currentFormatVersion), expectedConfiguratorPath(entry.formatVersion));
+    if (entry.formatVersion >= 6) assert.equal(firmwareFormat(parseHex(content.toString()), entry.keys), entry.formatVersion);
+  }
+});
+
+test('historical selection retains the default release and cannot cross board variants', () => {
+  for (const keys of [3, 6]) {
+    assert.equal(selectedFirmware(manifest, keys), manifest.firmware.find(entry => entry.keys === keys));
+    const choices = firmwareChoices(manifest, keys);
+    assert.equal(choices.length, 15);
+    assert.ok(choices.every(entry => entry.keys === keys));
+    for (const entry of choices) {
+      assert.equal(selectedFirmware(manifest, keys, entry.name), entry);
+      assert.equal(selectedFirmware(manifest, keys === 3 ? 6 : 3, entry.name), undefined);
+    }
+    assert.equal(selectedFirmware(manifest, keys, 'missing'), undefined);
+  }
 });

@@ -1,11 +1,14 @@
 import { Ch552Bootloader } from './bootloader.mjs';
 import { parseHex } from './hex.mjs';
 import { configuratorPath } from './firmware-format.mjs';
+import { firmwareChoices, selectedFirmware } from './firmware-list.mjs';
 
 const $ = id => document.getElementById(id);
 const status = $('status'), connect = $('connect'), install = $('install');
 const reboot = $('reboot');
 const variantConfirmation = $('confirm-variant');
+const releaseSelector = $('firmware-release');
+let selectedRelease = 'latest', loadedEntry = null;
 const variantButtons = Array.from(document.querySelectorAll('[data-variant]'));
 let selectedVariant = 3;
 const progress = $('progress');
@@ -48,15 +51,30 @@ function controls() {
     button.disabled = !manifest || busy;
     button.setAttribute('aria-pressed', String(Number(button.dataset.variant) === selectedVariant));
   }
+  releaseSelector.disabled = !manifest || busy;
   variantConfirmation.disabled = busy || !firmware;
   install.disabled = busy || !session?.ready || !firmware || !variantConfirmation.checked;
 }
 
+function releaseChoices() {
+  releaseSelector.replaceChildren();
+  const current = manifest.firmware.find(entry => entry.keys === selectedVariant);
+  for (const [value, label] of [
+    ['latest', `Latest release${current ? ` (v${current.formatVersion})` : ''}`],
+    ...firmwareChoices(manifest, selectedVariant).map(entry => [entry.name, `v${entry.formatVersion} · ${entry.sourceRevision}`]),
+  ]) {
+    const option = document.createElement('option'); option.value = value; option.textContent = label;
+    releaseSelector.append(option);
+  }
+  releaseSelector.value = selectedRelease;
+}
+
 async function loadFirmware() {
   firmware = null;
+  loadedEntry = null;
   $('download').hidden = true;
   controls();
-  const entry = manifest.firmware.find(f => f.keys === selectedVariant);
+  const entry = selectedFirmware(manifest, selectedVariant, selectedRelease);
   if (!entry) {
     $('firmware-info').textContent = 'Choose the number of keys on your macropad.';
     return;
@@ -71,7 +89,8 @@ async function loadFirmware() {
     if (digest !== entry.sha256) throw new Error('Firmware checksum does not match this published release. Reload the page.');
     firmware = parseHex(new TextDecoder().decode(content));
     if (firmware.length !== entry.bytes) throw new Error('Firmware size does not match the release manifest.');
-    $('firmware-info').textContent = `${entry.name} · ${firmware.length.toLocaleString()} application bytes`;
+    loadedEntry = entry;
+    $('firmware-info').textContent = `v${entry.formatVersion} · ${entry.name} · ${firmware.length.toLocaleString()} application bytes`;
     $('download').href = `./firmware/${entry.name}`;
     $('download').download = entry.name;
     $('download').hidden = false;
@@ -83,12 +102,20 @@ async function loadFirmware() {
 
 for (const button of variantButtons) {
   button.addEventListener('click', () => {
-    if (Number(button.dataset.variant) === selectedVariant) return;
+    if (busy || Number(button.dataset.variant) === selectedVariant) return;
     selectedVariant = Number(button.dataset.variant);
+    selectedRelease = 'latest';
+    releaseChoices();
     variantConfirmation.checked = false;
     return loadFirmware();
   });
 }
+releaseSelector.addEventListener('change', () => {
+  if (busy) return;
+  selectedRelease = releaseSelector.value;
+  variantConfirmation.checked = false;
+  return loadFirmware();
+});
 variantConfirmation.addEventListener('change', controls);
 connect.addEventListener('click', async () => {
   if (!supported || busy || session.ready) return;
@@ -135,7 +162,7 @@ install.addEventListener('click', async () => {
     $('device-info').textContent = 'Installation complete; bootloader session closed.';
     report('Firmware programmed and verified.');
     const configuratorLink = document.createElement('a');
-    const entry = manifest.firmware.find(f => f.keys === selectedVariant);
+    const entry = loadedEntry;
     configuratorLink.href = configuratorPath(entry.formatVersion, manifest.currentFormatVersion);
     configuratorLink.textContent = 'Open the macropad configurator to load or save your profile';
     status.append(' ', configuratorLink, '.');
@@ -162,6 +189,7 @@ try {
   const response = await fetch('./firmware.json', { cache: 'no-store' });
   if (!response.ok) throw new Error(`Firmware list unavailable (HTTP ${response.status}).`);
   manifest = await response.json();
+  releaseChoices();
   $('firmware-info').textContent = 'Choose the number of keys on your macropad.';
   report(supported ? 'Ready. Enter bootloader mode and connect when you are ready.' : 'WebUSB is unavailable. Open this page in desktop Chrome or Edge over HTTPS or localhost.');
   await loadFirmware();

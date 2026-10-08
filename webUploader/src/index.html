@@ -58,6 +58,12 @@
         <button type="button" data-variant="3" aria-pressed="true" disabled>3-key</button>
         <button type="button" data-variant="6" aria-pressed="false" disabled>6-key</button>
       </div>
+      <details class="advanced-firmware">
+        <summary>Previous firmware releases (advanced)</summary>
+        <label for="firmware-release">Firmware release</label>
+        <select id="firmware-release" disabled><option value="latest">Latest release</option></select>
+        <p class="muted">Older versions may leave a newer profile inactive. Export a backup first, then use the matching configurator after installing.</p>
+      </details>
       <p id="firmware-info" class="muted">Loading published firmware…</p>
       <a id="download" hidden download>Download this HEX file</a>
       <p>Installing replaces the application firmware and uses the CH55xDuino bootloader settings for P3.6 (D+) boot entry. Only install on a compatible CH552 macropad.</p>
