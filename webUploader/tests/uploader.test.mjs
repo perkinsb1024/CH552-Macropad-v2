@@ -7,18 +7,31 @@ import { parseHex, CODE_LIMIT } from '../src/hex.mjs';
 import { firmwareFormat, configuratorPath } from '../src/firmware-format.mjs';
 
 const manifest = JSON.parse(await readFile(new URL('../dist/firmware.json', import.meta.url), 'utf8'));
+const constants = await readFile(new URL('../../webapp/src/model/constants.ts', import.meta.url), 'utf8');
+const currentFormatVersion = Number(/FORMAT_VERSION\s*=\s*(\d+)/.exec(constants)?.[1]);
+
+function expectedConfiguratorPath(format) {
+  return format === currentFormatVersion ? '../' : `../versions/format-v${format}/`;
+}
 
 test('published firmware opens its matching configurator', async () => {
-  assert.equal(manifest.currentFormatVersion, 10);
+  assert.ok(Number.isInteger(currentFormatVersion) && currentFormatVersion >= 2);
+  assert.equal(manifest.currentFormatVersion, currentFormatVersion);
   for (const entry of manifest.firmware) {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url), 'utf8');
     assert.equal(firmwareFormat(parseHex(content), entry.keys), entry.formatVersion);
-    assert.equal(entry.formatVersion, 10);
-    assert.equal(configuratorPath(entry.formatVersion, 10), '../');
+    assert.equal(configuratorPath(entry.formatVersion, manifest.currentFormatVersion), expectedConfiguratorPath(entry.formatVersion));
   }
+});
+
+test('configurator links support current and archived formats and reject unsupported formats', () => {
+  assert.equal(configuratorPath(11, 11), '../');
+  assert.equal(configuratorPath(10, 11), '../versions/format-v10/');
+  assert.equal(configuratorPath(9, 11), '../versions/format-v9/');
   assert.equal(configuratorPath(10, 10), '../');
-  assert.equal(configuratorPath(9, 10), '../versions/format-v9/');
-  assert.throws(() => configuratorPath(11, 10), /matching configurator/);
+  for (const format of [12, 1, 0, 10.5, NaN]) {
+    assert.throws(() => configuratorPath(format, 11), /matching configurator/);
+  }
   assert.throws(() => firmwareFormat(new Uint8Array(16), 3), /identify/);
 });
 
@@ -175,7 +188,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     await element('install').emit('click');
     assert.equal(element('status').textContent, 'Firmware programmed and verified.');
     const successLink = element('status').children.find(child => typeof child !== 'string');
-    assert.equal(successLink.href, '../');
+    assert.equal(successLink.href, expectedConfiguratorPath(manifest.firmware.find(entry => entry.keys === 6).formatVersion));
     assert.equal(successLink.textContent, 'Open the macropad configurator to load or save your profile');
   } finally {
     for (const [key, descriptor] of Object.entries(originals)) {

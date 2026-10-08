@@ -81,7 +81,7 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v10 firmware files are available for [three-key](releases/ch552-macropad-3-key-30101c94.hex) and [six-key](releases/ch552-macropad-6-key-30101c94.hex) macropads, built from source revision `30101c94`. This version adds layer-specific **Timed actions** with 4.096-second interval steps and retains the per-timer 16ms fractional clock. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v11 firmware files are available for [three-key](releases/ch552-macropad-3-key-f87ca744.hex) and [six-key](releases/ch552-macropad-6-key-f87ca744.hex) macropads, built from source revision `f87ca744`. This version adds multi-step **Macros** with **Pause** and repeat support, a 32ms pause between characters in **Type text**, and shared global **Mouse toggle** state. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
 Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) to configure your macropad. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
 

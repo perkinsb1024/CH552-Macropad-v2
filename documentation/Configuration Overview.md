@@ -469,8 +469,9 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are available starting with v11 firmware and its matching configurator. The bundled
-v10 release firmware uses the frozen v10 editor and does not support them.
+Macros are supported by the [pre-built v11 release firmware](../README.md#how-to-compile-the-firmware)
+and the current configurator. Older firmware uses its matching archived editor
+and does not support macros.
 
 1. Open **Macros** and choose **Add macro**
 2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence
