@@ -76,10 +76,16 @@ export function MacrosPanel() {
           </div>;
         })}
         </div>
-        <button class="btn" disabled={!canAddStep(index)} onClick={() => {
-          updateProfile(draft => { draft.macros![index]!.actions.push({ type: 'keyTap', usage: 4, modifiers: 0 }); });
-          selectedSlot.value = { kind: 'macro', layer: 0, index, step: macro.actions.length };
-        }}><IconPlus /> Add step</button>
+        <div class="row">
+          <button class="btn" disabled={!canAddStep(index)} onClick={() => {
+            updateProfile(draft => { draft.macros![index]!.actions.push({ type: 'keyTap', usage: 4, modifiers: 0 }); });
+            selectedSlot.value = { kind: 'macro', layer: 0, index, step: macro.actions.length };
+          }}><IconPlus /> Add step</button>
+          <button class="btn" disabled={!canAddStep(index)} onClick={() => {
+            updateProfile(draft => { draft.macros![index]!.actions.push({ type: 'pause', ticks: 16 }); });
+            selectedSlot.value = { kind: 'macro', layer: 0, index, step: macro.actions.length };
+          }}><IconPlus /> Add pause</button>
+        </div>
       </article>)}
     </div>
     <button class="btn" disabled={(capacity.value?.remaining ?? 0) < 4} onClick={() => {

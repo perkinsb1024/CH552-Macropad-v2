@@ -117,7 +117,7 @@ export function mouseButtonNames(mask: number): string[] {
 /** Short label used on key caps and lists. */
 export function summarize(action: Action): string {
   switch (action.type) {
-    case 'macro': return `Macro ${action.macro + 1}${action.repeats > 1 ? ` × ${action.repeats}` : ''}`;
+    case 'macro': return `Macro ${action.macro + 1}${action.repeats > 1 ? ` (×${action.repeats})` : ''}`;
     case 'pause': return `Pause ${action.ticks * 16}ms`;
     case 'ledControl': return ledSummary(action.command, action.value, false, action.brightness);
     case 'none':

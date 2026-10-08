@@ -175,7 +175,7 @@ export function Inspector() {
             {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} ({macro.actions.length} step{macro.actions.length === 1 ? '' : 's'})</option>)}
           </select>
         </label>
-        {!singleRun && <div class="field">
+        {(!singleRun || action.repeats > 1) && <div class="field">
           <span class="field-label">Repeat</span>
           <div class="segmented" role="group" aria-label="Repeat">
             <button type="button" class={action.repeats > 1 ? 'is-selected' : ''} aria-pressed={action.repeats > 1} disabled={singleRun} onClick={() => update({ ...action, repeats: singleRun ? 1 : Math.max(2, action.repeats) })}>On</button>

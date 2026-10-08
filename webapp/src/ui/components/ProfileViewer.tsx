@@ -13,17 +13,16 @@ export function ViewerChords() {
   const p = profile.value!;
   const chords = p.chords.filter(c => c.global || c.layer === selectedLayer.value)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB);
-  if (!chords.length) return null;
   return <section class="card viewer-bindings">
-    <header class="card-head"><h2>Chords</h2><span class="muted">Two keys together</span></header>
-    <ul class="viewer-binding-list">
+    <header class="card-head"><h2>Chords ({chords.length})</h2></header>
+    {chords.length ? <ul class="viewer-binding-list">
       {chords.map(c => <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`}>
         <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
         <ActionLabel action={c.action} />
         {c.global && <span class="tab-badge">all layers</span>}
       </li>)}
-    </ul>
-    {p.chordWindow === 0 && <p class="hint warn">Chords are disabled in this profile.</p>}
+    </ul> : <p class="muted">No chords on this layer.</p>}
+    {chords.length > 0 && p.chordWindow === 0 && <p class="hint warn">Chords are disabled in this profile.</p>}
   </section>;
 }
 
@@ -48,10 +47,20 @@ export function ViewerTimers() {
 }
 
 export function ViewerMacros() {
-  const macros = profile.value!.macros ?? [];
-  if (!macros.length) return null;
+  const p = profile.value!;
+  const macros = p.macros ?? [];
+  const layerIndex = selectedLayer.value;
+  const layer = p.layers[layerIndex]!;
+  const triggers = [
+    ...layer.keys, layer.encoderButton, layer.clockwise, layer.counterclockwise,
+    ...p.chords.filter(chord => chord.global || chord.layer === layerIndex).map(chord => chord.action),
+    ...(p.timedActions ?? []).filter(timer => timer.layer === undefined || timer.layer === layerIndex)
+      .flatMap(timer => [timer.action, timer.resumeAction]),
+  ];
+  const triggeredMacros = new Set(triggers.filter(action => action.type === 'macro').map(action => action.macro));
   return <section class="card viewer-bindings"><header class="card-head"><h2>Macros ({macros.length})</h2></header>
-    {macros.map((macro, index) => <div><h3>Macro {index + 1}</h3><ol>{macro.actions.map(action => <li><ActionLabel action={action} /></li>)}</ol></div>)}
+    {!macros.length && <p class="muted">No macros in this profile.</p>}
+    {macros.map((macro, index) => <div style={{ opacity: triggeredMacros.has(index) ? 1 : 0.5 }}><h3>Macro {index + 1}</h3><ol>{macro.actions.map(action => <li><ActionLabel action={action} /></li>)}</ol></div>)}
   </section>;
 }
 

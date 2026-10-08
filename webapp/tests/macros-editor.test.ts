@@ -45,6 +45,11 @@ it('adds steps, edits through the inspector, reorders, deletes, and supports und
   click('Remove step 1'); expect(selectedSlot.value).toBeNull();
   undo(); expect(profile.value!.macros![0]!.actions).toHaveLength(2);
   redo(); expect(profile.value!.macros![0]!.actions).toHaveLength(1);
+  const addPause = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add pause'))!;
+  (addPause.props.onClick as () => void)();
+  expect(profile.value!.macros![0]!.actions[1]).toEqual({ type: 'pause', ticks: 16 });
+  expect(selectedSlot.value).toMatchObject({ kind: 'macro', index: 0, step: 1 });
+  undo(); expect(profile.value!.macros![0]!.actions).toHaveLength(1);
 });
 it('prevents nested and held steps and edits invocation selection and repeats', () => {
   start(); addMacro();
@@ -119,8 +124,12 @@ it('restricts repeats when selecting a layer-switching macro without silently ch
   const toggle = nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat')!;
   expect(nodes(toggle).find(n => n.props.children === 'On')!.props.disabled).toBe(true);
   expect(repeat.props.value).toBe(16);
-  (repeat.props.onInput as (e: unknown) => void)({ target: { value: '16' } });
+  expect(getAction(profile.value!, selectedSlot.value)).toMatchObject({ repeats: 16 });
+  const off = nodes(toggle).find(n => n.props.children === 'Off')!;
+  expect(off.props.disabled).toBeFalsy();
+  (off.props.onClick as () => void)();
   expect(getAction(profile.value!, selectedSlot.value)).toMatchObject({ repeats: 1 });
+  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat')).toBeUndefined();
   setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 16 });
   const select = nodes(Inspector()).find(n => n.props['aria-label'] === 'Macro')!;
   (select.props.onChange as (e: unknown) => void)({ target: { value: '0' } });
