@@ -258,6 +258,9 @@ static void testHorizontalDescriptor(void) {
             case 0x08: usage = value; break;
             case 0x80:
                 if (id == 2) {
+                    if (bits == 0) assert(size == 1 && count == 8 && minimum == 0 && maximum == 1 && value == 2);
+                    if (bits == 8) assert(size == 8 && count == 2 && minimum == -127 && maximum == 127 && value == 6);
+                    if (bits == 24) assert(usage == 0x38 && size == 4 && count == 1 && minimum == -1 && maximum == 1 && value == 6);
                     if (usage == 0x000c0238) {
                         assert(bits == 28 && size == 4 && count == 1);
                         assert(minimum == -1 && maximum == 1 && value == 6);

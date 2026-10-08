@@ -81,13 +81,15 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (!isSupportedUsage(b1)) return `Unsupported key usage 0x${b1.toString(16)}`;
       return { type: type === ActionCode.KeyTap ? 'keyTap' : 'keyHold', usage: b1, modifiers: aux };
     case ActionCode.MouseClick:
-      if ((version < 8 && nonZeroAux) || b1 < 1 || b1 > 7) return 'Invalid mouse click settings';
+      if ((version < 8 && nonZeroAux) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse click settings';
       return { type: 'mouseClick', buttons: b1, ...(aux ? { clicks: aux + 1 } : {}) };
     case ActionCode.MouseHold:
+      if (rotation) return 'Mouse hold bound to rotation';
+      if (nonZeroAux || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse button mask';
+      return { type: 'mouseHold', buttons: b1 };
     case ActionCode.MouseToggle:
-      if (rotation && type === ActionCode.MouseHold) return 'Mouse hold bound to rotation';
-      if (nonZeroAux || b1 < 1 || b1 > 7) return 'Invalid mouse button mask';
-      return { type: type === ActionCode.MouseHold ? 'mouseHold' : 'mouseToggle', buttons: b1 };
+      if (aux > (version >= 12 ? 2 : 0) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid persistent mouse settings';
+      return { type: aux === 1 ? 'mouseDown' : aux === 2 ? 'mouseUp' : 'mouseToggle', buttons: b1 };
     case ActionCode.Scroll:
       if ((version < 8 ? nonZeroAux : version === 8 ? aux !== 0 && aux !== 4 : !!(aux & 3)) || b1 === 0x80) return 'Invalid scroll settings';
       if (rotation && (aux & 4)) return 'Scroll hold bound to rotation';
@@ -130,7 +132,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;

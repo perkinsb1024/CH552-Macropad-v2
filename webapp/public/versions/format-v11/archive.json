@@ -1,0 +1,21 @@
+{
+  "formatVersion": 11,
+  "sourceCommit": "418894a1f940173afb3b46f9f9f7b96817fded89",
+  "changes": [
+    "Frozen v11 editor and live view; HTML archive banner and shared uploader redirect."
+  ],
+  "validation": "All 489 v11 tests, TypeScript and Vite production build passed.",
+  "sha256": {
+    "assets/configurator-DIezFQ8M.js.map": "75afce744aa4744e586424042e48f89b3f267ecb7357b8cdda4282bcc139d7e8",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-COa8cax8.css": "4155d7466d8288384d98b2dcec4cfd5e61b45057b81e3c3888c19f9b5467405e",
+    "assets/main-CrDoB_GZ.js": "faee5447b9819456ca2727ce679384e8a05609a6ce430340510891b6841557d3",
+    "assets/main-CrDoB_GZ.js.map": "22102cc7eb1f38472f161e278a0dbac2ec85cfd401a8f5bbf628a96eb32734c4",
+    "assets/viewer-DIezFQ8M.js.map": "bd4b8d96a31bbacf2005e152511ce71d0578b49696b71936fffcfa8f33bbdecb",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "9f564d10e2f08ebd19339ba744a9bb0e4e257924b03661a4a13aedf0505f1418",
+    "liveView/index.html": "82cc72baf4f3d9a28c9186ff6d4a3854d264153d6f42b219ef17967bde41f4a6",
+    "webUploader/index.html": "5c1d06ba1d9bdf0990e4a94998071e38f579fe0e4c4784728e94b460b69094f4"
+  }
+}

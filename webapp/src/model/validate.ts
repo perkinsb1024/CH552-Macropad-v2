@@ -49,9 +49,11 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       return null;
     case 'mouseClick':
     case 'mouseHold':
+    case 'mouseDown':
+    case 'mouseUp':
     case 'mouseToggle':
       if (action.type === 'mouseClick' && (!Number.isInteger(action.clicks ?? 1) || (action.clicks ?? 1) < 1 || (action.clicks ?? 1) > 16)) return 'Click count must be a whole number from 1 to 16.';
-      if (!Number.isInteger(action.buttons) || action.buttons < 1 || action.buttons > 7) return 'Choose at least one mouse button.';
+      if (!Number.isInteger(action.buttons) || action.buttons < 1 || action.buttons > 255) return 'Choose at least one mouse button.';
       return null;
     case 'scroll':
     case 'mouseX':

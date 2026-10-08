@@ -1,7 +1,7 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 11;
+export const FORMAT_VERSION = 12;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
@@ -62,6 +62,8 @@ export const enum ActionCode {
   MouseClick = 0x3,
   MouseHold = 0x4,
   MouseToggle = 0x5,
+  MouseDown = 0x15,
+  MouseUp = 0x25,
   Scroll = 0x6,
   Consumer = 0x7,
   ConsumerHold = 0x8,
@@ -82,6 +84,13 @@ export const MOD_GUI = 8;
 export const MOUSE_LEFT = 1;
 export const MOUSE_RIGHT = 2;
 export const MOUSE_MIDDLE = 4;
+/** UI order and HID bit positions; neither is DOM MouseEvent.button order. */
+export const MOUSE_BUTTONS = [
+  { bit: MOUSE_LEFT, label: 'Left', domButton: 0 },
+  { bit: MOUSE_MIDDLE, label: 'Middle', domButton: 1 },
+  { bit: MOUSE_RIGHT, label: 'Right', domButton: 2 },
+  ...Array.from({ length: 5 }, (_, i) => ({ bit: 1 << (i + 3), label: `Button ${i + 4}`, domButton: i + 3 })),
+] as const;
 
 export const LAYER_OPT_FULL_BRIGHTNESS = 0x01;
 export const LAYER_OPT_BOOTLOADER_RUN = 0x02;

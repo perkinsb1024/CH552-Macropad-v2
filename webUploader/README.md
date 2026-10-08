@@ -2,7 +2,14 @@
 
 *This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
-The bundled firmware uses configuration format v10, built from revision `30101c94`: [three-key](../releases/ch552-macropad-3-key-30101c94.hex) and [six-key](../releases/ch552-macropad-6-key-30101c94.hex). Use the frozen [v10 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v10/) after installing these files. Current source/editor support v11 macros; the bundled firmware remains v10 until a release is explicitly generated. The installer reads the configuration format from each bundled HEX and links to its matching editor. Back up your profile before updating; older profiles remain in DataFlash but inputs stay inactive until the editor migrates and explicitly saves them as v10. Legacy timer durations are preserved. Migration adds one byte per timer; oversized profiles remain editable and must be reduced before saving. The frozen [v9 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v9/) remains available for v9 devices.
+The bundled default firmware uses configuration format v11, built from revision
+`f87ca744`: [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
+[six-key](../releases/ch552-macropad-6-key-f87ca744.hex). Use the frozen
+[v11 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v11/)
+with these files. Current source/editor support v12; no v12 release has been
+generated. The installer reads each bundled HEX's format and links to its
+matching editor. Back up profiles before updating; older profiles remain in
+DataFlash with actions inactive until explicitly migrated and saved.
 
 The static page is built into `webapp/dist/webUploader/` for the existing GitHub Pages site. Its URL after deployment is:
 

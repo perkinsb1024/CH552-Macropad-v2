@@ -28,7 +28,7 @@ describe('v10 timed-action images', () => {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[2]).toBe(11);
+      expect(image[2]).toBe(12);
       expect((image[3]! >> 6) | ((image[4]! >> 7) << 2)).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);

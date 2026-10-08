@@ -54,3 +54,19 @@ Validate dragging, click/hold/toggle/down/up combinations, both scroll axes and
 buttons 4–8 on available hosts. Ordinary application interfaces and browser events
 may expose fewer buttons than the device advertises. Record observed results
 separately from descriptor and report correctness.
+
+## Configurator and Documentation Checkpoint
+
+The active editor uses format/JSON/draft version 12. All five mouse-button action
+families offer eight choices; down/up are explicit actions in every permitted
+trigger and macro context. Source-version gates reject v12-only actions or masks
+in older binary/JSON/draft inputs. V11 migration preserves actions, macros,
+strings, timer units and storage. The v11 editor/live view is frozen from main
+release commit `418894a`, with provenance and immutable file hashes.
+
+All 512 configurator tests pass, including independent comparisons with the
+firmware validator, every button mask, reserved modes, relocation, legacy
+migration, UI controls and DOM side-button mapping. TypeScript, production site
+build and frozen-archive verification pass. The standalone format reference is
+[config-v12.md](config-v12.md); current user documentation distinguishes v12
+source/editor from the bundled v11 firmware.
