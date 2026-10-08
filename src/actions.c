@@ -740,7 +740,9 @@ void actionsPoll(uint16_t now) {
     }
     if (type == CONFIG_ACTION_NONE) {
       stringIndex++;
-      phase = 0;
+      // Give the host time to process each character after its release arrives.
+      deadline = now + 32;
+      phase = 3;
     } else if (type == CONFIG_ACTION_MOUSE_CLICK && (currentFirst & 0xF0)) {
       currentFirst -= 0x10; // Count remaining clicks in this playback copy only.
       deadline = now + 200;
@@ -753,6 +755,7 @@ void actionsPoll(uint16_t now) {
 #if CONFIG_MACRO_PAUSE
       if (currentFirst == CONFIG_ACTION_PAUSE) { currentFirst = 0; return; }
 #endif
+      if (type == CONFIG_ACTION_NONE) { phase = 0; return; }
       tempOn = 1;
       if (flushOutputs()) {
         deadline = now + 8;

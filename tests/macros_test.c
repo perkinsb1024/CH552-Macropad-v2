@@ -162,7 +162,7 @@ static void testLongAndStrings(void) {
     memcpy(activeConfig + start, "chrome", 7); activeConfig[4] = 7; start += 7;
     const uint8_t launch[] = {0x81, 0x2C, CONFIG_ACTION_STRING, 0, 1, 0x28};
     define(start, launch, 3); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
-    press(0, 0); pump(0, 200); assert(count == 16);
+    press(0, 0); pump(0, 400); assert(count == 16);
     assert(reports[0][1] == 8 && reports[0][3] == 0x2C);
     for (unsigned i = 0; i < 6; i++) assert(reports[2 + 2 * i][3] == (uint8_t)"chrome"[i]);
     assert(reports[14][3] == 0x28);
@@ -172,6 +172,33 @@ static void testLongAndStrings(void) {
     bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 1000); assert(count == 80 && !actionsDropped(0));
 #endif
+}
+static void testTextCharacterPause(void) {
+    // Include Enter, repeated characters, and a deadline across clock wrap.
+    const uint8_t text[] = {'s', 's', '\n', 0};
+    for (unsigned wrap = 0; wrap < 2; wrap++) {
+        reset();
+        memcpy(activeConfig + start, text, sizeof text);
+        activeConfig[4] = sizeof text;
+        activeConfig[9] = CONFIG_ACTION_STRING; activeConfig[10] = 0;
+        seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+        uint16_t origin = wrap ? 65520 : 0;
+        unsigned presses = 0, lastRelease = 0;
+        press(0, origin);
+        for (unsigned elapsed = 0; elapsed < 200; elapsed++) {
+            unsigned before = count;
+            actionsPoll((uint16_t)(origin + elapsed));
+            for (unsigned i = before; i < count; i++) {
+                if (reports[i][0] != 1) continue;
+                if (reports[i][3]) {
+                    assert(presses < 3 && reports[i][3] == text[presses]);
+                    if (presses) assert(elapsed - lastRelease >= 32);
+                    presses++;
+                } else lastRelease = elapsed;
+            }
+        }
+        assert(presses == 3 && count == 6);
+    }
 }
 static void testTriggersAndCancellation(void) {
     reset(); const uint8_t pair[] = {1, 4, 1, 5}; define(start, pair, 2);
@@ -253,6 +280,7 @@ static void testImmediateSteps(void) {
     assert(reports[1][0] == 5 && reports[1][1] == 0 && reports[2][3] == 4);
 }
 int main(void) {
+    testTextCharacterPause();
     testValidation(); testSingleByteTerminators(); testRepeatsAndOrdering(); testLongAndStrings();
     testTriggersAndCancellation(); testImmediateSteps(); testQueueAndChords(); testPause(); testHeldPointer();
     return 0;
