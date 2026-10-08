@@ -35,7 +35,7 @@ This guide covers the current configurator and its supported three-key and six-k
 4. The configurator loads the saved profile from your device. If the macropad has no valid profile, the configurator defaults to a starter profile instead
 5. Make your changes, click **Save to device**, and wait for **Saved** before unplugging it
 
-If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Simply save a new profile to activate it.
+If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Save a new profile to activate it. V12 firmware also permits a three-second encoder hold to enter the bootloader in this state.
 
 ### Practice without Hardware
 
@@ -627,6 +627,10 @@ The browser also keeps a local draft. On reconnect, it may ask whether to use th
 ### Advanced: Optional Firmware Update Shortcut
 
 Under **Layer options → Advanced**, **Allow bootloader entry by long-pressing the encoder button** enables firmware update mode when you hold the wheel button for three seconds. It uses the layer active when the hold begins.
+
+When no valid profile is saved, v12 permits this three-second hold regardless of
+layer options while preserving the blinking error LED. Holding the encoder while
+connecting USB remains available with every version of this firmware.
 
 This option is for updating the device software, not editing a profile. It can interrupt an encoder hold action, so leave it disabled on layers where you regularly hold that button. If you enter update mode accidentally, unplug and reconnect normally. Holding the wheel button while plugging in also enters update mode, independently of this setting. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) when you actually need an update.
 

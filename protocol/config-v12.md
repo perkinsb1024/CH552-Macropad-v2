@@ -245,7 +245,10 @@ layer. Each binding uses the two-byte action encoding below.
 | 4–7 | Layer-indicator color | Palette index 0–15 |
 
 Holding the encoder button while powering up always enters the bootloader;
-this recovery gesture is not configurable. In **Always on** mode, idle keys use the
+this recovery gesture is not configurable. With an invalid or missing profile,
+a debounced three-second encoder hold also enters the bootloader regardless of
+layer options. With a valid profile, runtime entry uses the permission from the
+layer active when the hold begins. In **Always on** mode, idle keys use the
 indicator color at the brightness selected by bit 0. Pressed keys normally use
 their per-key color at full brightness. With header byte 5 bit 7 set, a pressed
 key whose color is index 15 (**Off**) instead displays its idle background,
@@ -995,7 +998,9 @@ the body, restores the magic last, and compares the stored image byte for byte.
 If a write fails, the previous active RAM configuration remains in use so the
 host can retry. An interrupted save may leave invalid flash; at startup, the
 device leaves keys and encoder actions inactive and blinks one red LED at 1 Hz
-until a valid profile is uploaded. USB configuration access remains available.
+until a valid profile is uploaded. USB configuration access and three-second
+encoder-hold bootloader recovery remain available. The error LED uses its own
+500ms timer, so blinking and preview cancellation do not interrupt the hold.
 Configuration activation releases held outputs, cancels pending actions, resets encoder state, and
 suppresses inputs that remain held until they are released.
 
@@ -1015,8 +1020,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,304 | 32 | 95 | 369 | 128 | 77 |
-| Three keys | 14,300 | 36 | 95 | 360 | 128 | 80 |
+| Six keys | 14,332 | 4 | 95 | 371 | 128 | 77 |
+| Three keys | 14,328 | 8 | 95 | 362 | 128 | 80 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -1028,7 +1033,9 @@ Stack figures are linker-reserved capacities, two bytes below finalized v11
 (79/82), and above the 69-byte minimum for this implementation. No v12 hardware
 testing has been performed. Host regressions include all eight button bits,
 mode validation, drags, scroll signs/counts, report backpressure, reset, idle
-reports and **GET_REPORT** on both geometries.
+reports and **GET_REPORT** on both geometries. Recovery tests cover invalid and
+missing profiles, interrupted holds, debounce, timer wraparound, preview
+cancellation, configuration reapplication and valid-profile layer permissions.
 
 ```sh
 python3 tests/run_host_tests.py

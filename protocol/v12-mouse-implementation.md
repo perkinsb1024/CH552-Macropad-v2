@@ -22,12 +22,13 @@ application limit. Builds use temporary outputs; release files remain v11.
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Image | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,304 | 32 | 95 | 369 | 128 | 77 |
-| Three keys | 14,300 | 36 | 95 | 360 | 128 | 80 |
+| Six keys | 14,332 | 4 | 95 | 371 | 128 | 77 |
+| Three keys | 14,328 | 8 | 95 | 362 | 128 | 80 |
 
 Stack capacity is two bytes lower than the finalized v11 baseline (79/82),
-and exceeds the requested minimum of 69 bytes. No persistent RAM or report-buffer
-growth was needed.
+and exceeds the requested minimum of 69 bytes. Mouse support adds no persistent
+RAM or report-buffer storage. Invalid-profile recovery adds a separate two-byte
+external-RAM blink timer; stack capacity is unchanged from the mouse checkpoint.
 
 ## Automated Verification
 
@@ -70,3 +71,21 @@ migration, UI controls and DOM side-button mapping. TypeScript, production site
 build and frozen-archive verification pass. The standalone format reference is
 [config-v12.md](config-v12.md); current user documentation distinguishes v12
 source/editor from the bundled v11 firmware.
+
+## Bonus Checkpoints
+
+The uploader now bundles all 30 older published HEX files recovered from main's
+release history, alongside the current v11 pair. Each copy has its original
+release commit, source revision, format version and SHA-256 recorded. The collapsed
+**Previous firmware releases (advanced)** control filters by board variant,
+requires confirmation after selection changes, and links to the matching archived
+configurator after flashing. All 48 uploader tests pass, including exact Git blob
+comparisons and simulated flashing of every bundled build. The production site
+build passes with all historical firmware included.
+
+An invalid or missing profile permits the existing three-second encoder hold to
+enter the bootloader. Recovery bypasses layer-option reads, preserves the 500ms
+error blink and cancels a hardware preview without restarting the hold. Both
+board variants pass regressions for debounce, interrupted holds, timer wrap,
+held-at-reapply recovery and enabled/disabled valid-profile layer permissions,
+with color preview both enabled and disabled. No feature degradation was needed.

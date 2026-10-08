@@ -73,8 +73,8 @@ __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with acti
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
-// With invalid config, actions are inactive: reuse this timer for the error LED.
 __xdata uint16_t encoderPressedMs;
+__xdata uint16_t errorLedChanged;
 
 void displayLeds() {
   LED_FUNC(ledData, NUM_BYTES);
@@ -285,7 +285,7 @@ void firmwarePreviewColor(uint8_t options) {
   if (!options && !activeConfigValid) {
     clearLeds();
     ledData[1] = 255;
-    encoderPressedMs = millis();
+    errorLedChanged = millis();
     displayLeds();
   } else {
     updateLeds();
@@ -367,15 +367,16 @@ void scanButton(uint8_t input, uint16_t now) {
   if (pressed != stableState[input] &&
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
+    if (pressed && input == NUM_LEDS) {
+      allowRunBootloader = !activeConfigValid ||
+          (configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN);
+      encoderPressedMs = now;
+    }
 #if ENABLE_COLOR_PREVIEW
     if (colorPreviewActive) firmwarePreviewColor(0);
-    if (!activeConfigValid) return;
 #endif
+    if (!activeConfigValid) return;
     if (pressed) {
-      if (input == NUM_LEDS) {
-        allowRunBootloader = configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN;
-        encoderPressedMs = now;
-      }
       if (!actionsTimedInput()) actionsPress(input, now);
     } else {
       actionsRelease(input);
@@ -395,9 +396,7 @@ void scanEncoder() {
 #endif
   movement = encoderTransitions[(encoderState << 2) | state];
   encoderState = state;
-#if ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) return;
-#endif
   if (movement == 0) {
     encoderMovement = 0; // A skipped state is not a complete detent.
   } else {
@@ -423,29 +422,26 @@ void firmwareApplyConfig(void) {
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
-#if !ENABLE_COLOR_PREVIEW
-  if (!activeConfigValid) {
-    encoderPressedMs = now;
-    ledData[1] = 255;
-    displayLeds();
-    return;
-  }
-#endif
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
     rawChanged[i] = now;
   }
   encoderState = readEncoder();
-#if ENABLE_COLOR_PREVIEW
+  allowRunBootloader = !activeConfigValid;
+  encoderPressedMs = now;
   if (!activeConfigValid) {
+#if ENABLE_COLOR_PREVIEW
     if (!previewOptions) firmwarePreviewColor(0);
+#else
+    errorLedChanged = now;
+    ledData[1] = 255;
+    displayLeds();
+#endif
     return;
   }
-#endif
   actionsClear();
   encoderMovement = 0;
   lastLayer = actionsLayer();
-  allowRunBootloader = 0;
   layerIndicatorPhasesLeft = 0;
   rainbowChanged = (uint8_t)now;
   rainbowHue = 0;
@@ -476,16 +472,6 @@ void loop() {
   uint16_t now = clock;
   USB_reportPoll(now);
   protocolPoll(now);
-#if !ENABLE_COLOR_PREVIEW
-  if (!activeConfigValid) {
-    if ((uint16_t)(now - encoderPressedMs) >= 500) {
-      encoderPressedMs = now;
-      ledData[1] ^= 255;
-      displayLeds();
-    }
-    return;
-  }
-#endif
   // Process due timers before physical input so resume/input actions win this frame.
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
@@ -510,16 +496,18 @@ void loop() {
     }
     updateLeds();
   }
-#if ENABLE_COLOR_PREVIEW
+  if (allowRunBootloader && stableState[NUM_LEDS] &&
+      (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
+    enterBootloader();
+  }
   if (!activeConfigValid) {
-    if (!previewOptions && (uint16_t)(now - encoderPressedMs) >= 500) {
-      encoderPressedMs = now;
+    if (!previewOptions && (uint16_t)(now - errorLedChanged) >= 500) {
+      errorLedChanged = now;
       ledData[1] ^= 255;
       displayLeds();
     }
     return;
   }
-#endif
   actionsPoll(now);
   if (actionsTakeLayerSelection() || lastLayer != actionsLayer()) {
     if (lastLayer != actionsLayer()) {
@@ -531,8 +519,4 @@ void loop() {
     if (!(previewOptions & LED_EFFECT_FLAG)) startLayerIndicator(lastLayer, now);
   }
   serviceLayerIndicator(now);
-  if (allowRunBootloader && stableState[NUM_LEDS] &&
-      (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
-    enterBootloader();
-  }
 }

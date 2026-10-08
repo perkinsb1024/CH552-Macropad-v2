@@ -2,9 +2,15 @@
 
 ## Status and Agreed Scope
 
-This is an implementation plan and investigation record, not the current wire
-format specification. Defer production implementation until the v11 release is
-finalized. All three additions belong to config v12, in this priority order:
+Implementation is complete from finalized v11 release commit `418894a`, including
+all eight buttons, down/up actions, configurator support and both bonus features.
+See [implementation and validation](v12-mouse-implementation.md) for measurements
+and checks, and [config-v12.md](config-v12.md) for the standalone wire reference.
+Hardware compatibility validation remains pending.
+
+The rest of this document preserves the original plan and investigation record.
+It scheduled production implementation after v11 finalization. All three
+additions belong to config v12, in this priority order:
 
 1. Support mouse buttons 4 and 5.
 2. Add **Mouse down** and **Mouse up** alongside **Mouse toggle** in action type

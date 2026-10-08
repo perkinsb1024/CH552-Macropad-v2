@@ -571,6 +571,104 @@ static void testOneShotChordIndicator(void) {
 
 #include "led_input_cases.h"
 
+static void assertBootloaderAt(uint16_t now) {
+    expectBootloader = 1;
+    USB_CTRL = EA = TMOD = 1;
+    if (setjmp(bootloaderJump) == 0) {
+        tick(now);
+        assert(0 && "Encoder hold must enter bootloader");
+    }
+    expectBootloader = 0;
+    for (uint8_t i = 0; i < NUM_LEDS; i++) {
+        assert(ledData[3*i] == 0 && ledData[3*i+1] == 255 && ledData[3*i+2] == 0);
+    }
+}
+
+static void testRuntimeBootloaderRecovery(void) {
+    const uint8_t optionsOffset = PHYSICAL_VARIANT ? 23 : 30;
+    // Erased flash, an old format and a damaged current profile all permit
+    // recovery without consulting layer options or emitting configured actions.
+    for (uint8_t mode = 0; mode < 3; mode++) {
+        testLoadStarterProfile(PHYSICAL_VARIANT);
+        activeConfig[optionsOffset] &= ~CONFIG_LAYER_OPT_BOOTLOADER_RUN;
+        uint16_t crc = configCrc(activeConfig);
+        activeConfig[6] = crc;
+        activeConfig[7] = crc >> 8;
+        assert(configValid(activeConfig, PHYSICAL_VARIANT));
+        if (mode == 0) memset(activeConfig, 0xFF, CONFIG_SIZE);
+        if (mode == 1) activeConfig[2] = 11;
+        if (mode == 2) activeConfig[0] = 0;
+        assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+        activeConfigValid = 0;
+        actionsClear();
+        frameCount = 0;
+        P1 = P3 = 0xFF;
+        currentMs = 65000;
+        firmwareApplyConfig();
+#if ENABLE_COLOR_PREVIEW
+        if (mode == 2) firmwarePreviewColor(0xFD);
+#endif
+        P3 &= ~8;
+        tick(65010);
+        tick(65019);
+        assert(!stableState[NUM_LEDS]);
+        tick(65020);
+        assert(stableState[NUM_LEDS] && allowRunBootloader);
+        assert(!previewOptions && frameCount == 0);
+        tick(65520);
+        assert(ledData[1] == 0);
+        tick(484); // 1,000ms held, crossing the low-word clock wrap.
+        assert(ledData[1] == 255 && frameCount == 0);
+        P3 |= 8;
+        tick(500);
+        tick(510);
+        tick(2484); // A released encoder does not enter after the old deadline.
+        assert(!stableState[NUM_LEDS] && frameCount == 0);
+        P3 &= ~8;
+        tick(2500);
+        P3 |= 8; // A pulse shorter than the debounce interval is ignored.
+        tick(2505);
+        tick(2515);
+        assert(!stableState[NUM_LEDS]);
+        P3 &= ~8;
+        tick(2520);
+        tick(2530);
+        tick(5529);
+        assert(frameCount == 0);
+        assertBootloaderAt(5530);
+    }
+
+    // Reapplying an invalid profile while already held starts a fresh hold.
+    currentMs = 100;
+    firmwareApplyConfig();
+    tick(3099);
+    assertBootloaderAt(3100);
+
+    // A valid profile retains its layer permission and existing hold timing.
+    for (uint8_t enabled = 0; enabled < 2; enabled++) {
+        testLoadStarterProfile(PHYSICAL_VARIANT);
+        if (enabled) activeConfig[optionsOffset] |= CONFIG_LAYER_OPT_BOOTLOADER_RUN;
+        else activeConfig[optionsOffset] &= ~CONFIG_LAYER_OPT_BOOTLOADER_RUN;
+        uint16_t crc = configCrc(activeConfig);
+        activeConfig[6] = crc;
+        activeConfig[7] = crc >> 8;
+        assert(configValid(activeConfig, PHYSICAL_VARIANT));
+        activeConfigValid = 1;
+        P1 = P3 = 0xFF;
+        currentMs = 10000;
+        firmwareApplyConfig();
+        frameCount = 0;
+        P3 &= ~8;
+        tick(10001);
+        tick(10011);
+        assert(allowRunBootloader == enabled);
+        tick(13010);
+        if (enabled) assertBootloaderAt(13011);
+        else tick(14000);
+    }
+    P1 = P3 = 0xFF;
+}
+
 int main(void) {
     testStartupIndicatorEnumeration();
     testConsumedPhysicalInput();
@@ -586,6 +684,7 @@ int main(void) {
     testRainbowDrift();
     testTransparencyAndRainbow();
     testMomentaryIndicatorCancellation();
+    testRuntimeBootloaderRecovery();
     currentMs = 0;
     frameCount = 0;
     // Invalid flash lights only the first key and leaves physical inputs inactive.
