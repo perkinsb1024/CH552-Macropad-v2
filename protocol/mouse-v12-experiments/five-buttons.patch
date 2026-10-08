@@ -1,0 +1,47 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -132,11 +132,11 @@
+             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
+                    keyboardUsageValid(param);
+         case CONFIG_ACTION_MOUSE_CLICK:
+-            return (uint8_t)(param - 1) < 7; // Auxiliary 0–15 means 1–16 clicks.
++            return (uint8_t)(param - 1) < 31; // Auxiliary 0–15 means 1–16 clicks.
+         case CONFIG_ACTION_MOUSE_HOLD:
+         case CONFIG_ACTION_MOUSE_TOGGLE:
+             return (!rotation || type != CONFIG_ACTION_MOUSE_HOLD) &&
+-                   aux == 0 && (uint8_t)(param - 1) < 7;
++                   aux == 0 && (uint8_t)(param - 1) < 31;
+         case CONFIG_ACTION_SCROLL:
+ #if CONFIG_SCROLL_ACCELERATION
+             return aux < 7 && (aux & 3) != 3 &&
+--- a/src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c
++++ b/src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c
+@@ -287,7 +287,7 @@
+   if (reportCount == 8 || UsbConfig == 0) {
+     return 0;
+   }
+-  mouseState = buttons & 7;
++  mouseState = buttons & 31;
+   // AC Pan uses two formerly-padding bits. Scroll playback emits unit steps.
+   if (buttons & 0x80) {
+     buttons = mouseState | ((uint8_t)wheel << 6);
+--- a/src/userUsbHidKeyboardMouse/USBconstant.c
++++ b/src/userUsbHidKeyboardMouse/USBconstant.c
+@@ -63,14 +63,14 @@
+     0x85, 0x02,       //   REPORT_ID (2)
+     0x05, 0x09,       //     USAGE_PAGE (Button)
+     0x19, 0x01,       //     USAGE_MINIMUM (Button 1)
+-    0x29, 0x03,       //     USAGE_MAXIMUM (Button 3)
++    0x29, 0x05,       //     USAGE_MAXIMUM (Button 5)
+     // Logical minimum 0 is inherited from the keyboard LED fields above.
+     0x25, 0x01,       //     LOGICAL_MAXIMUM (1)
+-    0x95, 0x03,       //     REPORT_COUNT (3)
++    0x95, 0x05,       //     REPORT_COUNT (5)
+     0x75, 0x01,       //     REPORT_SIZE (1)
+     0x81, 0x02,       //     INPUT (Data,Var,Abs)
+     0x95, 0x01,       //     REPORT_COUNT (1)
+-    0x75, 0x03,       //     REPORT_SIZE (3)
++    0x75, 0x01,       //     REPORT_SIZE (1)
+     0x81, 0x03,       //     INPUT (Cnst,Var,Abs)
+     0x0b, 0x38, 0x02, 0x0c, 0x00, // USAGE (Consumer AC Pan)
+     0x15, 0xff,       //     LOGICAL_MINIMUM (-1)

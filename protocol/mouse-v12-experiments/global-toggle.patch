@@ -1,0 +1,149 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -4,7 +4,6 @@
+ #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
+ 
+ #define MAX_INPUTS 7
+-#define TOGGLE_INPUTS (9 + CONFIG_TIMED_MAX)
+ #define EVENT_COUNT 8
+ 
+ // Page-zero xRAM uses one-byte addresses without consuming internal stack RAM.
+@@ -14,7 +13,6 @@
+ __pdata uint8_t buttonSecond[MAX_INPUTS];
+ __pdata uint8_t buttonPressed[MAX_INPUTS];
+ __pdata uint8_t buttonOrder[MAX_INPUTS];
+-__pdata uint8_t latchedMouse[TOGGLE_INPUTS];
+ __pdata uint8_t lastKeyboard[8];
+ __xdata uint8_t nextKeyboard[8];
+ __pdata uint8_t inputDown;
+@@ -52,8 +50,8 @@
+ #if CONFIG_MACRO_REPEAT
+ __idata uint8_t macroRepeat;
+ #endif
+-// A private toggle lane keeps macro ownership independent of physical/timed inputs.
+-__idata uint8_t macroMouse;
++// All toggle actions share one mouse-button state; held outputs remain separate.
++__idata uint8_t toggledMouse;
+ __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
+ // High interval-counter bits occupy the same positions as record bits 3-5.
+ __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
+@@ -143,11 +141,8 @@
+ }
+ 
+ static uint8_t mouseButtons(void) {
+-  uint8_t buttons = macroMouse;
++  uint8_t buttons = toggledMouse;
+   uint8_t i;
+-  for (i = 0; i < TOGGLE_INPUTS; i++) {
+-    buttons |= latchedMouse[i];
+-  }
+   for (i = 0; i < MAX_INPUTS; i++) {
+     if (buttonPressed[i] && actionType(buttonFirst[i]) == CONFIG_ACTION_MOUSE_HOLD) {
+       buttons |= buttonSecond[i];
+@@ -280,7 +275,7 @@
+       layerSelectionPending = 1;
+       break;
+     case CONFIG_ACTION_MOUSE_TOGGLE:
+-      latchedMouse[input] ^= second;
++      toggledMouse ^= second;
+       break;
+     case CONFIG_ACTION_RELATIVE_LAYER:
+       {
+@@ -342,9 +337,6 @@
+ #if CONFIG_SCROLL_ACCELERATION
+     scrollFirst = 0;
+ #endif
+-    for (i = 0; i < TOGGLE_INPUTS; i++) {
+-      latchedMouse[i] = 0;
+-    }
+     eventUsed = 0;
+     eventHead = 0;
+     eventTail = 0;
+@@ -354,7 +346,7 @@
+     }
+     currentFirst = 0;
+     macroNext = 0;
+-    macroMouse = 0;
++    toggledMouse = 0;
+     phase = 0;
+     tempOn = 0;
+     tempMouse = 0;
+@@ -382,7 +374,7 @@
+   eventUsed = 0;
+   currentFirst = 0;
+   macroNext = 0;
+-  macroMouse = 0;
++  toggledMouse = 0;
+   phase = 0;
+   consumerReleasePending = 0;
+   consumerFirst = 0;
+@@ -401,9 +393,6 @@
+     buttonOrder[i] = i;
+     buttonFirst[i] = 0;
+     buttonSecond[i] = 0;
+-  }
+-  for (i = 0; i < TOGGLE_INPUTS; i++) {
+-    latchedMouse[i] = 0;
+   }
+   for (i = 0; i < 8; i++) {
+     lastKeyboard[i] = 0;
+@@ -680,7 +669,7 @@
+ #endif
+       currentFirst = 0;
+     } else if (type == CONFIG_ACTION_MOUSE_TOGGLE) {
+-      macroMouse ^= currentSecond;
++      toggledMouse ^= currentSecond;
+       currentFirst = 0;
+     } else if (type == CONFIG_ACTION_SCROLL) {
+       int8_t delta = currentSecond;
+--- a/tests/macros_test.c
++++ b/tests/macros_test.c
+@@ -279,7 +279,48 @@
+     assert(count == 4 && reports[0][0] == 5 && reports[0][1] == 0xE9);
+     assert(reports[1][0] == 5 && reports[1][1] == 0 && reports[2][3] == 4);
+ }
++
++static uint8_t latestMouse(void) {
++    for (unsigned i = count; i > 0; i--)
++        if (reports[i - 1][0] == 2) return reports[i - 1][1];
++    return 0;
++}
++static void testGlobalToggle(void) {
++    // The reported physical-key/macro case, in both directions.
++    reset(); const uint8_t toggle[] = {CONFIG_ACTION_MOUSE_TOGGLE, 1};
++    define(start, toggle, 1); bind(0, start, 1);
++    activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 1;
++    press(1, 0); pump(0, 50); assert(latestMouse() == 1);
++    press(0, 50); pump(50, 100); assert(latestMouse() == 0);
++    press(0, 100); pump(100, 150); assert(latestMouse() == 1);
++    press(1, 150); pump(150, 200); assert(latestMouse() == 0);
++    // Another physical binding shares the state too.
++    activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 1;
++    press(0, 200); pump(200, 250); assert(latestMouse() == 1);
++    press(1, 250); pump(250, 300); assert(latestMouse() == 0);
++    // Toggle-off must not release an independently held button.
++    bind(0, start, 1);
++    activeConfig[13] = CONFIG_ACTION_MOUSE_HOLD; activeConfig[14] = 1;
++    actionsPress(2, 300); pump(300, 350); assert(latestMouse() == 1);
++    press(1, 350); pump(350, 400); assert(latestMouse() == 1);
++    press(0, 400); pump(400, 450); assert(latestMouse() == 1);
++    actionsRelease(2); pump(450, 500); assert(latestMouse() == 0);
++    // Clear/reset removes toggles.
++    press(0, 500); pump(500, 550); assert(latestMouse() == 1);
++    actionsClear(); pump(550, 600); assert(latestMouse() == 0);
++    // Effective layer changes remove toggles.
++    reset(); activeConfig[3] = 1; start = configTimedOffset();
++    memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0,
++           PHYSICAL_VARIANT ? 15 : 22);
++    define(start, toggle, 1); bind(0, start, 1);
++    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++    press(0, 0); pump(0, 50); assert(latestMouse() == 1);
++    press(1, 50); pump(50, 100);
++    assert(actionsLayer() == 1 && latestMouse() == 0);
++}
++
+ int main(void) {
++    testGlobalToggle();
+     testTextCharacterPause();
+     testValidation(); testSingleByteTerminators(); testRepeatsAndOrdering(); testLongAndStrings();
+     testTriggersAndCancellation(); testImmediateSteps(); testQueueAndChords(); testPause(); testHeldPointer();

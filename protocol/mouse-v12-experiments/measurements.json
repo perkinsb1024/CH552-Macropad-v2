@@ -1,0 +1,124 @@
+{
+  "toolchain": "SDCC 4.2.2 build.13407_4",
+  "clock_hz": 24000000,
+  "usb_dma_bytes": 148,
+  "flash_limit_bytes": 14336,
+  "cases": {
+    "global-toggle": {
+      "baseline_revision": "a2b9338f1226d8c1ed1403559e11f6e167576a31",
+      "patch": "global-toggle.patch",
+      "changed_source_hashes": {
+        "src/actions.c": {
+          "baseline_sha256": "42a6a6d5ecb0cf7262b549d52fe6e48f1cb6a90cc930d7daf8fe2b5a31edf09b",
+          "prototype_sha256": "a22dfb466ebfb6ed9d3db4a0abef166e91b40c87da6424a131db21ddb0f39e7a"
+        },
+        "tests/macros_test.c": {
+          "baseline_sha256": "abd8a59f086553c131f5a3bcc67d0515e9c5f457beb58101d5bdc8d4796ecb07",
+          "prototype_sha256": "c6a7ae8a968df005612e577cd23b013087520238bfb91359059e3d7e128624eb"
+        }
+      },
+      "measurements": [
+        {
+          "implementation": "baseline",
+          "variant": "six-key",
+          "flash_bytes": 14332,
+          "spare_flash_bytes": 4,
+          "paged_ram_bytes": 108,
+          "ordinary_xseg_bytes": 369,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 79
+        },
+        {
+          "implementation": "baseline",
+          "variant": "three-key",
+          "flash_bytes": 14328,
+          "spare_flash_bytes": 8,
+          "paged_ram_bytes": 108,
+          "ordinary_xseg_bytes": 360,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 82
+        },
+        {
+          "implementation": "prototype",
+          "variant": "six-key",
+          "flash_bytes": 14284,
+          "spare_flash_bytes": 52,
+          "paged_ram_bytes": 95,
+          "ordinary_xseg_bytes": 369,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 79
+        },
+        {
+          "implementation": "prototype",
+          "variant": "three-key",
+          "flash_bytes": 14280,
+          "spare_flash_bytes": 56,
+          "paged_ram_bytes": 95,
+          "ordinary_xseg_bytes": 360,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 82
+        }
+      ]
+    },
+    "five-buttons": {
+      "baseline_revision": "3b6ceeb4c2d428cd4f6046f80c0eac7625071cdb",
+      "patch": "five-buttons.patch",
+      "changed_source_hashes": {
+        "src/config.c": {
+          "baseline_sha256": "ce90bcb77c91ce9ea42bab42855ba0d86e53541585a10adcd959487e43bbe022",
+          "prototype_sha256": "7a2cf7fd6c5fd9b4eb5cec13e8b0a002e73fd97a6c4438253bc939d69efb9e0d"
+        },
+        "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c": {
+          "baseline_sha256": "096e332feb47d35a1e06f03f2322013b93103dc2b89e32810f31a53da769f7e3",
+          "prototype_sha256": "b5776722ab4ed7d95486f2731bd45d53d22d6cb2dd2e2b0a9e4c0e8af5eef9c4"
+        },
+        "src/userUsbHidKeyboardMouse/USBconstant.c": {
+          "baseline_sha256": "e3f012c70aed4bf88b940ad7e27eb2427c9218d2d535f51cd1672ef755da4871",
+          "prototype_sha256": "a59ac11e4fad14bcd201f54c034120047544de0e6a627842a4b41a8748aeaeaf"
+        }
+      },
+      "measurements": [
+        {
+          "implementation": "baseline",
+          "variant": "six-key",
+          "flash_bytes": 14284,
+          "spare_flash_bytes": 52,
+          "paged_ram_bytes": 95,
+          "ordinary_xseg_bytes": 369,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 79
+        },
+        {
+          "implementation": "baseline",
+          "variant": "three-key",
+          "flash_bytes": 14280,
+          "spare_flash_bytes": 56,
+          "paged_ram_bytes": 95,
+          "ordinary_xseg_bytes": 360,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 82
+        },
+        {
+          "implementation": "prototype",
+          "variant": "six-key",
+          "flash_bytes": 14284,
+          "spare_flash_bytes": 52,
+          "paged_ram_bytes": 95,
+          "ordinary_xseg_bytes": 369,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 79
+        },
+        {
+          "implementation": "prototype",
+          "variant": "three-key",
+          "flash_bytes": 14280,
+          "spare_flash_bytes": 56,
+          "paged_ram_bytes": 95,
+          "ordinary_xseg_bytes": 360,
+          "absolute_active_image_bytes": 128,
+          "stack_capacity_bytes": 82
+        }
+      ]
+    }
+  }
+}
