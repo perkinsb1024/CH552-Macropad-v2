@@ -60,13 +60,13 @@ uint8_t USB_queueKeyboard(const uint8_t *keys) {
     memcpy(frames[frameCount++] + 1, keys, 8);
     return 1;
 }
-uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
     assert(frameCount < 32);
     frames[frameCount][0] = 2;
     frames[frameCount][1] = buttons;
     frames[frameCount][2] = x;
     frames[frameCount][3] = y;
-    frames[frameCount][4] = wheel;
+    frames[frameCount][4] = scroll;
     frameCount++;
     return 1;
 }

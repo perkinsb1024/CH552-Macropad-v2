@@ -12,11 +12,11 @@ uint8_t USB_queueKeyboard(const uint8_t *keys) {
     assert(count < 1024); reports[count][0] = 1;
     memcpy(reports[count++] + 1, keys, 8); return 1;
 }
-uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
     if (blocked) return 0;
     assert(count < 1024); uint8_t *r = reports[count++];
-    r[0] = 2; r[1] = buttons & 7; r[2] = x; r[3] = y;
-    r[4] = buttons & 128 ? 0 : wheel; r[5] = buttons & 128 ? wheel : 0;
+    r[0] = 2; r[1] = buttons; r[2] = x; r[3] = y;
+    r[4] = (scroll & 15) == 15 ? -1 : scroll & 15; r[5] = (scroll >> 4) == 15 ? -1 : scroll >> 4;
     return 1;
 }
 uint8_t USB_queueConsumer(uint16_t usage) {
@@ -47,12 +47,8 @@ static void bind(uint8_t input, uint8_t macro, uint8_t repeat) {
 }
 static uint8_t define(uint8_t offset, const uint8_t *bytes, uint8_t steps) {
     memcpy(activeConfig + offset, bytes, 2 * steps);
-#if CONFIG_MACRO_STYLE == 1
-    assert(steps <= 2); return offset + 4;
-#else
     if (offset + 2 * steps < CONFIG_SIZE) activeConfig[offset + 2 * steps] = 0;
     return offset + 2 * steps + 1;
-#endif
 }
 static void press(uint8_t key, uint16_t now) { actionsPress(key, now); actionsRelease(key); }
 static void pump(uint16_t first, uint16_t end) {
@@ -71,14 +67,10 @@ static void testValidation(void) {
         for (uint8_t aux = 0; aux < 16; aux++) {
             activeConfig[9] = CONFIG_ACTION_MACRO | (aux << 4); activeConfig[10] = ref; seal();
             uint8_t expected;
-#if CONFIG_MACRO_STYLE == 1
-            expected = ref >= start && ref <= 124 && !((ref - start) & 3) && (CONFIG_MACRO_REPEAT || !aux);
-#else
             expected = ref >= start && ref < CONFIG_SIZE &&
                        ref != start + 1 && ref != start + 3 &&
                        ref != second + 1 && ref != second + 3 &&
                        (CONFIG_MACRO_REPEAT || !aux);
-#endif
             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == expected);
         }
     }
@@ -104,14 +96,9 @@ static void testValidation(void) {
     press(0, 0); pump(0, 80); assert(keyPresses(4) == 1 && keyPresses(5) == 1);
     // Padding cannot hide an unpaired opcode, regardless of tail alignment.
     reset(); activeConfig[127] = 1; seal();
-#if CONFIG_MACRO_STYLE == 1
-    if ((start & 1) != 0) assert(!configValid(activeConfig, PHYSICAL_VARIANT));
-#else
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
-#endif
 }
 static void testSingleByteTerminators(void) {
-#if CONFIG_MACRO_STYLE == 2
     reset();
     const uint8_t first[] = {CONFIG_ACTION_KEY_TAP, 4};
     // A zero parameter and an opcode-looking parameter are still action data.
@@ -135,7 +122,6 @@ static void testSingleByteTerminators(void) {
     bind(0, 125, CONFIG_MACRO_REPEAT ? 2 : 1); seal();
     assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 100); assert(keyPresses(4) == (CONFIG_MACRO_REPEAT ? 2 : 1));
-#endif
 }
 static void testRepeatsAndOrdering(void) {
     for (uint8_t repeat = 1; repeat <= (CONFIG_MACRO_REPEAT ? 16 : 1); repeat++) {
@@ -157,7 +143,6 @@ static void testRepeatsAndOrdering(void) {
     }
 }
 static void testLongAndStrings(void) {
-#if CONFIG_MACRO_STYLE == 2
     reset();
     memcpy(activeConfig + start, "chrome", 7); activeConfig[4] = 7; start += 7;
     const uint8_t launch[] = {0x81, 0x2C, CONFIG_ACTION_STRING, 0, 1, 0x28};
@@ -171,7 +156,6 @@ static void testLongAndStrings(void) {
     for (uint8_t i = 0; i < 40; i++) { activeConfig[start + 2 * i] = 1; activeConfig[start + 2 * i + 1] = 4 + i; }
     bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 1000); assert(count == 80 && !actionsDropped(0));
-#endif
 }
 static void testTextCharacterPause(void) {
     // Include Enter, repeated characters, and a deadline across clock wrap.
@@ -365,7 +349,101 @@ static void testGlobalToggleSources(void) {
     press(0, 150); pump(150, 200); assert(latestMouse() == 0);
 }
 
+static void testPersistentMouse(void) {
+    for (unsigned mask = 1; mask < 256; mask++) {
+        reset();
+        activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = mask;
+        activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = mask;
+        activeConfig[13] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[14] = mask;
+        press(0, 0); pump(0, 10); assert(latestMouse() == mask && count == 1);
+        press(0, 10); pump(10, 20); assert(count == 1); // Idempotent; no second edge.
+        press(1, 20); pump(20, 30); assert(latestMouse() == 0 && count == 2);
+        press(1, 30); pump(30, 40); assert(count == 2);
+        press(2, 40); pump(40, 50); assert(latestMouse() == mask);
+        press(0, 50); press(1, 51); pump(51, 60); assert(latestMouse() == 0);
+        // Persistent up cannot release a physical hold.
+        activeConfig[13] = CONFIG_ACTION_MOUSE_HOLD;
+        actionsPress(2, 60); pump(60, 70); assert(latestMouse() == mask);
+        press(0, 70); press(1, 71); pump(71, 80); assert(latestMouse() == mask);
+        actionsRelease(2); pump(80, 90); assert(latestMouse() == 0);
+        press(0, 90); pump(90, 100); actionsClear(); pump(100, 110); assert(latestMouse() == 0);
+    }
+    reset(); activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0xFF;
+    press(0, 0); pump(0, 10); count = 0; generation++;
+    blocked = 1; pump(10, 20); assert(count == 0);
+    blocked = 0; pump(20, 30); assert(latestMouse() == 0xFF); // Reassert all buttons after USB generation change.
+    // Different selected bits remain independent, including button 8.
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0xFF;
+    activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = 0x55;
+    press(0, 0); press(1, 1); pump(1, 10); assert(latestMouse() == 0xAA);
+    // Clicks are independent from persistent state.
+    activeConfig[13] = CONFIG_ACTION_MOUSE_CLICK; activeConfig[14] = 0x55;
+    press(2, 10); pump(10, 30); assert(latestMouse() == 0xAA);
+    assert(reports[count - 2][1] == 0xFF);
+    // Effective-layer transition clears all eight bits.
+    activeConfig[3] = 1;
+    activeConfig[13] = CONFIG_ACTION_SET_LAYER; activeConfig[14] = 1;
+    press(2, 30); pump(30, 40); assert(latestMouse() == 0);
+}
+
+static void testMouseDragAndScroll(void) {
+    reset();
+    const uint8_t drag[] = {
+        CONFIG_ACTION_MOUSE_DOWN, 0x80,
+        CONFIG_ACTION_MOUSE_DOWN, 0x80,
+        CONFIG_ACTION_MOUSE_X, 12,
+        CONFIG_ACTION_SCROLL, 2,
+        CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HORIZONTAL, 0xFD,
+        CONFIG_ACTION_PAUSE, 1,
+        CONFIG_ACTION_MOUSE_UP, 0x80,
+        CONFIG_ACTION_MOUSE_UP, 0x80,
+    };
+    define(start, drag, 8); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    press(0, 0); pump(0, 2); assert(count == 0);
+    // Down is applied once while a full transport refuses the changed report.
+    blocked = 1; pump(2, 10); assert(count == 0);
+    blocked = 0; actionsPoll(10); assert(count == 1 && latestMouse() == 0x80);
+    pending = 1; pump(11, 30); assert(count == 1); // No movement before down drains.
+    pending = 0; pump(30, 200);
+    assert(count == 8); // Down, X, two vertical, three horizontal, up.
+    assert(reports[1][1] == 0x80 && reports[1][2] == 12);
+    for (unsigned i = 2; i < 4; i++) assert(reports[i][1] == 0x80 && reports[i][4] == 1 && !reports[i][5]);
+    for (unsigned i = 4; i < 7; i++) assert(reports[i][1] == 0x80 && !reports[i][4] && reports[i][5] == 255);
+    assert(!reports[7][1]);
+    // Cancellation removes persistent drag state and the queued release/movement.
+    reset(); define(start, drag, 8); bind(0, start, 1);
+    press(0, 0); pump(0, 3); assert(latestMouse() == 0x80);
+    actionsClear(); count = 0; pump(3, 100); assert(!count);
+    // Macro completion retains a persistent press for a separate input to clear.
+    reset(); const uint8_t down[] = {CONFIG_ACTION_MOUSE_DOWN, 0xF8};
+    define(start, down, 1); bind(0, start, 2);
+    activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = 0xF8;
+    press(0, 0); pump(0, 30); assert(latestMouse() == 0xF8 && count == 1);
+    press(1, 30); pump(30, 40); assert(latestMouse() == 0);
+}
+
+static void testMouseSources(void) {
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0x80;
+    uint8_t cw = 9 + 2 * (configKeyCount() + 1);
+    activeConfig[cw] = CONFIG_ACTION_MOUSE_UP; activeConfig[cw + 1] = 0x80;
+    press(0, 0); pump(0, 10); actionsRotate(1); pump(10, 20); assert(latestMouse() == 0);
+    reset(); uint8_t chord = start; activeConfig[5] |= 2;
+    activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[chord + 2] = 0xF8;
+    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
+    pump(5, 20); assert(latestMouse() == 0xF8);
+    reset(); uint8_t timer = start; activeConfig[3] = 1 << 6;
+    memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
+    activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[timer + 2] = 0xFF;
+    activeConfig[timer + 3] = CONFIG_ACTION_MOUSE_UP; activeConfig[timer + 4] = 0xFF;
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0); pump(0, 10); assert(latestMouse() == 0xFF);
+    assert(!actionsTimedInput()); pump(10, 20); assert(latestMouse() == 0);
+}
+
 int main(void) {
+    testPersistentMouse(); testMouseDragAndScroll(); testMouseSources();
     testGlobalToggleSources();
     testGlobalToggle();
     testTextCharacterPause();

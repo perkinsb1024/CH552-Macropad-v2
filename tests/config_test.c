@@ -182,7 +182,7 @@ static void testChords(void) {
 }
 
 static void testMouseButtonMasks(void) {
-    const uint8_t types[] = {CONFIG_ACTION_MOUSE_CLICK, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_MOUSE_TOGGLE};
+    const uint8_t types[] = {CONFIG_ACTION_MOUSE_CLICK, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_MOUSE_TOGGLE, CONFIG_ACTION_MOUSE_DOWN, CONFIG_ACTION_MOUSE_UP};
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t action = 0; action < sizeof(types); action++) {
             for (uint16_t buttons = 0; buttons < 256; buttons++) {
@@ -190,9 +190,41 @@ static void testMouseButtonMasks(void) {
                 activeConfig[9] = types[action];
                 activeConfig[10] = buttons;
                 seal();
-                assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
+                assert(configValid(activeConfig, variant) == (buttons >= 1));
             }
         }
+    }
+}
+
+static void testPersistentMouseModes(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            for (uint8_t slot = 0; slot < 6; slot++) {
+                testLoadStarterProfile(variant);
+                uint8_t offset = 9;
+                if (slot == 1) offset = 9 + (variant ? 8 : 14);
+                if (slot == 2) {
+                    activeConfig[5] |= 2;
+                    offset = configTimedOffset() - 2;
+                    activeConfig[offset - 1] = 0;
+                }
+                if (slot == 3 || slot == 4) {
+                    activeConfig[3] |= 1 << 6;
+                    offset = configTimedOffset() + (slot == 3 ? 1 : 3);
+                }
+                if (slot == 5) offset = configTimedOffset(); // Unreferenced macro step.
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_TOGGLE;
+                activeConfig[offset + 1] = 0xFF;
+                seal(); assert(!!configValid(activeConfig, variant) == (aux <= 2));
+                activeConfig[offset + 1] = 0;
+                seal(); assert(!configValid(activeConfig, variant));
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_HOLD;
+                activeConfig[offset + 1] = 0xFF;
+                seal(); assert(!!configValid(activeConfig, variant) == (!aux && (slot == 0 || slot == 2)));
+            }
+        }
+        testLoadStarterProfile(variant);
+        activeConfig[2] = 11; seal(); assert(!configValid(activeConfig, variant));
     }
 }
 
@@ -218,7 +250,7 @@ static void testMultiClick(void) {
                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_CLICK;
                     activeConfig[offset + 1] = buttons;
                     seal();
-                    assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
+                    assert(configValid(activeConfig, variant) == (buttons >= 1));
                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MACRO;
                     seal();
                     assert(!configValid(activeConfig, variant));
@@ -581,6 +613,7 @@ int main(void) {
     testCapacityAndStrings(CONFIG_THREE_KEYS);
     testStringBoundaries();
     testChords();
+    testPersistentMouseModes();
     testMouseButtonMasks();
     testMultiClick();
     testActions();

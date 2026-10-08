@@ -25,8 +25,9 @@ void USB_discardReports(void) USB_CRITICAL;
 uint8_t USB_reportGeneration(void);
 
 FW_BIT USB_queueKeyboard(const __xdata uint8_t *keys) USB_CRITICAL;
-// Internal button bit 7 routes wheel to horizontal AC Pan; it is never sent as a button.
-FW_BIT USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) USB_CRITICAL;
+// Eight independent button bits. Scroll packs signed four-bit unit deltas:
+// vertical in bits 0–3, horizontal AC Pan in bits 4–7 (each -1, 0 or +1).
+FW_BIT USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) USB_CRITICAL;
 FW_BIT USB_queueConsumer(uint16_t usage) USB_CRITICAL;
 FW_BIT USB_reportsPending(void);
 void USB_reportPoll(uint16_t now) USB_CRITICAL;
