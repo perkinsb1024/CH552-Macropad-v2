@@ -492,6 +492,14 @@ output {
   flex-wrap: wrap;
   gap: 6px;
 }
+.mouse-button-picker {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+}
+.mouse-button-picker > .chip {
+  min-width: 84px;
+  justify-content: center;
+}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -2200,9 +2208,8 @@ output {
   margin-bottom: 8px;
 }
 .scroll-test-counts > div {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px 24px;
   font-variant-numeric: tabular-nums;
 }
@@ -2211,17 +2218,16 @@ output {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 172px;
+  min-width: 0;
 }
-.mouse-button-column:nth-child(2) {
-  justify-content: center;
-}
-.mouse-button-column:last-child {
-  justify-content: flex-end;
+.mouse-button-column:nth-child(6) {
+  grid-column: 1;
 }
 .mouse-button-column > span:last-child {
   display: inline-flex;
   align-items: baseline;
+  justify-content: space-between;
+  flex: 1;
   gap: 4px;
   white-space: nowrap;
 }
@@ -2249,11 +2255,13 @@ output {
 
 @container (max-width: 564px) {
   .scroll-test-counts > div {
-    flex-wrap: nowrap;
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+  }
+  .mouse-button-column:nth-child(6) {
+    grid-column: auto;
   }
   .mouse-button-column {
-    width: calc((100% - 16px) / 3);
     gap: 4px;
     font-size: 12px;
   }
@@ -2265,16 +2273,7 @@ output {
 }
 @container (max-width: 360px) {
   .scroll-test-counts > div {
-    gap: 6px;
-  }
-  .mouse-button-column {
-    width: calc((100% - 12px) / 3);
-    font-size: 10px;
-  }
-  .mouse-button-state {
-    width: 52px;
-    padding-inline: 3px;
-    font-size: 9px;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

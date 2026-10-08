@@ -1,5 +1,5 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
@@ -19,16 +19,23 @@ const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED con
 
 function MouseButtons({ value, onChange }: { value: number; onChange(v: number): void }) {
   const buttons = MOUSE_BUTTONS;
+  const [showMore, setShowMore] = useState(!!(value & 0xE0));
+  useEffect(() => {
+    if (value & 0xE0) setShowMore(true);
+  }, [value]);
+  const buttonControl = (b: typeof buttons[number]) => (
+    <label key={b.bit} class={`chip ${value & b.bit ? 'chip-on' : ''}`}>
+      <input type="checkbox" checked={!!(value & b.bit)} onChange={(e) => onChange((e.target as HTMLInputElement).checked ? value | b.bit : value & ~b.bit)} />
+      {b.label}
+    </label>
+  );
   return (
     <div class="field">
       <span class="field-label">Mouse buttons</span>
-      <div class="chips">
-        {buttons.map((b) => (
-          <label key={b.bit} class={`chip ${value & b.bit ? 'chip-on' : ''}`}>
-            <input type="checkbox" checked={!!(value & b.bit)} onChange={(e) => onChange((e.target as HTMLInputElement).checked ? value | b.bit : value & ~b.bit)} />
-            {b.label}
-          </label>
-        ))}
+      <div class="chips mouse-button-picker">
+        {buttons.slice(0, 5).map(buttonControl)}
+        <button type="button" class="inline-link" aria-expanded={showMore} onClick={() => setShowMore(!showMore)}>{showMore ? 'Less' : 'More'}</button>
+        {showMore && buttons.slice(5).map(buttonControl)}
       </div>
     </div>
   );
