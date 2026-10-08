@@ -121,10 +121,17 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 | --- | --- |
 | **Mouse click** | Clicks your selected mouse button or buttons 1–16 times: choose **Single**, **Double**, or **Custom** |
 | **Mouse hold** | Keeps the selected mouse buttons down while you hold the macropad button; useful for dragging |
-| **Mouse toggle** | Press once to keep the selected mouse buttons down; activate the same input again to release them. Changing layers also clears toggled mouse buttons |
+| **Mouse toggle** | Flips the selected mouse buttons between down and released. All toggle actions share the same state, so another input or macro can toggle them off. Changing layers also clears toggled mouse buttons |
 | **Scroll** | Sends a scroll step. Choose **Vertical** with **Up**/**Down**, or **Horizontal** with **Left**/**Right**, and a **Wheel step** from 1–127 (horizontal requires v9 firmware) |
 | **Move pointer X** | Moves left or right by the selected amount, from 1–127 |
 | **Move pointer Y** | Moves up or down by the selected amount, from 1–127 |
+
+**Mouse toggle** shares one state across keys, wheel inputs, chords, timers and macros.
+For example, a key can toggle **Left** on and a macro can toggle **Left** off.
+Each selected button flips independently. A button kept down by **Mouse hold**
+stays down until you release that held input, even if its toggle state is off.
+Macro toggles run when playback reaches their step; direct toggle bindings act
+immediately.
 
 Mouse button actions offer **Left**, **Middle**, and **Right**. You can select more than one (though that's not typically useful... How often do you press more than one mouse button at once?)
 
@@ -493,9 +500,11 @@ Switching layers immediately cancels any currently-running macros. This includes
 layer-switching actions that occur within the macro itself. Therefore, any layer-switching
 actions must be the final step, and that macro must have **Repeat count** set to 1.
 This applies to **Switch to layer** and **Relative layer**, including their one-shot variants,
-even if the target layer is already active. **Add step** is disabled while a
-layer-switching action is present. Remove that action to extend the sequence,
-then add it back at the end. Reordering, pasting or editing steps into an invalid
+even if the target layer is already active. **Add step** and **Add pause** stay
+below the steps but insert new actions before the first layer switch. A labeled
+divider marks that position. Any layer switch that is not the final step has a
+red border. Additions are available while storage permits, even when the sequence
+needs repair. Reordering, pasting or editing steps into an invalid
 order blocks saving until you fix it.
 
 For example, a tmux command-mode macro can prepare both tmux and your macropad:
@@ -660,7 +669,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |
-| The mouse seems stuck dragging | Activate the same **Mouse toggle** input again, or change layers to clear toggled buttons |
+| The mouse seems stuck dragging | Use any **Mouse toggle** action selecting that button to toggle it off, or change layers to clear toggled buttons. Release any **Mouse hold** inputs too |
 | LEDs do not look like the editor | Check layer indicators, key colors, temporary effects, and brightness overrides. Use **Restore all configured LED settings** to restore saved behavior |
 | LEDs do not light up at all | The absolute cheapest versions of these macropads do not include LEDs. Someone skilled with a soldering iron can add them, but it's probably easier to buy a macropad that already includes them |
 | My device has older firmware | Follow the configurator's compatibility notice or use **Older firmware configurators**. Older editors may have fewer features than this guide |
@@ -709,7 +718,7 @@ The same cancellation can happen when the unconsumed input's normal binding chan
 | Two **Previous layer** follow-ups | Each sees the history left by the earlier selection. They can switch away and then back again, rather than both restoring the layer you used before the reminders. Previous-layer history holds one entry |
 | Multiple **Relative layer** follow-ups | Their changes accumulate sequentially and wrap around. Two +1 selections normally advance two layers |
 | A persistent layer selection while **Layer while held** is active | The held layer keeps priority. Releasing the held input reveals the new persistent selection. Relative timed selections use the currently active layer as their starting point |
-| Different timers using **Mouse toggle** for the same mouse button | Each timer has its own toggle latch. Turning one timer's latch off does not release a button still latched by another timer. A change to the effective layer clears all mouse-toggle latches |
+| Different timers using **Mouse toggle** for the same mouse button | All timers share the global toggle state with other inputs and macros. Two toggle actions for the same button cancel each other; a change to the effective layer clears the toggle state |
 | Conflicting **LED control** follow-ups | Later actions overwrite overlapping settings. Relative adjustments and toggles operate on the state left by earlier actions. An unconsumed input's own LED action runs afterwards and can change the result again |
 | Output follow-ups while playback is backed up | The playback queue has eight entries. New output can be dropped when it is full; the timer's pending follow-up is still cleared, so it is not automatically retried |
 

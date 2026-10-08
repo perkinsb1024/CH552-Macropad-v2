@@ -272,14 +272,102 @@ static void testImmediateSteps(void) {
     activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 2;
     press(1, 0); press(0, 1); pump(0, 80);
     assert(ledCalls == 1 && ledCommand == CONFIG_LED_RESTORE && ledValue == 0);
-    assert(reports[count - 1][1] == 3); // Independent owners combine.
+    assert(reports[count - 1][1] == 3); // Different button bits combine in the shared toggle state.
     press(0, 80); pump(80, 160); assert(reports[count - 1][1] == 2);
     reset(); const uint8_t media[] = {CONFIG_ACTION_CONSUMER, 0xE9, 1, 4};
     define(start, media, 2); bind(0, start, 1); press(0, 0); pump(0, 100);
     assert(count == 4 && reports[0][0] == 5 && reports[0][1] == 0xE9);
     assert(reports[1][0] == 5 && reports[1][1] == 0 && reports[2][3] == 4);
 }
+static uint8_t latestMouse(void) {
+    for (unsigned i = count; i > 0; i--)
+        if (reports[i - 1][0] == 2) return reports[i - 1][1];
+    return 0;
+}
+static void testGlobalToggle(void) {
+    // The reported physical-key/macro case, in both directions.
+    reset(); const uint8_t toggle[] = {CONFIG_ACTION_MOUSE_TOGGLE, 1};
+    define(start, toggle, 1); bind(0, start, 1);
+    activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 1;
+    press(1, 0); pump(0, 50); assert(latestMouse() == 1);
+    press(0, 50); pump(50, 100); assert(latestMouse() == 0);
+    press(0, 100); pump(100, 150); assert(latestMouse() == 1);
+    press(1, 150); pump(150, 200); assert(latestMouse() == 0);
+    // Another physical binding shares the state too.
+    activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 1;
+    press(0, 200); pump(200, 250); assert(latestMouse() == 1);
+    press(1, 250); pump(250, 300); assert(latestMouse() == 0);
+    // Toggle-off must not release an independently held button.
+    bind(0, start, 1);
+    activeConfig[13] = CONFIG_ACTION_MOUSE_HOLD; activeConfig[14] = 1;
+    actionsPress(2, 300); pump(300, 350); assert(latestMouse() == 1);
+    press(1, 350); pump(350, 400); assert(latestMouse() == 1);
+    press(0, 400); pump(400, 450); assert(latestMouse() == 1);
+    actionsRelease(2); pump(450, 500); assert(latestMouse() == 0);
+    // Clear/reset removes toggles.
+    press(0, 500); pump(500, 550); assert(latestMouse() == 1);
+    actionsClear(); pump(550, 600); assert(latestMouse() == 0);
+    // Effective layer changes remove toggles.
+    reset(); activeConfig[3] = 1; start = configTimedOffset();
+    memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0,
+           PHYSICAL_VARIANT ? 15 : 22);
+    define(start, toggle, 1); bind(0, start, 1);
+    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+    press(0, 0); pump(0, 50); assert(latestMouse() == 1);
+    press(1, 50); pump(50, 100);
+    assert(actionsLayer() == 1 && latestMouse() == 0);
+}
+
+static void testGlobalToggleSources(void) {
+    // Overlapping masks toggle each selected button bit independently.
+    reset();
+    const uint8_t toggle[] = {CONFIG_ACTION_MOUSE_TOGGLE, 3};
+    define(start, toggle, 1); bind(0, start, 1);
+    activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 1;
+    press(1, 0); pump(0, 50); assert(latestMouse() == 1);
+    press(0, 50); pump(50, 100); assert(latestMouse() == 2);
+    press(0, 100); pump(100, 150); assert(latestMouse() == 1);
+    // Encoder rotation shares the physical key's state.
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 1;
+    uint8_t clockwise = 9 + 2 * (configKeyCount() + 1);
+    activeConfig[clockwise] = CONFIG_ACTION_MOUSE_TOGGLE;
+    activeConfig[clockwise + 1] = 1;
+    press(0, 0); pump(0, 50); assert(latestMouse() == 1);
+    actionsRotate(1); pump(50, 100); assert(latestMouse() == 0);
+    // A chord can undo a key toggle.
+    reset();
+    uint8_t chord = start; activeConfig[5] |= 2;
+    activeConfig[chord] = 0;
+    activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_TOGGLE;
+    activeConfig[chord + 2] = 1;
+    activeConfig[13] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[14] = 1;
+    press(2, 0); pump(0, 50); assert(latestMouse() == 1);
+    actionsPress(0, 50); actionsPress(1, 55);
+    actionsRelease(0); actionsRelease(1);
+    pump(55, 100); assert(latestMouse() == 0);
+    // Timer expiry and its follow-up share the macro's toggle state.
+    reset();
+    uint8_t timer = start; activeConfig[3] = 1 << 6;
+    start += CONFIG_TIMED_SIZE;
+    memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
+    activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_TOGGLE;
+    activeConfig[timer + 2] = 1;
+    activeConfig[timer + 3] = CONFIG_ACTION_MOUSE_TOGGLE;
+    activeConfig[timer + 4] = 1;
+    const uint8_t left[] = {CONFIG_ACTION_MOUSE_TOGGLE, 1};
+    define(start, left, 1); bind(0, start, 1);
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0);
+    pump(0, 50); assert(latestMouse() == 1);
+    press(0, 50); pump(50, 100); assert(latestMouse() == 0);
+    assert(!actionsTimedInput()); pump(100, 150); assert(latestMouse() == 1);
+    press(0, 150); pump(150, 200); assert(latestMouse() == 0);
+}
+
 int main(void) {
+    testGlobalToggleSources();
+    testGlobalToggle();
     testTextCharacterPause();
     testValidation(); testSingleByteTerminators(); testRepeatsAndOrdering(); testLongAndStrings();
     testTriggersAndCancellation(); testImmediateSteps(); testQueueAndChords(); testPause(); testHeldPointer();

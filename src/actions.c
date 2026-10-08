@@ -4,7 +4,6 @@
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 #define MAX_INPUTS 7
-#define TOGGLE_INPUTS (9 + CONFIG_TIMED_MAX)
 #define EVENT_COUNT 8
 
 // Page-zero xRAM uses one-byte addresses without consuming internal stack RAM.
@@ -14,7 +13,6 @@ __pdata uint8_t buttonFirst[MAX_INPUTS];
 __pdata uint8_t buttonSecond[MAX_INPUTS];
 __pdata uint8_t buttonPressed[MAX_INPUTS];
 __pdata uint8_t buttonOrder[MAX_INPUTS];
-__pdata uint8_t latchedMouse[TOGGLE_INPUTS];
 __pdata uint8_t lastKeyboard[8];
 __xdata uint8_t nextKeyboard[8];
 __pdata uint8_t inputDown;
@@ -52,8 +50,8 @@ __data uint8_t macroStart;
 #if CONFIG_MACRO_REPEAT
 __idata uint8_t macroRepeat;
 #endif
-// A private toggle lane keeps macro ownership independent of physical/timed inputs.
-__idata uint8_t macroMouse;
+// All toggle actions share one mouse-button state; held outputs remain separate.
+__idata uint8_t toggledMouse;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
@@ -143,11 +141,8 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
 }
 
 static uint8_t mouseButtons(void) {
-  uint8_t buttons = macroMouse;
+  uint8_t buttons = toggledMouse;
   uint8_t i;
-  for (i = 0; i < TOGGLE_INPUTS; i++) {
-    buttons |= latchedMouse[i];
-  }
   for (i = 0; i < MAX_INPUTS; i++) {
     if (buttonPressed[i] && actionType(buttonFirst[i]) == CONFIG_ACTION_MOUSE_HOLD) {
       buttons |= buttonSecond[i];
@@ -280,7 +275,7 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
-      latchedMouse[input] ^= second;
+      toggledMouse ^= second;
       break;
     case CONFIG_ACTION_RELATIVE_LAYER:
       {
@@ -342,9 +337,6 @@ static void updateLayer(void) {
 #if CONFIG_SCROLL_ACCELERATION
     scrollFirst = 0;
 #endif
-    for (i = 0; i < TOGGLE_INPUTS; i++) {
-      latchedMouse[i] = 0;
-    }
     eventUsed = 0;
     eventHead = 0;
     eventTail = 0;
@@ -354,7 +346,7 @@ static void updateLayer(void) {
     }
     currentFirst = 0;
     macroNext = 0;
-    macroMouse = 0;
+    toggledMouse = 0;
     phase = 0;
     tempOn = 0;
     tempMouse = 0;
@@ -382,7 +374,7 @@ void actionsInit(void) {
   eventUsed = 0;
   currentFirst = 0;
   macroNext = 0;
-  macroMouse = 0;
+  toggledMouse = 0;
   phase = 0;
   consumerReleasePending = 0;
   consumerFirst = 0;
@@ -401,9 +393,6 @@ void actionsInit(void) {
     buttonOrder[i] = i;
     buttonFirst[i] = 0;
     buttonSecond[i] = 0;
-  }
-  for (i = 0; i < TOGGLE_INPUTS; i++) {
-    latchedMouse[i] = 0;
   }
   for (i = 0; i < 8; i++) {
     lastKeyboard[i] = 0;
@@ -680,7 +669,7 @@ void actionsPoll(uint16_t now) {
 #endif
       currentFirst = 0;
     } else if (type == CONFIG_ACTION_MOUSE_TOGGLE) {
-      macroMouse ^= currentSecond;
+      toggledMouse ^= currentSecond;
       currentFirst = 0;
     } else if (type == CONFIG_ACTION_SCROLL) {
       int8_t delta = currentSecond;

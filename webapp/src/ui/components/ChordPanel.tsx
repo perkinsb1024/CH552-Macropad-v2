@@ -123,7 +123,7 @@ export function ChordPanel() {
           <select value={pick || (first ? `${first[0]}-${first[1]}` : '')} onChange={(e) => setPick((e.target as HTMLSelectElement).value)} aria-label="Key pair">
             {available.map(([a, b]) => <option key={`${a}-${b}`} value={`${a}-${b}`}>Keys {a + 1} + {b + 1}</option>)}
           </select>
-          <button class="btn" onClick={() => {
+          <button class="btn btn-primary" onClick={() => {
             const [a, b] = (pick || `${first![0]}-${first![1]}`).split('-').map(Number) as [number, number];
             addChord(li, a, b);
             setPick('');

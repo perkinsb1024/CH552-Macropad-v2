@@ -104,14 +104,37 @@ it('remaps macro layer targets, tracks edits, and clears a step to a zero pause'
   expect(computeCapacity(profile.value!).macros).toBe(3);
 });
 
-it('disables adding steps after a layer switch and explains the restriction in the sidebar', () => {
+it('inserts new steps before a layer switch and explains the restriction in the sidebar', () => {
   start(); addMacro();
   setAction(selectedSlot.value!, { type: 'oneShotRelativeLayer', offset: 0 });
   const add = () => nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add step'))!;
-  expect(add().props.disabled).toBe(true);
-  expect(JSON.stringify(nodes(Inspector()).filter(n => n.type === 'p').map(n => n.props.children))).toContain('final macro step');
-  clearSelectedAction();
   expect(add().props.disabled).toBe(false);
+  expect(JSON.stringify(nodes(Inspector()).filter(n => n.type === 'p').map(n => n.props.children))).toContain('final macro step');
+  (add().props.onClick as () => void)();
+  expect(profile.value!.macros![0]!.actions.map(a => a.type)).toEqual(['keyTap', 'oneShotRelativeLayer']);
+  expect(selectedSlot.value).toMatchObject({ step: 0 });
+  undo(); expect(profile.value!.macros![0]!.actions).toHaveLength(1);
+});
+
+it('marks invalid layer switches and inserts pauses before the first switch without rearranging steps', () => {
+  start();
+  updateProfile(p => { p.macros = [{ actions: [
+    { type: 'relativeLayer', offset: 0 },
+    { type: 'oneShotRelativeLayer', offset: 0 },
+    { type: 'setLayer', layer: 0 },
+  ] }]; });
+  const rows = () => nodes(MacrosPanel()).filter(n => String(n.props.class ?? '').split(' ').includes('macro-step'));
+  expect(rows().map(n => String(n.props.class).includes('has-problem'))).toEqual([true, true, false]);
+  const markers = () => nodes(MacrosPanel()).filter(n => n.props.class === 'hint macro-insertion-marker');
+  expect(markers()).toHaveLength(1);
+  const add = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add pause'))!;
+  expect(add.props.disabled).toBe(false);
+  (add.props.onClick as () => void)();
+  expect(profile.value!.macros![0]!.actions.map(a => a.type)).toEqual(['pause', 'relativeLayer', 'oneShotRelativeLayer', 'setLayer']);
+  expect(selectedSlot.value).toMatchObject({ step: 0 });
+  expect(markers()).toHaveLength(1);
+  expect(rows().map(n => String(n.props.class).includes('has-problem'))).toEqual([false, true, true, false]);
+  undo(); expect(profile.value!.macros![0]!.actions).toHaveLength(3);
 });
 
 it('restricts repeats when selecting a layer-switching macro without silently changing existing bindings', () => {

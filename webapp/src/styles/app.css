@@ -2280,9 +2280,17 @@ output {
 
 /* Macros share the existing timer binding/editor controls. */
 .seg-macros { background: #b87be7; }
+.macros-panel > .btn + .hint { margin-top: 12px; }
+.macro-step-actions { justify-content: flex-end; }
+.macro-add-step { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.macro-add-step:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-soft) 85%, var(--accent)); }
 /* Keep the delete control within the step outline and leave room for insertion markers. */
 .macro-step { display: flex; gap: 4px; align-items: center; position: relative; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-elev); padding-right: 4px; margin-bottom: 12px; }
 .macro-step.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.macro-step.has-problem { border-color: var(--danger); }
+.macro-step.has-problem.is-selected { box-shadow: 0 0 0 1px var(--danger); }
+.macro-insertion-marker { display: flex; align-items: center; gap: 12px; text-align: center; margin: 12px 0; }
+.macro-insertion-marker::before, .macro-insertion-marker::after { content: ''; flex: 1; min-width: 12px; border-top: 1px dashed var(--line); }
 .macro-step > .timer-action { flex: 1; min-width: 0; flex-direction: row; align-items: center; gap: 12px; padding: 8px 10px; border: 0; background: transparent; }
 .macro-step > .timer-action > .field-label { flex-shrink: 0; }
 .macro-step > .timer-action.is-selected { box-shadow: none; }

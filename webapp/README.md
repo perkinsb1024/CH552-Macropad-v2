@@ -296,8 +296,10 @@ remove it. **Execute macro** selects a definition and **Repeat count** (1–16).
 **Pause duration** is 0–4080ms in 16ms increments. Held actions, nested macros
 and **Nothing** steps are unavailable. Layer switches (absolute, relative and
 one-shot) must be the final step, even if their target is already active, and
-invocations of these macros must have **Repeat count** set to 1. **Add step** is
-disabled while a layer switch is present; the panel and sidebar explain the rule.
+invocations of these macros must have **Repeat count** set to 1. **Add step** and
+**Add pause** remain below the steps and insert before the first layer switch,
+at a labeled divider. Invalid nonfinal layer-switch steps have a red border.
+The buttons are disabled only when storage is full.
 Profile validation blocks saving invalid step order or repeat counts across all
 binding sites, including timers and their follow-ups. JSON imports reject these
 invalid configurations. Firmware behavior is unchanged: external layer changes
@@ -324,7 +326,9 @@ One macro streams from the active image; its invocation consumes one event slot.
 Long sequences delay later queued output. Overflow drops complete invocations,
 never a partial expansion. Physical/timer immediate actions can interleave;
 effective layer changes, configuration application and USB reset cancel playback.
-Macro mouse toggles share a private ownership lane; held actions retain their
-physical ownership. Layer-route analysis follows steps until cancellation.
+All **Mouse toggle** actions share one global button state across physical inputs,
+chords, timers and macros. Any toggle can undo another toggle for the same button;
+held actions retain their physical ownership. Layer-route analysis follows steps
+until cancellation.
 See [the complete v11 reference](../protocol/config-v11.md) and
 [implementation and optimization notes](../protocol/macros-implementation.md).

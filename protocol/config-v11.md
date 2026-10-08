@@ -134,8 +134,10 @@ steps only until their first effective layer change, where firmware cancels them
 The editor requires every layer-switching step (**Switch to layer**, **Relative layer**,
 and their one-shot variants) to be the final step, regardless of the invocation
 layer or whether the target is already active. Any invocation of such a macro
-must have **Repeat count** 1. **Add step** is disabled while a layer switch is
-present, and validation blocks saving invalid ordering or repeat counts at all
+must have **Repeat count** 1. **Add step** and **Add pause** stay below the steps
+and insert before the first layer switch, at a labeled divider. Layer-switch
+steps that are not final have a red border. Storage capacity limits additions;
+validation blocks saving invalid ordering or repeat counts at all
 binding sites. JSON import enforces the same rules. These are editor constraints;
 the wire encoding and firmware validation still accept the broader sequences
 and repeat counts described below. Firmware still cancels playback on an actual
@@ -496,10 +498,27 @@ complete configured sequence.
 Each click is an ordinary mouse-button press followed by release. Presses last
 at least 8ms, with a 200ms pause after release before the next click. USB
 backpressure can lengthen these times. The host decides whether a sequence
-counts as a double-click or another multiple-click gesture. Keyboard, held mouse
-buttons and toggled mouse buttons retain their existing composition rules.
+counts as a double-click or another multiple-click gesture. Held mouse buttons
+and toggled mouse buttons combine with click output using bitwise OR. A click
+cannot release a button that is held or toggled on.
 The sequence occupies the queued playback lane, delaying later queued actions.
 Held outputs, consumer controls, and layer/LED actions use independent handling.
+
+## Mouse Toggle State
+
+All **Mouse toggle** actions share one global three-bit button mask, initially
+zero. Each action XORs its parameter mask into that state, whether triggered by
+a key, encoder press/rotation, chord, timer expiry/follow-up, or macro step.
+A toggle from any source can undo another source's toggle for the same button.
+Multi-button masks flip each selected bit independently.
+
+The reported mouse buttons are the bitwise OR of the global toggle state,
+physical **Mouse hold** outputs and temporary click output. Toggling a bit off
+does not release a button still held by another output source. Releasing a
+physical trigger does not clear its toggle. Effective-layer changes,
+configuration application and action reset clear the global toggle state;
+ordinary macro completion does not. Direct toggle bindings act immediately;
+macro steps update the same state when queued playback reaches them.
 
 ## Action Encoding Examples
 
@@ -748,15 +767,16 @@ for other queued output.
 
 An actual effective-layer change, configuration application, USB reset/
 reconfiguration through configuration application, or `actionsClear()` cancels active
-and queued macros and clears their mouse-toggle lane. A macro's own layer step
+and queued macros and clears the global mouse-toggle state. A macro's own layer step
 therefore ends its remaining steps if the effective layer changes. Selecting the
 same effective layer continues. A macro consumes an armed one-shot selection
 once at invocation. Steps do not consume another one-shot selection as physical
 input would. Relative steps resolve against the then-effective layer.
 
-All macro **Mouse toggle** steps share one private toggle lane, independent of
-physical/chord/timer toggle owners. They do not remember separate ownership per
-macro definition. Macro consumers use the existing latest-wins consumer lane;
+Macro **Mouse toggle** steps update the same global state as all other toggle
+actions, as defined under [Mouse Toggle State](#mouse-toggle-state). There is no
+per-trigger or per-macro toggle ownership. Macro consumers use the existing
+latest-wins consumer lane;
 a new physical consumer action can interrupt it. No held-action lifecycle or
 nested macro stack is provided.
 
@@ -961,8 +981,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,332 | 4 | 108 | 369 | 128 | 79 |
-| Three keys | 14,328 | 8 | 108 | 360 | 128 | 82 |
+| Six keys | 14,284 | 52 | 95 | 369 | 128 | 79 |
+| Three keys | 14,280 | 56 | 95 | 360 | 128 | 82 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks

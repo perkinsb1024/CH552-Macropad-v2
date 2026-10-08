@@ -1,9 +1,10 @@
+import { Fragment } from 'preact';
 import { computeCapacity } from '../../model/capacity';
-import { macroSwitchesLayer, removeMacro } from '../../model/macros';
-import type { Slot } from '../../model/types';
+import { isMacroLayerSwitch, macroSwitchesLayer, removeMacro } from '../../model/macros';
+import type { Action, Slot } from '../../model/types';
 import { canInsertSlot, capacity, draggedSlot, insertSlotAction, profile, selectedSlot, slotDrop, updateProfile } from '../store';
 import { ActionLabel } from './ActionLabel';
-import { IconChevron, IconPlus, IconTrash } from './Icons';
+import { IconChevron, IconClock, IconPlus, IconTrash } from './Icons';
 import { timedBindingDrag } from './TimedActionsPanel';
 
 export function MacrosPanel() {
@@ -21,7 +22,17 @@ export function MacrosPanel() {
     });
     return closest as { slot: Slot; position: 'before' | 'after'; distance: number } | null;
   };
-  const canAddStep = (index: number) => !macroSwitchesLayer(macros[index]!.actions) && computeCapacity({ ...p, macros: macros.map((macro, i) => i === index ? { actions: [...macro.actions, { type: 'pause', ticks: 0 }] } : macro) }).remaining >= 0;
+  const insertionStep = (index: number) => {
+    const actions = macros[index]!.actions;
+    const firstSwitch = actions.findIndex(isMacroLayerSwitch);
+    return firstSwitch < 0 ? actions.length : firstSwitch;
+  };
+  const canAddStep = (index: number) => computeCapacity({ ...p, macros: macros.map((macro, i) => i === index ? { actions: [...macro.actions, { type: 'pause', ticks: 0 }] } : macro) }).remaining >= 0;
+  const addStep = (index: number, action: Action) => {
+    const step = insertionStep(index);
+    updateProfile(draft => { draft.macros![index]!.actions.splice(step, 0, action); });
+    selectedSlot.value = { kind: 'macro', layer: 0, index, step };
+  };
   return <details class="card macros-panel">
     <summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
     <p class="hint">Add steps, then assign <strong>Execute macro</strong> to a key, encoder, chord, or timer. Macros that do not switch layers can be repeated up to 16 times. Pauses give applications time to respond.</p>
@@ -34,7 +45,7 @@ export function MacrosPanel() {
             if (slot?.kind === 'macro') selectedSlot.value = slot.index === index ? null : slot.index > index ? { ...slot, index: slot.index - 1 } : slot;
           }}><IconTrash /></button>
         </header>
-        {macroSwitchesLayer(macro.actions) && <p class="hint">Macro steps are not permitted after a layer switch, and repeat will be disabled. Temporarily remove the layer switch step to add more steps. Changing layers from outside this macro will also cancel any pending steps.</p>}
+        {macroSwitchesLayer(macro.actions) && <p class="hint">A layer switch must be the final step, and this macro cannot repeat. Changing layers from outside this macro also cancels pending steps.</p>}
         {!macro.actions.length && <p class="empty">No steps yet.</p>}
         <div class="macro-steps" onDragOver={(event) => {
           if ((event.target as HTMLElement).closest('.macro-step')) return;
@@ -59,8 +70,10 @@ export function MacrosPanel() {
           const binding = timedBindingDrag(slot, true);
           const drop = slotDrop.value;
           const intent = drop?.slot.kind === 'macro' && drop.slot.index === index && drop.slot.step === step ? drop.position : null;
-          return <div class={`macro-step ${selectedSlot.value?.kind === 'macro' && selectedSlot.value.index === index && selectedSlot.value.step === step ? 'is-selected' : ''}`}
-            key={step} onDragOver={binding.onDragOver} onDrop={binding.onDrop}>
+          return <Fragment key={step}>
+            {step === insertionStep(index) && <p class="hint macro-insertion-marker">New steps and pauses will be inserted here</p>}
+            <div class={`macro-step ${selectedSlot.value?.kind === 'macro' && selectedSlot.value.index === index && selectedSlot.value.step === step ? 'is-selected' : ''} ${isMacroLayerSwitch(action) && step !== macro.actions.length - 1 ? 'has-problem' : ''}`}
+            onDragOver={binding.onDragOver} onDrop={binding.onDrop}>
             {intent && intent !== 'swap' && <span class={`drop-line drop-line-${intent}`} aria-hidden="true" />}
             <button key="action" data-clipboard-target data-slot={JSON.stringify(slot)} {...binding} aria-label={`Edit macro ${index + 1} step ${step + 1}`} onClick={() => {
               const selected = selectedSlot.value;
@@ -73,22 +86,16 @@ export function MacrosPanel() {
               const selected = selectedSlot.value;
               if (selected?.kind === 'macro' && selected.index === index) selectedSlot.value = selected.step === step ? null : selected.step > step ? { ...selected, step: selected.step - 1 } : selected;
             }}><IconTrash /></button>
-          </div>;
+          </div></Fragment>;
         })}
         </div>
-        <div class="row">
-          <button class="btn" disabled={!canAddStep(index)} onClick={() => {
-            updateProfile(draft => { draft.macros![index]!.actions.push({ type: 'keyTap', usage: 4, modifiers: 0 }); });
-            selectedSlot.value = { kind: 'macro', layer: 0, index, step: macro.actions.length };
-          }}><IconPlus /> Add step</button>
-          <button class="btn" disabled={!canAddStep(index)} onClick={() => {
-            updateProfile(draft => { draft.macros![index]!.actions.push({ type: 'pause', ticks: 16 }); });
-            selectedSlot.value = { kind: 'macro', layer: 0, index, step: macro.actions.length };
-          }}><IconPlus /> Add pause</button>
+        <div class="row macro-step-actions">
+          <button class="btn btn-ghost" disabled={!canAddStep(index)} onClick={() => addStep(index, { type: 'pause', ticks: 16 })}><IconClock /> Add pause</button>
+          <button class="btn macro-add-step" disabled={!canAddStep(index)} onClick={() => addStep(index, { type: 'keyTap', usage: 4, modifiers: 0 })}><IconPlus /> Add step</button>
         </div>
       </article>)}
     </div>
-    <button class="btn" disabled={(capacity.value?.remaining ?? 0) < 4} onClick={() => {
+    <button class="btn btn-primary" disabled={(capacity.value?.remaining ?? 0) < 4} onClick={() => {
       updateProfile(draft => { (draft.macros ??= []).push({ actions: [{ type: 'keyTap', usage: 4, modifiers: 0 }] }); });
       selectedSlot.value = { kind: 'macro', layer: 0, index: macros.length, step: 0 };
     }}><IconPlus /> Add macro</button>

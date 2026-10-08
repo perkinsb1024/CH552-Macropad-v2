@@ -13,13 +13,13 @@ application limit. Native outputs are temporary; releases are unchanged.
 
 | Resource, bytes | Six-key | Three-key |
 | --- | ---: | ---: |
-| Flash used | 14,332 | 14,328 |
-| Flash remaining | 4 | 8 |
+| Flash used | 14,284 | 14,280 |
+| Flash remaining | 52 | 56 |
 | Occupied internal RAM (including register banks/overlays) | 177 | 174 |
-| Paged external RAM | 108 | 108 |
+| Paged external RAM | 95 | 95 |
 | Ordinary XSEG | 369 | 360 |
 | Absolute active image | 128 | 128 |
-| Total allocated application external RAM | 605 | 596 |
+| Total allocated application external RAM | 592 | 583 |
 | USB DMA, additional | 148 | 148 |
 | Linker stack capacity | 79 | 82 |
 
@@ -28,10 +28,12 @@ without changing RAM allocation or stack capacity. Before that change,
 single-byte macro terminators added four flash bytes on each board relative to
 the earlier two-byte-terminator implementation (14,304/14,300 bytes). Validator
 allocation frees two internal RAM bytes, increasing linker stack capacity from
-77/80 to 79/82 bytes; external RAM is unchanged.
+77/80 to 79/82 bytes. The global mouse-toggle state then saves 48 flash
+bytes and 13 paged external RAM bytes on each board by removing per-input
+latches and their combine/clear loops; stack capacity is unchanged.
 The change remains in unreleased configuration format 11.
 Compared with v10 baseline `4647e6d`, stack capacity increases by four bytes on
-each board and allocated application xRAM increases by one byte. Stack capacity
+each board and allocated application xRAM decreases by 12 bytes. Stack capacity
 is a linker reserve rather than a runtime high-water measurement.
 
 The active image occupies `0x300–0x37F` and is absent from XSEG's reported size.
@@ -51,9 +53,9 @@ The zeroing loop does not initialize absolute storage; `protocolInit` loads all
   references may target shared suffixes or empty terminators, including byte 127.
   Validate all tail actions,
   even unreachable ones; reject nested macros and release-dependent actions.
-- Four persistent control bytes track next/start address, remaining repeats and
-  a private mouse-toggle lane. Each invocation consumes one queue entry; steps
-  stream directly, so a sequence longer than eight actions cannot overflow the
+- Three persistent control bytes track next/start address and remaining repeats.
+  One additional byte holds the global mouse-toggle state shared by all triggers.
+  Each invocation consumes one queue entry; steps stream directly, so a sequence longer than eight actions cannot overflow the
   queue merely by expanding. Later invocations can still fill it and drop.
 - **Pause** reuses the existing deadline/phase state; its 16ms quantum and maximum
   4080ms duration preserve wrap-safe 16-bit deadline comparisons. No new timer
@@ -67,7 +69,8 @@ The zeroing loop does not initialize absolute storage; `protocolInit` loads all
   paged. Page-aligned active-image addressing saves 62 flash bytes in the
   original aligned/unaligned comparison. Do not remove the alignment guard.
 - Queued immediate steps use one range check after pointer/scroll handling;
-  held actions never enter that queue. Macro toggles use their private lane.
+  held actions never enter that queue. Macro toggles update the global toggle state;
+  physical holds remain independent and combine with it using bitwise OR.
   Consumer tap/hold dispatch tests parity: final types 7/8 mean odd tap/even hold.
   This parity check was inverted during renumbering; auxiliary usage bits stay intact.
 
@@ -137,12 +140,24 @@ three-key and six-key macropads, and confirmed reliable Codex text entry with
 the fixed 32ms character pause. General firmware hardware testing is normally
 sufficient; stack high-water measurements are not required for every build.
 
+## Global Mouse Toggle Validation
+
+All toggle sources share one button mask. Host regressions on both variants
+verify physical-key/macro toggles undo each other in both directions, separate
+physical inputs share the same state, overlapping button masks flip independently,
+and wheel/chord/timer actions share the state. Physical holds survive toggling
+off, and action reset and effective-layer changes clear toggles. Both native builds pass
+the real flash limit and memory-layout checks. Hardware validation of this
+behavior remains outstanding.
+
 ## Configurator Layer-Switch Restrictions
 
 Layer-switching actions must finish a macro, including absolute/relative and
 one-shot variants even when their target might already be active. Every
-invocation of such a macro must use repeat count 1. The editor disables **Add
-step**, explains the rule in the panel/sidebar, and blocks saving invalid
+invocation of such a macro must use repeat count 1. **Add step** and **Add pause**
+insert before the first layer switch, with a labeled divider at that position;
+the buttons remain below the steps and are disabled only by storage capacity.
+Nonfinal layer-switch steps have a red border. The editor blocks saving invalid
 ordering or repeat counts. JSON import applies the same validation. Existing
 invalid device profiles remain editable for repair. This is a configurator-only
 restriction; firmware, binary encoding, flash, RAM and stack capacity are unchanged.
