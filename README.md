@@ -54,6 +54,10 @@ Remarkably, due to having a smaller fixed-layer byte size (and therefore more po
 
 To use this configuration as a starting point, copy the contents of either the [3-key maximum action slot profile](profiles/3-key-max-action-slots.json) or [6-key maximum action slot profile](profiles/6-key-max-action-slots.json) and click **Import from Clipboard** in the [web configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
 
+## USB-C Cable Support
+
+These macropads omit the necessary 5.1kΩ pull-down resistors to enable 5V output from USB-C to USB-C cables, so you will need to use a USB-A to USB-C cable or dongle for it to work. It *is* possible, however, to add these resistors yourself (notice I said "possible", not "easy"). If you want to enable true USB-C cable support, follow [this guide](documentation/USB-C%20Modification.md).
+
 ## Firmware Version History
 
 Below are the the primary firmware features added with each version
@@ -166,9 +170,12 @@ After both builds and exports succeed, older generated HEX files are deleted so 
 
 ## How to Upload the Firmware
 
-A macropad with its factory firmware requires a hardware bootloader entry for the first upload. Once this firmware is installed, you can enter the bootloader again by holding the encoder button while powering on the macropad.
+The hardest part of this project is getting the board into the bootloader (firmware update mode) the first time. Once you do that, everything else is easy. A macropad with its factory firmware requires a hardware bootloader entry for the first upload. Once this firmware is installed, you can enter the bootloader again by holding the encoder button while powering on the macropad.
 
 ### First Upload: Enter the Bootloader via Hardware
+
+> [!NOTE]
+> If you don't want to unscrew your macropad and carefully poke it with tweezers, I *have* been working on an alternate method, using a small Raspberry PI PR2350-based board. This method is somewhat finicky, but it does work, and doesn't require you to open your macropad and poke it. Check out [this guide](tools/rp2350-programmer-release/README.md) for more information.
 
 The following instructions and photo apply to the CH552G board shown in the original project. Confirm your chip's pin numbering and board layout before connecting anything.
 
