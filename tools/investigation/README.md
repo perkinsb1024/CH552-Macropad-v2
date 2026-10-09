@@ -14,8 +14,10 @@ python3 tools/investigation/build_firmware.py
 
 The builder retains an artifact directory outside the repository and prints
 its path. It never uploads, generates releases or writes checked-in release
-files. Each run requires an empty artifact directory. `--output /private/tmp/NAME`
-selects a location. Copy artifacts elsewhere if long-term retention is needed.
+files. By default, each run creates a unique directory in `/private/tmp/` named
+`macropad-fault-YYYYMMDDTHHMMSSZ-SUFFIX`, using a UTC timestamp and a random suffix.
+`--output /private/tmp/NAME` selects a location instead; that directory must be
+empty or not yet exist. Copy artifacts elsewhere if long-term retention is needed.
 
 The manifest identifies the selected HEX files and their SHA-256 checksums.
 It includes source/tool snapshots, compiler version, revision/dirty-state
@@ -50,6 +52,55 @@ the project normally preserves the original production behavior and defect.
 The corrected full-feature build is measured but currently exceeds the
 14,336-byte application limit. The comparison diagnostics are the usable
 corrected artifacts; this is not a production-release fix.
+
+## Flashing Diagnostic Firmware
+
+Use the native macOS uploader with the CH55xDuino 0.0.25 toolchain installed as
+described in the [firmware setup instructions](../../README.md#how-to-compile-the-firmware).
+Run the commands below from the repository root. Close the configurator and
+investigation host tools, and connect only the pad being flashed. First export
+its profile and prepare a profile without **Type text**, as described above.
+
+Set `artifact_dir` to the directory printed by the investigation builder:
+
+```sh
+artifact_dir='/private/tmp/macropad-fault-REPLACE-WITH-YOUR-RUN'
+```
+
+Check that `manifest.json` has `verified` set to `true`, and select the matching
+physical key count from `selectedImages`. The current reduced diagnostics use
+the following directories, each containing `firmware.hex`:
+
+| Physical Pad | Overlap Retained (Build ID 1) | Overlap Corrected (Build ID 2) |
+| --- | --- | --- |
+| Six Keys | `6-key-diagnostic-overlap-no-text` | `6-key-diagnostic-fixed-no-text` |
+| Three Keys | `3-key-diagnostic-overlap-no-text` | `3-key-diagnostic-fixed-no-text` |
+
+For example, flash the six-key overlap-retained diagnostic:
+
+```sh
+python3 "$artifact_dir/target_builder.py" upload "$artifact_dir/source" "$artifact_dir/6-key-diagnostic-overlap-no-text" 3
+```
+
+When the uploader begins waiting, unplug the pad, hold the encoder button,
+reconnect USB, then release the button. The uploader waits up to ten seconds;
+if it times out, repeat the command and bootloader-entry steps. Wait for a
+successful upload before starting monitoring or capture. If encoder entry is
+unavailable, follow the [hardware bootloader instructions](../../README.md#first-upload-enter-the-bootloader-via-hardware).
+
+After testing the retained overlap, flash its corrected counterpart and repeat
+the same workload. For the six-key pad:
+
+```sh
+python3 "$artifact_dir/target_builder.py" upload "$artifact_dir/source" "$artifact_dir/6-key-diagnostic-fixed-no-text" 3
+```
+
+For a three-key pad, substitute the corresponding `3-key-...` directory in
+both commands. The final `3` is the USB boot configuration, not the key count;
+keep it unchanged for both pads. These commands upload the existing HEX without
+rebuilding. Do not use `pio run -t upload` for this comparison: it builds and
+uploads the ordinary project firmware instead. The bundled browser installer
+only offers published firmware and cannot select these diagnostic files.
 
 ## Read-Only Diagnostic Protocol
 

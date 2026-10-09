@@ -38,9 +38,12 @@ def measure(build):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path)
+    parser.add_argument('--output', type=Path,
+                        help='Empty artifact directory (default: timestamped directory in /private/tmp/)')
     args = parser.parse_args()
-    output = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix='macropad-fault-'))
+    output = args.output.resolve() if args.output else Path(tempfile.mkdtemp(
+        prefix=f'macropad-fault-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}-',
+        dir='/private/tmp'))
     # Never mix artifacts with tracked source or overwrite a previous run.
     if output == ROOT or ROOT in output.parents:
         parser.error('Use an artifact directory outside the repository')
