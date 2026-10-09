@@ -16,6 +16,7 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_COMMIT_WRITE 7
 #define PROTOCOL_ABORT_WRITE 8
 #define PROTOCOL_PREVIEW_COLOR 9
+#define PROTOCOL_READ_STACK 0x70 // Diagnostic-only; normal replies stay unchanged.
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -110,6 +111,40 @@ static uint8_t processRequest(void) {
     return PROTOCOL_BAD_RANGE;
   }
   switch (opcode) {
+#if ENABLE_STACK_TEST && defined(__SDCC)
+    case PROTOCOL_READ_STACK:
+      protocolReply[7] = 6;
+      protocolReply[9] = 'S';
+      protocolReply[10] = 'W';
+      protocolReply[11] = 1; // Stack diagnostic schema.
+      protocolReply[12] = PHYSICAL_VARIANT;
+      // Append linker stack base and highest non-A5 address. Inline scanning
+      // adds no call frame or RAM allocation. Carry preserves EA: none of the
+      // intervening instructions changes it. R0/ACC/DPTR are scratch here.
+      __asm
+        .globl __start__stack
+        mov c,_EA
+        clr _EA
+        mov r0,#0xff
+      00090$:
+        mov a,@r0
+        xrl a,#0xa5
+        jnz 00091$
+        dec r0
+        mov a,r0
+        xrl a,#(__start__stack - 1)
+        jnz 00090$
+      00091$:
+        mov dptr,#(_protocolReply + 13)
+        mov a,#__start__stack
+        movx @dptr,a
+        inc dptr
+        mov a,r0
+        movx @dptr,a
+        mov _EA,c
+      __endasm;
+      break;
+#endif
     case PROTOCOL_GET_INFO:
       protocolReply[7] = 14;
       for (i = 0; i < sizeof(protocolInfo); i++)

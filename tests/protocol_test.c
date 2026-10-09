@@ -138,7 +138,10 @@ static void testReads(void) {
     assert(sent[16] == (PHYSICAL_VARIANT ? 3 : 6) && sent[19] == 128);
     assert(sent[14] == CONFIG_VERSION && sent[18] == CONFIG_MAX_LAYERS);
     request(2, 0, 0, 0);
+    assert(sent[7] == 6); // Diagnostic builds keep the normal status layout.
     assert(sent[9] == 1 && sent[10] == 0 && sent[12] == 0);
+    request(0x70, 0, 0, 0);
+    assert(sent[8] == 2 && !writes && !applies); // Default firmware has no stack diagnostic.
     request(4, 120, 8, 0);
     assert(sent[7] == 8 && memcmp(sent + 9, flash + 120, 8) == 0);
     request(3, 127, 2, 0);

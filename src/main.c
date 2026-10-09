@@ -31,6 +31,20 @@ __idata __at (0x0C) volatile uint8_t timer0_overflow_count_5th_byte = 0;
 void Timer0Interrupt(void) __interrupt(INT_NO_TMR0) __using(1);
 
 void main(void) {
+#if ENABLE_STACK_TEST
+  // C startup jumps here with no live stack frames, before init() enables
+  // interrupts. Fill only bytes above SP; the linked diagnostic test checks
+  // this exact prefix and its bounds against the linker stack allocation.
+  __asm
+    clr _EA
+    mov r0,sp
+    inc r0
+  00090$:
+    mov @r0,#0xa5
+    inc r0
+    cjne r0,#0,00090$
+  __endasm;
+#endif
   init();
   setup();
   for (;;) {

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V12 Stack Sanity Check</title>
+<style>
+  :root { color-scheme: light dark; font: 16px system-ui; }
+  body { max-width: 960px; margin: 32px auto; padding: 0 20px; }
+  p { line-height: 1.5; }
+  button, input, textarea { font: inherit; padding: 8px; margin: 4px 6px 4px 0; }
+  button { cursor: pointer; }
+  .results { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+  .results div { border: 1px solid #888; border-radius: 8px; padding: 16px; }
+  strong { display: block; font-size: 30px; }
+  #message { min-height: 24px; color: #d55; }
+  #log { box-sizing: border-box; width: 100%; height: 250px; font: 12px ui-monospace, monospace; }
+</style>
+<h1>V12 Stack Sanity Check</h1>
+<p>Install the stack-test firmware for your board and keep your existing profile.
+Close the configurator’s device connection before connecting here.
+This reader only reads diagnostics, status and profile bytes.</p>
+<button id="connect">Connect</button><button id="disconnect" disabled>Disconnect</button>
+<button id="sample" disabled>Read stack</button>
+<button id="monitor" disabled>Monitor once per second</button><button id="stop" disabled>Stop</button>
+<p id="device">No device connected.</p><p id="message" role="status"></p>
+<div class="results" aria-live="polite">
+  <div>Observed usage<strong id="used">—</strong></div>
+  <div>Peak This Connection<strong id="peak">—</strong></div>
+  <div>Untouched Headroom<strong id="free">—</strong></div>
+  <div>Stack Capacity<strong id="capacity">—</strong></div>
+</div>
+<label>Run / stage label <input id="label" value="startup baseline" maxlength="100"></label>
+<p><button id="capture" disabled>Capture flash and active bytes</button>
+<button id="download">Download results JSON</button></p>
+<p>Connecting reads one sample. Monitoring is optional and off by default.
+For untouched idle testing, disconnect the reader, leave the device powered,
+then reconnect and read the retained watermark. Record any fault before reconnecting:
+USB reconfiguration can change runtime state.</p>
+<p>The watermark includes startup after C initialization, normal operation, USB interrupts
+and diagnostic request handling. Readout adds no call frame and briefly masks interrupts.
+The peak is the largest sample observed during this connection; downloaded results retain
+earlier connections too. Power cycling or restarting firmware resets the device watermark.</p>
+<p>Pattern collisions can undercount usage. Zero headroom means the top was touched;
+an overflow that wraps the stack pointer cannot be measured reliably.
+Results are a sanity check, not proof of a worst-case bound.</p>
+<label>Results and diagnostics<textarea id="log" readonly></textarea></label>
+<script type="module" src="reader.mjs"></script>
+</html>

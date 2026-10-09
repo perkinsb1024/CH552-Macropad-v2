@@ -1,0 +1,75 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 12,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "transparentBlack": false,
+  "chordWindowMs": 75,
+  "rainbowPhaseDegrees": 60,
+  "rainbowSpeed": "fast",
+  "layers": [
+    {
+      "keys": [
+        { "type": "ledControl", "command": "brightnessBothRelative", "value": 1 },
+        { "type": "macro", "macro": 0, "repeats": 1 },
+        { "type": "ledControl", "command": "brightnessIndicatorRelative", "value": 1 },
+        { "type": "scroll", "delta": 1, "hold": true },
+        { "type": "relativeLayer", "offset": 1 },
+        { "type": "mouseToggle", "buttons": 1 }
+      ],
+      "encoderButton": { "type": "relativeLayer", "offset": 1 },
+      "clockwise": { "type": "scroll", "delta": -2 },
+      "counterclockwise": { "type": "macro", "macro": 1, "repeats": 6 },
+      "leds": ["Cyan", "Coral", "Magenta", "White", "Coral", "White"],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 3,
+      "indicatorColor": 14,
+      "indicatorFullBrightness": false
+    },
+    {
+      "keys": [
+        { "type": "macro", "macro": 0, "repeats": 1 },
+        { "type": "mouseToggle", "buttons": 1 },
+        { "type": "macro", "macro": 1, "repeats": 6 },
+        { "type": "keyTap", "usage": 80, "modifiers": 15 },
+        { "type": "relativeLayer", "offset": 1 },
+        { "type": "none" }
+      ],
+      "encoderButton": { "type": "relativeLayer", "offset": 1 },
+      "clockwise": { "type": "scroll", "delta": 2, "horizontal": true },
+      "counterclockwise": { "type": "scroll", "delta": -2, "horizontal": true },
+      "leds": ["Coral", "White", "Coral", "Off", "Coral", "Off"],
+      "bootloaderFromRun": true,
+      "indicatorBehavior": 3,
+      "indicatorColor": 8,
+      "indicatorFullBrightness": true
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [3, 5],
+      "global": false,
+      "action": { "type": "string", "text": "hello, world" }
+    }
+  ],
+  "macros": [
+    { "actions": [{ "type": "mouseToggle", "buttons": 1 }] },
+    {
+      "actions": [
+        { "type": "ledControl", "command": "brightnessBothRelative", "value": 1 },
+        { "type": "ledControl", "command": "brightnessIndicatorRelative", "value": 1 },
+        { "type": "mouseClick", "buttons": 1, "clicks": 2 }
+      ]
+    }
+  ],
+  "timedActions": [
+    {
+      "ticks": 1,
+      "consumeInput": false,
+      "resetOnInput": true,
+      "action": { "type": "ledControl", "command": "effectBlink8", "value": 15 },
+      "resumeAction": { "type": "ledControl", "command": "effectOn", "value": 1 }
+    }
+  ]
+}
