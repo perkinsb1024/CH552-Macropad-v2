@@ -78,11 +78,13 @@ Exports identify `format: "universal-macropad-profile"` and `version: 12`.
 `transparentBlack` is boolean; `chordWindowMs` is 0–75 in steps of 5;
 `rainbowPhaseDegrees` is 0, 30, 60 or 150; `rainbowSpeed` is `extra fast`, `fast`,
 `slow` or `extra slow`. `layers` contains the physical `keys` list,
-`encoderButton`, `clockwise`, `counterclockwise`, palette-name `leds`, boolean
-`bootloaderFromRun`, numeric `indicatorBehavior` (0–3), `indicatorColor` (0–15),
+`encoderButton`, `clockwise`, `counterclockwise`, palette-name `leds`,
+numeric `indicatorBehavior` (0–3), `indicatorColor` (0–15),
 and boolean `indicatorFullBrightness`. `chords` contains zero-based `layer`,
 `keys: [keyA, keyB]`, boolean `global` and `action`. Optional `localMetadata`
 contains `profileName` and `layerNames`; annotations do not reach the device.
+The former `bootloaderFromRun` layer field is accepted and ignored on import,
+and omitted from new exports.
 
 Optional `timedActions` is a list of at most four entries. Each has `ticks`
 (1–2048), boolean `resetOnInput`, boolean `consumeInput`, `action`, `resumeAction`,
@@ -240,15 +242,15 @@ layer. Each binding uses the two-byte action encoding below.
 | Layer-option bits | Meaning | Encoding |
 | --- | --- | --- |
 | 0 | Layer-indicator brightness | `0` = dimmed, `1` = full brightness; applies in **On for 1.5 seconds**, **Blink by layer number**, and **Always on** modes |
-| 1 | Encoder-hold bootloader entry | `0` = disabled, `1` = enabled |
+| 1 | Deprecated encoder-hold permission | Accepted as either value and ignored; new encoders write `0` |
 | 2–3 | Layer-selection LED behavior | `0` = **Do not indicate**, `1` = **On for 1.5 seconds**, `2` = **Blink by layer number**, `3` = **Always on** |
 | 4–7 | Layer-indicator color | Palette index 0–15 |
 
 Holding the encoder button while powering up always enters the bootloader;
-this recovery gesture is not configurable. With an invalid or missing profile,
-a debounced three-second encoder hold also enters the bootloader regardless of
-layer options. With a valid profile, runtime entry uses the permission from the
-layer active when the hold begins. In **Always on** mode, idle keys use the
+this recovery gesture is not configurable. Runtime encoder holds do not enter
+the bootloader, even with an invalid profile or layer-option bit 1 set. The
+**Enter bootloader** button in the firmware installer uses the HID command below.
+In **Always on** mode, idle keys use the
 indicator color at the brightness selected by bit 0. Pressed keys normally use
 their per-key color at full brightness. With header byte 5 bit 7 set, a pressed
 key whose color is index 15 (**Off**) instead displays its idle background,
@@ -701,7 +703,7 @@ their assigned layers are inactive. If any requests consumption, the normal
 binding is skipped. Consumption works with **Nothing** too. Otherwise the normal
 binding is resolved after the follow-ups, so their layer changes can affect it.
 Timer actions and a consumed input leave an armed one-shot layer return intact.
-Encoder-hold bootloader detection remains available for consumed presses.
+Consumed encoder presses do not enter the bootloader during use.
 
 Each timer retains an independent fractional byte. A carry of 256 fine ticks
 advances its interval age; each fine tick is 16ms. Start/reset alignment error
@@ -926,6 +928,18 @@ hold-mode support. Transport version remains 1.
 | 7 | `COMMIT_WRITE`, offset and length zero | Validates the full image and CRC, saves changed DataFlash bytes, verifies all 128 bytes, then activates the configuration. Repeated commit is safe. |
 | 8 | `ABORT_WRITE`, offset and length zero | Discards staging without changing flash or the active profile. |
 | 9 | `PREVIEW_COLOR`, options in offset, length zero | Overrides every LED; offset zero cancels. Empty reply. |
+| 10 (`0x0A`) | `ENTER_BOOTLOADER`, offset and length zero | Empty success reply, followed by bootloader entry. |
+
+ENTER_BOOTLOADER works with a valid, invalid or missing profile and does not
+write DataFlash. The entire request must pass normal packet validation. Firmware
+queues the empty success reply before the main loop releases held outputs,
+drains pending USB reports for up to 100ms, sets all LEDs red and enters the
+factory bootloader. A USB reset while the reply is waiting to be queued cancels
+the request. Unsaved upload staging is lost when the application restarts.
+The host should verify normal GET_INFO identity before sending the command,
+wait for the acknowledgement, then connect to the separate WebUSB bootloader.
+Earlier firmware returns BAD_OPCODE. Do not automatically retry this command
+after a missing acknowledgement; use encoder-held-at-power-up recovery if needed.
 
 GET_INFO returns 14 data bytes (offsets below are relative to reply data):
 
@@ -998,9 +1012,9 @@ the body, restores the magic last, and compares the stored image byte for byte.
 If a write fails, the previous active RAM configuration remains in use so the
 host can retry. An interrupted save may leave invalid flash; at startup, the
 device leaves keys and encoder actions inactive and blinks one red LED at 1 Hz
-until a valid profile is uploaded. USB configuration access and three-second
-encoder-hold bootloader recovery remain available. The error LED uses its own
-500ms timer, so blinking and preview cancellation do not interrupt the hold.
+until a valid profile is uploaded. USB configuration access, HID bootloader
+entry and encoder-held-at-power-up recovery remain available. The error LED
+uses its own 500ms timer.
 Configuration activation releases held outputs, cancels pending actions, resets encoder state, and
 suppresses inputs that remain held until they are released.
 
@@ -1020,8 +1034,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,332 | 4 | 95 | 371 | 128 | 77 |
-| Three keys | 14,328 | 8 | 95 | 362 | 128 | 80 |
+| Six keys | 14,262 | 74 | 95 | 369 | 128 | 77 |
+| Three keys | 14,258 | 78 | 95 | 360 | 128 | 80 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -1034,8 +1048,9 @@ Stack figures are linker-reserved capacities, two bytes below finalized v11
 testing has been performed. Host regressions include all eight button bits,
 mode validation, drags, scroll signs/counts, report backpressure, reset, idle
 reports and **GET_REPORT** on both geometries. Recovery tests cover invalid and
-missing profiles, interrupted holds, debounce, timer wraparound, preview
-cancellation, configuration reapplication and valid-profile layer permissions.
+missing profiles, startup encoder entry, HID acknowledgement backpressure,
+malformed bootloader requests, reset cancellation and runtime holds that do not
+enter the bootloader, including consumed presses and legacy permission bits.
 
 ```sh
 python3 tests/run_host_tests.py

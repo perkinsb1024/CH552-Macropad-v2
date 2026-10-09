@@ -147,8 +147,8 @@ Memory in the current firmware, in bytes:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 8 | 4 |
-| External RAM allocated (XSEG + absolute) | 490 | 499 |
+| Flash remaining | 78 | 74 |
+| External RAM allocated (XSEG + absolute) | 488 | 497 |
 | Stack available (linker reserve) | 80 | 77 |
 
 ### Build Release HEX Files for Both Variants
@@ -206,12 +206,10 @@ _An example of using a temporary button to enter the bootloader before uploading
 After installing this firmware, start `pio run -t upload` and enter the bootloader when the uploader begins waiting:
 
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
-- During use: **Hold** the encoder button for three seconds. This requires the active layer's **Allow bootloader entry by long-pressing the encoder button** option to be enabled in a saved profile.
+- During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
 
-With v12 firmware, the three-second encoder hold also enters the bootloader when
-the saved profile is missing or invalid, regardless of layer options. The blinking
-red error LED continues until recovery begins. The bundled v11 release requires
-the power-up method in this state.
+The bundled v11 release supports an optional three-second encoder hold on enabled
+layers. For an invalid profile on v11, use the power-up method.
 
 If the device cannot run the firmware, use the hardware method above to recover it.
 
@@ -233,7 +231,7 @@ No local web app installation is needed. Open the [Macropad Configurator](https:
 4. Click **Save to device** and wait for the saved confirmation. Changes in the editor take effect on the hardware only after saving.
 5. Close the browser and use the macropad normally. Its saved profile survives unplugging it.
 
-On first use, or when the saved profile is invalid, key and encoder actions stay inactive and one red LED blinks until you save a valid profile. The USB configurator connection still works. V12 also allows a three-second encoder hold to enter the bootloader in this state.
+On first use, or when the saved profile is invalid, key and encoder actions stay inactive and one red LED blinks until you save a valid profile. The USB configurator connection still works. V12 also accepts **Enter bootloader** from the firmware installer in this state.
 
 **Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100ms interval. Horizontal scrolling requires v9 firmware.
 

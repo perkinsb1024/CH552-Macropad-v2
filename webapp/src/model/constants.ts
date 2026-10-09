@@ -93,7 +93,6 @@ export const MOUSE_BUTTONS = [
 ] as const;
 
 export const LAYER_OPT_FULL_BRIGHTNESS = 0x01;
-export const LAYER_OPT_BOOTLOADER_RUN = 0x02;
 export const LAYER_OPT_INDICATOR_SHIFT = 2;
 export const LAYER_OPT_COLOR_SHIFT = 4;
 

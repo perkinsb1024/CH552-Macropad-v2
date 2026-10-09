@@ -26,7 +26,6 @@
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define RAINBOW_DRIFT_MASK 3 // Fastest drift: mask+1 frames; each drift slot is half as fast.
 #define DEBOUNCE_MS     10
-#define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
 #define LED_EFFECT_FLAG 2 // Unused by color preview; shares the alternate option byte.
 
@@ -60,7 +59,6 @@ __idata uint16_t rawChanged[7];
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
 __idata uint8_t lastLayer;
-ACTION_BIT allowRunBootloader;
 __pdata uint8_t layerIndicatorPhasesLeft;
 __pdata uint8_t layerIndicatorDeadline;
 __idata uint8_t rainbowChanged;
@@ -73,7 +71,6 @@ __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with acti
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
-__xdata uint16_t encoderPressedMs;
 __xdata uint16_t errorLedChanged;
 
 void displayLeds() {
@@ -367,11 +364,6 @@ void scanButton(uint8_t input, uint16_t now) {
   if (pressed != stableState[input] &&
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
-    if (pressed && input == NUM_LEDS) {
-      allowRunBootloader = !activeConfigValid ||
-          (configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN);
-      encoderPressedMs = now;
-    }
 #if ENABLE_COLOR_PREVIEW
     if (colorPreviewActive) firmwarePreviewColor(0);
 #endif
@@ -427,8 +419,6 @@ void firmwareApplyConfig(void) {
     rawChanged[i] = now;
   }
   encoderState = readEncoder();
-  allowRunBootloader = !activeConfigValid;
-  encoderPressedMs = now;
   if (!activeConfigValid) {
 #if ENABLE_COLOR_PREVIEW
     if (!previewOptions) firmwarePreviewColor(0);
@@ -472,6 +462,7 @@ void loop() {
   uint16_t now = clock;
   USB_reportPoll(now);
   protocolPoll(now);
+  if (protocolState == 3) enterBootloader();
   // Process due timers before physical input so resume/input actions win this frame.
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
@@ -495,10 +486,6 @@ void loop() {
       mask = (mask << 1) | 1;
     }
     updateLeds();
-  }
-  if (allowRunBootloader && stableState[NUM_LEDS] &&
-      (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
-    enterBootloader();
   }
   if (!activeConfigValid) {
     if (!previewOptions && (uint16_t)(now - errorLedChanged) >= 500) {

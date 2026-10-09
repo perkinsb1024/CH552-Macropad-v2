@@ -135,7 +135,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
   const device = new FakeBootloader();
   const replacements = {
     document: { getElementById: element, querySelectorAll: () => buttons, createElement: () => new Element() },
-    window: { isSecureContext: true, addEventListener() {} },
+    window: { isSecureContext: true, location: { search: '' }, addEventListener() {} },
     navigator: { platform: 'MacIntel', usb: { requestDevice: async () => device, addEventListener() {} } },
     fetch: async path => new Response(await readFile(new URL(`../dist/${path.slice(2)}`, import.meta.url))),
   };
@@ -176,6 +176,17 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.equal(confirmation.checked, false);
     assert.equal(element('install').disabled, true);
     assert.match(element('firmware-info').textContent, new RegExp(previous.sourceRevision));
+    assert.equal(element('download').download, previous.name);
+    const counterpart = manifest.previousFirmware.find(entry => entry.keys === 3 &&
+      entry.formatVersion === previous.formatVersion && entry.sourceRevision === previous.sourceRevision);
+    confirmation.checked = true;
+    await buttons[0].emit('click');
+    assert.equal(selector.value, counterpart.name);
+    assert.equal(element('download').download, counterpart.name);
+    assert.equal(confirmation.checked, false);
+    assert.equal(element('install').disabled, true);
+    await buttons[1].emit('click');
+    assert.equal(selector.value, previous.name);
     assert.equal(element('download').download, previous.name);
     // Even a directly invoked click cannot erase flash without confirmation.
     await element('install').emit('click');
@@ -222,7 +233,7 @@ test('unsupported browsers replace the top beta notice before firmware loading',
     };
     const replacements = {
       document: { getElementById: element, querySelectorAll: () => [] },
-      window: { isSecureContext: scenario !== 'insecure' },
+      window: { isSecureContext: scenario !== 'insecure', location: { search: '' } },
       navigator: { platform: 'MacIntel', ...(scenario === 'insecure' ? { usb: {} } : {}) },
       fetch: async path => {
         // The notice must be visible even before the first request completes.

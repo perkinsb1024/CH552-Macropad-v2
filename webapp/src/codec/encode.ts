@@ -1,7 +1,7 @@
 import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
   TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
-  LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_INDICATOR_SHIFT,
+  LAYER_OPT_INDICATOR_SHIFT,
   LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, keyCount, layerSize,
 } from '../model/constants';
 import type { Action, Profile } from '../model/types';
@@ -114,7 +114,6 @@ export function encodeProfile(profile: Profile): Uint8Array {
     });
     image[base + size - 1] =
       (layer.indicatorFullBrightness ? LAYER_OPT_FULL_BRIGHTNESS : 0) |
-      (layer.bootloaderFromRun ? LAYER_OPT_BOOTLOADER_RUN : 0) |
       ((layer.indicatorBehavior & 3) << LAYER_OPT_INDICATOR_SHIFT) |
       ((layer.indicatorColor & 15) << LAYER_OPT_COLOR_SHIFT);
   });

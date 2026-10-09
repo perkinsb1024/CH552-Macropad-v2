@@ -47,3 +47,7 @@ footer { padding: 8px 0 24px; line-height: 1.7; }
 .advanced-firmware { margin-top: 14px; color: var(--muted); font-size: 13px; }
 .advanced-firmware summary { font-weight: 400; }
 .advanced-firmware select { width: 100%; }
+
+.hex-drop { margin-top: 16px; padding: 14px; border: 2px dashed var(--line); border-radius: 8px; }
+.hex-drop.dragging { border-color: var(--accent); }
+.hex-drop input { max-width: 100%; }

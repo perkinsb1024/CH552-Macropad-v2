@@ -133,14 +133,15 @@ static void testConsumedPhysicalInput(void) {
     assert(ledSettings[3] == 3); // Completed detent resumes and is consumed.
     for (uint8_t i = 0; i < 4; i++) { P3 = (P3 & ~3) | sequence[i]; currentMs++; loop(); }
     assert(ledSettings[3] == 1);
-    // Encoder button may still enter the bootloader even when its binding is consumed.
+    // A consumed encoder press has no runtime bootloader shortcut.
     P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
     advanceTimedTo(4096);
     P3 &= ~8; currentMs++; loop(); currentMs += 10; loop();
-    assert(allowRunBootloader);
     expectBootloader = 1;
-    if (!setjmp(bootloaderJump)) { currentMs += 3000; loop(); assert(0); }
+    if (setjmp(bootloaderJump)) assert(0 && "Consumed runtime hold must not enter bootloader");
+    currentMs += 3000; loop();
     expectBootloader = 0;
+
 }
 
 static uint8_t effectComponent(uint8_t value, uint8_t dim) {

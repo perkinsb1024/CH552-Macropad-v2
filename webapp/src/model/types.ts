@@ -35,7 +35,6 @@ export interface Layer {
   counterclockwise: Action;
   /** Palette index per physical key, length 3 or 6. */
   leds: number[];
-  bootloaderFromRun: boolean;
   indicatorBehavior: LayerIndicatorBehavior;
   indicatorColor: number;
   indicatorFullBrightness: boolean;

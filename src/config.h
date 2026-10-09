@@ -117,9 +117,9 @@
 
 #define CONFIG_MOUSE_MOVE_HOLD         0x10
 
-// Per-layer option byte: full brightness bit 0, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.
+// Per-layer option byte: full brightness bit 0, deprecated/ignored bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01
-#define CONFIG_LAYER_OPT_BOOTLOADER_RUN  0x02
+#define CONFIG_LAYER_OPT_UNUSED         0x02 // Deprecated; accepted and ignored.
 #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
 #define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C
 #define CONFIG_LAYER_OPT_COLOR_SHIFT     4

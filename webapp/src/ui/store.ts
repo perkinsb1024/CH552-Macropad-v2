@@ -8,7 +8,7 @@ import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { chordSlot, matchesChord } from '../model/chords';
 import { actionProblem, slotLabel, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
-import { encoderBootloaderWarnings, selfReferentialLayerWarnings } from '../model/layerWarnings';
+import { selfReferentialLayerWarnings } from '../model/layerWarnings';
 import { timedToggleWarnings } from '../model/timedWarnings';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
@@ -121,7 +121,6 @@ export function redo(): void {
 export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
-export const bootloaderWarnings = computed(() => (profile.value ? encoderBootloaderWarnings(profile.value) : []));
 export const unusedMacros = computed(() => profile.value ? untriggeredMacros(profile.value) : []);
 export const timerWarnings = computed(() => (profile.value ? timedToggleWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));

@@ -380,7 +380,47 @@ static void testPreview(void) {
 #endif
 }
 
+static void testBootloaderRequest(void) {
+    reset();
+    prepare(10, 0, 0, 0);
+    busy = 1;
+    assert(protocolReceive(packet));
+    protocolPoll(now);
+    assert(protocolState == 2 && writes == 0);
+    busy = 0;
+    protocolPoll(now);
+    assert(protocolState == 3 && sent[8] == 0 && sent[7] == 0 && writes == 0);
+
+    // Invalid requests never arm entry, including padding and offset/length.
+    for (uint8_t field = 3; field < 32; field++) {
+        if (field == 4 || field == 5) continue;
+        reset();
+        prepare(10, 0, 0, 0);
+        packet[field] = field == 3 ? 2 : 1;
+        sendPacket();
+        assert(sent[8] && protocolState == 0 && writes == 0);
+    }
+    reset();
+    memset(flash, 0xFF, CONFIG_SIZE);
+    protocolInit();
+    assert(!activeConfigValid);
+    prepare(10, 0, 0, 0);
+    sendPacket();
+    assert(!sent[8] && protocolState == 3 && writes == 0);
+
+    reset();
+    prepare(10, 0, 0, 0);
+    busy = 1;
+    assert(protocolReceive(packet));
+    protocolPoll(now);
+    protocolReset();
+    busy = 0;
+    protocolPoll(now);
+    assert(protocolState == 0); // Reset cancels a blocked acknowledgement.
+}
+
 int main(void) {
+    testBootloaderRequest();
     testPreview();
     testReads();
     testSaveAndRetry();

@@ -32,13 +32,11 @@ describe('unsaved profile changes', () => {
     layer.indicatorBehavior = LayerIndicatorBehavior.AlwaysOn;
     layer.indicatorColor = 15;
     layer.indicatorFullBrightness = !saved.layers[0]!.indicatorFullBrightness;
-    layer.bootloaderFromRun = !saved.layers[0]!.bootloaderFromRun;
     const changes = profileChanges(saved, edited);
     expect(changes.map((change) => change.where)).toEqual([
       'Layer 1 · Key 1', 'Layer 1 · Encoder button', 'Layer 1 · Clockwise',
       'Layer 1 · Counterclockwise', 'Layer 1 · Layer selection LEDs',
       'Layer 1 · Indicator color', 'Layer 1 · Indicator brightness',
-      'Layer 1 · Encoder bootloader entry',
     ]);
     expect(changes[0]!.after).toBe(`Type ${JSON.stringify(layer.keys[0].text)}`);
     expect(changes.find((change) => change.where.endsWith('Indicator color'))!.after).toBe('Rainbow');
@@ -99,7 +97,6 @@ describe('unsaved profile changes', () => {
     layer.indicatorColor = 15;
     layer.indicatorBehavior = LayerIndicatorBehavior.None;
     layer.indicatorFullBrightness = !saved.layers[0]!.indicatorFullBrightness;
-    layer.bootloaderFromRun = !saved.layers[0]!.bootloaderFromRun;
     const entries = changesWithUndo(saved, edited);
     for (const entry of entries) {
       const draft = cloneProfile(edited);

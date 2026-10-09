@@ -35,7 +35,7 @@ This guide covers the current configurator and its supported three-key and six-k
 4. The configurator loads the saved profile from your device. If the macropad has no valid profile, the configurator defaults to a starter profile instead
 5. Make your changes, click **Save to device**, and wait for **Saved** before unplugging it
 
-If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Save a new profile to activate it. V12 firmware also permits a three-second encoder hold to enter the bootloader in this state.
+If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Save a new profile to activate it. V12 firmware also accepts the **Enter bootloader** command from the firmware installer in this state.
 
 ### Practice without Hardware
 
@@ -98,7 +98,7 @@ An action is what the macropad does. A trigger is what makes it happen.
 | Timer | Runs its action whenever its interval expires. The timer can optionally restart when you interact with the macropad |
 | **On next input** after a timer | Runs once when you next press a key or use the wheel, after that timer has fired |
 
-There are no separate user-configurable double-tap or long-press triggers for ordinary actions. **Key hold** means “keep this action held while I hold the button,” rather than “wait before starting.” The only exception is the optional three-second wheel button hold to enter firmware update mode (this is an advanced setting mostly used for development, I recommend leaving it off).
+There are no separate user-configurable double-tap or long-press triggers for ordinary actions. **Key hold** means “keep this action held while I hold the button,” rather than “wait before starting.” In v12, firmware update mode is entered through the installer or by holding the encoder while connecting USB.
 
 Actions that need a button release—**Key hold**, **Mouse hold**, **Layer while held**, and pointer movement set to **Hold**—cannot be used for wheel rotation or timer actions as those triggers have no button to release.
 
@@ -624,15 +624,13 @@ Save an export somewhere you can find it again. A device save and a backup serve
 
 The browser also keeps a local draft. On reconnect, it may ask whether to use the draft or load from the device. Choose the draft to continue browser edits, or the device copy to start from what is already saved on hardware. Browser drafts can disappear when browser data is cleared and are separate from the device's saved profile; keep an exported backup for anything you want to preserve.
 
-### Advanced: Optional Firmware Update Shortcut
+### Enter Firmware Update Mode
 
-Under **Layer options → Advanced**, **Allow bootloader entry by long-pressing the encoder button** enables firmware update mode when you hold the wheel button for three seconds. It uses the layer active when the hold begins.
+With v12 firmware, click **Enter bootloader** in the [firmware installer](../webUploader/), select the running macropad, then click **Connect bootloader**. This works even without a valid saved profile. The LEDs turn red when the device enters update mode.
 
-When no valid profile is saved, v12 permits this three-second hold regardless of
-layer options while preserving the blinking error LED. Holding the encoder while
-connecting USB remains available with every version of this firmware.
+Holding the encoder button while connecting USB remains available with every version of this firmware. Runtime encoder holds do not enter update mode in v12. Older firmware may support an optional three-second hold on enabled layers; its configurator controls that option.
 
-This option is for updating the device software, not editing a profile. It can interrupt an encoder hold action, so leave it disabled on layers where you regularly hold that button. If you enter update mode accidentally, unplug and reconnect normally. Holding the wheel button while plugging in also enters update mode, independently of this setting. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) when you actually need an update.
+Firmware update mode is for replacing device software. Use **Save to device** to change a profile. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) for hardware bootloader entry if the firmware cannot run.
 
 ## Example Configurations
 
@@ -685,7 +683,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A reminder fires earlier than expected | v10–v12 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
-| Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |
+| Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |
 | The mouse seems stuck dragging | Use **Mouse up** for that button in v12, or change layers to clear persistent buttons. With v11, use **Mouse toggle** to flip the shared state. Release any **Mouse hold** inputs too |
 | LEDs do not look like the editor | Check layer indicators, key colors, temporary effects, and brightness overrides. Use **Restore all configured LED settings** to restore saved behavior |
 | LEDs do not light up at all | The absolute cheapest versions of these macropads do not include LEDs. Someone skilled with a soldering iron can add them, but it's probably easier to buy a macropad that already includes them |

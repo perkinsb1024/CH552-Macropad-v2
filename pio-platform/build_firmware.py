@@ -182,7 +182,7 @@ def upload(build, bootcfg):
         build,
         bootcfg,
         build / "firmware.hex",
-        "Enter CH552 bootloader mode now: hold the encoder button for 3 seconds "
+        "Enter CH552 bootloader mode now: use the installer's Enter bootloader button "
         "or hold the encoder button while powering on. Waiting up to 10 seconds.",
     )
 
@@ -242,7 +242,7 @@ def erase_config(project, build, clock, usb_ram, code_limit, physical_variant, b
         build,
         bootcfg,
         build / "erase_config.hex",
-        "Enter CH552 bootloader mode now: hold the encoder button for 3 seconds "
+        "Enter CH552 bootloader mode now: use the installer's Enter bootloader button "
         "or hold the encoder button while powering on. The temporary utility will "
         "erase the saved profile and return to bootloader mode.",
     )

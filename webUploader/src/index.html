@@ -39,11 +39,12 @@
 
     <section>
       <h2>2. Enter bootloader mode</h2>
-      <p>If this project's firmware is already installed, entering bootloader mode is easy: unplug USB, hold the encoder button, and reconnect USB while keeping it held down. The LEDs will turn red. If the optional encoder long-press bootloader entry mode is enabled for the macropad's current layer, hold the encoder button for 3 seconds while the device is powered on. The LEDs will also turn red</p>
+      <p>With firmware supporting the command, click <strong>Enter bootloader</strong> and select the running macropad. Then click <strong>Connect bootloader</strong>. You can always enter using this project's firmware by unplugging USB, holding the encoder button, and reconnecting USB while keeping it held. The LEDs will turn red.</p>
       <p>With the stock firmware, follow the <a href="../README.md#how-to-upload-the-firmware" id="boot-guide">hardware bootloader instructions</a> on this project's GitHub page. This requires you to unscrew the acrylic plates and physically connect two pins with a button or metal tweezers.</p>
       <p>Once in bootloader mode, your browser will allow you to connect to the macropad. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick.</p>
       <p>Supported by this beta: <strong>CH552, bootloader versions 2.3.1-2.5.0</strong>.</p>
       <div class="connection-controls">
+        <button id="enter-bootloader" type="button" disabled>Enter bootloader</button>
         <button id="connect" type="button" disabled>Connect bootloader</button>
         <button id="reboot" type="button" disabled>Disconnect and Reboot</button>
       </div>
@@ -64,10 +65,19 @@
         <select id="firmware-release" disabled><option value="latest">Latest release</option></select>
         <p class="muted">Older versions may leave a newer profile inactive. Export a backup first, then use the matching configurator after installing.</p>
       </details>
+      <div id="external-firmware" hidden>
+        <div id="hex-drop" class="hex-drop">
+          <label for="hex-file">External firmware HEX file</label>
+          <input id="hex-file" type="file" accept=".hex" disabled>
+          <p class="muted">Drop one .hex file here or choose a file. Select the correct board variant above.</p>
+        </div>
+        <button id="use-published" type="button" disabled>Use published firmware</button>
+      </div>
       <p id="firmware-info" class="muted">Loading published firmware…</p>
       <a id="download" hidden download>Download this HEX file</a>
       <p>Installing replaces the application firmware and uses the CH55xDuino bootloader settings for P3.6 (D+) boot entry. Only install on a compatible CH552 macropad.</p>
       <label class="variant-confirmation"><input id="confirm-variant" type="checkbox" disabled> I have selected the proper board variant</label>
+      <label id="unrecognized-warning" class="variant-confirmation" hidden><input id="confirm-unrecognized" type="checkbox" disabled> I understand that this is not recognized CH552 Macropad firmware and installing it may cause unexpected behavior and/or prevent me from entering bootloader mode</label>
       <button id="install" type="button" disabled>Install firmware</button>
       <progress id="progress" max="100" value="0" aria-label="Firmware installation progress" hidden></progress>
       <p id="status" role="status" aria-live="polite">Checking browser support...</p>

@@ -33,7 +33,7 @@ static void testLoadStarterProfile(uint8_t variant) {
     activeConfig[offset + 2 * (keys + 1) + 1] = (uint8_t)-1;
     activeConfig[offset + 2 * (keys + 2)] = CONFIG_ACTION_SCROLL;
     activeConfig[offset + 2 * (keys + 2) + 1] = 1;
-    activeConfig[offset + size - 1] = CONFIG_LAYER_OPT_BOOTLOADER_RUN;
+    activeConfig[offset + size - 1] = CONFIG_LAYER_OPT_UNUSED;
     crc = configCrc(activeConfig);
     activeConfig[6] = (uint8_t)crc;
     activeConfig[7] = (uint8_t)(crc >> 8);

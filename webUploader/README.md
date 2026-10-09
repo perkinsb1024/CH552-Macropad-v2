@@ -47,12 +47,34 @@ The init command retains upstream's boot configuration value `0x03`, matching th
 
 1. Open the beta page in desktop Chrome or Edge over HTTPS or localhost.
 2. Follow the platform setup instructions below or on the page.
-3. **Enter** bootloader mode. With this project's firmware, hold the encoder while connecting USB. Stock firmware may require boot pads or a physical boot button; see the [repository instructions](../README.md#how-to-upload-the-firmware).
+3. Click **Enter bootloader** and select the running macropad if its firmware supports the HID command (v12). Alternatively, hold the encoder while connecting USB with this project's firmware. Stock firmware may require boot pads or a physical boot button; see the [repository instructions](../README.md#how-to-upload-the-firmware).
 4. Click **Connect bootloader** and select USB ID `4348:55E0`.
 5. Select the three-key or six-key variant, then click **Install firmware**.
 6. Keep USB connected through programming and verification. After restart, use the configurator to load/save your profile.
 
-The bootloader identifies the CH552 chip, not the board's key count. Selecting the correct variant is the user's responsibility. This beta accepts the same bootloader range as the pinned source: 2.3.1–2.5.0. Other versions are rejected before erase. Only the bundled published HEX files are selectable.
+The bootloader identifies the CH552 chip, not the board's key count. Selecting the correct variant is the user's responsibility. This beta accepts the same bootloader range as the pinned source: 2.3.1–2.5.0. Other versions are rejected before erase. Published firmware is selectable by default. Append `?external=true` to enable
+**External firmware HEX file**, which accepts one local `.hex` file through its
+picker or drop area. HEX checksums, record structure, overlap detection,
+application addresses below `0x3800`, data at address zero, EOF, chip/bootloader
+checks and programming readback verification remain enforced. Published files
+also retain their release-manifest hash and size checks; external files have no
+published manifest to compare against. External uploads work even when the
+published list is unavailable.
+
+A recognized macropad identity must match the selected key count; multiple
+identities are rejected. An image without a recognized identity additionally
+requires this checkbox, alongside the board confirmation:
+**I understand that this is not recognized CH552 Macropad firmware and installing it may cause unexpected behavior and/or prevent me from entering bootloader mode**.
+Both confirmations reset whenever the firmware selection changes. The embedded
+identity identifies a format and board variant; it does not authenticate an
+external file's origin.
+
+**Enter bootloader** is available with or without external upload mode. It uses
+WebHID to check the running device's normal GET_INFO identity, then sends opcode
+`0x0A` and waits for its empty acknowledgement. It changes no saved profile.
+Click **Connect bootloader** afterward to select the separate WebUSB device.
+Unsupported firmware reports an error and can use encoder-held-at-power-up
+entry instead. No automatic retry occurs after a missing acknowledgement.
 
 ### Windows
 

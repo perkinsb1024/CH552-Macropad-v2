@@ -1,7 +1,7 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
   PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
-  LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
+  LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
@@ -186,13 +186,13 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       leds.push(i & 1 ? byte >> 4 : byte & 15);
     }
     const options = image[base + size - 1]!;
+    // Bit 1 is the deprecated runtime bootloader permission; accept and ignore it.
     const layer: Layer = {
       keys: actions.slice(0, keys),
       encoderButton: actions[keys]!,
       clockwise: actions[keys + 1]!,
       counterclockwise: actions[keys + 2]!,
       leds,
-      bootloaderFromRun: !!(options & LAYER_OPT_BOOTLOADER_RUN),
       indicatorBehavior: (options >> LAYER_OPT_INDICATOR_SHIFT) & 3,
       indicatorColor: options >> 4,
       indicatorFullBrightness: !!(options & LAYER_OPT_FULL_BRIGHTNESS),

@@ -31,7 +31,6 @@ export interface ExportedProfile {
     clockwise: Action;
     counterclockwise: Action;
     leds: string[];
-    bootloaderFromRun: boolean;
     indicatorBehavior: number;
     indicatorColor: number;
     indicatorFullBrightness: boolean;
@@ -58,7 +57,6 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       clockwise: layer.clockwise,
       counterclockwise: layer.counterclockwise,
       leds: layer.leds.map((i) => PALETTE[i]?.name ?? String(i)),
-      bootloaderFromRun: layer.bootloaderFromRun,
       indicatorBehavior: layer.indicatorBehavior,
       indicatorColor: layer.indicatorColor,
       indicatorFullBrightness: layer.indicatorFullBrightness,
@@ -176,7 +174,6 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       clockwise: action(l.clockwise, `Layer ${li + 1} clockwise`),
       counterclockwise: action(l.counterclockwise, `Layer ${li + 1} counterclockwise`),
       leds: l.leds.map((c, i) => led(c, `Layer ${li + 1} LED ${i + 1}`)),
-      bootloaderFromRun: bool(l.bootloaderFromRun, 'bootloaderFromRun'),
       indicatorBehavior: l.indicatorBehavior === undefined ? 0 : int(l.indicatorBehavior, `Layer ${li + 1} indicatorBehavior`),
       indicatorColor: l.indicatorColor === undefined ? 0 : int(l.indicatorColor, `Layer ${li + 1} indicatorColor`),
       indicatorFullBrightness: bool(l.indicatorFullBrightness, `Layer ${li + 1} indicatorFullBrightness`),
