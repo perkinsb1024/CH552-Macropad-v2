@@ -1,4 +1,17 @@
 #include "config.h"
+#include "diagnostics.h"
+#if DATAFLASH_DIAGNOSTICS
+__xdata uint8_t configFailure, configFailureOffset;
+FW_BIT configCrcDiagnostic;
+#if DIAGNOSTIC_REDUCED
+#define CONFIG_FAIL(category, offset) return 0
+#else
+#define CONFIG_FAIL(category, offset) do { configFailure = (category); \
+  configFailureOffset = (offset); return 0; } while (0)
+#endif
+#else
+#define CONFIG_FAIL(category, offset) return 0
+#endif
 
 // Page alignment shortens indexed reads. protocolInit loads every byte before
 // use; build_firmware.py checks this absolute allocation separately from XSEG.
@@ -55,9 +68,13 @@ uint16_t configCrc(const __xdata uint8_t *image) {
     uint8_t i;
     uint8_t bit;
     for (i = 0; i < CONFIG_SIZE; i++) {
+#if DATAFLASH_DIAGNOSTICS
+        if (((i ^ (configCrcDiagnostic ? 14 : 6)) & 0xFE) == 0) continue;
+#else
         if (i == 6 || i == 7) {
             continue;
         }
+#endif
         crc ^= (uint16_t)image[i] << 8;
         for (bit = 0; bit < 8; bit++) {
             uint8_t high = (uint8_t)(crc >> 8) & 0x80;
@@ -184,38 +201,53 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     uint16_t end;
     uint16_t crc;
     validationImage = image;
-#ifdef __SDCC
-    if (variant != PHYSICAL_VARIANT) return 0;
+#if DATAFLASH_DIAGNOSTICS && !DIAGNOSTIC_REDUCED
+    configFailure = 0;
+    configFailureOffset = 0xFF;
 #endif
+#ifdef __SDCC
+    if (variant != PHYSICAL_VARIANT) CONFIG_FAIL(3, 5);
+#endif
+#if DATAFLASH_DIAGNOSTICS && !DIAGNOSTIC_REDUCED
+    if (variant > CONFIG_THREE_KEYS) CONFIG_FAIL(3, 5);
+    if (validationImage[0] != 'M') CONFIG_FAIL(1, 0);
+    if (validationImage[1] != 'P') CONFIG_FAIL(1, 1);
+    if (validationImage[2] != CONFIG_VERSION) CONFIG_FAIL(2, 2);
+    if ((validationImage[5] & 1) != variant) CONFIG_FAIL(3, 5);
+#else
     if (variant > CONFIG_THREE_KEYS || validationImage[0] != 'M' || validationImage[1] != 'P' ||
         validationImage[2] != CONFIG_VERSION ||
         ((validationImage[5] & 1) != variant)) {
         return 0;
     }
+#endif
     validationLayers = (validationImage[3] & 7) + 1;
     if (((validationImage[3] >> 3) & 7) >= validationLayers) {
-        return 0;
+        CONFIG_FAIL(4, 3);
     }
     keys = keyCount(variant);
     size = layerSize(variant);
-    if (validationLayers > maxLayers(variant)) return 0;
+    if (validationLayers > maxLayers(variant)) CONFIG_FAIL(4, 3);
     chords = (validationImage[5] >> 1) & 63;
     // Each product fits a byte after the layer/chord count checks; the sum
     // remains 16-bit so malformed images cannot wrap past the capacity check.
     timers = (validationImage[3] >> 6) | ((validationImage[4] >> 7) << 2);
-    if (timers > CONFIG_TIMED_MAX) return 0;
+    if (timers > CONFIG_TIMED_MAX) CONFIG_FAIL(5, 3);
     validationUsed = validationImage[4] & 127;
-    end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
-          (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed;
+    end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords)
+#if CONFIG_TIMED_MAX
+          + (uint8_t)(CONFIG_TIMED_SIZE * timers)
+#endif
+          + (uint16_t)validationUsed;
     if (end > CONFIG_SIZE) {
-        return 0;
+        CONFIG_FAIL(5, 4);
     }
     validationPool = (uint8_t)end - validationUsed;
     offset = 9;
     for (layer = 0; layer < validationLayers; layer++) {
         for (i = 0; i < keys + 3; i++, offset += 2) {
             if (!actionValid(offset, i >= keys + 1)) {
-                return 0;
+                CONFIG_FAIL(6, offset);
             }
         }
         offset += size - 2 * (keys + 3);
@@ -226,35 +258,42 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
             (id & 15) >= pairCount(variant) ||
             (i && id <= previous) ||
             !actionValid(offset + 1, 0)) {
-            return 0;
+            CONFIG_FAIL(7, offset);
         }
         previous = id;
         offset += 3;
     }
+#if CONFIG_TIMED_MAX
     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
         __idata uint8_t scope = validationImage[offset + 5] & 7;
-        if (scope && scope > validationLayers) return 0;
-        if (!actionValid(offset + 1, 1)) return 0;
+        if (scope && scope > validationLayers) CONFIG_FAIL(8, offset + 5);
+        if (!actionValid(offset + 1, 1)) CONFIG_FAIL(8, offset + 1);
 #if CONFIG_TIMED_RESUME
-        if (!actionValid(offset + 3, 1)) return 0;
+        if (!actionValid(offset + 3, 1)) CONFIG_FAIL(8, offset + 3);
 #endif
     }
+#endif
     if (validationUsed && validationImage[validationPool + validationUsed - 1] != 0) {
-        return 0;
+        CONFIG_FAIL(9, validationPool + validationUsed - 1);
     }
     for (i = 0; i < validationUsed; i++) {
         uint8_t c = validationImage[validationPool + i];
         if (c != 0 && c != 9 && c != 10 && (c < 32 || c > 126)) {
-            return 0;
+            CONFIG_FAIL(9, validationPool + i);
         }
     }
     for (offset = validationPool + validationUsed; offset < CONFIG_SIZE; offset++) {
         if (!validationImage[offset]) continue;
-        if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) return 0;
+        if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) CONFIG_FAIL(10, offset);
         offset++;
     }
     crc = configCrc(validationImage);
+#if DATAFLASH_DIAGNOSTICS
+    if (validationImage[6] != (uint8_t)crc || validationImage[7] != (uint8_t)(crc >> 8)) CONFIG_FAIL(11, 6);
+    return 1;
+#else
     return validationImage[6] == (uint8_t)crc && validationImage[7] == (uint8_t)(crc >> 8);
+#endif
 }
 
 uint8_t configLayerCount(void) { return (activeConfig[3] & 7) + 1; }
@@ -326,6 +365,7 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     return 0;
 }
 
+#if CONFIG_TIMED_MAX || CONFIG_TYPE_TEXT
 uint8_t configTimedCount(void) {
     return (activeConfig[3] >> 6) | ((activeConfig[4] >> 7) << 2);
 }
@@ -333,6 +373,8 @@ uint8_t configTimedCount(void) {
 uint8_t configTimedOffset(void) {
     return layerOffset(configLayerCount()) + 3 * ((activeConfig[5] >> 1) & 63);
 }
+#endif
+
 
 #if CONFIG_TYPE_TEXT
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {

@@ -16,9 +16,15 @@ void actionsTimedReset(uint8_t tick) {
 }
 
 static ACTION_BIT timedEvent(uint8_t tick) {
+  DIAG_ASSERT(configTimedCount() <= CONFIG_TIMED_MAX, DIAG_TIMER, DIAG_SITE_TIMER,
+    0x100 | configTimedCount());
   uint8_t offset = configTimedOffset();
   ACTION_BIT consume = 0;
   for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
+    DIAG_ASSERT(offset <= CONFIG_SIZE - CONFIG_TIMED_SIZE, DIAG_TIMER, DIAG_SITE_TIMER,
+      0x200 | i);
+    DIAG_ASSERT(timedPending[i] <= 1 && !(timedHigh[i] & 0xC7),
+      DIAG_TIMER, DIAG_SITE_TIMER, 0x300 | i);
     uint8_t age = timedAge[i];
     uint8_t action = 0;
     uint8_t flags = activeConfig[offset + 5];

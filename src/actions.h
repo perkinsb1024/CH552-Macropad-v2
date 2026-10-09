@@ -2,7 +2,7 @@
 #define MACROPAD_ACTIONS_H
 
 #include <stdint.h>
-#include "firmware_types.h"
+#include "config.h"
 
 #define ACTION_BIT FW_BIT
 // Main loop publishes input time before encoder dispatch when acceleration is
@@ -10,9 +10,15 @@
 extern __idata uint16_t actionsInputNow;
 
 // Low byte of millis() >> 9: 512 ms ticks, polled at least every 131 seconds.
+#if CONFIG_TIMED_MAX
 void actionsTimedReset(uint8_t tick);
 void actionsTimedPoll(uint8_t tick);
 ACTION_BIT actionsTimedInput(void); // True consumes this physical event.
+#else
+#define actionsTimedReset(tick) ((void)(tick))
+#define actionsTimedPoll(tick) ((void)(tick))
+#define actionsTimedInput() (0)
+#endif
 void actionsInit(void);
 void actionsPress(uint8_t input, uint16_t now);
 void actionsRelease(uint8_t input);

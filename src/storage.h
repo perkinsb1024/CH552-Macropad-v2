@@ -6,5 +6,8 @@
 
 uint8_t storageRead(uint8_t offset);
 FW_BIT storageSave(const __xdata uint8_t *image);
+#if DATAFLASH_DIAGNOSTICS
+FW_BIT storageWriteDiagnostic(uint8_t offset, uint8_t value);
+#endif
 
 #endif

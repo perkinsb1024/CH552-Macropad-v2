@@ -15,6 +15,7 @@
 #include "src/led_control.h"
 #include "src/config.h"
 #include "src/protocol_firmware.h"
+#include "src/diagnostics.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 // Hardware connections are fixed for both board variants.
@@ -321,12 +322,21 @@ void serviceLayerIndicator(uint16_t now) {
 }
 
 void enterBootloader() {
+#if DATAFLASH_DIAGNOSTICS
+  DIAG_TRAP(DIAG_BOOT_STARTUP, DIAG_SITE_BOOT_OTHER, 0);
+#else
   actionsClear();
   uint16_t start = millis();
   while (USB_reportsPending() && (uint16_t)(millis() - start) < 100) {
     USB_reportPoll(millis());
     actionsPoll(millis());
   }
+#endif
+#if DATAFLASH_DIAGNOSTICS
+}
+
+void diagnosticBootloader(void) {
+#endif
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     ledPtr[0] = 0;
@@ -388,6 +398,9 @@ void scanButton(uint8_t input, uint16_t now) {
 void scanEncoder() {
   uint8_t state = readEncoder();
   int8_t movement;
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT(encoderState <= 3, DIAG_MACRO, DIAG_SITE_LOOP, 0x600 | encoderState);
+#endif
   if (state == encoderState) {
     return;
   }
@@ -414,13 +427,23 @@ void scanEncoder() {
 }
 
 void firmwareApplyConfig(void) {
+#if DATAFLASH_DIAGNOSTICS
+  if (!activeConfigValid && !diagnosticRecovery) {
+    DIAG_TRAP(DIAG_INVALID_ACTIVE, DIAG_SITE_APPLY, 0);
+  }
+#endif
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
   // Bits 4-11 form the 16 ms fine clock; the low word is sufficient.
   actionsTimedReset(now >> 4);
+#if DATAFLASH_DIAGNOSTICS
+  ledSettings[0] = activeConfigValid ? (activeConfig[8] >> 4) & 3 : 0;
+  ledSettings[1] = activeConfigValid ? activeConfig[8] >> 6 : 0;
+#else
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
+#endif
   ledSettings[2] = ledSettings[3] = 3;
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
@@ -460,19 +483,39 @@ void setup() {
   P3_MOD_OC = (P3_MOD_OC | INPUT_P3_MASK) & ~0x10;
   P3_DIR_PU |= INPUT_P3_MASK | 0x10; // P3.4 is the push-pull LED output.
   clearLeds();
+#if DATAFLASH_DIAGNOSTICS
+  if (!activeConfigValid && !diagnosticRecovery) {
+    DIAG_TRAP(DIAG_INVALID_CONFIG, DIAG_SITE_STARTUP,
+#if DIAGNOSTIC_REDUCED
+      0);
+#else
+      ((uint16_t)configFailureOffset << 8) | configFailure);
+#endif
+  }
+#endif
   firmwareApplyConfig();
   USBInit();
   if (readButton(NUM_LEDS)) {
+#if DATAFLASH_DIAGNOSTICS
+    DIAG_TRAP(DIAG_BOOT_STARTUP, DIAG_SITE_BOOT_STARTUP, 1);
+#else
     enterBootloader();
+#endif
   }
 }
 
 void loop() {
   uint32_t clock = millis();
   uint16_t now = clock;
+#if DATAFLASH_DIAGNOSTICS
+  if (!activeConfigValid && !diagnosticRecovery) {
+    DIAG_TRAP(DIAG_INVALID_ACTIVE, DIAG_SITE_LOOP, 0);
+  }
+  if (activeConfigValid) diagnosticCheckActions();
+#endif
   USB_reportPoll(now);
   protocolPoll(now);
-#if INVESTIGATION_DIAGNOSTICS
+#if INVESTIGATION_DIAGNOSTICS && !DATAFLASH_DIAGNOSTICS
   if (protocolState == 3) enterBootloader();
 #endif
   // Process due timers before physical input so resume/input actions win this frame.
@@ -501,7 +544,11 @@ void loop() {
   }
   if (allowRunBootloader && stableState[NUM_LEDS] &&
       (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
+#if DATAFLASH_DIAGNOSTICS
+    DIAG_TRAP(DIAG_BOOT_HOLD, DIAG_SITE_BOOT_HOLD, (uint16_t)(now - encoderPressedMs));
+#else
     enterBootloader();
+#endif
   }
   if (!activeConfigValid) {
     if (!previewOptions && (uint16_t)(now - errorLedChanged) >= 500) {
@@ -523,3 +570,33 @@ void loop() {
   }
   serviceLayerIndicator(now);
 }
+
+#if DATAFLASH_DIAGNOSTICS
+void diagnosticSnapshotInputs(void) {
+  uint8_t i;
+  stagedConfig[48] = stagedConfig[49] = 0;
+  for (i = 0; i <= NUM_LEDS; i++) {
+    uint8_t mask = 1 << (i == NUM_LEDS ? 6 : i);
+    if (rawState[i]) stagedConfig[48] |= mask;
+    if (stableState[i]) stagedConfig[49] |= mask;
+  }
+  stagedConfig[51] = P1; stagedConfig[52] = P3;
+  stagedConfig[53] = encoderState; stagedConfig[54] = encoderMovement;
+  stagedConfig[55] = allowRunBootloader;
+  stagedConfig[56] = encoderPressedMs; stagedConfig[57] = encoderPressedMs >> 8;
+  stagedConfig[58] = rawChanged[NUM_LEDS]; stagedConfig[59] = rawChanged[NUM_LEDS] >> 8;
+#if !DIAGNOSTIC_REDUCED
+  for (i = 0; i < 4; i++) stagedConfig[112 + i] = ledSettings[i];
+  stagedConfig[116] = previewOptions; stagedConfig[117] = layerIndicatorPhasesLeft;
+  stagedConfig[118] = layerIndicatorDeadline; stagedConfig[119] = rainbowHue;
+#endif
+  stagedConfig[41] |= (colorPreviewActive ? 16 : 0);
+#if !DIAGNOSTIC_REDUCED
+  if (stagedConfig[10] != DIAG_SAVE && stagedConfig[10] != DIAG_INVALID_CONFIG &&
+      stagedConfig[10] != DIAG_TIMER) {
+    stagedConfig[120] = lastLayer; stagedConfig[121] = rainbowChanged;
+    for (i = 0; i < 6; i++) stagedConfig[122 + i] = ledData[i];
+  }
+#endif
+}
+#endif

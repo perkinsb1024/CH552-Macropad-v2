@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <setjmp.h>
 #define __xdata
 #define __code
 #define __data
@@ -33,6 +34,25 @@ uint8_t protocolReceive(const uint8_t *packet) {
 }
 
 void protocolReset(void) { resets++; }
+
+#if DATAFLASH_DIAGNOSTICS
+uint8_t stagedConfig[128];
+uint16_t diagnosticDetail;
+static uint16_t trappedHeader;
+static jmp_buf diagnosticJump;
+void logDiagnostics(uint16_t header) { trappedHeader = header; longjmp(diagnosticJump, 1); }
+static void testDiagnosticQueue(void) {
+    USB_EP1_reset();
+    reportHead = 8;
+    if (!setjmp(diagnosticJump)) { USB_reportPoll(0); assert(0); }
+    assert(trappedHeader == ((uint16_t)DIAG_SITE_USB << 8 | DIAG_TRANSPORT));
+    reportHead = 2; reportTail = 1; reportCount = 3;
+    configWaiting = configTurn = UpPoint1_Busy = 1;
+    diagnosticSnapshotUsb();
+    assert(stagedConfig[105] == 7 && stagedConfig[106] == 2 && stagedConfig[107] == 1 && stagedConfig[108] == 3);
+    USB_EP1_reset();
+}
+#endif
 
 static void reset(void) {
     USB_EP1_reset();
@@ -299,6 +319,9 @@ static void testSetupLengthSaturation(void) {
 }
 
 int main(void) {
+#if DATAFLASH_DIAGNOSTICS
+    testDiagnosticQueue();
+#endif
     testSetupLengthSaturation();
     testHorizontalDescriptor();
     testEightButtonsAndPackedScroll();

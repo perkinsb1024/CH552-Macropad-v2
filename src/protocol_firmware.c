@@ -2,6 +2,7 @@
 #include "config.h"
 #include "actions.h"
 #include "storage.h"
+#include "diagnostics.h"
 
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 void firmwareApplyConfig(void);
@@ -75,6 +76,9 @@ void protocolInit(void) {
   }
   flashValid = configValid(activeConfig, PHYSICAL_VARIANT);
   activeConfigValid = flashValid;
+#if DATAFLASH_DIAGNOSTICS
+  diagnosticRecovery = activeConfig[0] == DIAGNOSTIC_MAGIC;
+#endif
   protocolState = 0;
   uploadState = 0;
   resetPending = 0;
@@ -129,8 +133,10 @@ static uint8_t processRequest(void) {
   }
   switch (opcode) {
 #if INVESTIGATION_DIAGNOSTICS
+#if !DATAFLASH_DIAGNOSTICS
     case PROTOCOL_ENTER_BOOTLOADER:
       break; // Arm entry only after the successful reply has been queued.
+#endif
     case PROTOCOL_READ_FAULT: {
       // Snapshot into the existing reply buffer. No persistent diagnostic
       // storage, flash writes, reset counter or stack instrumentation.
@@ -247,12 +253,20 @@ static uint8_t processRequest(void) {
       }
       flashValid = storageSave(stagedConfig);
       if (!flashValid) {
+#if DATAFLASH_DIAGNOSTICS
+        extern __xdata uint8_t storageFailureOffset, storageFailureExpected;
+        DIAG_TRAP(DIAG_SAVE, DIAG_SITE_SAVE,
+          ((uint16_t)storageFailureExpected << 8) | storageFailureOffset);
+#endif
         return PROTOCOL_FLASH_FAILED;
       }
       for (i = 0; i < CONFIG_SIZE; i++) {
         activeConfig[i] = stagedConfig[i];
       }
       activeConfigValid = 1;
+#if DATAFLASH_DIAGNOSTICS
+      diagnosticRecovery = 0;
+#endif
       firmwareApplyConfig();
       uploadState = 2;
       break;
@@ -276,6 +290,10 @@ static uint8_t processRequest(void) {
 void protocolPoll(uint16_t now) {
   uint8_t i;
   uint8_t status;
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT(protocolState <= 2, DIAG_TRANSPORT, DIAG_SITE_PROTOCOL, protocolState);
+  DIAG_ASSERT(uploadState <= 2, DIAG_TRANSPORT, DIAG_SITE_PROTOCOL, 0x100 | uploadState);
+#endif
   if (resetPending) {
     uploadState = 0;
     protocolState = 0;
@@ -309,7 +327,7 @@ void protocolPoll(uint16_t now) {
   }
   // A reset during a save abandons its reply; flash still has to finish safely.
   if (!resetPending && USB_EP1_sendConfig(protocolReply)) {
-#if INVESTIGATION_DIAGNOSTICS
+#if INVESTIGATION_DIAGNOSTICS && !DATAFLASH_DIAGNOSTICS
     if (protocolInbox[4] == PROTOCOL_ENTER_BOOTLOADER && !protocolReply[8]) {
       protocolState = 3; // Main loop uses the existing bootloader entry path.
       return;

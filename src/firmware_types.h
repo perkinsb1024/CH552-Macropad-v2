@@ -13,6 +13,12 @@
 #ifndef INVESTIGATION_BUILD_ID
 #define INVESTIGATION_BUILD_ID 0
 #endif
+#ifndef DATAFLASH_DIAGNOSTICS
+#define DATAFLASH_DIAGNOSTICS 0
+#endif
+#ifndef DIAGNOSTIC_REDUCED
+#define DIAGNOSTIC_REDUCED 0
+#endif
 
 // Native 8051 bit storage/return convention; ordinary bytes for host tests.
 #ifdef __SDCC

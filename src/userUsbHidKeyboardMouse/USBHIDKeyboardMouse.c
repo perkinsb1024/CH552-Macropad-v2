@@ -8,6 +8,7 @@
 #include "USBHIDKeyboardMouse.h"
 #include "../protocol_firmware.h"
 #include "../config.h"
+#include "../diagnostics.h"
 // clang-format on
 
 // clang-format off
@@ -18,6 +19,11 @@ extern __xdata __at (EP1_ADDR) uint8_t Ep1Buffer[];
 __xdata uint8_t keyboardLedStatus;
 
 #define USB_BIT FW_BIT
+#if DATAFLASH_DIAGNOSTICS
+#define USB_POLL_LOCAL __idata
+#else
+#define USB_POLL_LOCAL
+#endif
 volatile USB_BIT UpPoint1_Busy; // ISR/main-loop flag uses bit-addressable RAM on SDCC.
 
 #if CONFIG_TYPE_TEXT
@@ -326,13 +332,15 @@ FW_BIT USB_reportsPending(void) {
 
 void USB_reportPoll(uint16_t now) USB_CRITICAL {
   uint8_t i;
-  uint8_t check;
+  USB_POLL_LOCAL uint8_t check;
+  DIAG_ASSERT(reportHead < 8 && reportTail < 8 && reportCount <= 8,
+    DIAG_TRANSPORT, DIAG_SITE_USB, 0);
   if (!reportCount) {
     uint8_t report = idleReport + 1;
     for (check = 0; check < 3; check++) {
       uint8_t rate = report == 1 ? USB_idleRate :
                      report == 2 ? mouseIdleRate : consumerIdleRate;
-      uint16_t sent = report == 1 ? keyboardTime :
+      USB_POLL_LOCAL uint16_t sent = report == 1 ? keyboardTime :
                       report == 2 ? mouseTime : consumerTime;
       if (rate && (uint16_t)(now - sent) >= ((uint16_t)rate << 2)) {
         idleReport = report == 3 ? 0 : report;
@@ -354,9 +362,18 @@ void USB_reportPoll(uint16_t now) USB_CRITICAL {
       (UEP1_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) {
     return;
   }
+#if DATAFLASH_DIAGNOSTICS
+  __xdata const uint8_t *__idata report = reportQueue[reportTail];
+#else
   __xdata const uint8_t *report = reportQueue[reportTail];
-  uint8_t identity = *report;
-  uint8_t length = reportLength[reportTail];
+#endif
+  USB_POLL_LOCAL uint8_t identity = *report;
+  USB_POLL_LOCAL uint8_t length = reportLength[reportTail];
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT((identity == 1 && length == 9) || (identity == 2 && length == 5) ||
+    (identity == 5 && length == 3), DIAG_TRANSPORT, DIAG_SITE_USB,
+    ((uint16_t)identity << 8) | length);
+#endif
   for (i = 0; i < length; i++) Ep1Buffer[64 + i] = *report++;
   if (identity == 1) keyboardTime = now;
   else if (identity == 2) mouseTime = now;
@@ -368,6 +385,15 @@ void USB_reportPoll(uint16_t now) USB_CRITICAL {
   UpPoint1_Busy = 1;
   UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
 }
+
+#if DATAFLASH_DIAGNOSTICS
+void diagnosticSnapshotUsb(void) {
+  stagedConfig[104] = UsbConfig;
+  stagedConfig[105] = (UpPoint1_Busy ? 1 : 0) | (configWaiting ? 2 : 0) | (configTurn ? 4 : 0);
+  stagedConfig[106] = reportHead; stagedConfig[107] = reportTail;
+  stagedConfig[108] = reportCount; stagedConfig[109] = reportGeneration;
+}
+#endif
 
 #if CONFIG_TYPE_TEXT
 uint8_t USB_asciiUsage(uint8_t c) {

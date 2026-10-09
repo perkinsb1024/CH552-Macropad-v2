@@ -1,5 +1,6 @@
 #include "storage.h"
 #include "config.h"
+#include "diagnostics.h"
 #ifdef __SDCC
 #include "include/ch5xx.h"
 #endif
@@ -10,6 +11,10 @@ void eeprom_write_byte(__data uint8_t addr, __xdata uint8_t value);
 uint8_t storageRead(uint8_t offset) {
   return eeprom_read_byte(offset);
 }
+
+#if DATAFLASH_DIAGNOSTICS
+__xdata uint8_t storageFailureOffset, storageFailureExpected, storageFailureActual;
+#endif
 
 static FW_BIT writeByte(uint8_t offset, uint8_t value) {
   if (storageRead(offset) != value) {
@@ -22,8 +27,22 @@ static FW_BIT writeByte(uint8_t offset, uint8_t value) {
     EA = enabled;
 #endif
   }
+#if DATAFLASH_DIAGNOSTICS
+  if (storageRead(offset) == value) return 1;
+  storageFailureOffset = offset;
+  storageFailureExpected = value;
+  storageFailureActual = storageRead(offset);
+  return 0;
+#else
   return storageRead(offset) == value;
+#endif
 }
+
+#if DATAFLASH_DIAGNOSTICS
+FW_BIT storageWriteDiagnostic(uint8_t offset, uint8_t value) {
+  return offset < CONFIG_SIZE && writeByte(offset, value);
+}
+#endif
 
 static FW_BIT matches(const __xdata uint8_t *image) {
   uint8_t i;

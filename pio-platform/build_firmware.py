@@ -130,6 +130,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
     actions_rel = compile_source(project / "src/actions.c", "actions")
     storage_rel = compile_source(project / "src/storage.c", "storage")
     protocol_rel = compile_source(project / "src/protocol_firmware.c", "protocol_firmware")
+    diagnostics_rel = compile_source(project / "src/diagnostics.c", "diagnostics")
     hid_sources = sorted((project / "src/userUsbHidKeyboardMouse").glob("*.c"))
     hid_rels = [compile_source(source, "hid_" + source.stem) for source in hid_sources]
     main_rel = compile_source(project / "src/main.c", "core_main")
@@ -161,7 +162,7 @@ def build_firmware(project, build, clock, usb_ram, code_limit, physical_variant=
         f"-L{libroot / 'lib/small_int_calc_stack_auto'}",
         "--code-size", code_limit, "--xram-size", str(1024 - int(usb_ram)),
         "--xram-loc", usb_ram, "-mmcs51", "-DCH552",
-        sketch_rel, config_rel, actions_rel, protocol_rel, storage_rel, main_rel, *hid_rels, ws_rel, core_lib,
+        sketch_rel, config_rel, actions_rel, protocol_rel, storage_rel, diagnostics_rel, main_rel, *hid_rels, ws_rel, core_lib,
         "-lmcs51", "-llibsdcc", "-lliblong", "-lliblonglong",
         "-llibint", "-llibfloat", "--out-fmt-ihx", "-o", firmware,
     )

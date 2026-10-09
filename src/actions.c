@@ -1,6 +1,7 @@
 #include "actions.h"
 #include "config.h"
 #include "led_control.h"
+#include "diagnostics.h"
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 #define MAX_INPUTS 7
@@ -52,11 +53,13 @@ __idata uint8_t macroRepeat;
 #endif
 // Toggle/down/up share one persistent mouse-button state; holds remain separate.
 __idata uint8_t persistentMouse;
+#if CONFIG_TIMED_MAX
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
 __idata uint8_t timedFraction[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
+#endif
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerReleasePending;
 __data uint8_t consumerFirst;
@@ -81,6 +84,12 @@ __idata uint8_t scrollFraction;
 #define actionType(first) ((uint8_t)((first) & 15))
 
 static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
+#if DATAFLASH_DIAGNOSTICS
+  diagnosticCheckActions();
+#else
+  DIAG_ASSERT(eventHead < EVENT_COUNT && eventTail < EVENT_COUNT && eventUsed <= EVENT_COUNT,
+    DIAG_ACTION_QUEUE, DIAG_SITE_ACTION_QUEUE, 0);
+#endif
   if (eventUsed == EVENT_COUNT ||
       ((rotation & 1) && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
     if (rotation & 1) {
@@ -228,7 +237,9 @@ static FW_BIT flushOutputs(void) {
 }
 
 static void updateLayer(void);
+#if CONFIG_TIMED_MAX
 static void resetLayerTimers(void);
+#endif
 
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
@@ -310,6 +321,10 @@ static void resolvePending(void) {
   if (!pendingInput) {
     return;
   }
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT(pendingInput <= configKeyCount(), DIAG_ACTION_QUEUE, DIAG_SITE_ACTION_POLL,
+    0x400 | pendingInput);
+#endif
   input = pendingInput - 1;
   pendingInput = 0;
   buttonPressed[input] = 1;
@@ -331,11 +346,17 @@ static void updateLayer(void) {
         next = buttonSecond[i];
       }
     }
+#if !DIAGNOSTIC_REDUCED
+    DIAG_ASSERT(next < configLayerCount(), DIAG_LAYER, DIAG_SITE_LAYER,
+      ((uint16_t)configLayerCount() << 8) | next);
+#endif
     if (next == effectiveLayer) {
       return;
     }
     effectiveLayer = next;
+#if CONFIG_TIMED_MAX
     resetLayerTimers();
+#endif
 #if CONFIG_SCROLL_ACCELERATION
     scrollFirst = 0;
 #endif
@@ -545,7 +566,9 @@ void actionsRotate(uint8_t clockwise) {
   updateLayer();
 }
 
+#if CONFIG_TIMED_MAX
 #include "timed_actions.inc"
+#endif
 
 void actionsPoll(uint16_t now) {
   __idata uint8_t type;
@@ -555,6 +578,9 @@ void actionsPoll(uint16_t now) {
 #endif
   __idata uint8_t i;
   __idata uint8_t slot;
+#if DATAFLASH_DIAGNOSTICS
+  diagnosticCheckActions();
+#endif
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
   if (!(scrollFirst & CONFIG_SCROLL_HOLD) &&
@@ -624,6 +650,10 @@ void actionsPoll(uint16_t now) {
   }
   if (!currentFirst) {
     if (macroNext) {
+#if !DIAGNOSTIC_REDUCED
+      // Repeating the empty terminator at 127 advances the cursor to 129.
+      DIAG_ASSERT(macroNext <= CONFIG_SIZE + 1, DIAG_MACRO, DIAG_SITE_MACRO, macroNext);
+#endif
       c = macroNext >= CONFIG_SIZE - 1 || !activeConfig[macroNext];
       if (c) {
 #if CONFIG_MACRO_REPEAT
@@ -635,6 +665,9 @@ void actionsPoll(uint16_t now) {
         macroNext = 0;
       }
       if (macroNext) {
+#if !DIAGNOSTIC_REDUCED
+        DIAG_ASSERT(macroNext < CONFIG_SIZE, DIAG_MACRO, DIAG_SITE_MACRO, macroNext);
+#endif
         currentFirst = activeConfig[macroNext];
         // A repeated empty macro may point to the sole terminator at byte 127.
         if (currentFirst) currentSecond = activeConfig[macroNext + 1];
@@ -664,6 +697,10 @@ void actionsPoll(uint16_t now) {
     } else
 #endif
     if (type == CONFIG_ACTION_MACRO) {
+#if !DIAGNOSTIC_REDUCED
+      DIAG_ASSERT(currentSecond >= 9 && currentSecond < CONFIG_SIZE,
+        DIAG_MACRO, DIAG_SITE_MACRO, 0x100 | currentSecond);
+#endif
       macroNext = macroStart = currentSecond;
 #if CONFIG_MACRO_REPEAT
       macroRepeat = currentFirst >> 4;
@@ -758,3 +795,31 @@ void actionsPoll(uint16_t now) {
     }
   }
 }
+
+#if DATAFLASH_DIAGNOSTICS
+void diagnosticCheckActions(void) {
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT(configLayerCount() <= CONFIG_MAX_LAYERS, DIAG_LAYER, DIAG_SITE_ACTION_POLL,
+    configLayerCount());
+#endif
+  DIAG_ASSERT(eventHead < EVENT_COUNT && eventTail < EVENT_COUNT && eventUsed <= EVENT_COUNT,
+    DIAG_ACTION_QUEUE, DIAG_SITE_ACTION_POLL, 0);
+  DIAG_ASSERT(effectiveLayer < configLayerCount()
+#if !DIAGNOSTIC_REDUCED
+    && baseLayer < configLayerCount() &&
+    previousLayer < configLayerCount() &&
+    (oneShotReturnLayer == 0xFF || oneShotReturnLayer < configLayerCount())
+#endif
+    ,
+    DIAG_LAYER, DIAG_SITE_ACTION_POLL, ((uint16_t)configLayerCount() << 8) | effectiveLayer);
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT(phase <= 3 && consumerOwner <= MAX_INPUTS && pendingInput <= configKeyCount(),
+    DIAG_MACRO, DIAG_SITE_ACTION_POLL, 0x200 | phase);
+#endif
+  // 128 follows the final two-byte step; 129 follows an empty repeat at 127.
+#if !DIAGNOSTIC_REDUCED
+  DIAG_ASSERT(!macroNext || (macroNext >= 9 && macroNext <= CONFIG_SIZE + 1),
+    DIAG_MACRO, DIAG_SITE_MACRO, macroNext);
+#endif
+}
+#endif
