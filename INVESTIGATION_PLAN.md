@@ -265,6 +265,38 @@ its initialization and reader against the current linker layout.
 
 ## Phase 4: Optional Debug Build and Reader
 
+### Approved Feature-Cut Order
+
+The user approved the following additional feature cuts for investigation
+builds, only as needed for flash capacity, in this order:
+
+1. E: **Type text** / stored text playback. Retain keyboard taps, holds and
+   other macro steps.
+2. B: LED-control actions that change brightness, presets or effects during
+   operation. Retain saved profile lighting.
+3. C: Timed actions, including expiry and next-input actions.
+4. D: Chords. Retain ordinary individual bindings.
+5. A: Animated rainbow lighting. Retain static palette colors, key feedback,
+   layer indications and error LEDs.
+
+Live color preview was already approved and disabled for the initial stack
+diagnostic. These additional cuts are authorized for investigation builds;
+they are not requested production feature removals. Measure cumulative flash
+costs and stop cutting once sufficient space is available. The user initially
+asked to defer builds, then explicitly approved implementation, temporary
+builds, host tools under `tools/`, checkpoint commits and additional
+`investigation/` branches. Pushing and flashing firmware are not authorized.
+
+### Diagnostic Design
+
+The first uptime/validity diagnostic comparison is implemented. See
+[V12 Fault Investigation Tools](tools/investigation/README.md) for the complete
+diagnostic layout, host commands, selected artifacts and limitations, and
+[prepared variant measurements](INVESTIGATION_HYPOTHESES.md#prepared-diagnostic-variants)
+for results. This replaces stack instrumentation in the new builds; the older
+stack artifacts remain preserved. The current diagnostic adds no flash
+logging, persistent event history, reset-source capture or USB-event counters.
+
 If reproduction or stack testing does not identify the fault, prepare a separate
 debug build with a small read-only host reader. Prefer compile-time diagnostic
 options and bounded records over serial logging in time-sensitive paths.

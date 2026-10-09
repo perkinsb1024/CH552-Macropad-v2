@@ -10,6 +10,14 @@
 #define USB_CRITICAL
 #endif
 
+// Give ISR-only helper parameters their own external RAM, preserving direct
+// RAM and stack capacity. The pointer's target and storage are both xdata.
+#if INVESTIGATION_OVERLAP_FIX && defined(__SDCC)
+#define USB_ISR_PARAM __xdata
+#else
+#define USB_ISR_PARAM
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,8 +41,9 @@ FW_BIT USB_reportsPending(void);
 void USB_reportPoll(uint16_t now) USB_CRITICAL;
 uint8_t USB_asciiUsage(uint8_t c);
 extern volatile __xdata uint8_t USB_idleRate;
-uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data);
-void USB_setIdle(uint8_t report, uint8_t rate);
+uint8_t USB_getReport(uint8_t report, USB_ISR_PARAM uint8_t output,
+                      __xdata uint8_t * USB_ISR_PARAM data);
+void USB_setIdle(uint8_t report, USB_ISR_PARAM uint8_t rate);
 uint8_t USB_getIdle(uint8_t report);
 
 #ifdef __cplusplus

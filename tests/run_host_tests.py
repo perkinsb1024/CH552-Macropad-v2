@@ -15,12 +15,21 @@ with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
     suites += [("macros", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("timed_actions", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("input", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+    if "--no-text" in sys.argv:
+        flags.append("-DCONFIG_TYPE_TEXT=0")
+        # The full config/action/timer suites intentionally require text.
+        # Keep input, USB, protocol and non-text macro regressions, and test
+        # rejection of unsupported text separately.
+        suites = [suite for suite in suites if suite[0] not in ("config", "actions", "timed_actions", "protocol")]
+        suites += [("protocol", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+        suites += [("reduced_config", ["src/config.c"], variant) for variant in (0, 1)]
     for suite in suites:
         name, sources, *variant = suite
         options = [f"-DPHYSICAL_VARIANT={variant[0]}"] if variant else []
         binary = str(Path(directory) / (name + str(variant)))
         subprocess.run([*flags, *options, f"tests/{name}_test.c", *sources, "-o", binary], cwd=ROOT, check=True)
-        subprocess.run([binary], check=True)
+        arguments = [str(ROOT / "tools/investigation/reproduction-six-key.bin")] if name == "reduced_config" else []
+        subprocess.run([binary, *arguments], check=True)
         print(f"Passed {name} {variant}", flush=True)
 
 subprocess.run(["python3", str(ROOT / "tests/build_layout_test.py")], check=True)

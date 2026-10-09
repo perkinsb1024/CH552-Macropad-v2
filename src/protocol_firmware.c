@@ -17,6 +17,10 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_ABORT_WRITE 8
 #define PROTOCOL_PREVIEW_COLOR 9
 #define PROTOCOL_READ_STACK 0x70 // Diagnostic-only; normal replies stay unchanged.
+#define PROTOCOL_READ_FAULT 0x71
+#if INVESTIGATION_DIAGNOSTICS
+uint32_t millis(void);
+#endif
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -50,6 +54,18 @@ __xdata uint8_t uploadState; // 0 idle, 1 receiving, 2 committed (retry acknowle
 __xdata uint8_t uploadNext;
 __xdata uint16_t uploadCrc;
 __xdata uint16_t uploadTime;
+
+#if INVESTIGATION_DIAGNOSTICS
+// Keep the 32-bit return value out of processRequest's scarce direct-RAM
+// temporaries. SDCC passes this sole argument in registers.
+static void replyUptime(uint32_t uptime) {
+  uint8_t i;
+  for (i = 0; i < 4; i++) {
+    protocolReply[16 + i] = uptime;
+    uptime >>= 8;
+  }
+}
+#endif
 
 void protocolInit(void) {
   uint8_t i;
@@ -111,6 +127,22 @@ static uint8_t processRequest(void) {
     return PROTOCOL_BAD_RANGE;
   }
   switch (opcode) {
+#if INVESTIGATION_DIAGNOSTICS
+    case PROTOCOL_READ_FAULT: {
+      // Snapshot into the existing reply buffer. No persistent diagnostic
+      // storage, flash writes, reset counter or stack instrumentation.
+      protocolReply[7] = 11;
+      protocolReply[9] = 'F';
+      protocolReply[10] = 'D';
+      protocolReply[11] = 1;
+      protocolReply[12] = PHYSICAL_VARIANT;
+      protocolReply[13] = INVESTIGATION_BUILD_ID;
+      protocolReply[14] = flashValid;
+      protocolReply[15] = activeConfigValid;
+      replyUptime(millis());
+      break;
+    }
+#endif
 #if ENABLE_STACK_TEST && defined(__SDCC)
     case PROTOCOL_READ_STACK:
       protocolReply[7] = 6;

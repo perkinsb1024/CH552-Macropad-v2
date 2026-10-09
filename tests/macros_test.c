@@ -143,6 +143,7 @@ static void testRepeatsAndOrdering(void) {
     }
 }
 static void testLongAndStrings(void) {
+#if CONFIG_TYPE_TEXT
     reset();
     memcpy(activeConfig + start, "chrome", 7); activeConfig[4] = 7; start += 7;
     const uint8_t launch[] = {0x81, 0x2C, CONFIG_ACTION_STRING, 0, 1, 0x28};
@@ -151,12 +152,14 @@ static void testLongAndStrings(void) {
     assert(reports[0][1] == 8 && reports[0][3] == 0x2C);
     for (unsigned i = 0; i < 6; i++) assert(reports[2 + 2 * i][3] == (uint8_t)"chrome"[i]);
     assert(reports[14][3] == 0x28);
+#endif
     reset();
     // More steps than the physical event queue: expansion streams one at a time.
     for (uint8_t i = 0; i < 40; i++) { activeConfig[start + 2 * i] = 1; activeConfig[start + 2 * i + 1] = 4 + i; }
     bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 1000); assert(count == 80 && !actionsDropped(0));
 }
+#if CONFIG_TYPE_TEXT
 static void testTextCharacterPause(void) {
     // Include Enter, repeated characters, and a deadline across clock wrap.
     const uint8_t text[] = {'s', 's', '\n', 0};
@@ -184,6 +187,7 @@ static void testTextCharacterPause(void) {
         assert(presses == 3 && count == 6);
     }
 }
+#endif
 static void testTriggersAndCancellation(void) {
     reset(); const uint8_t pair[] = {1, 4, 1, 5}; define(start, pair, 2);
     bind(configKeyCount() + 1, start, 1); actionsRotate(1); pump(0, 100);
@@ -446,7 +450,9 @@ int main(void) {
     testPersistentMouse(); testMouseDragAndScroll(); testMouseSources();
     testGlobalToggleSources();
     testGlobalToggle();
+#if CONFIG_TYPE_TEXT
     testTextCharacterPause();
+#endif
     testValidation(); testSingleByteTerminators(); testRepeatsAndOrdering(); testLongAndStrings();
     testTriggersAndCancellation(); testImmediateSteps(); testQueueAndChords(); testPause(); testHeldPointer();
     return 0;

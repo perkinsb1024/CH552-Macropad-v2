@@ -242,3 +242,71 @@ this is not a clean full-UBSan result or exhaustive static analysis.
 Stack overflow remains on the list with reduced priority. Do not promote the
 newly identified overlap, a USB event, or an electrical explanation to the
 shared diagnosis without demonstrating the missing links to both incidents.
+
+## Prepared Diagnostic Variants
+
+The user approved implementation and temporary builds, with no pushing or
+flashing. A matched comparison pair for each physical variant now reports
+application uptime, both validity flags, board variant and investigation build
+ID through read-only opcode `0x71`. Build ID 1 retains the original overlap;
+build ID 2 corrects it. Both disable live color preview and **Type text**;
+no later approved feature cut was necessary. Stack watermark code is disabled.
+Profiles containing **Type text** must be replaced with a compatible profile
+using normal firmware before installing these reduced diagnostics. The original
+incident profile remains valid; the broader coverage profile contains text.
+
+The correction gives the ISR helpers' four parameter bytes dedicated external
+RAM and applies `#pragma nooverlay` to the helper definitions. It adds no
+interrupt masking or parameter pushes. Their former three-byte internal
+overlay shrinks to two bytes used by foreground helpers, increasing linker
+stack capacity by one byte. Linked checks find no remaining overlaid
+allocations in the USB handler, HID helper or protocol modules of the fixed
+build. This addresses the audited overlap; it does not certify every possible
+interrupt interaction or establish the cause of either original incident.
+
+| Variant | Diagnostic | Flash Bytes | Spare Bytes | Stack Capacity | Ordinary External RAM |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Six Keys | Overlap Retained | 13,984 | 352 | 77 | 370 |
+| Six Keys | Overlap Corrected | 14,008 | 328 | 78 | 374 |
+| Three Keys | Overlap Retained | 13,978 | 358 | 80 | 361 |
+| Three Keys | Overlap Corrected | 14,002 | 334 | 81 | 365 |
+
+These use SDCC 4.2.2 build.13407_4, 24MHz, 148 USB DMA bytes and the actual
+14,336-byte application limit. Paged RAM remains 95 bytes; the active image
+remains at `0x300–0x37F`. Removing text saves 352 bytes from the otherwise
+matching faulty diagnostic and 354 bytes from the corrected diagnostic.
+The matched-pair correction costs 24 flash bytes and four external-RAM bytes.
+The full-feature correction costs 26 flash bytes: 14,358/14,354 bytes, exceeding
+the limit by 22/18. Those attempts are not flashable application artifacts.
+Default builds remain byte-for-byte identical to the retained original
+six-key/three-key production HEX files.
+
+Selected artifacts are retained at
+[/private/tmp/macropad-fault-20261008](/private/tmp/macropad-fault-20261008),
+with source/tool snapshots, manifest, checksums, map/memory files, linked
+listings and logs. Temporary artifacts need copying for long-term retention.
+The manifest's `selectedImages` identifies the matched diagnostic HEX files;
+other successful experimental stages are not the selected comparison pair.
+
+Verification replays actual linked SET_IDLE stores and foreground reads for
+all 65,536 argument/rate combinations, plus both GET_REPORT output selectors
+and their pointer stores. The faulty fragments overwrite foreground storage;
+the fixed fragments preserve it. Tests check the HEX bytes against linked
+listings. Normal host suites and both reduced diagnostic suites pass, including
+independent validity flags, uptime serialization, rejection of unsupported
+text and validation of the original incident image. Eleven host-tool tests cover
+read-only requests, reply matching, timeout/errors, image capture, uptime wrap
+and discontinuity, disappearance/reappearance, passive operation, preservation
+of log files, confirmed shared HID opening on macOS and idle-rate restoration
+after an injected failure.
+
+Host tools use timestamped JSONL logs on the Mac. Passive monitoring polls
+enumeration; active monitoring reads uptime/validity and captures images on
+invalid state. A native HID path exercises GET_REPORT; optional libusb traffic
+also exercises SET_IDLE with GET_IDLE confirmation and rate restoration.
+macOS may deny that interface access; no driver detachment or USB reset is
+attempted. Dependency/API availability and bundled backend loading were checked
+on macOS, but no attached pad was opened, exercised or flashed. Hardware
+request delivery, timing, observable action corruption and either original
+LED failure remain unverified. The earlier LED restore signed-shift defect
+is deliberately separate and remains uncorrected in these comparison builds.

@@ -158,7 +158,7 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
 #if CONFIG_MACRO_PAUSE
             if (aux == 2) return 1;
 #endif
-            if (aux != 1 || param >= validationUsed) return 0;
+            if (!CONFIG_TYPE_TEXT || aux != 1 || param >= validationUsed) return 0;
             return param == 0 || validationImage[validationPool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
             return aux <= 1 && (param < validationLayers ||
@@ -334,6 +334,7 @@ uint8_t configTimedOffset(void) {
     return layerOffset(configLayerCount()) + 3 * ((activeConfig[5] >> 1) & 63);
 }
 
+#if CONFIG_TYPE_TEXT
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
     uint8_t position = offset + index;
     uint8_t start;
@@ -343,3 +344,4 @@ uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
     return activeConfig[start + position];
 }
+#endif

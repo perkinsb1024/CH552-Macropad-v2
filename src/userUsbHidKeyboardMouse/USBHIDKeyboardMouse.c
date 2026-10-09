@@ -7,6 +7,7 @@
 #include "USBhandler.h"
 #include "USBHIDKeyboardMouse.h"
 #include "../protocol_firmware.h"
+#include "../config.h"
 // clang-format on
 
 // clang-format off
@@ -19,6 +20,7 @@ __xdata uint8_t keyboardLedStatus;
 #define USB_BIT FW_BIT
 volatile USB_BIT UpPoint1_Busy; // ISR/main-loop flag uses bit-addressable RAM on SDCC.
 
+#if CONFIG_TYPE_TEXT
 #define SHIFT 0x80
 __code uint8_t _asciimap[128] = {
     0x00, // NUL
@@ -151,6 +153,7 @@ __code uint8_t _asciimap[128] = {
     0x35 | SHIFT, // ~
     0             // DEL
 };
+#endif
 
 // Share the endpoint fairly between short input reports and configuration replies.
 __xdata uint8_t reportQueue[8][9];
@@ -366,14 +369,20 @@ void USB_reportPoll(uint16_t now) USB_CRITICAL {
   UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
 }
 
+#if CONFIG_TYPE_TEXT
 uint8_t USB_asciiUsage(uint8_t c) {
   if (c >= 128) {
     return 0;
   }
   return _asciimap[c];
 }
+#endif
 
-void USB_setIdle(uint8_t report, uint8_t rate) {
+#if INVESTIGATION_OVERLAP_FIX && defined(__SDCC)
+#pragma save
+#pragma nooverlay
+#endif
+void USB_setIdle(uint8_t report, USB_ISR_PARAM uint8_t rate) {
   if (!report) {
     USB_globalIdleRate = rate;
     USB_idleRate = mouseIdleRate = consumerIdleRate = rate;
@@ -394,7 +403,8 @@ uint8_t USB_getIdle(uint8_t report) {
   return 0;
 }
 
-uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
+uint8_t USB_getReport(uint8_t report, USB_ISR_PARAM uint8_t output,
+                      __xdata uint8_t * USB_ISR_PARAM data) {
   uint8_t i;
   data[0] = report;
   if (report == 1) {
@@ -419,3 +429,6 @@ uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
   }
   return 0;
 }
+#if INVESTIGATION_OVERLAP_FIX && defined(__SDCC)
+#pragma restore
+#endif

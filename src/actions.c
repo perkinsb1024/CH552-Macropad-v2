@@ -550,7 +550,9 @@ void actionsRotate(uint8_t clockwise) {
 void actionsPoll(uint16_t now) {
   __idata uint8_t type;
   __idata uint8_t c;
+#if CONFIG_TYPE_TEXT
   __idata uint8_t usage;
+#endif
   __idata uint8_t i;
   __idata uint8_t slot;
 #if CONFIG_SCROLL_ACCELERATION
@@ -696,6 +698,7 @@ void actionsPoll(uint16_t now) {
       tempSecond = currentSecond;
       tempMouse = 0;
       if (type == CONFIG_ACTION_NONE) {
+#if CONFIG_TYPE_TEXT
         c = configStringChar(currentSecond, stringIndex);
         if (!c) {
           currentFirst = 0;
@@ -704,6 +707,10 @@ void actionsPoll(uint16_t now) {
         usage = USB_asciiUsage(c);
         tempFirst = CONFIG_ACTION_KEY_TAP | ((usage & 0x80) ? 0x20 : 0);
         tempSecond = usage & 0x7F;
+#else
+        currentFirst = 0;
+        return; // Text actions are rejected by the reduced build's validator.
+#endif
       } else if (type == CONFIG_ACTION_MOUSE_CLICK) {
         tempMouse = currentSecond;
       }

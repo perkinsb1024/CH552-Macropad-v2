@@ -7,6 +7,9 @@
 #define CONFIG_SIZE 128
 // Format 12: eight mouse buttons and persistent toggle/down/up modes.
 #define CONFIG_VERSION 12
+#ifndef CONFIG_TYPE_TEXT
+#define CONFIG_TYPE_TEXT 1
+#endif
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
 #endif

@@ -19,6 +19,11 @@ static uint8_t preview;
 static uint16_t now;
 static uint8_t busy;
 static uint8_t resetOnWrite;
+#if INVESTIGATION_DIAGNOSTICS
+static uint32_t diagnosticClock;
+uint32_t millis(void) { return diagnosticClock; }
+extern PROTOCOL_BIT flashValid;
+#endif
 
 uint8_t eeprom_read_byte(uint8_t offset) {
     assert(offset < CONFIG_SIZE);
@@ -156,6 +161,39 @@ static void testReads(void) {
     assert(sent[9] == flash[6]);
     request(4, 6, 1, 0);
     assert(sent[9] == flash[6]); // Boot copies even invalid flash into the inactive RAM image.
+}
+
+static void testFaultDiagnostic(void) {
+    reset();
+#if INVESTIGATION_DIAGNOSTICS
+    diagnosticClock = 0xFEDCBA98UL;
+    // Test both flags independently: status previously exposed only flashValid.
+    for (uint8_t saved = 0; saved < 2; saved++) {
+        for (uint8_t active = 0; active < 2; active++) {
+            flashValid = saved;
+            activeConfigValid = active;
+            request(0x71, 0, 0, 0);
+            assert(sent[8] == 0 && sent[7] == 11);
+            assert(memcmp(sent + 9, "FD\1", 3) == 0);
+            assert(sent[12] == PHYSICAL_VARIANT && sent[13] == INVESTIGATION_BUILD_ID);
+            assert(sent[14] == saved && sent[15] == active);
+            assert(sent[16] == 0x98 && sent[17] == 0xBA && sent[18] == 0xDC && sent[19] == 0xFE);
+            assert(!writes && !applies);
+        }
+    }
+    protocolReset();
+    protocolPoll(now);
+    request(0x71, 0, 0, 0);
+    assert(sent[16] == 0x98 && sent[19] == 0xFE); // USB reset did not reset the clock.
+    assert(!writes);
+    request(0x71, 1, 0, 0);
+    assert(sent[8] == 3);
+    request(0x71, 0, 1, 0);
+    assert(sent[8] == 3);
+#else
+    request(0x71, 0, 0, 0);
+    assert(sent[8] == 2 && !writes && !applies);
+#endif
 }
 
 static void testSaveAndRetry(void) {
@@ -384,6 +422,7 @@ static void testPreview(void) {
 }
 
 int main(void) {
+    testFaultDiagnostic();
     testPreview();
     testReads();
     testSaveAndRetry();
