@@ -331,12 +331,12 @@ void enterBootloader() {
     ledPtr[2] = 0;
     ledPtr += 3;
   }
-  displayLeds();
-
   USB_CTRL = 0;
   EA = 0;                     // Disabling all interrupts is required.
   TMOD = 0;
+  // Keep USB disconnected for 100ms; split the wait so both LED frames latch.
   delayMicroseconds(50000);
+  displayLeds();
   delayMicroseconds(50000);
 #ifdef __SDCC
   __asm__ ("lcall #0x3800");  // Jump to bootloader code

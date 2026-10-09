@@ -20,6 +20,8 @@ volatile uint8_t EA;
 static uint32_t currentMs;
 static jmp_buf bootloaderJump;
 static uint8_t expectBootloader;
+static uint8_t bootloaderWaits;
+static uint8_t bootloaderRedShown;
 // A held input reads low even when setup writes high to its pull-up latch.
 static uint8_t encoderHeldAtStartup;
 #undef P3_3
@@ -36,13 +38,26 @@ volatile uint8_t protocolState;
 
 uint32_t millis(void) { return currentMs; }
 void delayMicroseconds(uint16_t us) {
-    (void)us;
     if (expectBootloader) {
+        assert(us == 50000);
         assert(USB_CTRL == 0 && EA == 0 && TMOD == 0);
+        if (++bootloaderWaits == 1) return;
+        assert(bootloaderWaits == 2);
+        assert(bootloaderRedShown);
+        bootloaderWaits = 0;
+        bootloaderRedShown = 0;
         longjmp(bootloaderJump, 1);
     }
 }
 void neopixel_show_P3_4(uint8_t *data, uint8_t length) {
+    if (bootloaderWaits) {
+        assert(bootloaderWaits == 1);
+        for (uint8_t i = 0; i < length; i++) {
+            assert(data[i] == (i % 3 == 1 ? 255 : 0));
+        }
+        // The second wait must follow a transmitted red frame.
+        bootloaderRedShown = 1;
+    }
     uint8_t lit = data[0] || data[1] || data[2];
     if (lit && !indicatorWasLit) indicatorRisingEdges++;
     indicatorWasLit = lit;
