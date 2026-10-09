@@ -91,6 +91,13 @@ ${core}
   const constants = await readFile(resolve(root, '../webapp/src/model/constants.ts'), 'utf8');
   const currentFormatVersion = Number(/FORMAT_VERSION\s*=\s*(\d+)/.exec(constants)?.[1]);
   if (!currentFormatVersion) throw new Error('Cannot identify current configurator format.');
-  await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, currentFormatVersion, firmware, previousFirmware }, null, 2) + '\n');
+  // Bundle the README's version history so the installer stays in sync with it.
+  const readme = await readFile(resolve(root, '../README.md'), 'utf8');
+  const releaseNotes = {};
+  for (const match of readme.matchAll(/^\| \[v(\d+)\]\([^|]+\) \| (.+) \|$/gm)) {
+    releaseNotes[match[1]] = match[2].replace(/<br>\s*-\s*/g, '; ').replace(/^-\s*/, '')
+      .replace(/\*\*/g, '').replace(/\*([^*]+)\*/g, '$1').replace(/ · /g, ' / ');
+  }
+  await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, currentFormatVersion, firmware, previousFirmware, releaseNotes }, null, 2) + '\n');
   console.log(`Built beta uploader: ${output}\nUpstream: ${revision}\nFirmware: ${firmware.map(f => f.name).join(', ')}`);
 } finally { await rm(temporary, { recursive: true, force: true }); }

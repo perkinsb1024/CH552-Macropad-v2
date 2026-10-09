@@ -51,3 +51,46 @@ footer { padding: 8px 0 24px; line-height: 1.7; }
 .hex-drop { margin-top: 16px; padding: 14px; border: 2px dashed var(--line); border-radius: 8px; }
 .hex-drop.dragging { border-color: var(--accent); }
 .hex-drop input { max-width: 100%; }
+
+h3 { margin: 0; font-size: 15px; }
+.connection-controls { display: grid; grid-template-columns: 1fr 1fr; margin-top: 20px; }
+.connection-step { display: flex; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; }
+.connection-step p { font-size: 13px; color: var(--muted); }
+.step-number { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; background: #e9ebf0; border-radius: 50%; font-size: 13px; font-weight: 600; }
+.connection-step[data-state="next"] { border-color: var(--accent); }
+.connection-step[data-state="success"] .step-number { background: #e1f5ea; color: #18763e; }
+.device-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; }
+.device-info { white-space: pre-line; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); font-size: 13px; margin: 0; }
+.firmware-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+.firmware-tabs button { background: transparent; color: var(--muted); border-radius: 0; border-bottom: 2px solid transparent; margin: 0 0 -1px; padding: 12px 10px; font-size: 13px; }
+.firmware-tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+#firmware-release { width: 100%; }
+.release-notes { font-size: 13px; line-height: 1.7; color: var(--muted); }
+#release-history { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; font-size: 13px; line-height: 1.6; }
+#release-history dt { font-weight: 600; }
+#release-history dd { margin: 0; color: var(--muted); }
+.firmware-summary { margin: 20px 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; }
+#firmware-info { white-space: pre-line; overflow-wrap: anywhere; margin: 0 0 8px; }
+#download { font-size: 13px; }
+.firmware-pill { display: inline-block; padding: 1px 7px; border-radius: 6px; background: #e9ebf0; font-size: 13px; font-weight: 600; }
+.status-message { padding: 12px 14px; border-radius: 8px; background: #edf0f6; font-size: 13px; color: var(--muted); line-height: 1.6; }
+[data-state="success"] { color: #18763e; }
+[data-state="error"] { color: #b02832; }
+.status-message[data-state="success"] { background: #e1f5ea; }
+.status-message[data-state="error"] { background: #fde4e5; }
+.validation-note { color: var(--muted); font-size: 13px; }
+footer { text-align: center; }
+@media (prefers-color-scheme: dark) {
+  .step-number, .firmware-pill, .status-message { background: #111620; }
+  .connection-step[data-state="success"] .step-number, .status-message[data-state="success"] { background: #12301f; }
+  [data-state="success"], .connection-step[data-state="success"] .step-number { color: #3ccf7a; }
+  [data-state="error"] { color: #ff6b70; }
+  .status-message[data-state="error"] { background: #3a1618; }
+  .secondary { background: transparent; }
+}
+@media (max-width: 560px) {
+  .connection-controls { grid-template-columns: 1fr; }
+  .device-summary { align-items: flex-start; flex-direction: column; }
+  .firmware-tabs button { flex: 1; padding: 10px 4px; }
+}

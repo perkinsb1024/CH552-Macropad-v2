@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { firmwareChoices, selectedFirmware } from '../src/firmware-list.mjs';
+import { firmwareChoices, previousReleases, selectedFirmware } from '../src/firmware-list.mjs';
 import { Ch552Bootloader } from '../dist/bootloader.mjs';
 import { parseHex, CODE_LIMIT } from '../src/hex.mjs';
 import { firmwareFormat, configuratorPath } from '../src/firmware-format.mjs';
@@ -124,6 +124,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     replaceChildren(...children) { this.children = children; }
     setAttribute(name, value) { this.attributes[name] = value; }
     addEventListener(name, handler) { this.handlers[name] = handler; }
+    focus() {}
     async emit(name) { await this.handlers[name](); }
   }
   const elements = new Map();
@@ -132,9 +133,10 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     return elements.get(id);
   };
   const buttons = [3, 6].map(keys => Object.assign(new Element(), { dataset: { variant: String(keys) } }));
+  const tabs = ['latest', 'previous', 'custom'].map(source => Object.assign(element(`tab-${source}`), { dataset: { source } }));
   const device = new FakeBootloader();
   const replacements = {
-    document: { getElementById: element, querySelectorAll: () => buttons, createElement: () => new Element() },
+    document: { getElementById: element, querySelectorAll: selector => selector === '[data-source]' ? tabs : buttons, createElement: () => new Element() },
     window: { isSecureContext: true, location: { search: '' }, addEventListener() {} },
     navigator: { platform: 'MacIntel', usb: { requestDevice: async () => device, addEventListener() {} } },
     fetch: async path => new Response(await readFile(new URL(`../dist/${path.slice(2)}`, import.meta.url))),
@@ -169,7 +171,8 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.equal(element('install').disabled, true);
     assert.equal(buttons[1].attributes['aria-pressed'], 'true');
     assert.match(element('firmware-info').textContent, /6-key/);
-    const previous = manifest.previousFirmware.find(entry => entry.keys === 6 && entry.formatVersion === 9);
+    await element('tab-previous').emit('click');
+    const previous = previousReleases(manifest, 6).find(entry => entry.formatVersion === 9);
     const selector = element('firmware-release');
     confirmation.checked = true;
     selector.value = previous.name; await selector.emit('change');
@@ -208,10 +211,10 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     confirmation.checked = true;
     await confirmation.emit('change');
     await element('install').emit('click');
-    assert.equal(element('status').textContent, 'Firmware programmed and verified.');
+    assert.equal(element('status').textContent, 'Firmware programmed and verified');
     const successLink = element('status').children.find(child => typeof child !== 'string');
     assert.equal(successLink.href, expectedConfiguratorPath(previous.formatVersion));
-    assert.equal(successLink.textContent, 'Open the macropad configurator to load or save your profile');
+    assert.equal(successLink.textContent, 'Open the Macropad Configurator');
   } finally {
     for (const [key, descriptor] of Object.entries(originals)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -225,14 +228,15 @@ test('unsupported browsers replace the top beta notice before firmware loading',
     const elements = new Map();
     const element = id => {
       if (!elements.has(id)) elements.set(id, {
-        disabled: true, attributes: {},
+        disabled: true, attributes: {}, dataset: {},
+        append() {}, replaceChildren() {},
         setAttribute(name, value) { this.attributes[name] = value; },
         addEventListener() {},
       });
       return elements.get(id);
     };
     const replacements = {
-      document: { getElementById: element, querySelectorAll: () => [] },
+      document: { getElementById: element, querySelectorAll: () => [], createElement: () => element('created') },
       window: { isSecureContext: scenario !== 'insecure', location: { search: '' } },
       navigator: { platform: 'MacIntel', ...(scenario === 'insecure' ? { usb: {} } : {}) },
       fetch: async path => {
@@ -251,8 +255,8 @@ test('unsupported browsers replace the top beta notice before firmware loading',
       }
       await import(`../dist/app.mjs?compatibility=${scenario}`);
       assert.equal(element('notice-title').textContent, scenario === 'insecure'
-        ? 'A secure connection is required to install firmware'
-        : 'Unable to install firmware');
+        ? 'A Secure Connection Is Required to Install Firmware'
+        : 'Unable to Install Firmware');
       assert.equal(element('connect').disabled, true);
       assert.equal(element('install').disabled, true);
     } finally {
@@ -434,4 +438,17 @@ test('historical selection retains the default release and cannot cross board va
     }
     assert.equal(selectedFirmware(manifest, keys, 'missing'), undefined);
   }
+});
+
+test('previous release choices show each version once and select its newest build', () => {
+  for (const keys of [3, 6]) {
+    const choices = previousReleases(manifest, keys);
+    assert.deepEqual(choices.map(entry => entry.formatVersion), [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    for (const entry of choices) {
+      const builds = firmwareChoices(manifest, keys).filter(build => build.formatVersion === entry.formatVersion);
+      assert.ok(builds.every(build => build.publishedAt <= entry.publishedAt));
+      assert.ok(manifest.releaseNotes[entry.formatVersion]?.length);
+    }
+  }
+  assert.match(manifest.releaseNotes[11], /32ms/);
 });

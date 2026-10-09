@@ -3,86 +3,125 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Macropad Firmware Installer — Beta</title>
+  <title>Macropad Firmware Installer</title>
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.mjs"></script>
 </head>
 <body>
   <main>
-    <header><a href="../">← Macropad configurator</a><h1>Firmware installer <span class="badge">Beta</span></h1>
+    <header><a href="../">← Macropad Configurator</a><h1>Firmware Installer <span class="badge">Beta</span></h1>
       <p>Install the published firmware on a CH552 macropad using desktop Chrome or Edge. No PlatformIO or Arduino installation needed.</p>
     </header>
-    <aside id="compatibility-notice" class="beta"><strong id="notice-title">Beta prototype — macOS tested and verified.</strong> <span id="notice-message">Windows and Linux hardware validation is still pending, but should work after following Step 1</span></aside>
+    <aside id="compatibility-notice" class="beta" hidden><strong id="notice-title"></strong> <span id="notice-message"></span></aside>
 
     <section>
-      <h2>1. Prepare your computer</h2>
+      <h2>1. Prepare Your Computer</h2>
       <p>Choose your platform for USB access instructions. The bootloader is a separate USB device from your normal keyboard.</p>
       <details id="platform-windows" open><summary>Windows</summary>
+        <p class="validation-note">Windows hardware validation is still pending</p>
         <p>WebUSB requires the <strong>WinUSB</strong> driver for the bootloader. If connecting fails, download <a href="https://zadig.akeo.ie/" target="_blank" rel="noopener noreferrer">Zadig from its official site</a>.</p>
-        <ol><li>Put the macropad in bootloader mode using Step 2. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick</li><li>In Zadig, choose <strong>Options → List All Devices</strong>.</li><li>Select only the bootloader with USB ID <strong>4348:55E0</strong> (it may be called “Unknown device” or “USB Module”). Do not select your normal keyboard or “Universal Macropad”.</li><li>Select <strong>WinUSB</strong>, then Install/Replace Driver. Administrator access is required.</li><li>Return here and connect. This driver change may affect other native WCH programming tools.</li><li><strong>Optional: </strong> when you are done uploading the firmware, you can remove WinUSB following the <a href="https://github.com/pbatard/libwdi/wiki/faq#user-content-Help_Zadig_replaced_the_driver_for_the_wrong_device_How_do_I_restore_it" target="_blank">official Zadig guide</a>.</li></ol>
-        <p class="source">Sources: <a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#windows" target="_blank" rel="noopener noreferrer">Chrome: Windows WebUSB requirements</a> · <a href="https://github.com/pbatard/libwdi/wiki/Zadig" target="_blank" rel="noopener noreferrer">Official Zadig guide</a></p>
+        <ol><li>Put the macropad in bootloader mode using Step 2. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick</li><li>In Zadig, choose <strong>Options → List All Devices</strong>.</li><li>Select only the bootloader with USB ID <strong>4348:55E0</strong> (it may be called “Unknown device” or “USB Module”). Do not select your normal keyboard or “Universal Macropad”.</li><li>Select <strong>WinUSB</strong>, then <strong>Install/Replace Driver</strong>. Administrator access is required.</li><li>Return here and connect. This driver change may affect other native WCH programming tools.</li><li><strong>Optional: </strong> when you are done uploading the firmware, you can remove WinUSB following the <a href="https://github.com/pbatard/libwdi/wiki/faq#user-content-Help_Zadig_replaced_the_driver_for_the_wrong_device_How_do_I_restore_it" target="_blank" rel="noopener noreferrer">official Zadig guide</a>.</li></ol>
+        <p class="source">† <a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#windows" target="_blank" rel="noopener noreferrer">Chrome: Windows WebUSB requirements</a> / <a href="https://github.com/pbatard/libwdi/wiki/Zadig" target="_blank" rel="noopener noreferrer">Official Zadig guide</a></p>
       </details>
       <details id="platform-macos"><summary>macOS</summary>
         <p><strong>Tested and verified:</strong> firmware installation on macOS, including boot configuration readback, firmware verification, and preservation of on-device profiles in DataFlash.</p>
         <p>No additional USB driver is normally needed. Close other firmware upload tools that may be using the device, then connect its bootloader here.</p>
-        <p class="source">Source: <a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#macos" target="_blank" rel="noopener noreferrer">Chrome: macOS WebUSB requirements</a></p>
+        <p class="source">† <a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#macos" target="_blank" rel="noopener noreferrer">Chrome: macOS WebUSB requirements</a></p>
       </details>
       <details id="platform-linux"><summary>Linux</summary>
+        <p class="validation-note">Linux hardware validation is still pending</p>
         <p>If the picker lists the bootloader but opening it fails with a permission error, a udev rule may be needed. Ask your administrator to grant your account access to USB device <strong>4348:55e0</strong>.</p>
         <p>On systems with a <code>plugdev</code> group, put this device-specific rule in <code>/etc/udev/rules.d/70-ch552-bootloader.rules</code>:</p>
         <pre><code>SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="0660", GROUP="plugdev"</code></pre>
         <p>Ensure your account belongs to that group (check with <code>id -nG</code>). An administrator can add it with <code>sudo usermod -aG plugdev "$USER"</code>; log out and back in afterward. Group names vary by distribution.</p>
         <p>Reload rules with <code>sudo udevadm control --reload-rules</code>, then unplug the device and reconnect it in bootloader mode. Do not run your browser as root.</p>
-        <p class="source">Sources: <a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#linux" target="_blank" rel="noopener noreferrer">Chrome: Linux WebUSB permissions</a> · <a href="https://www.freedesktop.org/software/systemd/man/latest/udev.html" target="_blank" rel="noopener noreferrer">udev rule documentation</a> · <a href="https://www.freedesktop.org/software/systemd/man/latest/udevadm.html" target="_blank" rel="noopener noreferrer">udevadm documentation</a></p>
+        <p class="source">† <a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#linux" target="_blank" rel="noopener noreferrer">Chrome: Linux WebUSB permissions</a> / <a href="https://www.freedesktop.org/software/systemd/man/latest/udev.html" target="_blank" rel="noopener noreferrer">udev rule documentation</a> / <a href="https://www.freedesktop.org/software/systemd/man/latest/udevadm.html" target="_blank" rel="noopener noreferrer">udevadm documentation</a></p>
       </details>
     </section>
 
     <section>
-      <h2>2. Enter bootloader mode</h2>
-      <p>With firmware supporting the command, click <strong>Enter bootloader</strong> and select the running macropad. Then click <strong>Connect bootloader</strong>. You can always enter using this project's firmware by unplugging USB, holding the encoder button, and reconnecting USB while keeping it held. The LEDs will turn red.</p>
-      <p>With the stock firmware, follow the <a href="../README.md#how-to-upload-the-firmware" id="boot-guide">hardware bootloader instructions</a> on this project's GitHub page. This requires you to unscrew the acrylic plates and physically connect two pins with a button or metal tweezers.</p>
-      <p>Once in bootloader mode, your browser will allow you to connect to the macropad. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick.</p>
-      <p>Supported by this beta: <strong>CH552, bootloader versions 2.3.1-2.5.0</strong>.</p>
+      <h2>2. Enter Bootloader Mode</h2>
+      <p>Choose the instructions for your macropad, then follow the two steps below.</p>
+      <details><summary>Stock Macropad</summary>
+        <p>Follow the <a href="../README.md#how-to-upload-the-firmware" id="boot-guide">hardware bootloader instructions</a>. Remove the acrylic plates and connect the boot pins with a button or metal tweezers, then select <strong>Connect Bootloader</strong>.</p>
+      </details>
+      <details><summary>Macropad Running v11 or Earlier</summary>
+        <p>Unplug USB, hold the encoder button, and reconnect USB while keeping it held. The LEDs turn red. Then select <strong>Connect Bootloader</strong>.</p>
+      </details>
+      <details open><summary>Macropad Running v12+</summary>
+        <p>Select <strong>Enter Bootloader</strong> and choose the running macropad in the browser picker. When the command succeeds, select <strong>Connect Bootloader</strong> to connect to its separate USB bootloader.</p>
+        <p>You can also use the encoder method above.</p>
+      </details>
+      <p class="muted">Connect promptly: the chip exits bootloader mode after 8–10 seconds without communication.</p>
+      <p class="muted">This tool supports: CH552, bootloader versions 2.3.1-2.5.0</p>
       <div class="connection-controls">
-        <button id="enter-bootloader" type="button" disabled>Enter bootloader</button>
-        <button id="connect" type="button" disabled>Connect bootloader</button>
-        <button id="reboot" type="button" disabled>Disconnect and Reboot</button>
+        <div class="connection-step" id="entry-step">
+          <span class="step-number" aria-hidden="true">1</span>
+          <div><h3>Enter Bootloader</h3><p>Use the command below or the hardware instructions above.</p>
+            <button id="enter-bootloader" type="button" disabled>Enter Bootloader</button>
+            <p id="entry-status" class="muted" role="status">Waiting for bootloader entry</p>
+          </div>
+        </div>
+        <div class="connection-step" id="connect-step">
+          <span class="step-number" aria-hidden="true">2</span>
+          <div><h3>Connect Bootloader</h3><p>Select the CH55x USB bootloader (4348:55E0).</p>
+            <button id="connect" type="button" disabled>Connect Bootloader</button>
+            <p id="connection-status" class="muted" role="status">Connect after entering bootloader mode</p>
+          </div>
+        </div>
       </div>
-      <p id="device-info" class="muted">No bootloader connected.</p>
+      <div class="device-summary"><div id="device-info" class="device-info" aria-live="polite">No bootloader connected</div>
+        <button id="reboot" class="secondary" type="button" disabled>Disconnect and Reboot</button>
+      </div>
     </section>
 
     <section>
-      <h2>3. Choose firmware and install</h2>
-      <p>The bootloader does not know which type of board it's running on, so you must select the variant matching your macropad:</p>
-      <div class="variant-label" id="variant-label">Macropad variant</div>
-      <div class="segmented" role="group" aria-labelledby="variant-label">
-        <button type="button" data-variant="3" aria-pressed="true" disabled>3-key</button>
-        <button type="button" data-variant="6" aria-pressed="false" disabled>6-key</button>
+      <h2>3. Choose Firmware and Install</h2>
+      <div class="firmware-tabs" role="tablist" aria-label="Firmware source">
+        <button id="tab-latest" role="tab" aria-selected="true" aria-controls="panel-latest" data-source="latest" type="button">Latest Release</button>
+        <button id="tab-previous" role="tab" aria-selected="false" aria-controls="panel-previous" tabindex="-1" data-source="previous" type="button">Previous Release</button>
+        <button id="tab-custom" role="tab" aria-selected="false" aria-controls="panel-custom" tabindex="-1" data-source="custom" type="button">Custom Firmware</button>
       </div>
-      <details class="advanced-firmware">
-        <summary>Previous firmware releases (advanced)</summary>
-        <label for="firmware-release">Firmware release</label>
-        <select id="firmware-release" disabled><option value="latest">Latest release</option></select>
-        <p class="muted">Older versions may leave a newer profile inactive. Export a backup first, then use the matching configurator after installing.</p>
-      </details>
-      <div id="external-firmware" hidden>
-        <div id="hex-drop" class="hex-drop">
-          <label for="hex-file">External firmware HEX file</label>
-          <input id="hex-file" type="file" accept=".hex" disabled>
-          <p class="muted">Drop one .hex file here or choose a file. Select the correct board variant above.</p>
+      <div id="board-selection">
+        <div class="variant-label" id="variant-label">Macropad Variant</div>
+        <div class="segmented" role="group" aria-labelledby="variant-label">
+          <button type="button" data-variant="3" aria-pressed="true" disabled>3-Key</button>
+          <button type="button" data-variant="6" aria-pressed="false" disabled>6-Key</button>
         </div>
-        <button id="use-published" type="button" disabled>Use published firmware</button>
+        <p class="muted">Select the number of keys on your macropad. The bootloader cannot detect the board variant.</p>
       </div>
-      <p id="firmware-info" class="muted">Loading published firmware…</p>
-      <a id="download" hidden download>Download this HEX file</a>
-      <p>Installing replaces the application firmware and uses the CH55xDuino bootloader settings for P3.6 (D+) boot entry. Only install on a compatible CH552 macropad.</p>
-      <label class="variant-confirmation"><input id="confirm-variant" type="checkbox" disabled> I have selected the proper board variant</label>
+      <div id="panel-latest" role="tabpanel" aria-labelledby="tab-latest" tabindex="0">
+        <p class="muted">The latest published firmware, with a matching configurator for your profiles.</p>
+        <p id="latest-notes" class="release-notes"></p>
+      </div>
+      <div id="panel-previous" role="tabpanel" aria-labelledby="tab-previous" tabindex="0" hidden>
+        <label for="firmware-release">Previous Firmware Releases</label>
+        <select id="firmware-release" disabled></select>
+        <p id="release-notes" class="release-notes"></p>
+        <details class="release-history"><summary>Version History</summary><dl id="release-history"></dl></details>
+        <p class="muted">Export a profile backup before downgrading. Older firmware may leave newer profiles inactive; use the matching configurator afterward.</p>
+      </div>
+      <div id="panel-custom" role="tabpanel" aria-labelledby="tab-custom" tabindex="0" hidden>
+        <div id="hex-drop" class="hex-drop">
+          <label for="hex-file">Custom Firmware HEX File</label>
+          <input id="hex-file" type="file" accept=".hex" disabled>
+          <p class="muted">Drop one .hex file here or choose a file. Recognized builds show their version and board variant below.</p>
+        </div>
+      </div>
+      <div class="firmware-summary">
+        <p id="firmware-info" class="muted">Loading published firmware…</p>
+        <a id="download" hidden download>Download HEX File</a>
+      </div>
+      <p class="muted">Installation replaces the application firmware. Back up your profiles in the configurator before updating.</p>
+      <label class="variant-confirmation"><input id="confirm-variant" type="checkbox" disabled> <span id="confirmation-label">Choose firmware to confirm installation</span></label>
       <label id="unrecognized-warning" class="variant-confirmation" hidden><input id="confirm-unrecognized" type="checkbox" disabled> I understand that this is not recognized CH552 Macropad firmware and installing it may cause unexpected behavior and/or prevent me from entering bootloader mode</label>
-      <button id="install" type="button" disabled>Install firmware</button>
+      <button id="install" type="button" disabled>Install Firmware</button>
       <progress id="progress" max="100" value="0" aria-label="Firmware installation progress" hidden></progress>
-      <p id="status" role="status" aria-live="polite">Checking browser support...</p>
+      <p id="status" class="status-message" role="status" aria-live="polite">Checking browser support…</p>
     </section>
-    <footer>Based on <a href="https://github.com/DeqingSun/ch55xduino/tree/ch55xduino/bootloaderWebtool" target="_blank" rel="noopener noreferrer">Deqing Sun's CH55xDuino bootloader web tool</a>, with verification and packet alignment fixes. <a href="./README.md">Beta notes and attribution</a> · <a href="./upstream-LICENSE.txt">Upstream license</a> · <a href="./upstream-original.js">Original source</a> · <a href="./verification-fix.patch">Verification patch</a> · <a href="./packet-alignment-fix.patch">Alignment patch</a></footer>
+    <footer>Based on <a href="https://github.com/DeqingSun/ch55xduino/tree/ch55xduino/bootloaderWebtool" target="_blank" rel="noopener noreferrer">Deqing Sun's CH55xDuino bootloader web tool</a>, with verification and packet alignment fixes.<br>
+      <a href="./README.md">Beta notes and attribution</a> · <a href="./upstream-LICENSE.txt">Upstream license</a> · <a href="./upstream-original.js">Original source</a> · <a href="./verification-fix.patch">Verification patch</a> · <a href="./packet-alignment-fix.patch">Alignment patch</a>
+    </footer>
   </main>
 </body>
 </html>
