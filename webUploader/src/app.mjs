@@ -39,12 +39,6 @@ const currentOS = /mac/i.test(platform) ? 'macos' : /linux/i.test(platform) ? 'l
 for (const os of ['windows', 'macos', 'linux']) $(`platform-${os}`).open = os === currentOS;
 
 function report(text, state = busy ? 'working' : 'info') {
-  const installationFeedback = state === 'working' || state === 'error'
-    || text === 'Firmware programmed and verified' || text.startsWith('Restart command sent');
-  const selectionStatus = $('selection-status'), installationStatus = $('installation-status');
-  selectionStatus.hidden = installationFeedback;
-  installationStatus.hidden = !installationFeedback;
-  (installationFeedback ? installationStatus : selectionStatus).append(status);
   status.textContent = text.replace(/ · /g, ' / ').replace(/\.$/, '');
   const entryPrompt = 'Enter bootloader mode';
   if (status.textContent.startsWith(entryPrompt)) {

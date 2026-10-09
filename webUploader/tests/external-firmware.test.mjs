@@ -246,6 +246,5 @@ test('validated custom firmware prompts for a bootloader connection before insta
   assert.equal(p.node('install').disabled, true);
   assert.match(p.node('status').textContent, /Enter bootloader mode, then select Connect Bootloader/);
   assert.equal(p.node('selection-status').hidden, false);
-  assert.equal(p.node('installation-status').hidden, true);
   assert.match(p.node('profile-impact').textContent, /may not support your existing profile/);
 });

@@ -114,6 +114,7 @@ function session(device, timeout = 1000) {
 
 test('UI defaults to 3-key and requires renewed confirmation after changing variants', async () => {
   class Element {
+    hidden = false;
     disabled = true;
     checked = false;
     dataset = {};
@@ -233,8 +234,7 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     await confirmation.emit('change');
     await element('install').emit('click');
     assert.equal(element('status').textContent, 'Firmware programmed and verified');
-    assert.equal(element('selection-status').hidden, true);
-    assert.equal(element('installation-status').hidden, false);
+    assert.equal(element('selection-status').hidden, false);
     const successLink = element('status').children.find(child => typeof child !== 'string');
     assert.equal(successLink.target, '_blank');
     assert.equal(successLink.href, expectedConfiguratorPath(previous.formatVersion));
@@ -376,6 +376,62 @@ test('0x0040 alone is insufficient; matching effective options permit installati
   const init = commands.indexOf(0xa8);
   assert.deepEqual(commands.slice(init, init + 4), [0xa8, 0xa7, 0xa3, 0xa4]);
   assert.equal(commands.at(-1), 0xa2);
+});
+
+const observedConfigReadback = Uint8Array.from(
+  'a7 fb 1a 00 1f 00 ff ff ff ff 03 00 00 00 ff 52 5d 73 00 02 05 00 83 5d 42 be 00 00 00 00'
+    .split(' '), byte => parseInt(byte, 16));
+
+test('observed CH552 v2.5.0 readback with second byte 0xFB permits a verified firmware upload', async () => {
+  for (const keys of [3, 6]) {
+    const device = new FakeBootloader(), client = session(device);
+    device.version = [2, 5, 0];
+    device.id = [...observedConfigReadback.slice(22, 26)];
+    const receive = device.transferIn.bind(device);
+    device.transferIn = async endpoint => {
+      const result = await receive(endpoint);
+      if (device.packet[0] === 0xa7) {
+        const bytes = observedConfigReadback.slice();
+        result.data = new DataView(bytes.buffer);
+      }
+      return result;
+    };
+    const entry = selectedFirmware(manifest, keys, 'latest');
+    const hex = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url), 'utf8');
+    const image = parseHex(hex);
+    await client.connect();
+    await client.flash(image);
+    assert.deepEqual(device.flash.slice(0, image.length), image);
+    assert.ok(device.commands.some(packet => packet[0] === 0xa6));
+    assert.equal(device.commands.at(-1)[0], 0xa2);
+    assert.equal(device.opened, false);
+  }
+});
+
+test('nonzero second A7 byte still rejects malformed or mismatched readback before programming', async () => {
+  for (const [reason, damage] of [
+    ['unexpected reply command', bytes => { bytes[0] = 0xa8; }],
+    ['invalid reply length', bytes => { bytes[2] = 21; }],
+    ['invalid reply length', bytes => { bytes[2] = 27; }],
+    ['missing configuration fields', bytes => { bytes[4] = 1; }],
+    ['boot options did not match', bytes => { bytes[10] = 2; }],
+  ]) {
+    const device = new FakeBootloader(), client = session(device);
+    await client.connect();
+    const receive = device.transferIn.bind(device);
+    device.transferIn = async endpoint => {
+      const result = await receive(endpoint);
+      if (device.packet[0] === 0xa7) {
+        const bytes = observedConfigReadback.slice();
+        damage(bytes);
+        result.data = new DataView(bytes.buffer);
+      }
+      return result;
+    };
+    await assert.rejects(client.flash(new Uint8Array(64)), new RegExp(`Configuration readback failed: ${reason}`));
+    assert.equal(device.commands.some(packet => [0xa3, 0xa4, 0xa5, 0xa6, 0xa2].includes(packet[0])), false);
+    assert.equal(device.opened, false);
+  }
 });
 
 test('initialization failure reports the actual reply and stops before erase', async () => {
