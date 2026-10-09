@@ -72,7 +72,11 @@ custom file's origin.
 
 **Enter Bootloader** uses
 WebHID to check the running device's normal GET_INFO identity, then sends opcode
-`0x0A` and waits for its empty acknowledgement. It changes no saved profile.
+`0x0A` and waits for its empty acknowledgement. Before sending the command,
+the installer defaults the published firmware's board selector to the key count
+reported by that identity. You can still change the selector if the installed
+firmware's variant does not match your hardware. Detection does not require a
+valid saved profile and changes no saved profile.
 Click **Connect Bootloader** afterward to select the separate WebUSB device.
 Unsupported firmware reports an error and can use encoder-held-at-power-up
 entry instead. No automatic retry occurs after a missing acknowledgement.

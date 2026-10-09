@@ -1,5 +1,5 @@
 // WebHID payloads exclude the report ID. This uses the normal transport-v1 protocol.
-export async function enterBootloader(hid, timeoutMs = 3000) {
+export async function enterBootloader(hid, { timeoutMs = 3000, onInfo = () => {} } = {}) {
   const devices = await hid.requestDevice({ filters: [
     { vendorId: 0x1209, productId: 0xc55d, usagePage: 0xff00, usage: 1 },
   ] });
@@ -15,12 +15,12 @@ export async function enterBootloader(hid, timeoutMs = 3000) {
         if (bytes.length !== 31 || bytes[0] !== 0x55 || bytes[1] !== 0x4d ||
             bytes[2] !== 1 || bytes[3] !== opcode || bytes[4] !== sequence) return;
         if (bytes[5] || bytes[6] > 23) reject(new Error('Invalid HID reply.'));
-        else if (bytes[7] === 2) reject(new Error('This firmware does not support the bootloader command. Hold the encoder while reconnecting USB.'));
+        else if (bytes[7] === 2) reject(new Error('This firmware does not support the bootloader command. Hold the encoder button while reconnecting USB.'));
         else if (bytes[7]) reject(new Error(`Macropad rejected the command (status ${bytes[7]}).`));
         else resolve(bytes.slice(8, 8 + bytes[6]));
       };
       device.addEventListener('inputreport', listener);
-      timer = setTimeout(() => reject(new Error('No HID acknowledgement. Hold the encoder while reconnecting USB if needed.')), timeoutMs);
+      timer = setTimeout(() => reject(new Error('No HID acknowledgement. Hold the encoder button while reconnecting USB if needed.')), timeoutMs);
     });
     reply.catch(() => {}); // Also handle a synchronous sendReport failure.
     try {
@@ -40,10 +40,14 @@ export async function enterBootloader(hid, timeoutMs = 3000) {
     if (info.length !== 14 || info[0] !== 0x55 || info[1] !== 0x4d ||
         info[2] !== 0x41 || info[3] !== 0x43 || info[4] !== 1 || info[6] > 1 ||
         info[7] !== (info[6] ? 3 : 6) || info[8] !== info[7] || info[10] !== 128) {
-      throw new Error('Unrecognized macropad reply. Hold the encoder while reconnecting USB.');
+      throw new Error('Unrecognized macropad reply. Hold the encoder button while reconnecting USB.');
     }
+    const identity = { formatVersion: info[5], variant: info[6], keys: info[7] };
+    // Let the page select and load matching firmware before the device restarts.
+    await onInfo(identity);
     const reply = await request(0x0a, 2);
     if (reply.length) throw new Error('Unexpected bootloader acknowledgement.');
+    return identity;
   } finally {
     // USB disappearance after acknowledgement is expected.
     if (device.opened) await device.close().catch(() => {});

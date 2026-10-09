@@ -1010,6 +1010,19 @@ output {
 .footer > span {
   white-space: nowrap;
 }
+.footer-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer-version {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
 .footer > .muted {
   min-width: 0;
   overflow: hidden;

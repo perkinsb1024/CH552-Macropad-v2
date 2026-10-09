@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { enterBootloader } from '../src/hid-bootloader.mjs';
 
-function fakeHid(mode = 'success') {
+function fakeHid(mode = 'success', keys = 6) {
   const listeners = new Set(), commands = [];
   const device = {
     opened: false, closes: 0,
@@ -22,7 +22,7 @@ function fakeHid(mode = 'success') {
       bytes.set(payload.slice(0, 5));
       if (payload[3] === 1) {
         bytes[6] = 14;
-        bytes.set([0x55, 0x4d, 0x41, 0x43, 1, 12, 0, 6, 6, 5, 128, 3, 255, 255], 8);
+        bytes.set([0x55, 0x4d, 0x41, 0x43, 1, 12, keys === 3 ? 1 : 0, keys, keys, keys === 3 ? 7 : 5, 128, 3, 255, 255], 8);
         if (mode === 'identity') bytes[8] = 0;
       } else {
         if (mode === 'unsupported') bytes[7] = 2;
@@ -45,9 +45,16 @@ function fakeHid(mode = 'success') {
   } };
 }
 
-test('identifies normal firmware and acknowledges opcode 0x0A', async () => {
-  const hid = fakeHid();
-  await enterBootloader(hid);
+for (const keys of [3, 6]) test(`identifies ${keys}-key firmware before sending opcode 0x0A`, async () => {
+  const hid = fakeHid('success', keys);
+  const identity = { formatVersion: 12, variant: keys === 3 ? 1 : 0, keys };
+  const result = await enterBootloader(hid, { onInfo: async info => {
+    assert.deepEqual(info, identity);
+    assert.deepEqual(hid.commands, [1]);
+    await Promise.resolve();
+    assert.deepEqual(hid.commands, [1]);
+  } });
+  assert.deepEqual(result, identity);
   assert.deepEqual(hid.commands, [1, 10]);
   assert.equal(hid.device.closes, 1);
   assert.equal(hid.listeners.size, 0);
@@ -60,8 +67,11 @@ for (const [mode, message] of [
   ['cancel', /No macropad/],
 ]) test(`handles ${mode} and releases the HID device`, async () => {
   const hid = fakeHid(mode);
-  await assert.rejects(enterBootloader(hid, 10), message);
+  let detected = null;
+  await assert.rejects(enterBootloader(hid, { timeoutMs: 10, onInfo: info => { detected = info; } }), message);
   assert.equal(hid.listeners.size, 0);
   assert.equal(hid.device.opened, false);
   if (mode === 'identity') assert.deepEqual(hid.commands, [1]);
+  if (['identity', 'timeout', 'send-failure', 'cancel'].includes(mode)) assert.equal(detected, null);
+  if (mode === 'unsupported') assert.equal(detected.keys, 6);
 });

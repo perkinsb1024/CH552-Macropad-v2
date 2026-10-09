@@ -14,7 +14,11 @@ const variantButtons = Array.from(document.querySelectorAll('[data-variant]'));
 const sourceTabs = Array.from(document.querySelectorAll('[data-source]'));
 let source = 'latest', selectedVariant = 3, selectedRelease = 'latest';
 let manifest, firmware = null, loadedEntry = null, localFile = null, busy = false;
-let entryState = 'idle';
+let entryState = 'idle', pendingOperations = 0;
+let historyButtons = [];
+// Firmware loading can overlap startup and HID entry; release controls only when all finish.
+function beginOperation() { busy = ++pendingOperations > 0; }
+function endOperation() { busy = --pendingOperations > 0; }
 const repository = 'https://github.com/perkinsb1024/CH552-Macropad-v2';
 $('boot-guide').href = `${repository}#how-to-upload-the-firmware`;
 const supported = window.isSecureContext && 'usb' in navigator;
@@ -35,7 +39,20 @@ const currentOS = /mac/i.test(platform) ? 'macos' : /linux/i.test(platform) ? 'l
 for (const os of ['windows', 'macos', 'linux']) $(`platform-${os}`).open = os === currentOS;
 
 function report(text, state = busy ? 'working' : 'info') {
+  const installationFeedback = state === 'working' || state === 'error'
+    || text === 'Firmware programmed and verified' || text.startsWith('Restart command sent');
+  const selectionStatus = $('selection-status'), installationStatus = $('installation-status');
+  selectionStatus.hidden = installationFeedback;
+  installationStatus.hidden = !installationFeedback;
+  (installationFeedback ? installationStatus : selectionStatus).append(status);
   status.textContent = text.replace(/ · /g, ' / ').replace(/\.$/, '');
+  const entryPrompt = 'Enter bootloader mode';
+  if (status.textContent.startsWith(entryPrompt)) {
+    const remainder = status.textContent.slice(entryPrompt.length);
+    const link = document.createElement('a');
+    link.href = '#connection'; link.textContent = entryPrompt;
+    status.replaceChildren(link, remainder);
+  }
   status.dataset.state = state;
   const match = /^(flash|verify) package (\d+) of (\d+)$/.exec(text);
   if (match) {
@@ -70,7 +87,9 @@ function confirmationLabel() {
     const span = document.createElement('span'); span.className = 'firmware-pill'; span.textContent = text; return span;
   };
   if (Number.isInteger(loadedEntry?.formatVersion)) {
-    label.append('I confirm that I want to install ', pill(`v${loadedEntry.formatVersion}`), ' for a ', pill(`${loadedEntry.keys}-key`), ' macropad');
+    const versionPill = pill(`v${loadedEntry.formatVersion}`);
+    if (source === 'previous') versionPill.className += ' previous';
+    label.append('I confirm that I want to install ', versionPill, ' for a ', pill(`${loadedEntry.keys}-key`), ' macropad');
   } else {
     label.textContent = 'I confirm that I want to install this custom firmware on my CH552 macropad';
   }
@@ -93,12 +112,24 @@ function controls() {
     $(`panel-${tab.dataset.source}`).hidden = !active;
   }
   $('board-selection').hidden = source === 'custom';
+  const recommendation = $('release-recommendation');
+  recommendation.dataset.tone = source === 'latest' ? 'success' : 'warning';
+  recommendation.textContent = source === 'latest'
+    ? 'This version is recommended for most situations'
+    : 'The latest version is recommended for most situations';
   $('unrecognized-warning').hidden = source !== 'custom' || !firmware || Number.isInteger(loadedEntry?.formatVersion);
   releaseSelector.disabled = !manifest || busy || source !== 'previous';
   variantConfirmation.disabled = busy || !firmware;
   install.disabled = busy || !session?.ready || !canInstall();
   $('entry-step').dataset.state = session?.ready ? 'success' : entryState;
   $('connect-step').dataset.state = session?.ready ? 'success' : entryState === 'success' ? 'next' : 'idle';
+  for (const button of historyButtons) button.disabled = busy;
+  $('profile-impact').textContent = source === 'previous'
+    ? 'Installation replaces the application firmware, and your existing profile will no longer be valid.'
+    : source === 'custom'
+      ? 'Installation replaces the application firmware, and may not support your existing profile.'
+      : 'Installation replaces the application firmware.';
+  $('profile-migration').hidden = source !== 'latest';
   confirmationLabel();
 }
 function releaseChoices() {
@@ -111,8 +142,25 @@ function releaseChoices() {
   if (source === 'previous' && !entries.some(entry => entry.name === selectedRelease)) selectedRelease = entries[0]?.name ?? '';
   releaseSelector.value = selectedRelease;
   $('release-history').replaceChildren();
-  for (const entry of entries) {
-    const version = document.createElement('dt'); version.textContent = `v${entry.formatVersion}`;
+  historyButtons = [];
+  const latest = selectedFirmware(manifest, selectedVariant, 'latest');
+  const history = latest ? [latest, ...entries.filter(entry => entry.formatVersion !== latest.formatVersion)] : entries;
+  for (const entry of history) {
+    const version = document.createElement('dt');
+    const button = document.createElement('button');
+    button.type = 'button'; button.textContent = `v${entry.formatVersion}`;
+    button.className = `history-version${entry === latest ? '' : ' previous'}`;
+    button.setAttribute('aria-label', `Select v${entry.formatVersion}${entry === latest ? ' (latest release)' : ''}`);
+    button.addEventListener('click', async () => {
+      if (busy) return;
+      source = entry === latest ? 'latest' : 'previous';
+      selectedRelease = entry === latest ? 'latest' : entry.name;
+      releaseSelector.value = selectedRelease;
+      await loadFirmware();
+      if (source === 'latest') $('tab-latest').focus();
+    });
+    historyButtons.push(button);
+    version.append(button);
     const notes = document.createElement('dd'); notes.textContent = manifest.releaseNotes?.[entry.formatVersion] ?? 'Published firmware release';
     $('release-history').append(version, notes);
   }
@@ -126,7 +174,8 @@ async function loadFirmware() {
     $('firmware-info').textContent = 'No published firmware is available for this selection';
     controls(); return;
   }
-  busy = true;
+  const stillSelected = () => source !== 'custom' && selectedFirmware(manifest, selectedVariant, selectedRelease) === entry;
+  beginOperation();
   $('firmware-info').textContent = 'Loading and checking firmware…';
   controls();
   try {
@@ -137,24 +186,24 @@ async function loadFirmware() {
     if (digest !== entry.sha256) throw new Error('Firmware checksum does not match this published release. Reload the page.');
     const image = parseHex(new TextDecoder().decode(content));
     if (image.length !== entry.bytes) throw new Error('Firmware size does not match the release manifest.');
+    if (!stillSelected()) return;
     firmware = image;
     loadedEntry = entry;
     $('firmware-info').textContent = `v${entry.formatVersion} for a ${entry.keys}-key macropad\n${entry.name}\n${firmware.length.toLocaleString()} application bytes`;
     $('download').href = `./firmware/${entry.name}`;
     $('download').download = entry.name;
     $('download').hidden = false;
-    const notes = manifest.releaseNotes?.[entry.formatVersion] ?? '';
-    $(source === 'latest' ? 'latest-notes' : 'release-notes').textContent = notes;
     report(session?.ready ? 'Bootloader connected. Review your firmware selection and confirm to install' : 'Enter bootloader mode, then select Connect Bootloader', 'info');
   } catch (error) {
+    if (!stillSelected()) return;
     firmware = loadedEntry = null;
     $('firmware-info').textContent = 'Firmware could not be loaded';
     report(error.message, 'error');
-  } finally { busy = false; controls(); }
+  } finally { endOperation(); controls(); }
 }
 async function loadLocal(file) {
   if (source !== 'custom' || busy) return;
-  busy = true;
+  beginOperation();
   localFile = file;
   firmware = loadedEntry = null;
   resetConfirmations();
@@ -167,12 +216,14 @@ async function loadLocal(file) {
     loadedEntry = result.entry;
     $('unrecognized-warning').hidden = result.identified;
     $('firmware-info').textContent = `${result.identified ? `v${loadedEntry.formatVersion} for a ${loadedEntry.keys}-key macropad` : 'Board variant unknown'}\n${file.name}\n${firmware.length.toLocaleString()} application bytes`;
-    report(result.identified ? 'Custom firmware validated. Review the detected board variant and confirm to install' : 'Custom HEX validated. Confirm that this firmware is compatible with your hardware', 'info');
+    report(!session?.ready ? 'Enter bootloader mode, then select Connect Bootloader'
+      : result.identified ? 'Custom firmware validated. Review the detected board variant and confirm to install'
+      : 'Custom HEX validated. Confirm that this firmware is compatible with your hardware', 'info');
   } catch (error) {
     firmware = loadedEntry = null;
     $('firmware-info').textContent = 'Custom firmware could not be loaded';
     report(error.message, 'error');
-  } finally { busy = false; controls(); }
+  } finally { endOperation(); controls(); }
 }
 async function selectSource(next) {
   if (busy || source === next) return;
@@ -226,12 +277,15 @@ dropZone.addEventListener('drop', event => {
 });
 $('enter-bootloader').addEventListener('click', async () => {
   if (busy || !window.isSecureContext || !navigator.hid || session?.ready) return;
-  busy = true; entryState = 'working';
+  beginOperation(); entryState = 'working';
   $('entry-status').textContent = 'Select the running macropad in the HID picker';
   $('entry-status').dataset.state = 'working';
   controls(); progress.hidden = true;
   try {
-    await enterBootloader(navigator.hid);
+    await enterBootloader(navigator.hid, { onInfo: async ({ keys }) => {
+      $('entry-status').textContent = `${keys}-key firmware identified. Preparing bootloader entry…`;
+      await selectVariant(keys);
+    } });
     entryState = 'success';
     $('entry-status').textContent = 'Bootloader entry command succeeded';
     $('entry-status').dataset.state = 'success';
@@ -244,17 +298,22 @@ $('enter-bootloader').addEventListener('click', async () => {
     connectionMessage('Use the hardware instructions above, then connect');
     report(error.message, 'error');
   } finally {
-    busy = false; controls();
+    endOperation(); controls();
     if (entryState === 'success' && supported) connect.focus();
   }
 });
+async function selectVariant(keys) {
+  if (keys === selectedVariant) return;
+  const version = loadedEntry?.formatVersion;
+  selectedVariant = keys;
+  if (source === 'custom' || !manifest) { controls(); return; }
+  selectedRelease = source === 'latest' ? 'latest' : previousReleases(manifest, selectedVariant).find(entry => entry.formatVersion === version)?.name ?? '';
+  releaseChoices(); await loadFirmware();
+}
 for (const button of variantButtons) {
   button.addEventListener('click', async () => {
     if (busy || source === 'custom' || !manifest || Number(button.dataset.variant) === selectedVariant) return;
-    const version = loadedEntry?.formatVersion;
-    selectedVariant = Number(button.dataset.variant);
-    selectedRelease = source === 'latest' ? 'latest' : previousReleases(manifest, selectedVariant).find(entry => entry.formatVersion === version)?.name ?? '';
-    releaseChoices(); await loadFirmware();
+    await selectVariant(Number(button.dataset.variant));
   });
 }
 releaseSelector.addEventListener('change', () => {
@@ -265,7 +324,7 @@ variantConfirmation.addEventListener('change', controls);
 unknownConfirmation.addEventListener('change', controls);
 connect.addEventListener('click', async () => {
   if (!supported || busy || session.ready) return;
-  busy = true; controls(); progress.hidden = true;
+  beginOperation(); controls(); progress.hidden = true;
   connectionMessage('Select the CH55x bootloader in the USB picker', 'working');
   try {
     const info = await session.connect();
@@ -280,7 +339,7 @@ connect.addEventListener('click', async () => {
     deviceMessage('Bootloader connection failed', 'error');
     connectionMessage('Connection failed. Re-enter bootloader mode and try again', 'error');
     report(`${error.message} Check the platform instructions above if USB access failed.`, 'error');
-  } finally { busy = false; controls(); }
+  } finally { endOperation(); controls(); }
 });
 function closedConnection(message, state = 'info') {
   entryState = 'idle';
@@ -291,7 +350,7 @@ function closedConnection(message, state = 'info') {
 }
 reboot.addEventListener('click', async () => {
   if (busy || !session?.ready) return;
-  busy = true; controls(); progress.hidden = true;
+  beginOperation(); controls(); progress.hidden = true;
   report('Sending the restart command…');
   try {
     await session.reboot();
@@ -300,11 +359,11 @@ reboot.addEventListener('click', async () => {
   } catch (error) {
     closedConnection('Bootloader disconnected', 'error');
     report(`Could not confirm the restart command: ${error.message} Unplug and reconnect USB to restart the device.`, 'error');
-  } finally { busy = false; controls(); }
+  } finally { endOperation(); controls(); }
 });
 install.addEventListener('click', async () => {
   if (busy || !session?.ready || !canInstall()) return;
-  busy = true; controls(); progress.value = 0; progress.hidden = false;
+  beginOperation(); controls(); progress.value = 0; progress.hidden = false;
   report('Preparing the bootloader and checking boot configuration…');
   try {
     await session.flash(firmware);
@@ -318,13 +377,15 @@ install.addEventListener('click', async () => {
     if (path) {
       const configuratorLink = document.createElement('a');
       configuratorLink.href = path;
+      configuratorLink.target = '_blank';
+      configuratorLink.rel = 'noopener noreferrer';
       configuratorLink.textContent = 'Open the Macropad Configurator';
       status.append(' ', configuratorLink);
     }
   } catch (error) {
     closedConnection('Installation stopped. Re-enter bootloader mode before retrying', 'error');
     report(`Installation stopped: ${error.message}`, 'error');
-  } finally { busy = false; resetConfirmations(); controls(); }
+  } finally { endOperation(); resetConfirmations(); controls(); }
 });
 if (supported) {
   navigator.usb.addEventListener('disconnect', event => {

@@ -120,6 +120,8 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     attributes = {};
     handlers = {};
     children = [];
+    get textContent() { return this._textContent ?? ""; }
+    set textContent(value) { this._textContent = value; this.children = []; }
     append(...children) { this.children.push(...children); }
     replaceChildren(...children) { this.children = children; }
     setAttribute(name, value) { this.attributes[name] = value; }
@@ -156,6 +158,25 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.match(element('firmware-info').textContent, /3-key/);
     assert.equal(element('connect').disabled, false);
     assert.equal(element('reboot').disabled, true);
+    const historyVersions = element('release-history').children.filter((_, index) => index % 2 === 0).map(term => term.children[0]);
+    assert.equal(historyVersions[0].textContent, `v${selectedFirmware(manifest, 3, 'latest').formatVersion}`);
+    const historical = historyVersions.find(button => button.textContent === 'v9');
+    await historical.emit('click');
+    assert.equal(element('panel-previous').hidden, false);
+    assert.equal(element('release-recommendation').dataset.tone, 'warning');
+    assert.equal(element('release-recommendation').textContent, 'The latest version is recommended for most situations');
+    assert.match(element('firmware-info').textContent, /v9 for a 3-key/);
+    assert.match(element('profile-impact').textContent, /will no longer be valid/);
+    assert.equal(element('profile-migration').hidden, true);
+    const selectedVersion = element('confirmation-label').children.find(child => typeof child !== 'string');
+    assert.match(selectedVersion.className, /previous/);
+    assert.equal(element('status').children[0].href, '#connection');
+    await historyVersions[0].emit('click');
+    assert.equal(element('panel-latest').hidden, false);
+    assert.equal(element('release-recommendation').dataset.tone, 'success');
+    assert.equal(element('release-recommendation').textContent, 'This version is recommended for most situations');
+    assert.equal(element('profile-impact').textContent, 'Installation replaces the application firmware.');
+    assert.equal(element('profile-migration').hidden, false);
     await element('connect').emit('click');
     assert.equal(element('connect').disabled, true);
     assert.equal(element('reboot').disabled, false);
@@ -212,7 +233,10 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     await confirmation.emit('change');
     await element('install').emit('click');
     assert.equal(element('status').textContent, 'Firmware programmed and verified');
+    assert.equal(element('selection-status').hidden, true);
+    assert.equal(element('installation-status').hidden, false);
     const successLink = element('status').children.find(child => typeof child !== 'string');
+    assert.equal(successLink.target, '_blank');
     assert.equal(successLink.href, expectedConfiguratorPath(previous.formatVersion));
     assert.equal(successLink.textContent, 'Open the Macropad Configurator');
   } finally {
