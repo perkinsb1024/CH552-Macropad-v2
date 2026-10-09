@@ -230,7 +230,7 @@ async function selectSource(next) {
     $('firmware-info').textContent = 'Choose a HEX file to see its firmware details';
     controls();
     if (localFile) await loadLocal(localFile);
-    else report('Choose a custom firmware HEX file');
+    else report('Enter bootloader mode, then select Connect Bootloader');
   } else if (manifest) {
     selectedRelease = source === 'latest' ? 'latest' : previousReleases(manifest, selectedVariant).find(entry => entry.formatVersion === previousVersion)?.name ?? '';
     releaseChoices(); await loadFirmware();
