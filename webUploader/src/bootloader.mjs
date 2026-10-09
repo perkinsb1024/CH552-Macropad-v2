@@ -10,6 +10,8 @@ export class Ch552Bootloader {
     this.timeoutMs = timeoutMs;
     this.device = null;
     this.endpointOut = null;
+    this.endpointIn = null;
+    this.dataFlashTrace = [];
     this.busy = false;
     this.ready = false;
     this.core = createUpstream({
@@ -56,6 +58,7 @@ export class Ch552Bootloader {
         return result;
       },
       transferIn: async (endpoint, size) => {
+        this.endpointIn = endpoint;
         const result = await this.timed(device.transferIn(endpoint, size));
         const minLength = command === 0xa7 ? 26 : 6;
         if (result.status !== 'ok' || !result.data || result.data.byteLength < minLength) throw new Error('USB returned an incomplete bootloader response.');
@@ -134,11 +137,53 @@ export class Ch552Bootloader {
     }
   }
 
+  async readDataFlash() {
+    if (this.busy || !this.ready) throw new Error('Connect the bootloader first.');
+    this.busy = true;
+    this.dataFlashTrace = [];
+    try {
+      // WCH ISP DATA_READ: command, payload length (u16), logical address
+      // (u32), requested byte count (u16). No key/configuration write is needed.
+      const image = new Uint8Array(128);
+      for (let address = 0; address < image.length; address += 58) {
+        const count = Math.min(58, image.length - address);
+        const packet = new Uint8Array(9);
+        const request = new DataView(packet.buffer);
+        packet[0] = 0xab;
+        request.setUint16(1, 6, true);
+        request.setUint32(3, address, true);
+        request.setUint16(7, count, true);
+        const trace = { address, count, request: [...packet] };
+        this.dataFlashTrace.push(trace);
+        this.onStatus(`Reading DataFlash: ${address} of 128 bytes…`);
+        const sent = await this.timed(this.device.transferOut(this.endpointOut, packet.buffer));
+        if (sent.status !== 'ok' || sent.bytesWritten !== packet.length) throw new Error('DataFlash request failed or was incomplete.');
+        const received = await this.timed(this.device.transferIn(this.endpointIn, 64));
+        trace.usbStatus = received.status;
+        const data = received.data;
+        trace.reply = data ? [...new Uint8Array(data.buffer, data.byteOffset, data.byteLength)] : [];
+        const replyHex = trace.reply.map(byte => byte.toString(16).padStart(2, '0')).join(' ') || '(empty)';
+        const fail = reason => { throw new Error(`${reason} (address ${address}; reply: ${replyHex}).`); };
+        if (received.status !== 'ok' || !data || data.byteLength < 6) fail('Incomplete DataFlash response');
+        if (data.getUint8(0) !== 0xab || data.getUint8(1) !== 0) fail('Unrecognized DataFlash response header');
+        if (data.getUint16(4, true) !== 0) fail(`Bootloader rejected DataFlash read with status 0x${data.getUint16(4, true).toString(16)}`);
+        if (data.getUint16(2, true) !== count + 2 || data.byteLength !== count + 6) fail('Unexpected DataFlash response length');
+        image.set(new Uint8Array(data.buffer, data.byteOffset + 6, count), address);
+      }
+      return image;
+    } catch (error) {
+      // A failed/unsupported read may leave the USB exchange out of sync.
+      await this.disconnect();
+      throw error;
+    } finally { this.busy = false; }
+  }
+
   async disconnect() {
     this.ready = false;
     const device = this.device;
     this.device = null;
     this.endpointOut = null;
+    this.endpointIn = null;
     if (device?.opened) await this.timed(device.close()).catch(() => {});
   }
 }

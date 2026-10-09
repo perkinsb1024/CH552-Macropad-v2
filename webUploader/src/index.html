@@ -50,6 +50,15 @@
       </div>
       <p id="device-info" class="muted">No bootloader connected.</p>
       <p class="muted">HID entry requires diagnostic firmware supporting this command. Close configurator and monitoring connections, select the running macropad, then click Connect bootloader after it switches modes.</p>
+      <details>
+        <summary>Read DataFlash (experimental)</summary>
+        <p>Read the pad's 128 saved profile bytes from the connected bootloader. Support depends on its bootloader version and has not yet been verified on hardware. This operation does not erase, program, or restart the pad.</p>
+        <button id="read-dataflash" type="button" disabled>Read DataFlash</button>
+        <p id="dataflash-info" class="muted">Connect the bootloader before reading.</p>
+        <a id="dataflash-download" hidden download>Download DataFlash binary</a>
+        <a id="dataflash-trace" hidden download>Download read diagnostic log</a>
+        <pre id="dataflash-hex" hidden aria-label="DataFlash hex dump"></pre>
+      </details>
     </section>
 
     <section>

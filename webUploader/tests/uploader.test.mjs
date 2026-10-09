@@ -46,6 +46,7 @@ class FakeBootloader {
   configuration = null;
   commands = [];
   flash = new Uint8Array(CODE_LIMIT).fill(0xff);
+  dataFlash = Uint8Array.from({ length: 128 }, (_, i) => i ^ 0x5a);
   id = [1, 2, 3, 4];
   version = [2, 4, 0];
   chip = 0x52;
@@ -73,7 +74,7 @@ class FakeBootloader {
     assert.equal(endpoint, 2);
     const p = this.packet, cmd = p[0];
     if (cmd === this.hangOn) return new Promise(() => {});
-    const response = new Uint8Array(cmd === 0xa7 ? 30 : 6);
+    const response = new Uint8Array(cmd === 0xa7 ? 30 : cmd === 0xab ? 6 + p[7] : 6);
     response[0] = cmd;
     response[2] = response.length - 4;
     if (cmd === 0xa1) { response[4] = this.chip; response[5] = 0x11; }
@@ -87,6 +88,10 @@ class FakeBootloader {
       response.set([2, 0, 0x40, 0], 2);
     }
     else if (cmd === 0xa3) { response[4] = (8 * this.id.reduce((sum, byte) => sum + byte, 0) + this.chip) & 0xff; }
+    else if (cmd === 0xab) {
+      const request = new DataView(p.buffer, p.byteOffset, p.byteLength);
+      response.set(this.dataFlash.slice(request.getUint32(3, true), request.getUint32(3, true) + request.getUint16(7, true)), 6);
+    }
     else if (cmd === 0xa4) this.flash.fill(0xff);
     else if (cmd === 0xa5 || cmd === 0xa6) {
       const address = p[3] + p[4] * 256;
@@ -162,6 +167,15 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.equal(element('connect').disabled, true);
     assert.equal(element('reboot').disabled, false);
     assert.equal(element('install').disabled, true);
+    assert.equal(element('read-dataflash').disabled, false);
+    const readCommandCount = device.commands.length;
+    await element('read-dataflash').emit('click');
+    assert.deepEqual(device.commands.slice(readCommandCount).map(packet => packet[0]), [0xab, 0xab, 0xab]);
+    assert.equal(element('dataflash-download').hidden, false);
+    assert.equal(element('dataflash-trace').hidden, false);
+    assert.match(element('dataflash-info').textContent, /Read 128 bytes/);
+    assert.match(element('dataflash-hex').textContent, /^0000: 5a 5b/);
+    assert.equal(element('reboot').disabled, false);
     const confirmation = element('confirm-variant');
     confirmation.checked = true;
     await confirmation.emit('change');
@@ -290,6 +304,66 @@ test('reboot requires a connection and closes the session even if the restart tr
   assert.equal(client.ready, false);
   assert.equal(client.busy, false);
   assert.equal(device.commands.some(p => [0xa4, 0xa5, 0xa6].includes(p[0])), false);
+});
+
+test('DataFlash reads all 128 bytes without configuration, key, erase, write or reboot commands', async () => {
+  const device = new FakeBootloader(), client = session(device);
+  await assert.rejects(client.readDataFlash(), /Connect/);
+  assert.equal(device.commands.length, 0);
+  await client.connect();
+  const originalOptions = device.bootOptions;
+  const originalFlash = device.flash.slice();
+  const count = device.commands.length;
+  assert.deepEqual(await client.readDataFlash(), device.dataFlash);
+  assert.deepEqual(device.commands.slice(count).map(packet => [...packet]), [
+    [0xab, 6, 0, 0, 0, 0, 0, 58, 0],
+    [0xab, 6, 0, 58, 0, 0, 0, 58, 0],
+    [0xab, 6, 0, 116, 0, 0, 0, 12, 0],
+  ]);
+  assert.equal(client.dataFlashTrace.length, 3);
+  assert.equal(client.ready, true);
+  assert.equal(client.busy, false);
+  assert.equal(device.bootOptions, originalOptions);
+  assert.deepEqual(device.flash, originalFlash);
+  client.busy = true;
+  await assert.rejects(client.readDataFlash(), /Connect/);
+  client.busy = false;
+  await client.disconnect();
+});
+
+test('DataFlash rejects failed, malformed and unsupported responses without returning partial data', async () => {
+  for (const failure of ['short', 'timeout', 'status', 'header', 'length', 'trailing', 'stall', 'write', 'later-chunk']) {
+    const device = new FakeBootloader(), client = session(device, 10);
+    await client.connect();
+    const receive = device.transferIn.bind(device);
+    const send = device.transferOut.bind(device);
+    device.transferOut = async (endpoint, buffer) => {
+      const result = await send(endpoint, buffer);
+      return failure === 'write' ? { status: 'ok', bytesWritten: 1 } : result;
+    };
+    device.transferIn = async endpoint => {
+      if (failure === 'timeout') return new Promise(() => {});
+      const result = await receive(endpoint);
+      const data = result.data;
+      if (failure === 'short') result.data = new DataView(data.buffer, data.byteOffset, 3);
+      if (failure === 'status' || (failure === 'later-chunk' && device.packet[3] === 58)) data.setUint16(4, 0xfe, true);
+      if (failure === 'header') data.setUint8(0, 0xa7);
+      if (failure === 'length') data.setUint16(2, 1, true);
+      if (failure === 'trailing') {
+        const extra = new Uint8Array(data.byteLength + 1);
+        extra.set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+        result.data = new DataView(extra.buffer);
+      }
+      if (failure === 'stall') result.status = 'stall';
+      return result;
+    };
+    await assert.rejects(client.readDataFlash(), /DataFlash|Bootloader rejected|timed out/);
+    assert.equal(client.ready, false, failure);
+    assert.equal(client.busy, false, failure);
+    assert.equal(device.opened, false, failure);
+    assert.equal(client.dataFlashTrace.length, failure === 'later-chunk' ? 2 : 1);
+    assert.ok(device.commands.every(packet => [0xa1, 0xa7, 0xab].includes(packet[0])), failure);
+  }
 });
 
 for (const entry of [...manifest.firmware, ...manifest.previousFirmware]) {

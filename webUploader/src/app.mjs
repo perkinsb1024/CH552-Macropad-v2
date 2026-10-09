@@ -12,6 +12,21 @@ const variantConfirmation = $('confirm-variant');
 const releaseSelector = $('firmware-release');
 let selectedRelease = 'latest', loadedEntry = null;
 let localFile = null;
+let bootloaderInfo = null;
+const dataFlashUrls = [];
+function clearDataFlash() {
+  for (const url of dataFlashUrls) URL.revokeObjectURL(url);
+  dataFlashUrls.length = 0;
+  for (const id of ['dataflash-download', 'dataflash-trace', 'dataflash-hex']) $(id).hidden = true;
+  $('dataflash-info').textContent = 'Connect the bootloader before reading.';
+}
+function dataFlashDownload(id, content, name, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  dataFlashUrls.push(url);
+  $(id).href = url;
+  $(id).download = name;
+  $(id).hidden = false;
+}
 const variantButtons = Array.from(document.querySelectorAll('[data-variant]'));
 let selectedVariant = 3;
 const progress = $('progress');
@@ -53,6 +68,7 @@ function controls() {
   $('use-published').disabled = busy || !manifest || !localFile;
   connect.disabled = !supported || busy || !!session?.ready;
   reboot.disabled = busy || !session?.ready;
+  $('read-dataflash').disabled = busy || !session?.ready;
   for (const button of variantButtons) {
     button.disabled = (!manifest && !localFile) || busy;
     button.setAttribute('aria-pressed', String(Number(button.dataset.variant) === selectedVariant));
@@ -189,14 +205,52 @@ connect.addEventListener('click', async () => {
   controls();
   progress.hidden = true;
   report('Select the CH55x bootloader in the USB picker.');
+  clearDataFlash();
+  bootloaderInfo = null;
   try {
     const info = await session.connect();
+    bootloaderInfo = info;
     $('device-info').textContent = `CH552 · bootloader ${info.version} · chip ID ${info.id.map(b => b.toString(16).padStart(2, '0')).join('')}`;
-    report('Bootloader connected. Choose the correct firmware, then install.');
+    report('Bootloader connected. You can read DataFlash or choose firmware to install.');
   } catch (error) {
     $('device-info').textContent = 'No bootloader connected.';
     report(`${error.message} Check the platform instructions above if USB access failed.`);
   } finally { busy = false; controls(); }
+});
+
+$('read-dataflash').addEventListener('click', async () => {
+  if (busy || !session?.ready) return;
+  busy = true;
+  clearDataFlash();
+  controls();
+  progress.hidden = true;
+  const capturedUtc = new Date().toISOString();
+  const suffix = capturedUtc.replace(/[:.]/g, '-');
+  let readError = null;
+  try {
+    const image = await session.readDataFlash();
+    const lines = [];
+    for (let offset = 0; offset < image.length; offset += 16) {
+      const bytes = [...image.slice(offset, offset + 16)];
+      lines.push(`${offset.toString(16).padStart(4, '0')}: ${bytes.map(byte => byte.toString(16).padStart(2, '0')).join(' ')}  ${bytes.map(byte => byte >= 32 && byte < 127 ? String.fromCharCode(byte) : '.').join('')}`);
+    }
+    $('dataflash-hex').textContent = lines.join('\n');
+    $('dataflash-hex').hidden = false;
+    dataFlashDownload('dataflash-download', image, `ch552-dataflash-${suffix}.bin`, 'application/octet-stream');
+    $('dataflash-info').textContent = `Read 128 bytes at ${capturedUtc}. Compare this binary with an application HID capture to confirm the data.`;
+    report('DataFlash read completed. No firmware or saved data was written.');
+  } catch (error) {
+    readError = error.message;
+    $('dataflash-info').textContent = 'DataFlash read failed; no binary was exported. The diagnostic log contains the raw exchanges.';
+    $('device-info').textContent = 'Bootloader session closed. Re-enter bootloader mode before retrying.';
+    report(`DataFlash read stopped: ${error.message}`);
+  } finally {
+    dataFlashDownload('dataflash-trace', JSON.stringify({ schema: 1, capturedUtc, bootloader: bootloaderInfo,
+      complete: readError === null, error: readError, exchanges: session.dataFlashTrace }, null, 2) + '\n',
+      `ch552-dataflash-read-${suffix}.json`, 'application/json');
+    busy = false;
+    controls();
+  }
 });
 
 reboot.addEventListener('click', async () => {

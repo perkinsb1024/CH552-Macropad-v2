@@ -84,6 +84,36 @@ in addition to WebUSB and requires HTTPS or localhost in a supporting browser.
 Firmware without this command requires the encoder or hardware entry method.
 The new HID path has automated coverage but has not been validated on hardware.
 
+### Reading DataFlash From the Bootloader
+
+Enter bootloader mode and click **Connect bootloader**, then expand
+**Read DataFlash (experimental)** and click **Read DataFlash**. No firmware
+selection or board-variant confirmation is needed for this read. On success,
+the page displays a hex dump and offers **Download DataFlash binary** containing
+all 128 bytes. **Download read diagnostic log** exports the bootloader identity,
+timestamp, requests and raw replies, including exchanges preceding a failure.
+Files are generated locally in the browser.
+
+This path sends only ISP `DATA_READ` (`0xAB`) requests after the existing
+identification/configuration-read handshake. It does not set an encryption key,
+write boot options, erase or program flash, or restart the pad. It requests
+58, 58 and 12 bytes at logical offsets 0, 58 and 116. Replies must have the
+expected command header, zero status and exact requested length. A failed read
+closes the connection and offers no partial binary; re-enter bootloader mode
+and reconnect before retrying. A successful read keeps the session connected,
+so **Disconnect and Reboot** remains available.
+
+Bootloader DataFlash reading has automated coverage but has not been validated
+on these pads. Bootloader versions may reject the command or use a different
+reply layout; retain the diagnostic log if that happens. Even a well-formed
+reply should be compared byte for byte with a known application `READ_FLASH`
+capture to establish correct addressing and contents. The saved profile can
+include stored text, so the binary and diagnostic log can contain that text.
+
+Protocol references: [WCH ISP command definitions](https://github.com/ch32-rs/wchisp/blob/main/src/constants.rs),
+[request encoding](https://github.com/ch32-rs/wchisp/blob/main/src/protocol.rs), and
+[DataFlash read implementation](https://github.com/ch32-rs/wchisp/blob/main/src/flashing.rs).
+
 ### Windows
 
 WebUSB requires **WinUSB** on the bootloader interface. If necessary, download [Zadig from its official site](https://zadig.akeo.ie/), enter bootloader mode, enable **Options → List All Devices**, and select only USB ID `4348:55E0`. Choose **WinUSB** and Install/Replace Driver. Do not replace the normal keyboard/macropad driver. Administrator access may be needed, and the change may affect compatibility with other WCH programming tools.
