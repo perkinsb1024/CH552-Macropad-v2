@@ -2,6 +2,8 @@ import { Ch552Bootloader } from './bootloader.mjs';
 import { parseHex } from './hex.mjs';
 import { configuratorPath } from './firmware-format.mjs';
 import { firmwareChoices, selectedFirmware } from './firmware-list.mjs';
+import { localFirmware } from './local-firmware.mjs';
+import { enterDiagnosticBootloader } from './diagnostic-hid.mjs';
 
 const $ = id => document.getElementById(id);
 const status = $('status'), connect = $('connect'), install = $('install');
@@ -9,6 +11,7 @@ const reboot = $('reboot');
 const variantConfirmation = $('confirm-variant');
 const releaseSelector = $('firmware-release');
 let selectedRelease = 'latest', loadedEntry = null;
+let localFile = null;
 const variantButtons = Array.from(document.querySelectorAll('[data-variant]'));
 let selectedVariant = 3;
 const progress = $('progress');
@@ -45,13 +48,16 @@ function report(text) {
 
 const session = supported ? new Ch552Bootloader(navigator.usb, report) : null;
 function controls() {
+  $('enter-bootloader').disabled = busy || !!session?.ready || !window.isSecureContext || !navigator.hid;
+  $('hex-file').disabled = busy;
+  $('use-published').disabled = busy || !manifest || !localFile;
   connect.disabled = !supported || busy || !!session?.ready;
   reboot.disabled = busy || !session?.ready;
   for (const button of variantButtons) {
-    button.disabled = !manifest || busy;
+    button.disabled = (!manifest && !localFile) || busy;
     button.setAttribute('aria-pressed', String(Number(button.dataset.variant) === selectedVariant));
   }
-  releaseSelector.disabled = !manifest || busy;
+  releaseSelector.disabled = !manifest || busy || !!localFile;
   variantConfirmation.disabled = busy || !firmware;
   install.disabled = busy || !session?.ready || !firmware || !variantConfirmation.checked;
 }
@@ -100,13 +106,73 @@ async function loadFirmware() {
   } finally { busy = false; controls(); }
 }
 
+async function loadLocal(file) {
+  if (busy) return;
+  busy = true;
+  localFile = file;
+  firmware = loadedEntry = null;
+  variantConfirmation.checked = false;
+  $('download').hidden = true;
+  controls();
+  try {
+    if (file.size > 1024 * 1024) throw new Error('HEX text file is too large (maximum 1 MiB).');
+    const result = localFirmware(file.name, await file.text(), selectedVariant);
+    firmware = result.image;
+    loadedEntry = result.entry;
+    $('firmware-info').textContent = `${file.name} · ${firmware.length.toLocaleString()} application bytes · ${result.identified ? `v${loadedEntry.formatVersion}, ${loadedEntry.keys}-key identity` : 'No recognized identity; confirm hardware compatibility yourself'}`;
+    report('Local HEX validated. Confirm the board variant before installing.');
+  } catch (error) {
+    $('firmware-info').textContent = 'Local firmware could not be loaded.';
+    report(error.message);
+  } finally { busy = false; controls(); }
+}
+
+$('hex-file').addEventListener('change', event => {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (file) return loadLocal(file);
+});
+const dropZone = $('hex-drop');
+dropZone.addEventListener('dragover', event => {
+  event.preventDefault();
+  if (!busy) dropZone.classList.add('dragging');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+dropZone.addEventListener('drop', event => {
+  event.preventDefault();
+  dropZone.classList.remove('dragging');
+  if (busy) return;
+  const files = event.dataTransfer.files;
+  if (files.length !== 1) { report('Drop exactly one .hex file.'); return; }
+  return loadLocal(files[0]);
+});
+$('use-published').addEventListener('click', () => {
+  if (busy || !manifest) return;
+  localFile = null;
+  variantConfirmation.checked = false;
+  return loadFirmware();
+});
+$('enter-bootloader').addEventListener('click', async () => {
+  if (busy || !navigator.hid || session?.ready) return;
+  busy = true;
+  controls();
+  progress.hidden = true;
+  report('Select the running diagnostic macropad in the HID picker.');
+  try {
+    await enterDiagnosticBootloader(navigator.hid);
+    report('Bootloader command acknowledged. Click Connect bootloader now.');
+  } catch (error) { report(error.message); }
+  finally { busy = false; controls(); }
+});
+
 for (const button of variantButtons) {
   button.addEventListener('click', () => {
     if (busy || Number(button.dataset.variant) === selectedVariant) return;
     selectedVariant = Number(button.dataset.variant);
     selectedRelease = 'latest';
-    releaseChoices();
+    if (manifest) releaseChoices();
     variantConfirmation.checked = false;
+    if (localFile) return loadLocal(localFile);
     return loadFirmware();
   });
 }
@@ -161,11 +227,17 @@ install.addEventListener('click', async () => {
     progress.value = 100;
     $('device-info').textContent = 'Installation complete; bootloader session closed.';
     report('Firmware programmed and verified.');
-    const configuratorLink = document.createElement('a');
     const entry = loadedEntry;
-    configuratorLink.href = configuratorPath(entry.formatVersion, manifest.currentFormatVersion);
-    configuratorLink.textContent = 'Open the macropad configurator to load or save your profile';
-    status.append(' ', configuratorLink, '.');
+    let path;
+    if (Number.isInteger(entry.formatVersion)) {
+      try { path = configuratorPath(entry.formatVersion, manifest?.currentFormatVersion); } catch { /* Unknown local firmware has no matching editor. */ }
+    }
+    if (path) {
+      const configuratorLink = document.createElement('a');
+      configuratorLink.href = path;
+      configuratorLink.textContent = 'Open the macropad configurator to load or save your profile';
+      status.append(' ', configuratorLink, '.');
+    }
   } catch (error) {
     $('device-info').textContent = 'Bootloader session closed. Re-enter bootloader mode before retrying.';
     report(`Installation stopped: ${error.message}`);
@@ -190,8 +262,10 @@ try {
   if (!response.ok) throw new Error(`Firmware list unavailable (HTTP ${response.status}).`);
   manifest = await response.json();
   releaseChoices();
-  $('firmware-info').textContent = 'Choose the number of keys on your macropad.';
-  report(supported ? 'Ready. Enter bootloader mode and connect when you are ready.' : 'WebUSB is unavailable. Open this page in desktop Chrome or Edge over HTTPS or localhost.');
-  await loadFirmware();
+  if (!localFile) {
+    $('firmware-info').textContent = 'Choose the number of keys on your macropad.';
+    report(supported ? 'Ready. Enter bootloader mode and connect when you are ready.' : 'WebUSB is unavailable. Open this page in desktop Chrome or Edge over HTTPS or localhost.');
+    await loadFirmware();
+  }
 } catch (error) { report(error.message); }
 controls();

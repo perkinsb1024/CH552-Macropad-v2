@@ -7,6 +7,8 @@ import { firmwareChoices, selectedFirmware } from '../src/firmware-list.mjs';
 import { Ch552Bootloader } from '../dist/bootloader.mjs';
 import { parseHex, CODE_LIMIT } from '../src/hex.mjs';
 import { firmwareFormat, configuratorPath } from '../src/firmware-format.mjs';
+import { localFirmware } from '../src/local-firmware.mjs';
+import { enterDiagnosticBootloader } from '../src/diagnostic-hid.mjs';
 
 const manifest = JSON.parse(await readFile(new URL('../dist/firmware.json', import.meta.url), 'utf8'));
 const constants = await readFile(new URL('../../webapp/src/model/constants.ts', import.meta.url), 'utf8');
@@ -120,11 +122,12 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     attributes = {};
     handlers = {};
     children = [];
+    classList = { add() {}, remove() {} };
     append(...children) { this.children.push(...children); }
     replaceChildren(...children) { this.children = children; }
     setAttribute(name, value) { this.attributes[name] = value; }
     addEventListener(name, handler) { this.handlers[name] = handler; }
-    async emit(name) { await this.handlers[name](); }
+    async emit(name, event) { await this.handlers[name](event); }
   }
   const elements = new Map();
   const element = id => {
@@ -133,10 +136,11 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
   };
   const buttons = [3, 6].map(keys => Object.assign(new Element(), { dataset: { variant: String(keys) } }));
   const device = new FakeBootloader();
+  const hid = new FakeHid();
   const replacements = {
     document: { getElementById: element, querySelectorAll: () => buttons, createElement: () => new Element() },
     window: { isSecureContext: true, addEventListener() {} },
-    navigator: { platform: 'MacIntel', usb: { requestDevice: async () => device, addEventListener() {} } },
+    navigator: { platform: 'MacIntel', hid: hidPicker(hid), usb: { requestDevice: async () => device, addEventListener() {} } },
     fetch: async path => new Response(await readFile(new URL(`../dist/${path.slice(2)}`, import.meta.url))),
   };
   const originals = Object.fromEntries(Object.keys(replacements).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
@@ -201,6 +205,28 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     const successLink = element('status').children.find(child => typeof child !== 'string');
     assert.equal(successLink.href, expectedConfiguratorPath(previous.formatVersion));
     assert.equal(successLink.textContent, 'Open the macropad configurator to load or save your profile');
+    // A dropped file clears confirmation; a mismatch blocks installation,
+    // and changing the physical variant revalidates the same local file.
+    const localText = `${record(0, 0, [0x55, 0x4d, 0x41, 0x43, 1, 12, 0])}\n${eof}`;
+    const localFile = { name: 'diagnostic.hex', size: localText.length, text: async () => localText };
+    await element('hex-drop').emit('drop', { preventDefault() {}, dataTransfer: { files: [localFile] } });
+    assert.equal(confirmation.checked, false);
+    assert.match(element('firmware-info').textContent, /diagnostic.hex.*v12, 6-key/);
+    assert.equal(element('firmware-release').disabled, true);
+    await buttons[0].emit('click');
+    assert.match(element('status').textContent, /6-key/);
+    assert.equal(element('install').disabled, true);
+    await buttons[1].emit('click');
+    assert.match(element('firmware-info').textContent, /diagnostic.hex/);
+    const invalidFile = { name: 'bad.hex', size: 3, text: async () => 'bad' };
+    await element('hex-file').emit('change', { target: { files: [invalidFile] } });
+    assert.equal(element('confirm-variant').disabled, true);
+    await element('use-published').emit('click');
+    assert.equal(element('firmware-release').disabled, false);
+    assert.ok(element('firmware-info').textContent.includes(manifest.firmware.find(entry => entry.keys === 6).name));
+    await element('enter-bootloader').emit('click');
+    assert.deepEqual(hid.requests, [0x71, 0x72]);
+    assert.match(element('status').textContent, /acknowledged/);
   } finally {
     for (const [key, descriptor] of Object.entries(originals)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -378,6 +404,69 @@ function record(address, type, data) {
   return ':' + bytes.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 const eof = ':00000001FF';
+test('local HEX validates format, size, identity and selected board variant', () => {
+  const hex = data => `${record(0, 0, data)}\n${eof}`;
+  const identity = [0x55, 0x4d, 0x41, 0x43, 1, 12, 0];
+  const result = localFirmware('diagnostic.HEX', hex(identity), 6);
+  assert.equal(result.entry.formatVersion, 12);
+  assert.equal(result.entry.keys, 6);
+  assert.equal(result.identified, true);
+  assert.throws(() => localFirmware('diagnostic.hex', hex(identity), 3), /6-key/);
+  assert.throws(() => localFirmware('diagnostic.txt', hex(identity), 6), /\.hex/);
+  assert.throws(() => localFirmware('diagnostic.hex', hex([...identity, ...identity]), 6), /Ambiguous/);
+  assert.equal(localFirmware('unknown.hex', hex([1, 2, 3]), 3).identified, false);
+  assert.throws(() => localFirmware('bad.hex', `${record(0, 0, [1])}\n${record(CODE_LIMIT, 0, [1])}\n${eof}`, 3), /application area/);
+  const maximum = `${record(0, 0, [1])}\n${record(CODE_LIMIT - 1, 0, [1])}\n${eof}`;
+  assert.equal(localFirmware('max.hex', maximum, 3).image.length, CODE_LIMIT);
+});
+
+class FakeHid extends EventTarget {
+  opened = false;
+  requests = [];
+  status = 0;
+  failSend = false;
+  async open() { this.opened = true; }
+  async close() { this.opened = false; }
+  async sendReport(id, payload) {
+    assert.equal(id, 3);
+    assert.equal(payload.length, 31);
+    assert.deepEqual([...payload.slice(5)], Array(26).fill(0));
+    this.requests.push(payload[3]);
+    if (this.failSend) throw new Error('Send failed');
+    const bytes = new Uint8Array(31);
+    bytes.set([0x55, 0x4d, 1, payload[3], payload[4], 0, 0, this.status]);
+    if (payload[3] === 0x71 && !this.status) {
+      bytes[6] = 11;
+      bytes.set([0x46, 0x44, 1, 0, 2, 1, 1, 0, 0, 0, 0], 8);
+    }
+    const event = new Event('inputreport');
+    event.reportId = 4;
+    event.data = new DataView(bytes.buffer);
+    this.dispatchEvent(event);
+  }
+}
+const hidPicker = device => ({ requestDevice: async options => {
+  assert.deepEqual(options.filters, [{ vendorId: 0x1209, productId: 0xc55d, usagePage: 0xff00, usage: 1 }]);
+  return [device];
+} });
+test('HID bootloader entry checks diagnostic identity, sends command and closes', async () => {
+  const device = new FakeHid();
+  await enterDiagnosticBootloader(hidPicker(device));
+  assert.deepEqual(device.requests, [0x71, 0x72]);
+  assert.equal(device.opened, false);
+});
+test('unsupported firmware, canceled selection and send failure do not report HID entry success', async () => {
+  const device = new FakeHid();
+  device.status = 2;
+  await assert.rejects(enterDiagnosticBootloader(hidPicker(device)), /does not support/);
+  assert.deepEqual(device.requests, [0x71]);
+  assert.equal(device.opened, false);
+  await assert.rejects(enterDiagnosticBootloader({ requestDevice: async () => [] }), /No macropad/);
+  device.failSend = true;
+  await assert.rejects(enterDiagnosticBootloader(hidPicker(device)), /Send failed/);
+  assert.equal(device.opened, false);
+});
+
 test('validates HEX boundaries, checksums, overlap, EOF, and FF alignment padding', () => {
   const start = record(0, 0, [1, 2, 3]);
   assert.deepEqual(parseHex(`${start}\n${eof}`), Uint8Array.of(1, 2, 3, 255, 255, 255, 255, 255));

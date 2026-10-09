@@ -63,17 +63,63 @@ def compare_uptime(previous, current, elapsed_ms, tolerance_ms=2000):
     return 'consistent-with-continuous-uptime'
 
 
+class MonitorProgress:
+    def __init__(self, duration, stream=None):
+        self.duration = duration
+        self.stream = stream if stream is not None else sys.stderr
+        self.enabled = self.stream.isatty()
+        self.text = ''
+
+    @staticmethod
+    def timestamp(seconds):
+        minutes, seconds = divmod(int(max(0, seconds)), 60)
+        return f'{minutes}:{seconds:02d}'
+
+    def update(self, elapsed):
+        if not self.enabled:
+            return
+        self.clear()
+        if self.duration:
+            elapsed = min(elapsed, self.duration)
+            filled = min(20, int(20 * elapsed / self.duration))
+            self.text = f'{self.timestamp(elapsed)} [{"#" * filled}{" " * (20 - filled)}] {self.timestamp(self.duration)}'
+        else:
+            self.text = f'{self.timestamp(elapsed)} [monitoring; Ctrl-C to stop]'
+        self.redraw()
+
+    def clear(self):
+        if self.enabled and self.text:
+            self.stream.write('\r' + ' ' * len(self.text) + '\r')
+            self.stream.flush()
+
+    def redraw(self):
+        if self.enabled and self.text:
+            self.stream.write('\r' + self.text)
+            self.stream.flush()
+
+    def finish(self, elapsed):
+        self.update(elapsed)
+        if self.enabled:
+            self.stream.write('\n')
+            self.stream.flush()
+
+
 class Logger:
     def __init__(self, path):
         # Exclusive creation protects earlier evidence.
         self.file = Path(path).open('x', buffering=1)
+        self.progress = None
 
     def __call__(self, event, **fields):
         row = dict(utc=datetime.now(timezone.utc).isoformat(), monotonic=time.monotonic(),
                    event=event, **fields)
         self.file.write(json.dumps(row) + '\n')
         if event not in ('request', 'reply', 'class_request'):
+            if self.progress:
+                self.progress.clear()
             print(json.dumps(row), flush=True)
+            if self.progress:
+                self.progress.redraw()
 
     def close(self):
         self.file.close()
@@ -171,6 +217,10 @@ def monitor(args, log):
     device = link = None
     previous = previous_time = previous_presence = None
     started = time.monotonic()
+    progress = MonitorProgress(args.duration)
+    if isinstance(log, Logger):
+        log.progress = progress
+    progress.update(0)
     try:
         while not args.duration or time.monotonic() - started < args.duration:
             paths = sorted(d['path'].hex() for d in candidates(hid, args.serial))
@@ -205,8 +255,15 @@ def monitor(args, log):
                     if device:
                         device.close()
                         device = link = None
-            time.sleep(args.interval)
+            elapsed = time.monotonic() - started
+            progress.update(elapsed)
+            remaining = max(0, args.duration - elapsed) if args.duration else args.interval
+            time.sleep(min(args.interval, remaining))
+            progress.update(time.monotonic() - started)
     finally:
+        if isinstance(log, Logger):
+            log.progress = None
+        progress.finish(time.monotonic() - started)
         if device:
             device.close()
     return 0

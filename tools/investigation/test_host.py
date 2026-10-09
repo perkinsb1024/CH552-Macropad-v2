@@ -1,5 +1,7 @@
 """Host-tool tests use fake transports and never access attached USB devices."""
 import argparse
+import io
+import json
 import tempfile
 from pathlib import Path
 import unittest
@@ -8,6 +10,11 @@ from unittest.mock import Mock
 import sys
 
 import host
+
+
+class Terminal(io.StringIO):
+    def isatty(self):
+        return True
 
 
 def reply(opcode=0x71, sequence=0, offset=0, status=0, data=None):
@@ -53,6 +60,62 @@ class FakeControl:
 
 
 class Tests(unittest.TestCase):
+    def test_progress_format_completion_and_redirect(self):
+        stream = Terminal()
+        progress = host.MonitorProgress(600, stream)
+        progress.update(296)
+        self.assertTrue(stream.getvalue().endswith('4:56 [#########           ] 10:00'))
+        progress.finish(601)
+        self.assertTrue(stream.getvalue().endswith('10:00 [####################] 10:00\n'))
+        stream = io.StringIO()
+        progress = host.MonitorProgress(600, stream)
+        progress.update(296)
+        progress.finish(600)
+        self.assertEqual(stream.getvalue(), '')
+        stream = Terminal()
+        progress = host.MonitorProgress(0, stream)
+        progress.finish(61)
+        self.assertTrue(stream.getvalue().endswith('1:01 [monitoring; Ctrl-C to stop]\n'))
+
+    def test_timed_progress_in_both_monitor_modes(self):
+        for passive in (False, True):
+            stream = Terminal()
+            clock = [0]
+            def sleep(seconds):
+                clock[0] += seconds
+            args = argparse.Namespace(serial=None, passive=passive, duration=2, interval=1)
+            device = FakeHid([])
+            link = Mock()
+            link.read.return_value = reply()[9:20]
+            with patch('host.sys.stderr', stream), \
+                 patch('host.time.monotonic', side_effect=lambda: clock[0]), \
+                 patch('host.time.sleep', side_effect=sleep), \
+                 patch('host.hid_module', return_value=object()), \
+                 patch('host.candidates', return_value=[dict(path=b'pad')]), \
+                 patch('host.one_device', return_value=device) as opened, \
+                 patch('host.HidLink', return_value=link):
+                self.assertEqual(host.monitor(args, lambda *a, **kw: None), 0)
+            self.assertIn('0:01 [##########          ] 0:02', stream.getvalue())
+            self.assertTrue(stream.getvalue().endswith('0:02 [####################] 0:02\n'))
+            if passive:
+                opened.assert_not_called()
+            else:
+                self.assertTrue(device.closed)
+
+    def test_progress_keeps_console_events_and_jsonl_separate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'test.jsonl'
+            stream = Terminal()
+            log = host.Logger(path)
+            log.progress = host.MonitorProgress(600, stream)
+            log.progress.update(296)
+            with patch('host.sys.stdout', new_callable=io.StringIO) as console:
+                log('sample', uptimeMs=123)
+            log.close()
+            self.assertEqual(json.loads(path.read_text())['uptimeMs'], 123)
+            self.assertEqual(json.loads(console.getvalue())['event'], 'sample')
+            self.assertTrue(stream.getvalue().endswith('4:56 [#########           ] 10:00'))
+
     def test_macos_shared_mode_before_open(self):
         module = Mock(__file__='fake-hid.so')
         library = Mock()

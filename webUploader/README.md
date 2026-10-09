@@ -1,6 +1,6 @@
 # Macropad Firmware Installer — Beta
 
-*This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
+*This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs published three-key or six-key CH552 firmware or a local HEX file through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
 The bundled default firmware uses configuration format v11, built from revision
 `f87ca744`: [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
@@ -52,7 +52,37 @@ The init command retains upstream's boot configuration value `0x03`, matching th
 5. Select the three-key or six-key variant, then click **Install firmware**.
 6. Keep USB connected through programming and verification. After restart, use the configurator to load/save your profile.
 
-The bootloader identifies the CH552 chip, not the board's key count. Selecting the correct variant is the user's responsibility. This beta accepts the same bootloader range as the pinned source: 2.3.1–2.5.0. Other versions are rejected before erase. Only the bundled published HEX files are selectable.
+The bootloader identifies the CH552 chip, not the board's key count. Selecting the correct variant is the user's responsibility. This beta accepts the same bootloader range as the pinned source: 2.3.1–2.5.0. Other versions are rejected before erase.
+
+### Local HEX Files
+
+Select the physical board variant, then drop one `.hex` file into the file area
+or use its file picker. Installation requires renewed confirmation after loading
+a file or changing variants. **Use published firmware** returns to the release
+selection.
+
+Validation checks Intel HEX syntax, record lengths and checksums, supported
+record types, nonoverlapping data, an EOF record, data at address zero, and the
+14,336-byte application boundary (including eight-byte write alignment). This
+limit applies to decoded flash addresses, not the text file's size; HEX text
+files also have a 1 MiB input limit. DataFlash and bootloader addresses are
+rejected. A recognized macropad identity must match the selected key count;
+files without one require the user to confirm hardware compatibility. These
+checks do not establish authenticity or correct firmware behavior. Local files
+are processed in the browser and are not uploaded to a server. After programming,
+the bootloader verifies the written bytes. A matching configurator link is
+offered when the detected format is supported.
+
+### HID Bootloader Entry
+
+With diagnostic firmware supporting HID bootloader entry, click
+**Enter bootloader via HID** and select the running macropad. Close configurator
+and monitoring connections first. The uploader checks the diagnostic identity,
+sends the bootloader command, and waits for its acknowledgement. Then click
+**Connect bootloader** to select the re-enumerated USB device. This uses WebHID
+in addition to WebUSB and requires HTTPS or localhost in a supporting browser.
+Firmware without this command requires the encoder or hardware entry method.
+The new HID path has automated coverage but has not been validated on hardware.
 
 ### Windows
 

@@ -11,6 +11,9 @@
 
 #define PROTOCOL_BIT FW_BIT
 extern PROTOCOL_BIT activeConfigValid;
+#if INVESTIGATION_DIAGNOSTICS
+extern volatile __pdata uint8_t protocolState; // 3 requests main-loop bootloader entry.
+#endif
 
 #if ENABLE_COLOR_PREVIEW
 // Zero cancels; otherwise layer-style color/brightness/indicator bits.

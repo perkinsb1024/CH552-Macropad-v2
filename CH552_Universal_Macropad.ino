@@ -472,6 +472,9 @@ void loop() {
   uint16_t now = clock;
   USB_reportPoll(now);
   protocolPoll(now);
+#if INVESTIGATION_DIAGNOSTICS
+  if (protocolState == 3) enterBootloader();
+#endif
   // Process due timers before physical input so resume/input actions win this frame.
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;

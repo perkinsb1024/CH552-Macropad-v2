@@ -89,10 +89,16 @@ void USB_EP1_receiveReady(void) {}
 void USB_setKeyboardLedStatus(uint8_t leds) { (void)leds; }
 uint8_t USB_EP1_sendConfig(const uint8_t *reply) { (void)reply; return 1; }
 void protocolReset(void) { resetPending = 1; }
+#if INVESTIGATION_DIAGNOSTICS
+volatile uint8_t protocolState;
+#endif
 void protocolInit(void) {
     memcpy(activeConfig, flash, CONFIG_SIZE);
     activeConfigValid = configValid(activeConfig, PHYSICAL_VARIANT);
     resetPending = 0;
+#if INVESTIGATION_DIAGNOSTICS
+    protocolState = 0;
+#endif
 }
 void firmwareApplyConfig(void);
 void protocolPoll(uint16_t now) {
@@ -863,5 +869,19 @@ int main(void) {
         expectBootloader = 0;
         encoderHeldAtStartup = 0;
     }
+#if INVESTIGATION_DIAGNOSTICS
+    // HID entry reaches the same bootloader path without any held input,
+    // including when the saved profile is invalid.
+    P1 = P3 = 0xFF;
+    activeConfigValid = 0;
+    protocolState = 3;
+    expectBootloader = 1;
+    USB_CTRL = EA = TMOD = 1;
+    if (setjmp(bootloaderJump) == 0) {
+        loop();
+        assert(0 && "HID command must enter bootloader from main loop");
+    }
+    expectBootloader = 0;
+#endif
     return 0;
 }

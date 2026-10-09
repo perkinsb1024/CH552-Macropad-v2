@@ -81,7 +81,7 @@ ${core}
   }
   for (const entry of firmware) await cp(join(releases, entry.name), join(output, 'firmware', entry.name));
   for (const entry of previousFirmware) await cp(join(historicalRoot, entry.name), join(output, 'firmware', entry.name));
-  for (const name of ['index.html', 'style.css', 'app.mjs', 'bootloader.mjs', 'hex.mjs', 'firmware-format.mjs', 'firmware-list.mjs']) await cp(join(root, 'src', name), join(output, name));
+  for (const name of ['index.html', 'style.css', 'app.mjs', 'bootloader.mjs', 'hex.mjs', 'firmware-format.mjs', 'firmware-list.mjs', 'local-firmware.mjs', 'diagnostic-hid.mjs']) await cp(join(root, 'src', name), join(output, name));
   await writeFile(join(output, 'upstream-patched.mjs'), factory);
   await cp(join(upstream, 'LICENSE'), join(output, 'upstream-LICENSE.txt'));
   await cp(join(root, 'README.md'), join(output, 'README.md'));

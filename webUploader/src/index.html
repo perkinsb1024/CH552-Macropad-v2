@@ -10,7 +10,7 @@
 <body>
   <main>
     <header><a href="../">← Macropad configurator</a><h1>Firmware installer <span class="badge">Beta</span></h1>
-      <p>Install the published firmware on a CH552 macropad using desktop Chrome or Edge. No PlatformIO or Arduino installation needed.</p>
+      <p>Install published firmware or a local HEX file on a CH552 macropad using desktop Chrome or Edge. No PlatformIO or Arduino installation needed.</p>
     </header>
     <aside id="compatibility-notice" class="beta"><strong id="notice-title">Beta prototype — macOS tested and verified.</strong> <span id="notice-message">Windows and Linux hardware validation is still pending, but should work after following Step 1</span></aside>
 
@@ -44,10 +44,12 @@
       <p>Once in bootloader mode, your browser will allow you to connect to the macropad. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick.</p>
       <p>Supported by this beta: <strong>CH552, bootloader versions 2.3.1-2.5.0</strong>.</p>
       <div class="connection-controls">
+        <button id="enter-bootloader" type="button" disabled>Enter bootloader via HID</button>
         <button id="connect" type="button" disabled>Connect bootloader</button>
         <button id="reboot" type="button" disabled>Disconnect and Reboot</button>
       </div>
       <p id="device-info" class="muted">No bootloader connected.</p>
+      <p class="muted">HID entry requires diagnostic firmware supporting this command. Close configurator and monitoring connections, select the running macropad, then click Connect bootloader after it switches modes.</p>
     </section>
 
     <section>
@@ -64,6 +66,12 @@
         <select id="firmware-release" disabled><option value="latest">Latest release</option></select>
         <p class="muted">Older versions may leave a newer profile inactive. Export a backup first, then use the matching configurator after installing.</p>
       </details>
+      <div id="hex-drop" class="hex-drop">
+        <label for="hex-file">Drop one .hex file here or choose a file</label>
+        <input id="hex-file" type="file" accept=".hex" disabled>
+        <p class="muted">Local files must fit the 14,336-byte application area. HEX structure and checksums are checked; compatibility can only be identified when the file contains a recognized macropad identity.</p>
+        <button id="use-published" type="button" disabled>Use published firmware</button>
+      </div>
       <p id="firmware-info" class="muted">Loading published firmware…</p>
       <a id="download" hidden download>Download this HEX file</a>
       <p>Installing replaces the application firmware and uses the CH55xDuino bootloader settings for P3.6 (D+) boot entry. Only install on a compatible CH552 macropad.</p>

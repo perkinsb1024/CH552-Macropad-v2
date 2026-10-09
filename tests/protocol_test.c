@@ -421,7 +421,46 @@ static void testPreview(void) {
 #endif
 }
 
+static void testBootloaderCommand(void) {
+    reset();
+    request(0x72, 1, 0, 0);
+    assert(sent[8] == 3);
+    request(0x72, 0, 1, 0);
+    assert(sent[8] == 3);
+    prepare(0x72, 0, 0, 0);
+    packet[9] = 1;
+    sendPacket();
+    assert(sent[8] == 4);
+    request(0x72, 0, 0, 0);
+#if INVESTIGATION_DIAGNOSTICS
+    assert(sent[8] == 0 && sent[7] == 0 && protocolState == 3);
+    assert(!protocolReceive(packet));
+    reset();
+    activeConfigValid = 0;
+    prepare(0x72, 0, 0, 0);
+    busy = 1;
+    assert(protocolReceive(packet));
+    protocolPoll(now);
+    assert(protocolState == 2); // Wait for room to queue the acknowledgement.
+    busy = 0;
+    protocolPoll(now);
+    assert(protocolState == 3 && !writes && !applies);
+    reset();
+    prepare(0x72, 0, 0, 0);
+    busy = 1;
+    assert(protocolReceive(packet));
+    protocolPoll(now);
+    protocolReset();
+    protocolPoll(now);
+    assert(protocolState == 0); // USB reset cancels unacknowledged entry.
+#else
+    assert(sent[8] == 2);
+#endif
+    assert(!writes);
+}
+
 int main(void) {
+    testBootloaderCommand();
     testFaultDiagnostic();
     testPreview();
     testReads();

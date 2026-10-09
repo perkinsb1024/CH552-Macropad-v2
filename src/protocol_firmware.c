@@ -18,6 +18,7 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_PREVIEW_COLOR 9
 #define PROTOCOL_READ_STACK 0x70 // Diagnostic-only; normal replies stay unchanged.
 #define PROTOCOL_READ_FAULT 0x71
+#define PROTOCOL_ENTER_BOOTLOADER 0x72
 #if INVESTIGATION_DIAGNOSTICS
 uint32_t millis(void);
 #endif
@@ -128,6 +129,8 @@ static uint8_t processRequest(void) {
   }
   switch (opcode) {
 #if INVESTIGATION_DIAGNOSTICS
+    case PROTOCOL_ENTER_BOOTLOADER:
+      break; // Arm entry only after the successful reply has been queued.
     case PROTOCOL_READ_FAULT: {
       // Snapshot into the existing reply buffer. No persistent diagnostic
       // storage, flash writes, reset counter or stack instrumentation.
@@ -306,6 +309,12 @@ void protocolPoll(uint16_t now) {
   }
   // A reset during a save abandons its reply; flash still has to finish safely.
   if (!resetPending && USB_EP1_sendConfig(protocolReply)) {
+#if INVESTIGATION_DIAGNOSTICS
+    if (protocolInbox[4] == PROTOCOL_ENTER_BOOTLOADER && !protocolReply[8]) {
+      protocolState = 3; // Main loop uses the existing bootloader entry path.
+      return;
+    }
+#endif
     protocolState = 0;
     USB_EP1_receiveReady();
   }
