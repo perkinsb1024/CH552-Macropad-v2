@@ -137,13 +137,14 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 | **Scroll** | Sends a scroll step. Choose **Vertical** with **Up**/**Down**, or **Horizontal** with **Left**/**Right**, and a **Wheel step** from 1–127 (horizontal requires v9 firmware) |
 | **Move pointer X** | Moves left or right by the selected amount, from 1–127 |
 | **Move pointer Y** | Moves up or down by the selected amount, from 1–127 |
+| **Move pointer X/Y** | Moves both axes together; each axis uses 0–60 mouse counts in steps of 4, with its own direction |
 
 In v12, **Mouse toggle**, **Mouse down** and **Mouse up** share one persistent state
 across keys, wheel inputs, chords, timers and macros. Each selected bit operates
 independently. Down sets bits, up clears them, and toggle flips them. Repeated
 down/up is idempotent. For example, one key can start a drag with **Mouse down**
 and another can end it with **Mouse up**. A macro can use **Mouse down** →
-**Move pointer X**/**Move pointer Y** → **Mouse up**, with **Pause** steps as needed.
+**Move pointer X**, **Move pointer Y**, or **Move pointer X/Y** → **Mouse up**, with **Pause** steps as needed.
 A physical **Mouse hold** or temporary click keeps its buttons down independently.
 Macro completion and physical release leave persistent state intact; layer
 changes and resets clear it. Direct bindings act immediately, while macro steps
@@ -170,6 +171,10 @@ backwards, swap **Up**/**Down** or **Left**/**Right**. Under **Scroll direction*
 **Click here** opens **Scroll & click test** with a scrollable area on both axes
 and click counters for each mouse button. Save edits to the macropad before
 testing; the modal warns if you have unsaved changes.
+
+Pointer movement uses relative mouse counts; screen distance depends on the
+computer's pointer speed and acceleration. **Move pointer X/Y** sends both axes
+in one report. Set an axis to zero to leave it stationary.
 
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held
@@ -550,7 +555,7 @@ some actions wait for the macro to finish, while others act immediately:
 
 | Behavior | Actions triggered while a macro is running |
 | --- | --- |
-| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X** and **Move pointer Y** set to **Tap**, and another **Execute macro** |
+| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X**, **Move pointer Y**, and **Move pointer X/Y** set to **Tap**, and another **Execute macro** |
 | Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Mouse down**, **Mouse up**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
 
 Changing the active layer cancels the rest of the macro and clears waiting

@@ -288,7 +288,7 @@ Extra-button behavior depends on the host and application, especially buttons 6�
 persistent state used by **Mouse toggle**. Repeated down/up is idempotent; macro
 completion leaves the state intact, while layer changes and resets clear it.
 Physical **Mouse hold** and temporary clicks remain independent. Use **Mouse down**
-→ **Move pointer X**/**Move pointer Y** → **Mouse up** for a macro drag.
+→ **Move pointer X**, **Move pointer Y**, or **Move pointer X/Y** → **Mouse up** for a macro drag.
 
 **Mouse click** offers **Single / Double / Custom**. **Custom** shows a slider for
 3–16 clicks. The selected mouse buttons are pressed and released for each click,

@@ -128,6 +128,8 @@ function action(v: unknown, what: string): Action {
     case 'mouseX':
     case 'mouseY':
       return { type, delta: int(v.delta, `${what} delta`), ...(bool(v.hold, `${what} hold`) ? { hold: true } : {}) };
+    case 'mouseXY':
+      return { type, x: int(v.x, `${what} X delta`), y: int(v.y, `${what} Y delta`), ...(bool(v.hold, `${what} hold`) ? { hold: true } : {}) };
     case 'consumer':
     case 'consumerHold':
       return { type, usage: int(v.usage, `${what} usage`) };

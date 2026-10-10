@@ -107,6 +107,7 @@ describe('every action type round-trips', () => {
     { type: 'relativeLayer', offset: -3 },
     { type: 'mouseX', delta: -5 },
     { type: 'mouseY', delta: 100 },
+    { type: 'mouseXY', x: -60, y: 4 },
     { type: 'mouseX', delta: -1, hold: true },
     { type: 'mouseY', delta: 127, hold: true },
   ];
@@ -140,7 +141,7 @@ describe('every action type round-trips', () => {
 });
 
 describe('pointer hold auxiliary bit', () => {
-  it('keeps existing tap bytes and uses only auxiliary bit 0 for hold', () => {
+  it('uses the hold flag and reserves single-axis bits 6–7', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1 };
     let image = encodeProfile(profile);
@@ -149,7 +150,7 @@ describe('pointer hold auxiliary bit', () => {
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x1c, 0xff]);
     expect(image[2]).toBe(13);
-    image[9] = 0x2c;
+    image[9] = 0x4c;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
   });

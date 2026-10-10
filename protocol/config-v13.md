@@ -16,7 +16,8 @@
 
 This standalone reference specifies the version 13 firmware binary image and
 transport. It supports eight-bit consumer taps with optional modifiers and places
-**Mouse hold** in auxiliary mode 3 of the shared mouse action type. Dynamic
+**Mouse hold** in auxiliary mode 3 of the shared mouse action type. Pointer
+actions support fine single-axis movement and combined pointer movement. Dynamic
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
 
@@ -223,8 +224,8 @@ The action types are:
 | 9 | **Set layer** | `0` for persistent; `1` for one-shot | Layer index, or `0xFF` for previous persistent layer |
 | A | **Momentary layer** | `0` | Layer index |
 | B | **Relative layer** | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -6 to +6; added to the selected base-layer index with wraparound. `0` has no effect. |
-| C | **Mouse X movement** | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
-| D | **Mouse Y movement** | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
+| C | **Single-axis mouse movement** | Bit 0 selects hold; bit 1 selects Y instead of X; bits 2–3 reserved | Signed 8-bit delta from -127 to +127 |
+| D | **Combined mouse movement** | Bit 0 selects hold; bit 1 negates X; bit 2 negates Y; bit 3 reserved | Low nibble: X magnitude; high nibble: Y magnitude; each multiplied by 4 |
 | E | **LED control** | Value or signed step (see below) | Full command byte (see below) |
 | F | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
 
@@ -270,24 +271,39 @@ A chord-eligible press keeps the one-shot layer active through its chord window.
 The resolved single-key or chord action consumes it. The selected action runs
 to completion after returning, and held outputs retain their bindings until release.
 
-For scroll, X, and Y actions, interpret the parameter as a signed 8-bit
-two's-complement value. Thus `0x01`–`0x7F` mean +1 to +127, and
-`0x81`–`0xFF` mean -127 to -1. `0x00` means zero movement. Reject `0x80`,
-which represents -128 and is excluded so direction reversal can safely
-negate any accepted delta.
+For **Scroll** and **Single-axis mouse movement** (type `0xC`), interpret the
+parameter as a signed 8-bit two's-complement value. `0x01`–`0x7F` mean +1 to
++127; `0x81`–`0xFF` mean -127 to -1; `0x00` means zero movement. Reject `0x80`
+(-128), so every accepted delta can be safely negated.
 
-For X and Y movement, auxiliary bit 0 (record byte 0, bit 4) selects hold mode.
-Auxiliary value `0` sends one movement step per press or encoder detent.
-Value `1` sends an initial step and repeats the delta while the input is held,
-at an 8ms interval when USB is ready and queued actions have finished.
-Releasing a key, the encoder button, or either chord key stops new repeats.
-Held inputs retain their original bindings across layer changes, as other holds do.
-Repeat reports are skipped when USB is busy; they do not accumulate for later playback.
-Auxiliary values 2–15 are invalid. The current action map retains the v11 movement type codes and
-auxiliary/parameter encodings.
+For type `0xC`, auxiliary bit 1 (record byte 0, bit 5) selects the axis:
+clear means X, set means Y. Auxiliary bits 2–3 (record bits 6–7) must be zero.
+The configurator exposes this action as **Move pointer X** and **Move pointer Y**.
+
+For **Combined mouse movement** (type `0xD`), the parameter's low nibble is the
+X magnitude and its high nibble is the Y magnitude. Decode each as an unsigned
+integer 0–15 and multiply by 4. Auxiliary bit 1 (record bit 5) negates X;
+auxiliary bit 2 (record bit 6) negates Y. Auxiliary bit 3 (record bit 7) must be
+zero. Each axis therefore supports -60 to +60 in increments of 4. All 256
+parameter bytes are valid, including `0x80` (X=0, Y magnitude=32). A sign bit
+on a zero magnitude is valid and still produces zero. Both axes are sent in one
+mouse report; a zero axis stays stationary. The configurator calls this action
+**Move pointer X/Y**. Positive X moves right; positive Y moves down.
+
+Both pointer actions use auxiliary bit 0 (record bit 4) for **Hold** mode.
+Clear sends one step per press or encoder detent; set sends an initial step
+and repeats while held, at an 8ms interval when USB is ready and queued actions
+have finished. Releasing a key, the encoder button, or either chord key stops
+new repeats. Held inputs retain their original bindings across layer changes.
+Repeat reports are skipped when USB is busy; they do not accumulate for later
+playback. Both axes of a combined hold repeat together. Type `0xC` accepts
+auxiliary values 0–3; type `0xD` accepts 0–7, subject to trigger restrictions.
+
+Pointer deltas are relative HID mouse counts. Screen distance depends on host
+pointer speed and acceleration, and is not guaranteed to equal pixels.
 
 Rotation bindings cannot use **Keyboard hold**, **Mouse hold**, **Consumer Hold**,
-**Scroll Hold**, **Momentary layer**, or X/Y movement in hold mode. Timed expiry and
+**Scroll Hold**, **Momentary layer**, or pointer movement in hold mode. Timed expiry and
 next-input actions have the same restrictions.
 For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
@@ -514,6 +530,10 @@ host and requires hardware verification.
 | **Execute macro** | `0x0F \| ((repeats - 1) << 4)` | Absolute address of a macro step |
 | **Consumer Tap** | `0x07 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
 | **Consumer Hold** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
+| **Move pointer X**, **Tap** | `0x0C` | Signed delta, -127–127; reject `0x80` |
+| **Move pointer Y**, **Hold** | `0x3C` | Signed delta, -127–127; reject `0x80` |
+| **Move pointer X/Y**, X=-4, Y=+60, **Tap** | `0x2D` | `0xF1` |
+| **Move pointer X/Y**, X=+60, Y=-4, **Hold** | `0x5D` | `0x1F` |
 | **Scroll Tap** | `0x06` | Signed wheel step, -127–127 |
 | **Scroll Hold** | `0x46` | Signed vertical wheel step, -127–127 |
 | **Scroll Tap**, **Horizontal** | `0x86` | Signed horizontal step, -127–127 |
@@ -732,11 +752,11 @@ both timer action fields. Macro steps cannot reference other macros.
 Allowed steps are **Keyboard tap**, **Type Text**, **Mouse click**, **Mouse toggle**, **Mouse down**, **Mouse up**,
 **Media / system with modifiers**,
 **Scroll Tap**, **Consumer tap**, persistent/one-shot **Set layer** and **Relative
-layer**, X/Y movement in **Tap** mode, **LED control**, and **Pause**.
+layer**, pointer movement in **Tap** mode, **LED control**, and **Pause**.
 **Nothing** is represented by the single-byte terminator rather than a step.
 All normal parameter rules still apply. Reject **Execute macro**, **Keyboard hold**,
 **Mouse hold**, **Consumer hold**, **Scroll Hold**, **Momentary layer**, and held
-X/Y movement anywhere in the tail, including unreferenced actions. Strings used
+pointer movement anywhere in the tail, including unreferenced actions. Strings used
 by steps share the existing string pool and its start/bounds checks.
 
 A macro invocation occupies one entry in the normal eight-event queue, regardless

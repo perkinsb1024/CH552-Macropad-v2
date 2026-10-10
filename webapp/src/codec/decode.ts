@@ -102,12 +102,21 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if ((version < 8 ? nonZeroAux : version === 8 ? aux !== 0 && aux !== 4 : !!(aux & 3)) || b1 === 0x80) return 'Invalid scroll settings';
       if (rotation && (aux & 4)) return 'Scroll hold bound to rotation';
       return { type: 'scroll', delta: toSigned(b1), ...(aux & 4 ? { hold: true } : {}), ...(aux & 8 ? { horizontal: true } : {}) };
-    case ActionCode.MouseX:
-    case ActionCode.MouseY: {
-      if (aux > 1 || b1 === 0x80) return 'Invalid relative delta';
-      if (rotation && aux) return 'Pointer hold bound to rotation';
-      const t = type === ActionCode.MouseX ? 'mouseX' : 'mouseY';
-      return { type: t, delta: toSigned(b1), ...(aux ? { hold: true } : {}) };
+    case ActionCode.MouseAxis:
+    case ActionCode.MouseXY: {
+      if (version < 13) {
+        if (aux > 1 || b1 === 0x80) return 'Invalid relative delta';
+        if (rotation && aux) return 'Pointer hold bound to rotation';
+        return { type: type === ActionCode.MouseAxis ? 'mouseX' : 'mouseY', delta: toSigned(b1), ...(aux ? { hold: true } : {}) };
+      }
+      if (rotation && (aux & 1)) return 'Pointer hold bound to rotation';
+      const hold = aux & 1 ? { hold: true } : {};
+      if (type === ActionCode.MouseAxis) {
+        if (aux > 3 || b1 === 0x80) return 'Invalid single-axis movement';
+        return { type: aux & 2 ? 'mouseY' : 'mouseX', delta: toSigned(b1), ...hold };
+      }
+      if (aux > 7) return 'Invalid combined movement';
+      return { type: 'mouseXY', x: ((b1 & 15) * 4 * (aux & 2 ? -1 : 1)) || 0, y: ((b1 >> 4) * 4 * (aux & 4 ? -1 : 1)) || 0, ...hold };
     }
     case ActionCode.Consumer:
     case ActionCode.ConsumerHold:

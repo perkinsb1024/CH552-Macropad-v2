@@ -108,7 +108,7 @@ function MouseButtons({ value, onChange }: { value: number; onChange(v: number):
   );
 }
 
-function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest, children }: {
+function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest, children, min = 1, max = 127, step = 1 }: {
   label: string;
   directionLabel: string;
   negativeLabel: string;
@@ -118,15 +118,26 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
   onChange(v: number): void;
   onTest?(): void;
   children?: ComponentChildren;
+  min?: number;
+  max?: number;
+  step?: number;
 }) {
-  const magnitude = Math.max(1, Math.min(127, Math.abs(value)));
-  const negative = value < 0;
-  const setMagnitude = (next: number) => onChange((negative ? -1 : 1) * Math.max(1, Math.min(127, Math.round(next))));
-  const setDirection = (nextNegative: boolean) => onChange((nextNegative ? -1 : 1) * magnitude);
+  const [zeroNegative, setZeroNegative] = useState(false);
+  const magnitude = Math.max(min, Math.min(max, Math.abs(value)));
+  const negative = value < 0 || (value === 0 && zeroNegative);
+  const setMagnitude = (next: number) => {
+    const amount = Math.max(min, Math.min(max, Math.round(next / step) * step));
+    if (!amount) setZeroNegative(negative);
+    onChange(amount ? (negative ? -amount : amount) : 0);
+  };
+  const setDirection = (nextNegative: boolean) => {
+    setZeroNegative(nextNegative);
+    if (magnitude) onChange((nextNegative ? -1 : 1) * magnitude);
+  };
   return (
     <div class="field">
       <span class="field-label">{label} <output>{magnitude}</output></span>
-      <input type="range" min={1} max={127} step={1} value={magnitude} aria-label={label} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
+      <input type="range" min={min} max={max} step={step} value={magnitude} aria-label={label} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
       <span class="hint">{hint}</span>
       {children}
       <div class="field scroll-direction">
@@ -390,13 +401,18 @@ export function Inspector() {
         </DirectionalStep>
       )}
       {action.type === 'mouseX' && (
-        <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+        <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Mouse counts per repeat.' : 'Mouse counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
       {action.type === 'mouseY' && (
-        <DirectionalStep label="Vertical move" directionLabel="Pointer direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Pixels per repeat.' : 'Pixels per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+        <DirectionalStep label="Vertical move" directionLabel="Pointer direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Mouse counts per repeat.' : 'Mouse counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
       )}
 
-      {(action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY') && (
+      {action.type === 'mouseXY' && <>
+        <DirectionalStep label="Horizontal move" directionLabel="Horizontal direction" negativeLabel="Left" positiveLabel="Right" hint="Mouse counts in steps of 4; zero leaves this axis stationary." min={0} max={60} step={4} value={action.x} onChange={x => update({ ...action, x })} />
+        <DirectionalStep label="Vertical move" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" hint="Both axes move in the same report. Screen distance depends on pointer settings." min={0} max={60} step={4} value={action.y} onChange={y => update({ ...action, y })} />
+      </>}
+
+      {(action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY') && (
         <div class="field">
           {!rotation && <>
             <span class="field-label">{action.type === 'scroll' ? 'Scroll behavior' : 'Movement behavior'}</span>

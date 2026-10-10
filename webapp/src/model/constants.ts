@@ -72,8 +72,8 @@ export const enum ActionCode {
   SetLayer = 0x9,
   MomentaryLayer = 0xa,
   RelativeLayer = 0xb,
-  MouseX = 0xc,
-  MouseY = 0xd,
+  MouseAxis = 0xc,
+  MouseXY = 0xd,
   LedControl = 0xe,
 }
 
