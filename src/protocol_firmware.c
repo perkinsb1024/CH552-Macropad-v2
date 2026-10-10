@@ -4,7 +4,7 @@
 #include "storage.h"
 
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
-void firmwareApplyConfig(uint8_t restartIndicator);
+void firmwareApplyConfig(FW_BIT restartIndicator);
 
 #define PROTOCOL_VERSION 1
 #define PROTOCOL_GET_INFO 1

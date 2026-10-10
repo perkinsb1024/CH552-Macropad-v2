@@ -147,7 +147,7 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 54 | 50 |
+| Flash remaining | 4 | 0 |
 | External RAM allocated (XSEG + absolute) | 488 | 497 |
 | Stack available (linker reserve) | 80 | 77 |
 
@@ -270,6 +270,16 @@ use independent handling. Legacy double-click bindings (v7 and earlier) migrate 
 
 **LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
 
+At power-up with a valid profile, LEDs stay dark while waiting for USB enumeration.
+If enumeration has not completed after one second, **Key 1** starts blinking yellow.
+Successful enumeration or pressing **Key 1** clears the warning and starts normal
+operation with the configured
+layer indication. The dismissal press does not run its assigned action; release
+the key before pressing it again. Manual dismissal allows local operation, while
+keyboard and mouse output still require USB enumeration. The warning is startup
+only; later USB resets do not restart it. An invalid profile takes priority and
+shows the existing blinking red error LED instead.
+
 **Relative both brightnesses** starts from the brighter current indicator/key brightness, applies the signed step once through **Off** → **Dim** → **Bright** → **Off**, and sets both to the result. Configured policies resolve to the current layer's saved indicator brightness and **Bright** key feedback first. Earlier firmware stepped each brightness independently; synchronized stepping requires updated firmware, with no profile conversion.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
@@ -314,6 +324,7 @@ The production files are written to `webapp/dist/`. This repository's [GitHub Ac
 - Missing CH55xDuino component: Install board package version 0.0.25 and check `CH55XDUINO_PACKAGE_DIR` if you use a custom location
 - Upload cannot find the device: Use a USB-A to USB-C cable with data pins (this cheap board omits the necessary 5.1k pulldown resistors for USB-C cables to supply power), wait for the upload prompt, and enter the bootloader within ten seconds. Factory firmware generally needs the hardware method.
 - Macropad does not appear in the browser: Use a supported desktop browser, HTTPS or localhost, and this firmware. Reconnect USB after uploading.
+- **Key 1** blinks yellow after a one-second startup delay: USB enumeration has not completed. Check the USB data cable and connection, or wait for the computer to finish recognizing the device. Enumeration clears the warning automatically. Press **Key 1** to dismiss it manually; that press does not run its assigned action, and keyboard/mouse output still requires USB enumeration.
 - One red LED blinks and inputs do nothing: Connect the configurator and save a valid profile
 - The wrong keys respond: Check the physical variant in `platformio.ini`, clean the build, and upload again
 

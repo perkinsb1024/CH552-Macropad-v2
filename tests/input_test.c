@@ -71,12 +71,14 @@ void set_pixel_for_GRB_LED(uint8_t *data, uint8_t index,
 }
 uint8_t eeprom_read_byte(uint8_t offset) { return flash[offset]; }
 uint8_t USB_queueKeyboard(const uint8_t *keys) {
+    if (!UsbConfig) return 0;
     assert(frameCount < 32);
     frames[frameCount][0] = 1;
     memcpy(frames[frameCount++] + 1, keys, 8);
     return 1;
 }
 uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
+    if (!UsbConfig) return 0;
     assert(frameCount < 32);
     frames[frameCount][0] = 2;
     frames[frameCount][1] = buttons;
@@ -87,6 +89,7 @@ uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll
     return 1;
 }
 uint8_t USB_queueConsumer(uint16_t usage) {
+    if (!UsbConfig) return 0;
     assert(frameCount < 32);
     frames[frameCount][0] = 5;
     frames[frameCount][1] = usage;
@@ -137,59 +140,17 @@ static void assertIndicatorLeds(uint8_t full, uint8_t lit, uint8_t held) {
     }
 }
 
-static void testStartupIndicatorEnumeration(void) {
-    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
-    for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
-        for (uint8_t behavior = CONFIG_LAYER_INDICATOR_TIMED_ON;
-             behavior <= CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER; behavior++) {
-            testLoadStarterProfile(PHYSICAL_VARIANT);
-            for (uint8_t i = 1; i < CONFIG_MAX_LAYERS; i++) {
-                memcpy(activeConfig + 9 + size * i, activeConfig + 9, size);
-            }
-            activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3);
-            activeConfig[9 + size * (layer + 1) - 1] =
-                (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
-                (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
-            uint16_t crc = configCrc(activeConfig);
-            activeConfig[6] = crc;
-            activeConfig[7] = crc >> 8;
-            memcpy(flash, activeConfig, CONFIG_SIZE);
-            P1 = P3 = 0xFF;
-            previewOptions = 0;
-            UsbConfig = 0;
-            currentMs = 0;
-            indicatorRisingEdges = indicatorWasLit = 0;
-            setup();
-            assert(activeConfigValid && actionsLayer() == layer);
-            uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
-            uint8_t phases = timed ? 6 : 2 * (layer + 1);
-            assert(layerIndicatorPhasesLeft == phases && indicatorRisingEdges == 1);
-            assertIndicatorLeds(0, 1, 0);
+static void assertBlack(void) {
+    for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
+}
 
-            // Bus reset and SET_CONFIGURATION preserve the original phase/deadline.
-            for (uint16_t now = 1; now <= 250 * (phases + 1); now++) {
-                if (now == 100 || now == 350 || now == 600) protocolReset();
-                if (now == 600) UsbConfig = 1;
-                tick(now);
-                uint8_t elapsed = now / 250;
-                assert(layerIndicatorPhasesLeft == (elapsed < phases ? phases - elapsed : 0));
-                assertIndicatorLeds(0, elapsed < phases && (timed || !(elapsed & 1)), 0);
-            }
-            assert(indicatorRisingEdges == (timed ? 1 : layer + 1));
-            // A later reset must not revive a completed startup indication.
-            protocolReset(); tick(250 * (phases + 1) + 1);
-            assert(!layerIndicatorPhasesLeft);
-            assertIndicatorLeds(0, 0, 0);
-            assert(indicatorRisingEdges == (timed ? 1 : layer + 1));
-
-        }
+static void assertUsbWarning(uint8_t lit) {
+    for (uint8_t i = 0; i < NUM_BYTES; i++) {
+        assert(ledData[i] == (lit && i < 2 ? 255 : 0));
     }
 }
 
-
-static void testStartupRainbowEnumeration(void) {
-    testLoadStarterProfile(PHYSICAL_VARIANT);
-    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+static void saveStartupProfile(void) {
     uint16_t crc = configCrc(activeConfig);
     activeConfig[6] = crc;
     activeConfig[7] = crc >> 8;
@@ -198,19 +159,153 @@ static void testStartupRainbowEnumeration(void) {
     previewOptions = 0;
     UsbConfig = 0;
     currentMs = 0;
-    setup();
+    frameCount = 0;
+}
+
+static void testStartupIndicatorEnumeration(void) {
+    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    const uint16_t enumerationTimes[] = {1, 499, 500, 800, 999, 1000, 1100, 2100};
+    for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
+        for (uint8_t behavior = CONFIG_LAYER_INDICATOR_TIMED_ON;
+             behavior <= CONFIG_LAYER_INDICATOR_ALWAYS_ON; behavior++) {
+            for (uint8_t e = 0; e < sizeof(enumerationTimes) / sizeof(enumerationTimes[0]); e++) {
+                testLoadStarterProfile(PHYSICAL_VARIANT);
+                for (uint8_t i = 1; i < CONFIG_MAX_LAYERS; i++) {
+                    memcpy(activeConfig + 9 + size * i, activeConfig + 9, size);
+                }
+                activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3);
+                activeConfig[9 + size * (layer + 1) - 1] =
+                    (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                    (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+                saveStartupProfile();
+                indicatorRisingEdges = indicatorWasLit = 0;
+                setup();
+                assert(activeConfigValid && actionsLayer() == layer && startupWaiting);
+                assertBlack();
+                uint16_t enumeration = enumerationTimes[e];
+                for (uint16_t now = 1; now < enumeration; now++) {
+                    if (now == 100 || now == 350) protocolReset();
+                    tick(now);
+                    assertUsbWarning(now >= 1000 && !((now / 500) & 1));
+                }
+                assert(indicatorRisingEdges == (enumeration - 1) / 1000);
+                indicatorRisingEdges = indicatorWasLit = 0;
+                UsbConfig = 1;
+                protocolReset();
+                tick(enumeration);
+                assert(!startupWaiting && !startupWarning);
+                uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
+                uint8_t always = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON;
+                uint8_t phases = always ? 0 : timed ? 6 : 2 * (layer + 1);
+                assert(layerIndicatorPhasesLeft == phases);
+                assertIndicatorLeds(0, 1, 0);
+                for (uint16_t elapsed = 1; elapsed <= 250 * (phases + 1); elapsed++) {
+                    // Later USB resets do not restart startup or indicator timing.
+                    if (elapsed == 100 || elapsed == 350) protocolReset();
+                    tick(enumeration + elapsed);
+                    uint8_t completed = (((enumeration + elapsed) >> 1) - (enumeration >> 1)) / LAYER_INDICATOR_PHASE_TICKS;
+                    assert(layerIndicatorPhasesLeft == (completed < phases ? phases - completed : 0));
+                    assertIndicatorLeds(0, always || (completed < phases && (timed || !(completed & 1))), 0);
+                }
+                UsbConfig = 0;
+                protocolReset();
+                tick(enumeration + 250 * (phases + 1) + 1);
+                tick(enumeration + 250 * (phases + 1) + 1001);
+                assert(!startupWaiting && !layerIndicatorPhasesLeft);
+                assertIndicatorLeds(0, always, 0);
+                assert(indicatorRisingEdges == (timed || always ? 1 : layer + 1));
+            }
+        }
+    }
+    UsbConfig = 1;
+}
+
+static void testStartupWarningDismissal(void) {
+    // Dismissal works during either blink phase, across the clock wrap, and
+    // without enumeration. No tap/release/chord action escapes the dismissal.
+    for (uint8_t dark = 0; dark < 2; dark++) {
+        testLoadStarterProfile(PHYSICAL_VARIANT);
+        uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+        memcpy(activeConfig + 9 + size, activeConfig + 9, size);
+        activeConfig[3] = 1; // Two layers; key 1 selects the second layer.
+        activeConfig[9] = CONFIG_ACTION_SET_LAYER;
+        activeConfig[10] = 1;
+        saveStartupProfile();
+        currentMs = 65500;
+        setup();
+        assertBlack();
+        tick(463); assertBlack();
+        assert(!startupWarning);
+        tick(464); assertBlack(); // Warning begins with a 500ms dark phase.
+        assert(startupWarning);
+        tick(963); assertBlack();
+        tick(964); assertUsbWarning(1); // First yellow at 1000ms, across wrap.
+        if (dark) {
+            tick(1463); assertUsbWarning(1);
+            tick(1464); assertUsbWarning(0);
+        }
+        uint16_t press = dark ? 1465 : 965;
+        P1 &= ~0x02;
+        tick(press); tick(press + 9);
+        assert(startupWaiting && frameCount == 0);
+        tick(press + 10);
+        assert(!startupWaiting && !startupWarning && frameCount == 0);
+        assertIndicatorLeds(0, 0, 1); // Consumed press still has normal key LED feedback.
+        assert(actionsLayer() == 0);
+        tick(press + 100);
+        P1 |= 0x02;
+        tick(press + 101); tick(press + 111);
+        assert(frameCount == 0);
+        // A fresh press operates normally even before USB enumeration.
+        P1 &= ~0x02;
+        tick(press + 112); tick(press + 122); tick(press + 162);
+        assert(actionsLayer() == 1 && frameCount == 0);
+        P1 |= 0x02;
+        tick(press + 163); tick(press + 173); tick(press + 200);
+        UsbConfig = 1;
+        protocolReset(); tick(press + 201);
+        frameCount = 0;
+        assert(!startupWaiting && !startupWarning);
+        UsbConfig = 0;
+        protocolReset(); tick(press + 202); tick(press + 1202);
+        assert(!startupWaiting && !startupWarning);
+    }
+    // Presses before the warning do not dismiss it; other inputs stay inactive.
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    saveStartupProfile(); setup();
+    P1 &= ~0x82;
+    tick(100); tick(110);
+    assert(startupWaiting && !startupWarning && frameCount == 0);
+    tick(499);
+    assert(startupWaiting && !startupWarning && frameCount == 0);
+    tick(500); tick(810);
+    assert(startupWaiting && startupWarning && frameCount == 0);
+    assertBlack(); // Key 1 can dismiss during the first dark warning phase.
+    P1 |= 0x02;
+    tick(811); tick(821);
+    P1 &= ~0x02;
+    tick(822); tick(832);
+    assert(!startupWaiting && frameCount == 0);
+    P1 = P3 = 0xFF;
+    UsbConfig = 1;
+}
+
+static void testStartupRainbowEnumeration(void) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+    saveStartupProfile(); setup();
+    assertBlack();
+    tick(100); assertBlack();
+    UsbConfig = 1;
+    protocolReset(); tick(100);
     assert(ledData[1] && !layerIndicatorPhasesLeft);
-    tick(100);
+    tick(110);
     uint8_t hue = rainbowHue;
     uint8_t drift[NUM_LEDS];
     memcpy(drift, rainbowDrift, NUM_LEDS);
     uint8_t rendered[NUM_BYTES];
     memcpy(rendered, ledData, NUM_BYTES);
-    protocolReset(); tick(100);
-    assert(rainbowHue == hue && memcmp(drift, rainbowDrift, NUM_LEDS) == 0);
-    assert(memcmp(rendered, ledData, NUM_BYTES) == 0);
-    UsbConfig = 1;
-    protocolReset(); tick(100);
+    protocolReset(); tick(110);
     assert(rainbowHue == hue && memcmp(drift, rainbowDrift, NUM_LEDS) == 0);
     assert(memcmp(rendered, ledData, NUM_BYTES) == 0);
 }
@@ -667,6 +762,7 @@ static void testHidBootloaderHandoff(void) {
 
 int main(void) {
     testStartupIndicatorEnumeration();
+    testStartupWarningDismissal();
     testStartupRainbowEnumeration();
     testConsumedPhysicalInput();
     testTemporaryEffects();
@@ -687,8 +783,9 @@ int main(void) {
     frameCount = 0;
     // Invalid flash lights only the first key and leaves physical inputs inactive.
     memset(flash, 0xFF, sizeof(flash));
+    UsbConfig = 0;
     setup();
-    assert(!activeConfigValid);
+    assert(!activeConfigValid && !startupWaiting);
     assert(ledData[1] == 255);
     for (uint8_t i = 0; i < NUM_BYTES; i++) {
         assert(ledData[i] == (i == 1 ? 255 : 0));
@@ -708,6 +805,7 @@ int main(void) {
     tick(464);
     assert(ledData[1] == 0); // 500 ms, including the 16-bit timer wrap.
 
+    UsbConfig = 1;
     // Applying a valid profile replaces the error light with normal layer LEDs.
     P1 = P3 = 0xFF;
     testLoadStarterProfile(PHYSICAL_VARIANT);
@@ -721,6 +819,7 @@ int main(void) {
     memcpy(flash, activeConfig, CONFIG_SIZE);
     P1 = P3 = 0xFF;
     setup();
+    tick(0); // Observe successful enumeration before normal input tests.
     assert(bytesWritten == (PHYSICAL_VARIANT ? 9 : 18));
     for (uint8_t i = 0; i < (PHYSICAL_VARIANT ? 9 : 18); i++) {
         assert(ledData[i] == 0);

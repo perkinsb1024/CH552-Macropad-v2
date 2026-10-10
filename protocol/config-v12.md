@@ -246,6 +246,24 @@ layer. Each binding uses the two-byte action encoding below.
 | 2–3 | Layer-selection LED behavior | `0` = **Do not indicate**, `1` = **On for 1.5 seconds**, `2` = **Blink by layer number**, `3` = **Always on** |
 | 4–7 | Layer-indicator color | Palette index 0–15 |
 
+At power-up with a valid profile, all LEDs remain dark while waiting for USB
+configuration (`SET_CONFIGURATION` with value 1). The initial wait lasts up to 500ms
+after USB initialization. Successful enumeration ends it immediately and starts
+the configured startup-layer indication, including its full blink/timed sequence.
+If the timeout expires first, only **Key 1** begins a yellow warning blink,
+starting with 500ms off, then alternating 500ms on and 500ms off. The first yellow
+flash therefore appears at 1000ms after USB initialization. Enumeration or a
+debounced press of **Key 1** clears the warning, including during its initial dark phase.
+Inputs and timed actions remain inactive during the wait and warning, except for
+that dismissal input. A press during the initial 500ms wait does not dismiss it.
+Dismissal consumes the press and its release; inputs held when normal operation
+starts must be released before a new press can trigger their actions. Normal
+operation can start without USB after manual dismissal, but HID output still
+requires enumeration. Invalid configuration takes priority over the USB warning
+and displays the red error indication described below. The USB wait and warning
+apply only at power-up; later USB resets/reconfiguration do not restart either.
+Later resets also preserve the running layer indication and rainbow animation.
+
 Holding the encoder button while powering up always enters the bootloader;
 this recovery gesture is not configurable. Runtime encoder holds do not enter
 the bootloader, even with an invalid profile or layer-option bit 1 set. The
@@ -1013,8 +1031,11 @@ If a write fails, the previous active RAM configuration remains in use so the
 host can retry. An interrupted save may leave invalid flash; at startup, the
 device leaves keys and encoder actions inactive and blinks one red LED at 1 Hz
 until a valid profile is uploaded. USB configuration access, HID bootloader
-entry and encoder-held-at-power-up recovery remain available. The error LED
-uses its own 500ms timer.
+entry and encoder-held-at-power-up recovery remain available. The red error
+indication starts on immediately, then alternates 500ms off and 500ms on. It
+shares the 500ms blink timer code with the yellow USB warning, but does not use
+the USB warning's initial dark phase. USB enumeration and **Key 1** dismissal do
+not clear the invalid-configuration error.
 Configuration activation releases held outputs, cancels pending actions, resets encoder state, and
 suppresses inputs that remain held until they are released.
 
@@ -1034,8 +1055,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,286 | 50 | 95 | 369 | 128 | 77 |
-| Three keys | 14,282 | 54 | 95 | 360 | 128 | 80 |
+| Six keys | 14,336 | 0 | 95 | 369 | 128 | 77 |
+| Three keys | 14,332 | 4 | 95 | 360 | 128 | 80 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks

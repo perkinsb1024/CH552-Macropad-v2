@@ -37,6 +37,16 @@ This guide covers the current configurator and its supported three-key and six-k
 
 If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Save a new profile to activate it. V12 firmware also accepts the **Enter bootloader** command from the firmware installer in this state.
 
+With a valid profile, the macropad stays dark while the computer recognizes it
+over USB. If that takes more than one second, **Key 1** starts blinking yellow.
+The warning clears automatically when USB enumeration completes, and normal
+operation starts with the configured layer indication. You can also press
+**Key 1** to dismiss the warning; that press does not run its assigned action.
+Release the key before pressing it again. Manual dismissal allows local actions
+and lighting, but keyboard and mouse output still require USB enumeration.
+The yellow warning only applies at startup. An invalid profile displays the red
+error indication instead and requires saving a valid profile.
+
 ### Practice without Hardware
 
 Open a [virtual three-key macropad](https://perkinsb1024.github.io/CH552-Macropad-v2/?sim=three) or a [virtual six-key macropad](https://perkinsb1024.github.io/CH552-Macropad-v2/?sim=six). You can also open **More connection options**, the arrow beside **Connect macropad**, and choose a simulated device.
@@ -670,6 +680,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | --- | --- |
 | Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable (you'll need a dongle on Macs), and a macropad running this project's firmware. Reconnect after installing firmware. These boards will not power on with a USB-C to USB-C cable. Linux users may need the [device access setup](../webapp/README.md#linux-device-access) |
 | One red LED blinks and controls do nothing | Connect and save a valid profile |
+| **Key 1** blinks yellow after a one-second startup delay | USB enumeration has not completed. Check the USB data cable and connection, or wait for the computer to recognize the device. Enumeration clears the warning automatically. Press **Key 1** to dismiss it manually; keyboard/mouse output still requires enumeration |
 | All LEDs are red and controls do nothing | Device is in bootloader mode (firmware update mode). Unplug and replug the device without holding the wheel button |
 | My edits have no effect | Click **Save to device** and wait for **Saved**. Check that you are connected to hardware, rather than a simulator |
 | Clicking a layer tab does not update the device | Tabs only affect what you're currently edit. Use a saved layer-switch action on the macropad |

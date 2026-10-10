@@ -71,6 +71,8 @@ __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with acti
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
+static ACTION_BIT startupWaiting;
+static ACTION_BIT startupWarning;
 __xdata uint16_t errorLedChanged;
 
 void displayLeds() {
@@ -95,6 +97,7 @@ uint8_t indicatorBrightness(uint8_t options) {
 }
 
 void updateLeds() {
+  if (startupWaiting) return;
   if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
@@ -295,10 +298,8 @@ void startLayerIndicator(uint8_t layer, uint16_t now) {
   if (!(previewOptions & LED_EFFECT_FLAG)) {
     uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
     layerIndicatorPhasesLeft = 0;
-    if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
-        behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
-      layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 : 2 * (layer + 1);
-    }
+    if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON) layerIndicatorPhasesLeft = 6;
+    if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) layerIndicatorPhasesLeft = 2 * (layer + 1);
   }
   layerIndicatorDeadline = (uint8_t)((now >> 1) + LAYER_INDICATOR_PHASE_TICKS);
   updateLeds();
@@ -364,6 +365,10 @@ void scanButton(uint8_t input, uint16_t now) {
   if (pressed != stableState[input] &&
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
+    if (startupWaiting) {
+      if (startupWarning && pressed) startupWaiting = 0;
+      return; // Consume dismissal; its release has no matching action press.
+    }
 #if ENABLE_COLOR_PREVIEW
     if (colorPreviewActive) firmwarePreviewColor(0);
 #endif
@@ -405,7 +410,7 @@ void scanEncoder() {
   }
 }
 
-void firmwareApplyConfig(uint8_t restartIndicator) {
+void firmwareApplyConfig(ACTION_BIT restartIndicator) {
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
@@ -444,6 +449,8 @@ void firmwareApplyConfig(uint8_t restartIndicator) {
 
 void setup() {
   protocolInit();
+  startupWaiting = activeConfigValid;
+  startupWarning = 0;
   P1 |= KEY_P1_MASK;
   P1_MOD_OC |= KEY_P1_MASK;
   P1_DIR_PU |= KEY_P1_MASK;
@@ -451,9 +458,10 @@ void setup() {
   P3_MOD_OC = (P3_MOD_OC | INPUT_P3_MASK) & ~0x10;
   P3_DIR_PU |= INPUT_P3_MASK | 0x10; // P3.4 is the push-pull LED output.
   clearLeds();
-  firmwareApplyConfig(1);
   USBInit();
-  if (readButton(NUM_LEDS)) {
+  firmwareApplyConfig(0);
+  errorLedChanged = rawChanged[0]; // Input initialization samples the post-USB clock.
+  if (stableState[NUM_LEDS]) {
     enterBootloader();
   }
 }
@@ -464,6 +472,14 @@ void loop() {
   USB_reportPoll(now);
   protocolPoll(now);
   if (protocolState == 3) enterBootloader();
+  if (startupWaiting) {
+    scanButton(0, now);
+    if (UsbConfig || !startupWaiting) {
+      startupWaiting = startupWarning = 0;
+      firmwareApplyConfig(1);
+    } else goto errorLed;
+    return;
+  }
   // Process due timers before physical input so resume/input actions win this frame.
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
@@ -488,10 +504,18 @@ void loop() {
     }
     updateLeds();
   }
-  if (!activeConfigValid) {
+errorLed:
+  if (startupWaiting || !activeConfigValid) {
     if (!previewOptions && (uint16_t)(now - errorLedChanged) >= 500) {
       errorLedChanged = now;
-      ledData[1] ^= 255;
+      uint8_t color = ~ledData[1];
+      if (startupWaiting) {
+        // The warning starts with a dark phase; first yellow appears at 1000ms.
+        if (!startupWarning) color = 0;
+        startupWarning = 1;
+        ledData[0] = color;
+      }
+      ledData[1] = color;
       displayLeds();
     }
     return;
