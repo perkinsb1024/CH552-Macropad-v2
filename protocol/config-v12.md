@@ -1059,8 +1059,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,330 | 6 | 95 | 369 | 128 | 77 |
-| Three keys | 14,326 | 10 | 95 | 360 | 128 | 80 |
+| Six keys | 14,312 | 24 | 95 | 373 | 128 | 78 |
+| Three keys | 14,308 | 28 | 95 | 364 | 128 | 81 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -1068,7 +1068,7 @@ its address and overlap with ordinary external/paged/USB memory. `protocolInit`
 loads all 128 bytes from DataFlash before any image use; absolute storage does
 not rely on the ordinary XSEG startup clear loop.
 
-Stack figures are linker-reserved capacities, two bytes below finalized v11
+Stack figures are linker-reserved capacities, one byte below finalized v11
 (79/82), and above the 69-byte minimum for this implementation. No v12 hardware
 testing has been performed. Host regressions include all eight button bits,
 mode validation, drags, scroll signs/counts, report backpressure, reset, idle

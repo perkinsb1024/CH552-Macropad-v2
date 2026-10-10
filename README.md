@@ -147,9 +147,9 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 10 | 6 |
-| External RAM allocated (XSEG + absolute) | 488 | 497 |
-| Stack available (linker reserve) | 80 | 77 |
+| Flash remaining | 28 | 24 |
+| External RAM allocated (XSEG + absolute) | 492 | 501 |
+| Stack available (linker reserve) | 81 | 78 |
 
 ### Build Release HEX Files for Both Variants
 

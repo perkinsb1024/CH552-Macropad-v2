@@ -56,6 +56,22 @@ def check_memory_layout(map_text, usb_ram):
         and external_start + external_size <= 1024
     ):
         raise RuntimeError("External RAM overlaps paged/USB RAM or exceeds CH552 RAM")
+    # USB interrupt parameter stores must never alias foreground overlays.
+    # The GET_REPORT pointer needs two bytes of storage, separate from its target.
+    usb_parameters = {"_USB_setIdle_PARM_2": 1, "_USB_getReport_PARM_2": 1,
+                      "_USB_getReport_PARM_3": 2}
+    if any(name in symbols for name in usb_parameters):
+        allocated = set()
+        for name, size in usb_parameters.items():
+            start = symbols.get(name)
+            if start is None or not (
+                external_start <= start and start + size <= external_start + external_size
+            ):
+                raise RuntimeError(f"USB interrupt parameter {name} must use external RAM")
+            storage = set(range(start, start + size))
+            if allocated & storage:
+                raise RuntimeError("USB interrupt parameter storage overlaps")
+            allocated.update(storage)
     # Experimental macros align the active image on page three. Absolute xdata
     # is omitted from l_XSEG, so it needs an explicit overlap/capacity check.
     active_start = symbols.get("_activeConfig")

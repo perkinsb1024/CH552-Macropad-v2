@@ -42,6 +42,22 @@ class MemoryLayoutTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "exceeds"):
             self.check(l_XSEG=755)
 
+    def test_usb_interrupt_parameter_storage(self):
+        parameters = dict(_USB_setIdle_PARM_2=270, _USB_getReport_PARM_2=271,
+                          _USB_getReport_PARM_3=272)
+        self.check(**parameters)
+        for name in parameters:
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(RuntimeError, "must use external RAM"):
+                    self.check(**(parameters | {name: 124}))
+                with self.assertRaisesRegex(RuntimeError, "must use external RAM"):
+                    self.check(**(parameters | {name: None}))
+        # The full two-byte pointer must fit, even if its first byte fits.
+        with self.assertRaisesRegex(RuntimeError, "must use external RAM"):
+            self.check(**(parameters | {"_USB_getReport_PARM_3": 807}))
+        with self.assertRaisesRegex(RuntimeError, "storage overlaps"):
+            self.check(**(parameters | {"_USB_getReport_PARM_3": 271}))
+
     def test_absolute_active_configuration(self):
         self.check(_activeConfig=0x300, l_XSEG=498)
         with self.assertRaisesRegex(RuntimeError, "absolute active configuration"):

@@ -373,7 +373,11 @@ uint8_t USB_asciiUsage(uint8_t c) {
   return _asciimap[c];
 }
 
-void USB_setIdle(uint8_t report, uint8_t rate) {
+#ifdef __SDCC
+#pragma save
+#pragma nooverlay
+#endif
+void USB_setIdle(uint8_t report, USB_ISR_PARAM uint8_t rate) {
   if (!report) {
     USB_globalIdleRate = rate;
     USB_idleRate = mouseIdleRate = consumerIdleRate = rate;
@@ -394,7 +398,8 @@ uint8_t USB_getIdle(uint8_t report) {
   return 0;
 }
 
-uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
+uint8_t USB_getReport(uint8_t report, USB_ISR_PARAM uint8_t output,
+                      __xdata uint8_t * USB_ISR_PARAM data) {
   uint8_t i;
   data[0] = report;
   if (report == 1) {
@@ -419,3 +424,6 @@ uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
   }
   return 0;
 }
+#ifdef __SDCC
+#pragma restore
+#endif
