@@ -85,7 +85,7 @@ static void testValidation(void) {
         activeConfig[start] = (first & 0xF0) | CONFIG_ACTION_MACRO;
         activeConfig[start + 1] = second; seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     }
-    const uint8_t holds[] = {CONFIG_ACTION_KEY_HOLD, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_CONSUMER_HOLD, CONFIG_ACTION_MOMENTARY_LAYER, CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y};
+    const uint8_t holds[] = {CONFIG_ACTION_KEY_HOLD, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_CONSUMER_HOLD, CONFIG_ACTION_MOMENTARY_LAYER, CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS, CONFIG_MOUSE_MOVE_HOLD | (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y), CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE | CONFIG_MOUSE_Y_NEGATIVE};
     for (unsigned i = 0; i < sizeof holds; i++) {
         activeConfig[start] = holds[i]; activeConfig[start + 1] = 1;
         seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
@@ -229,7 +229,7 @@ static void testQueueAndChords(void) {
 }
 static void testHeldPointer(void) {
     reset(); const uint8_t pair[] = {1, 4, 1, 5}; define(start, pair, 2); bind(0, start, 1);
-    activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X;
+    activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
     activeConfig[12] = 1;
     actionsPress(1, 0); actionsPoll(0); press(0, 1); pump(1, 20);
     unsigned moves = 0;
@@ -397,27 +397,29 @@ static void testMouseDragAndScroll(void) {
     const uint8_t drag[] = {
         CONFIG_ACTION_MOUSE_DOWN, 0x80,
         CONFIG_ACTION_MOUSE_DOWN, 0x80,
-        CONFIG_ACTION_MOUSE_X, 12,
+        CONFIG_ACTION_MOUSE_AXIS, 12,
+        CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE, 0xF1,
         CONFIG_ACTION_SCROLL, 2,
         CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HORIZONTAL, 0xFD,
         CONFIG_ACTION_PAUSE, 1,
         CONFIG_ACTION_MOUSE_UP, 0x80,
         CONFIG_ACTION_MOUSE_UP, 0x80,
     };
-    define(start, drag, 8); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    define(start, drag, 9); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 2); assert(count == 0);
     // Down is applied once while a full transport refuses the changed report.
     blocked = 1; pump(2, 10); assert(count == 0);
     blocked = 0; actionsPoll(10); assert(count == 1 && latestMouse() == 0x80);
     pending = 1; pump(11, 30); assert(count == 1); // No movement before down drains.
     pending = 0; pump(30, 200);
-    assert(count == 8); // Down, X, two vertical, three horizontal, up.
+    assert(count == 9); // Down, X, combined, two vertical, three horizontal, up.
     assert(reports[1][1] == 0x80 && reports[1][2] == 12);
-    for (unsigned i = 2; i < 4; i++) assert(reports[i][1] == 0x80 && reports[i][4] == 1 && !reports[i][5]);
-    for (unsigned i = 4; i < 7; i++) assert(reports[i][1] == 0x80 && !reports[i][4] && reports[i][5] == 255);
-    assert(!reports[7][1]);
+    assert(reports[2][1] == 0x80 && (int8_t)reports[2][2] == -4 && reports[2][3] == 60);
+    for (unsigned i = 3; i < 5; i++) assert(reports[i][1] == 0x80 && reports[i][4] == 1 && !reports[i][5]);
+    for (unsigned i = 5; i < 8; i++) assert(reports[i][1] == 0x80 && !reports[i][4] && reports[i][5] == 255);
+    assert(!reports[8][1]);
     // Cancellation removes persistent drag state and the queued release/movement.
-    reset(); define(start, drag, 8); bind(0, start, 1);
+    reset(); define(start, drag, 9); bind(0, start, 1);
     press(0, 0); pump(0, 3); assert(latestMouse() == 0x80);
     actionsClear(); count = 0; pump(3, 100); assert(!count);
     // Macro completion retains a persistent press for a separate input to clear.
@@ -426,6 +428,48 @@ static void testMouseDragAndScroll(void) {
     activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = 0xF8;
     press(0, 0); pump(0, 30); assert(latestMouse() == 0xF8 && count == 1);
     press(1, 30); pump(30, 40); assert(latestMouse() == 0);
+}
+
+static void testCombinedPointerSources(void) {
+    // A chord hold stops when either chord member is released.
+    for (uint8_t released = 0; released < 2; released++) {
+        reset(); activeConfig[5] |= 2;
+        activeConfig[start] = 0;
+        activeConfig[start + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_Y_NEGATIVE;
+        activeConfig[start + 2] = 0xF1;
+        actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
+        assert(count == 2 && reports[1][2] == 4 && (int8_t)reports[1][3] == -60);
+        actionsRelease(released); pump(10, 30); assert(count == 2);
+    }
+    // Resolved pointer holds retain their axes and signs across layer changes.
+    reset(); activeConfig[3] = 1;
+    activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_X_NEGATIVE;
+    activeConfig[10] = 0xF1;
+    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+    actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
+    assert(actionsLayer() == 1 && count == 2);
+    assert((int8_t)reports[1][2] == -4 && reports[1][3] == 60);
+    actionsRelease(0); pump(10, 30); assert(count == 2);
+
+    // Both timer slots use the same dispatcher and preserve blocked tap reports.
+    reset(); uint8_t timer = start; activeConfig[3] = 1 << 6;
+    activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_Y_NEGATIVE;
+    activeConfig[timer + 2] = 0xF1;
+    activeConfig[timer + 3] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y;
+    activeConfig[timer + 4] = 0x81;
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0);
+    blocked = 1; pump(0, 10); assert(count == 0);
+    blocked = 0; pump(10, 20);
+    assert(count == 1 && reports[0][2] == 4 && (int8_t)reports[0][3] == -60);
+    assert(!actionsTimedInput()); pump(20, 30);
+    assert(count == 2 && !reports[1][2] && (int8_t)reports[1][3] == -127);
+
+    reset(); const uint8_t step[] = {CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE | CONFIG_MOUSE_Y_NEGATIVE, 0xFF};
+    define(start, step, 1); bind(0, start, 2); seal();
+    assert(configValid(activeConfig, PHYSICAL_VARIANT)); press(0, 0); pump(0, 20);
+    assert(count == 2);
+    for (unsigned i = 0; i < count; i++) assert((int8_t)reports[i][2] == -60 && (int8_t)reports[i][3] == -60);
 }
 
 static void testMouseSources(void) {
@@ -594,7 +638,7 @@ int main(void) {
     testModifiedConsumer(); testModifiedConsumerBackpressure();
     testModifiedConsumerReplacement(); testModifiedConsumerMacrosAndSources();
     testModifiedConsumerCleanup();
-    testPersistentMouse(); testMouseDragAndScroll(); testMouseSources();
+    testPersistentMouse(); testMouseDragAndScroll(); testCombinedPointerSources(); testMouseSources();
     testGlobalToggleSources();
     testGlobalToggle();
     testTextCharacterPause();

@@ -314,19 +314,24 @@ static void testActions(void) {
     uint8_t type;
     uint8_t param;
     uint8_t aux;
-    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+    // Exhaust every flag/parameter combination on keys and wheel rotation.
+    for (type = CONFIG_ACTION_MOUSE_AXIS; type <= CONFIG_ACTION_MOUSE_XY; type++) {
+        unsigned value;
         for (aux = 0; aux < 16; aux++) {
-            testLoadStarterProfile(CONFIG_SIX_KEYS);
-            activeConfig[9] = (aux << 4) | type;
-            activeConfig[10] = 1;
-            seal();
-            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux <= 1));
-            activeConfig[9] = CONFIG_ACTION_NONE;
-            activeConfig[10] = 0;
-            activeConfig[23] = (aux << 4) | type;
-            activeConfig[24] = 1;
-            seal();
-            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux == 0));
+            for (value = 0; value < 256; value++) {
+                uint8_t valid = type == CONFIG_ACTION_MOUSE_AXIS ?
+                    aux < 4 && value != 0x80 : aux < 8;
+                testLoadStarterProfile(CONFIG_SIX_KEYS);
+                activeConfig[9] = (aux << 4) | type;
+                activeConfig[10] = value;
+                seal();
+                assert(configValid(activeConfig, CONFIG_SIX_KEYS) == valid);
+                activeConfig[9] = activeConfig[10] = 0;
+                activeConfig[23] = (aux << 4) | type;
+                activeConfig[24] = value;
+                seal();
+                assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (valid && !(aux & 1)));
+            }
         }
     }
     for (type = 0; type < 16; type++) {
@@ -338,8 +343,8 @@ static void testActions(void) {
                    type <= CONFIG_ACTION_MOUSE_TOGGLE) {
             param = 1;
         } else if (type == CONFIG_ACTION_SCROLL ||
-                   type == CONFIG_ACTION_MOUSE_X ||
-                   type == CONFIG_ACTION_MOUSE_Y) {
+                   type == CONFIG_ACTION_MOUSE_AXIS ||
+                   type == CONFIG_ACTION_MOUSE_XY) {
             param = 1;
         } else if (type == CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_CONSUMER_HOLD) {
             param = 0xE9;

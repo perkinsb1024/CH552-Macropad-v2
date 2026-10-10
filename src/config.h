@@ -86,8 +86,8 @@
 #define CONFIG_ACTION_SET_LAYER        0x9
 #define CONFIG_ACTION_MOMENTARY_LAYER  0xA
 #define CONFIG_ACTION_RELATIVE_LAYER   0xB
-#define CONFIG_ACTION_MOUSE_X          0xC
-#define CONFIG_ACTION_MOUSE_Y          0xD
+#define CONFIG_ACTION_MOUSE_AXIS       0xC
+#define CONFIG_ACTION_MOUSE_XY          0xD
 #define CONFIG_ACTION_LED_CONTROL      0xE
 #define CONFIG_ACTION_MACRO            0xF
 
@@ -117,6 +117,9 @@
 #define CONFIG_LED_CONFIGURED 15
 
 #define CONFIG_MOUSE_MOVE_HOLD         0x10
+#define CONFIG_MOUSE_AXIS_Y            0x20
+#define CONFIG_MOUSE_X_NEGATIVE        0x20
+#define CONFIG_MOUSE_Y_NEGATIVE        0x40
 
 // Per-layer option byte: full brightness bit 0, deprecated/ignored bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01

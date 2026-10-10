@@ -315,7 +315,7 @@ static void testScrollHold(void) {
 
     // Pointer movement still repeats on its original 8 ms clock.
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
-    activeConfig[10] = 1; activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X;
+    activeConfig[10] = 1; activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
     activeConfig[12] = 1; activeConfig[8] &= 0xF0; // No chord window.
     actionsPress(0, 0); actionsPress(1, 0);
     for (uint16_t now = 0; now <= 9; now++) actionsPoll(now);
@@ -735,7 +735,7 @@ static void testPointerSteps(void) {
     const int8_t deltas[] = {-127, -1, 1, 127};
     uint8_t type;
     uint8_t i;
-    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+    for (type = CONFIG_ACTION_MOUSE_AXIS; type <= (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y); type += CONFIG_MOUSE_AXIS_Y) {
         for (i = 0; i < sizeof(deltas); i++) {
             reset();
             activeConfig[9] = type;
@@ -743,8 +743,8 @@ static void testPointerSteps(void) {
             actionsPress(0, 0);
             actionsPoll(0);
             assert(count == 1 && reports[0][0] == 2);
-            assert((int8_t)reports[0][2] == (type == CONFIG_ACTION_MOUSE_X ? deltas[i] : 0));
-            assert((int8_t)reports[0][3] == (type == CONFIG_ACTION_MOUSE_Y ? deltas[i] : 0));
+            assert((int8_t)reports[0][2] == (type == CONFIG_ACTION_MOUSE_AXIS ? deltas[i] : 0));
+            assert((int8_t)reports[0][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? deltas[i] : 0));
             actionsPoll(1); // Holding the key must not repeat the step.
             assert(count == 1);
             actionsRelease(0);
@@ -766,8 +766,8 @@ static void testPointerSteps(void) {
             blocked = 0;
             actionsPoll(1); // Retry a rejected report without losing the step.
             assert(count == 1 && reports[0][0] == 2);
-            assert((int8_t)reports[0][2] == (type == CONFIG_ACTION_MOUSE_X ? deltas[i] : 0));
-            assert((int8_t)reports[0][3] == (type == CONFIG_ACTION_MOUSE_Y ? deltas[i] : 0));
+            assert((int8_t)reports[0][2] == (type == CONFIG_ACTION_MOUSE_AXIS ? deltas[i] : 0));
+            assert((int8_t)reports[0][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? deltas[i] : 0));
             actionsPress(0, 2); // A later action must not be stuck behind movement.
             actionsPoll(2);
             assert(count == 2 && reports[1][0] == 1 && reports[1][3] == 0x29);
@@ -775,10 +775,62 @@ static void testPointerSteps(void) {
     }
 }
 
+static void testCombinedPointer(void) {
+    // Every magnitude pair and sign combination must produce one exact report.
+    for (unsigned signs = 0; signs < 4; signs++) {
+        for (unsigned value = 0; value < 256; value++) {
+            int8_t x = (value & 15) * 4;
+            int8_t y = (value >> 4) * 4;
+            if (signs & 1) x = -x;
+            if (signs & 2) y = -y;
+            reset();
+            activeConfig[9] = CONFIG_ACTION_MOUSE_XY | (signs << 5);
+            activeConfig[10] = value;
+            actionsPress(0, 0);
+            blocked = 1;
+            actionsPoll(0);
+            assert(count == 0);
+            blocked = 0;
+            actionsPoll(1);
+            assert(count == 1 && reports[0][0] == 2);
+            assert((int8_t)reports[0][2] == x && (int8_t)reports[0][3] == y);
+            actionsPoll(9);
+            assert(count == 1);
+            actionsRelease(0);
+
+            reset();
+            activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | (signs << 5);
+            activeConfig[10] = value;
+            actionsPress(0, 0);
+            actionsPoll(0);
+            actionsPoll(7);
+            assert(count == 1);
+            actionsPoll(8);
+            assert(count == 2);
+            assert((int8_t)reports[1][2] == x && (int8_t)reports[1][3] == y);
+            blocked = 1;
+            actionsPoll(16);
+            assert(count == 2);
+            blocked = 0;
+            actionsPoll(24);
+            assert(count == 3);
+            actionsRelease(0);
+            actionsPoll(32);
+            assert(count == 3);
+        }
+    }
+    reset();
+    activeConfig[23] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE;
+    activeConfig[24] = 0xF1;
+    actionsRotate(1);
+    actionsPoll(0);
+    assert(count == 1 && (int8_t)reports[0][2] == -4 && reports[0][3] == 60);
+}
+
 static void testPointerHold(void) {
     uint8_t type;
     uint8_t released;
-    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+    for (type = CONFIG_ACTION_MOUSE_AXIS; type <= (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y); type += CONFIG_MOUSE_AXIS_Y) {
         reset();
         activeConfig[9] = type | CONFIG_MOUSE_MOVE_HOLD;
         activeConfig[10] = 0xFF;
@@ -788,8 +840,8 @@ static void testPointerHold(void) {
         assert(count == 1);
         actionsPoll(8);
         assert(count == 2 && reports[1][0] == 2);
-        assert(reports[1][2] == (type == CONFIG_ACTION_MOUSE_X ? 0xFF : 0));
-        assert(reports[1][3] == (type == CONFIG_ACTION_MOUSE_Y ? 0xFF : 0));
+        assert(reports[1][2] == (type == CONFIG_ACTION_MOUSE_AXIS ? 0xFF : 0));
+        assert(reports[1][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? 0xFF : 0));
         actionsPoll(16);
         assert(count == 3);
         actionsRelease(0);
@@ -818,9 +870,9 @@ static void testPointerHold(void) {
 
     // Both axes repeat independently, and unrelated key taps can still finish.
     reset();
-    activeConfig[9] = CONFIG_ACTION_MOUSE_X | CONFIG_MOUSE_MOVE_HOLD;
+    activeConfig[9] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
     activeConfig[10] = 1;
-    activeConfig[11] = CONFIG_ACTION_MOUSE_Y | CONFIG_MOUSE_MOVE_HOLD;
+    activeConfig[11] = (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) | CONFIG_MOUSE_MOVE_HOLD;
     activeConfig[12] = 2;
     actionsPress(0, 0);
     actionsPress(1, 0);
@@ -844,7 +896,7 @@ static void testPointerHold(void) {
         reset();
         activeConfig[5] = 2;
         activeConfig[31] = 0;
-        activeConfig[32] = CONFIG_ACTION_MOUSE_X | CONFIG_MOUSE_MOVE_HOLD;
+        activeConfig[32] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
         activeConfig[33] = 3;
         actionsPress(0, 100);
         actionsPress(1, 101);
@@ -1490,6 +1542,7 @@ int main(void) {
     testHighLayerActions();
     testPointerHold();
     testPointerSteps();
+    testCombinedPointer();
     testPreviousLayer();
     testOneShot();
     testOneShotGlobalLayerChord();

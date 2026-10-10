@@ -138,12 +138,13 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             // Binding-kind callers pass rotation as 0 or 1.
             return !(aux & (uint8_t)((rotation << 2) | 3)) && param != 0x80;
 #else
-            if (aux) return 0;
-            // Fall through: legacy scroll and pointer share the delta bound.
+            return !aux && param != 0x80;
 #endif
-        case CONFIG_ACTION_MOUSE_X:
-        case CONFIG_ACTION_MOUSE_Y:
-            return aux < (uint8_t)(2 - rotation) && param != 0x80;
+        case CONFIG_ACTION_MOUSE_AXIS:
+            if (param == 0x80 || (aux & 4)) return 0;
+            // Fall through: both pointer actions share hold and reserved-bit checks.
+        case CONFIG_ACTION_MOUSE_XY:
+            return !(aux & (uint8_t)(8 | rotation));
         case CONFIG_ACTION_CONSUMER:
         case CONFIG_ACTION_CONSUMER_HOLD:
             // The full 12-bit consumer usage is retained, including its high nibble.

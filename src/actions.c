@@ -155,10 +155,22 @@ static uint8_t mouseButtons(void) {
   return buttons;
 }
 
-static FW_BIT movePointer(uint8_t type, int8_t delta) {
-  return USB_queueMousePacked(mouseButtons(),
-                        type == CONFIG_ACTION_MOUSE_X ? delta : 0,
-                        type == CONFIG_ACTION_MOUSE_Y ? delta : 0, 0);
+static FW_BIT movePointer(uint8_t first, uint8_t second) {
+  int8_t x = second;
+  int8_t y;
+  if (first & 1) { // Combined movement (type D).
+    x = (second & 15) << 2;
+    y = (second >> 4) << 2;
+    if (first & CONFIG_MOUSE_X_NEGATIVE) x = -x;
+    if (first & CONFIG_MOUSE_Y_NEGATIVE) y = -y;
+  } else {
+    y = 0;
+    if (first & CONFIG_MOUSE_AXIS_Y) {
+      y = x;
+      x = 0;
+    }
+  }
+  return USB_queueMousePacked(mouseButtons(), x, y, 0);
 }
 
 static FW_BIT addUsage(uint8_t usage) {
@@ -627,8 +639,8 @@ void actionsPoll(uint16_t now) {
       buttonPressed[i] = 0;
     } else if (c && buttonPressed[i]) {
       // Pointer holds keep their 8 ms cadence; scroll holds have a slower clock.
-      if ((uint8_t)(buttonFirst[i] - (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X)) <= 1) {
-        movePointer(actionType(buttonFirst[i]), buttonSecond[i]);
+      if ((buttonFirst[i] & 0x1E) == (CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS)) {
+        movePointer(buttonFirst[i], buttonSecond[i]);
 #if CONFIG_SCROLL_HOLD_SUPPORT
       } else if ((uint8_t)(buttonFirst[i] & (uint8_t)~CONFIG_SCROLL_HORIZONTAL) == (CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL) &&
                  (uint8_t)((uint8_t)now - scrollRepeated) >= 100) {
@@ -700,9 +712,8 @@ void actionsPoll(uint16_t now) {
           currentFirst = 0;
         }
       }
-    } else if (type == CONFIG_ACTION_MOUSE_X || type == CONFIG_ACTION_MOUSE_Y) {
-      int8_t delta = currentSecond;
-      if (movePointer(type, delta)) {
+    } else if ((type & 0xE) == CONFIG_ACTION_MOUSE_AXIS) {
+      if (movePointer(currentFirst, currentSecond)) {
         pointerRepeated = now;
         currentFirst = 0;
       }
