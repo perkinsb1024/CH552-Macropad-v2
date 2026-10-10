@@ -104,6 +104,39 @@ Any temporary modifier ownership must be reconciled with that behavior. A tap
 implementation could cover encoder and macro use without also implementing a
 modified consumer hold; that scope decision remains open.
 
+### Preliminary Modified Consumer Tap Resource Estimate
+
+Assuming a dedicated action type is available, a self-contained modified
+consumer tap is estimated to require 250–500 bytes of additional firmware flash,
+with approximately 350 bytes as a planning figure, and 2–4 bytes of additional
+runtime state. These are rough estimates from the current code structure, not
+measured builds or resource guarantees. SDCC code generation and the final
+interruption policy could materially change the costs.
+
+This estimate assumes the four-bit modifier mask plus eight-bit usage encoding
+described above, support for physical inputs, encoder rotation and macro steps,
+and retention of the existing unmodified 12-bit consumer actions. It includes
+firmware validation/dispatch, merging temporary modifiers with physical holds,
+ordering modifier press before consumer press and modifier release after
+consumer release, USB backpressure handling, reconciliation with latest-wins
+consumer interruption, and cancellation/reset cleanup. The runtime state would
+track temporary modifier ownership and lifecycle progress; placement should
+preserve the stack reserve.
+
+The action still occupies two configuration bytes, so there is no increase in
+per-action configuration storage. It reuses the existing keyboard and consumer
+HID reports and USB report queue; no usage lookup table, new report descriptor,
+or additional report buffer is needed. The complete action can require up to
+four reports: modifier press, consumer press, consumer release, and modifier
+release. Unchanged modifier states may avoid the corresponding keyboard reports.
+
+The estimate excludes modified consumer holds, general macro holds, solving
+action-type allocation, and configuration-format migration. Configurator changes
+are also outside this firmware resource estimate. Modifier ownership still adds
+real lifecycle work even with an action type available, but ordinary-key storage
+and six-key slot handling are unnecessary. Measure both hardware variants before
+using these figures to make a final resource decision.
+
 ## Macro Hold Alternatives
 
 Supporting a modified consumer tap directly would solve the motivating use case
@@ -121,6 +154,74 @@ layer change, configuration application, and USB reset. It also needs a policy
 for unmatched presses/releases and interactions with keyboard taps and text.
 Existing persistent mouse down/up behavior is useful context but does not
 automatically define suitable keyboard ownership semantics.
+
+### Per-Run Release Proposal
+
+A further proposal is to allow **Key hold** steps whose release event is the end
+of one macro run. Each repetition would release its holds before the next run
+starts; holds would not span the entire invocation's repeat count. This is
+technically workable, but has not been implemented or measured.
+
+The proposed semantics are accumulating holds: each step adds its modifiers and
+optional ordinary key to macro-owned state until the run ends. Reports combine
+that state with physical holds and temporary taps. Cleanup removes only the
+macro's contribution, preserving keys and modifiers still held by physical
+inputs. The release reports must drain before the next repetition begins, and
+cancellation must clear macro ownership too.
+
+For example, **Key hold** with Option+Shift and **No key (modifiers only)**,
+followed by **Media / system** brightness up, would press the modifiers, press
+and release the consumer usage, then release the modifiers. This provides the
+required HID ordering; host behavior still needs hardware verification.
+
+Other possible benefits include continuous modifier sequences such as holding
+Command across multiple Tab taps, modified mouse clicks/scrolls/drags, timed
+ordinary-key presses using **Pause**, and overlapping ordinary keys. Individual
+**Key tap** actions already support modifiers; the added capability is keeping
+state active across multiple steps and report types.
+
+The main limitations and implementation complications are:
+
+- End-only release cannot return to unmodified output midway through a run.
+  Later taps and **Type text** inherit held modifiers, potentially activating
+  shortcuts instead of entering text.
+- Tapping a key already held by the macro produces no fresh press unless that
+  key is first released. Long ordinary-key holds may trigger host key repeat.
+- The six ordinary-key report slots require an overflow policy that cannot
+  leave playback waiting indefinitely for a slot occupied by its own holds.
+- Immediate physical consumer actions can interleave with playback and receive
+  the macro's held modifiers. Ownership cannot isolate modifiers to one action
+  because the host sees a combined keyboard state.
+- Supporting other hold types adds separate problems: consumer ownership must
+  reconcile with the latest-wins lane; pointer/scroll repeats currently wait
+  for playback to become idle; momentary layers conflict with cancellation on
+  effective-layer changes. Keyboard-only support would be a narrower first scope.
+
+### Preliminary Resource Estimates
+
+These are rough estimates from the current code structure, not measured builds
+or resource guarantees. SDCC code generation could materially change the costs.
+
+| Scope | Estimated Additional Firmware Flash |
+| --- | --- |
+| Modifier-only macro holds | 200–400 bytes |
+| Keyboard holds including ordinary keys | 400–800 bytes; approximately 600 bytes for planning |
+| Keyboard, mouse, consumer, pointer and scroll holds | 1–2KB, potentially more |
+
+Keyboard-only support would likely need approximately 8–12 bytes of additional
+runtime state, preferably placed where it does not reduce the stack reserve.
+Its flash estimate includes report merging, hold-step handling, release between
+repetitions, and cancellation cleanup. Modifier-only support is cheaper because
+its accumulated state is a bitmask; ordinary keys also require storage, merging,
+and report-slot handling.
+
+### Current Decision
+
+Defer macro hold support. The expected flash cost and implementation complexity
+outweigh the benefits for this device; finding that space may require cutting
+other features. The per-run release proposal remains investigation context,
+not an implementation plan. Self-contained modified consumer taps remain a
+separate design option, with their encoding and lifecycle still undecided.
 
 ## Implementation Constraints
 
