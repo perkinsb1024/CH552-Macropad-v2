@@ -4,7 +4,7 @@
 #include "storage.h"
 
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
-void firmwareApplyConfig(void);
+void firmwareApplyConfig(uint8_t restartIndicator);
 
 #define PROTOCOL_VERSION 1
 #define PROTOCOL_GET_INFO 1
@@ -186,7 +186,7 @@ static uint8_t processRequest(void) {
         activeConfig[i] = stagedConfig[i];
       }
       activeConfigValid = 1;
-      firmwareApplyConfig();
+      firmwareApplyConfig(1);
       uploadState = 2;
       break;
 #if ENABLE_COLOR_PREVIEW
@@ -212,7 +212,7 @@ void protocolPoll(uint16_t now) {
   if (resetPending) {
     uploadState = 0;
     protocolState = 0;
-    firmwareApplyConfig();
+    firmwareApplyConfig(0);
     resetPending = 0;
     USB_EP1_receiveReady();
     return;

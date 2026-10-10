@@ -111,11 +111,11 @@ void protocolInit(void) {
     resetPending = 0;
     protocolState = 0;
 }
-void firmwareApplyConfig(void);
+void firmwareApplyConfig(uint8_t restartIndicator);
 void protocolPoll(uint16_t now) {
     (void)now;
     if (resetPending) {
-        firmwareApplyConfig();
+        firmwareApplyConfig(0);
         resetPending = 0;
     }
 }
@@ -161,35 +161,58 @@ static void testStartupIndicatorEnumeration(void) {
             indicatorRisingEdges = indicatorWasLit = 0;
             setup();
             assert(activeConfigValid && actionsLayer() == layer);
-            assert(!layerIndicatorPhasesLeft && !indicatorRisingEdges);
-            assertIndicatorLeds(0, 0, 0);
-
-            // Bus resets before configuration must not flash the indicator.
-            protocolReset(); tick(100);
-            protocolReset(); tick(350);
-            assert(!layerIndicatorPhasesLeft && !indicatorRisingEdges);
-            assertIndicatorLeds(0, 0, 0);
-
-            // SET_CONFIGURATION schedules the same main-loop config application.
-            UsbConfig = 1;
-            protocolReset(); tick(600);
             uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
             uint8_t phases = timed ? 6 : 2 * (layer + 1);
-            assert(layerIndicatorPhasesLeft == phases);
+            assert(layerIndicatorPhasesLeft == phases && indicatorRisingEdges == 1);
             assertIndicatorLeds(0, 1, 0);
-            for (uint8_t phase = 1; phase <= phases; phase++) {
-                uint16_t deadline = 600 + 250 * phase;
-                tick(deadline - 1);
-                assert(layerIndicatorPhasesLeft == phases - phase + 1);
-                tick(deadline);
-                assertIndicatorLeds(0, (timed || !(phase & 1)) && phase < phases, 0);
+
+            // Bus reset and SET_CONFIGURATION preserve the original phase/deadline.
+            for (uint16_t now = 1; now <= 250 * (phases + 1); now++) {
+                if (now == 100 || now == 350 || now == 600) protocolReset();
+                if (now == 600) UsbConfig = 1;
+                tick(now);
+                uint8_t elapsed = now / 250;
+                assert(layerIndicatorPhasesLeft == (elapsed < phases ? phases - elapsed : 0));
+                assertIndicatorLeds(0, elapsed < phases && (timed || !(elapsed & 1)), 0);
             }
-            tick(600 + 250 * (phases + 1));
+            assert(indicatorRisingEdges == (timed ? 1 : layer + 1));
+            // A later reset must not revive a completed startup indication.
+            protocolReset(); tick(250 * (phases + 1) + 1);
             assert(!layerIndicatorPhasesLeft);
             assertIndicatorLeds(0, 0, 0);
             assert(indicatorRisingEdges == (timed ? 1 : layer + 1));
+
         }
     }
+}
+
+
+static void testStartupRainbowEnumeration(void) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+    uint16_t crc = configCrc(activeConfig);
+    activeConfig[6] = crc;
+    activeConfig[7] = crc >> 8;
+    memcpy(flash, activeConfig, CONFIG_SIZE);
+    P1 = P3 = 0xFF;
+    previewOptions = 0;
+    UsbConfig = 0;
+    currentMs = 0;
+    setup();
+    assert(ledData[1] && !layerIndicatorPhasesLeft);
+    tick(100);
+    uint8_t hue = rainbowHue;
+    uint8_t drift[NUM_LEDS];
+    memcpy(drift, rainbowDrift, NUM_LEDS);
+    uint8_t rendered[NUM_BYTES];
+    memcpy(rendered, ledData, NUM_BYTES);
+    protocolReset(); tick(100);
+    assert(rainbowHue == hue && memcmp(drift, rainbowDrift, NUM_LEDS) == 0);
+    assert(memcmp(rendered, ledData, NUM_BYTES) == 0);
+    UsbConfig = 1;
+    protocolReset(); tick(100);
+    assert(rainbowHue == hue && memcmp(drift, rainbowDrift, NUM_LEDS) == 0);
+    assert(memcmp(rendered, ledData, NUM_BYTES) == 0);
 }
 
 static void testIndicatorBrightness(void) {
@@ -210,7 +233,7 @@ static void testIndicatorBrightness(void) {
                     (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
                     (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) | full;
                 currentMs = 65500;
-                firmwareApplyConfig();
+                firmwareApplyConfig(1);
                 startLayerIndicator(layer, currentMs);
                 if (behavior == CONFIG_LAYER_INDICATOR_NONE ||
                     behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON) {
@@ -260,7 +283,7 @@ static void testRainbowSpeed(void) {
                 previewOptions = 0;
 #endif
                 currentMs = 65520; // Exercise both the 8-bit and 16-bit timer wraps.
-                firmwareApplyConfig();
+                firmwareApplyConfig(1);
 #if ENABLE_COLOR_PREVIEW
                 if (preview) {
                     firmwareLedAction(CONFIG_LED_SPEED_SET, 3 - speed);
@@ -295,7 +318,7 @@ static void testRainbowPhaseSpacing(void) {
 #if ENABLE_COLOR_PREVIEW
     previewOptions = 0;
 #endif
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     for (uint8_t full = 0; full < 2; full++) {
         activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | full;
         for (uint8_t phase = 0; phase < 4; phase++) {
@@ -344,7 +367,7 @@ static void testRainbowDrift(void) {
         previewOptions = 0;
 #endif
         currentMs = 65520;
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         uint8_t initial[NUM_BYTES], previous[NUM_BYTES];
         memcpy(initial, ledData, NUM_BYTES);
         for (uint16_t frame = 1; frame <= 1024; frame++) {
@@ -388,7 +411,7 @@ static void testRainbowDrift(void) {
         } else {
             assert(memcmp(initial, ledData, NUM_BYTES) == 0);
         }
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         assert(memcmp(initial, ledData, NUM_BYTES) == 0); // Reset restores start.
     }
 }
@@ -406,7 +429,7 @@ static void testTransparencyAndRainbow(void) {
     for (uint8_t full = 0; full < 2; full++) {
         activeConfig[optionsOffset] = 0x3C | full; // Always-on amber.
         activeConfig[5] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         updateLeds();
@@ -433,7 +456,7 @@ static void testTransparencyAndRainbow(void) {
         // Timed Rainbow overrides an opaque black pressed key, then expires.
         activeConfig[optionsOffset] = 0xF4 | full;
         currentMs = 6000;
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         startLayerIndicator(0, currentMs);
         memcpy(before, ledData, NUM_BYTES);
         tick(6006);
@@ -455,7 +478,7 @@ static void testTransparencyAndRainbow(void) {
         activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         activeConfig[optionsOffset] = 0xF8 | full;
         currentMs = 8000;
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         startLayerIndicator(0, currentMs);
         memcpy(before, ledData, NUM_BYTES);
         assert(ledData[0] || ledData[1] || ledData[2]);
@@ -490,7 +513,7 @@ static void testMomentaryIndicatorCancellation(void) {
     activeConfigValid = 1;
     P1 = P3 = 0xFF;
     currentMs = 8000;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     assertIndicatorLeds(0, 1, 0);
     P1 &= ~0x02;
     rawState[0] = stableState[0] = 1;
@@ -520,7 +543,7 @@ static void testSameLayerIndicator(void) {
         activeConfigValid = 1;
         P1 = P3 = 0xFF;
         currentMs = 10000;
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         actionsPress(0, currentMs);
         tick(10000);
         assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
@@ -561,7 +584,7 @@ static void testOneShotChordIndicator(void) {
     activeConfigValid = 1;
     P1 = P3 = 0xFF;
     currentMs = 20000;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     actionsPress(0, 20000);
     actionsRelease(0);
     tick(20000);
@@ -605,7 +628,7 @@ static void testRuntimeHoldDoesNotEnterBootloader(void) {
         frameCount = 0;
         P1 = P3 = 0xFF;
         currentMs = 65000;
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         expectBootloader = 1;
         if (setjmp(bootloaderJump) != 0) assert(0 && "Runtime encoder hold must not enter bootloader");
         P3 &= ~8;
@@ -627,7 +650,7 @@ static void testRuntimeHoldDoesNotEnterBootloader(void) {
 static void testHidBootloaderHandoff(void) {
     P1 = P3 = 0xFF;
     currentMs = 100;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     protocolState = 3;
     expectBootloader = 1;
     USB_CTRL = EA = TMOD = 1;
@@ -644,6 +667,7 @@ static void testHidBootloaderHandoff(void) {
 
 int main(void) {
     testStartupIndicatorEnumeration();
+    testStartupRainbowEnumeration();
     testConsumedPhysicalInput();
     testTemporaryEffects();
     testTimedLighting();
@@ -678,7 +702,7 @@ int main(void) {
     assert(ledData[1] == 255 && frameCount == 0);
     // A USB reset reapplies the error indicator and restarts its timer.
     currentMs = 65500;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     tick(463);
     assert(ledData[1] == 255);
     tick(464);
@@ -688,7 +712,7 @@ int main(void) {
     P1 = P3 = 0xFF;
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfigValid = 1;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     for (uint8_t i = 0; i < NUM_BYTES; i++) {
         assert(ledData[i] == 0);
     }
@@ -720,7 +744,7 @@ int main(void) {
     activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
     activeConfig[10] = 0x04;
     P1 &= ~0x02;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     tick(32);
     assert(frameCount >= 3);
     uint8_t releaseSeen = 0;
@@ -737,7 +761,7 @@ int main(void) {
     tick(3020);
     assert(frames[frameCount - 1][3] == 0);
 
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     P3 = (P3 & ~0x03) | 0x03; // Start encoder at 11.
     encoderState = readEncoder();
     scanEncoder(); // Same state does not count.
@@ -746,16 +770,16 @@ int main(void) {
     P3 &= ~0x03;
     scanEncoder();
     assert(encoderMovement == -2);
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     assert(encoderMovement == 0 && lastLayer == 0);
 
 #if ENABLE_COLOR_PREVIEW
     // Preview overrides held keys and restores the configured output on cancel.
     P1 = P3 = 0xFF;
     currentMs = 4000;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     P1 &= ~0x02;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     firmwarePreviewColor(0x85); // Full cyan on every LED.
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
         assert(ledData[3*i] == 255 && ledData[3*i+1] == 0 && ledData[3*i+2] == 200);
@@ -765,7 +789,7 @@ int main(void) {
     firmwarePreviewColor(0);
     assert(ledData[1] == 255 && ledData[3] == 0);
     P1 |= 0x02;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     firmwarePreviewColor(0x84); // Same dimming as an always-on layer indicator.
     assert(ledData[0] == 15 && ledData[2] == 13);
     firmwarePreviewColor(0xF5);
@@ -801,7 +825,7 @@ int main(void) {
     // Invalid flash still scans cancellation inputs, without emitting actions.
     activeConfigValid = 0;
     P1 = P3 = 0xFF;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     firmwarePreviewColor(0xFD);
     tick(5050);
     assert(previewOptions == 0xFD);

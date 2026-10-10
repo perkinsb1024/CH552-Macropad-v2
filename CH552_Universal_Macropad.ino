@@ -405,7 +405,7 @@ void scanEncoder() {
   }
 }
 
-void firmwareApplyConfig(void) {
+void firmwareApplyConfig(uint8_t restartIndicator) {
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
@@ -432,13 +432,14 @@ void firmwareApplyConfig(void) {
   actionsClear();
   encoderMovement = 0;
   lastLayer = actionsLayer();
-  layerIndicatorPhasesLeft = 0;
-  rainbowChanged = (uint8_t)now;
-  rainbowHue = 0;
-  for (uint8_t i = 0; i < NUM_LEDS; i++) rainbowDrift[i] = 0;
-  // Enumeration reapplies config: wait for SET_CONFIGURATION to avoid an extra blink.
-  if (UsbConfig) startLayerIndicator(lastLayer, now);
-  else updateLeds();
+  // USB resets reapply input state without restarting LED animation or indication.
+  if (restartIndicator) {
+    layerIndicatorPhasesLeft = 0;
+    rainbowChanged = (uint8_t)now;
+    rainbowHue = 0;
+    for (uint8_t i = 0; i < NUM_LEDS; i++) rainbowDrift[i] = 0;
+    startLayerIndicator(lastLayer, now);
+  } else updateLeds();
 }
 
 void setup() {
@@ -450,7 +451,7 @@ void setup() {
   P3_MOD_OC = (P3_MOD_OC | INPUT_P3_MASK) & ~0x10;
   P3_DIR_PU |= INPUT_P3_MASK | 0x10; // P3.4 is the push-pull LED output.
   clearLeds();
-  firmwareApplyConfig();
+  firmwareApplyConfig(1);
   USBInit();
   if (readButton(NUM_LEDS)) {
     enterBootloader();

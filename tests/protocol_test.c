@@ -53,7 +53,7 @@ uint8_t USB_EP1_sendConfig(const uint8_t *reply) {
 void USB_EP1_receiveReady(void) {}
 uint8_t actionsLayer(void) { return configStartupLayer(); }
 uint8_t actionsDropped(uint8_t rotation) { return rotation ? 9 : 3; }
-void firmwareApplyConfig(void) { applies++; }
+void firmwareApplyConfig(uint8_t restartIndicator) { (void)restartIndicator; applies++; }
 void firmwarePreviewColor(uint8_t options) { preview = options; }
 
 static void seal(uint8_t *image) {

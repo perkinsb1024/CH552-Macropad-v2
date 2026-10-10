@@ -143,11 +143,11 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current firmware, in bytes:
+Memory in the current firmware, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 78 | 74 |
+| Flash remaining | 54 | 50 |
 | External RAM allocated (XSEG + absolute) | 488 | 497 |
 | Stack available (linker reserve) | 80 | 77 |
 
