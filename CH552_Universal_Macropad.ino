@@ -76,7 +76,23 @@ static ACTION_BIT startupWarning;
 __xdata uint16_t errorLedChanged;
 
 void displayLeds() {
+  // Allow the LEDs to latch the previous frame before another transmission.
+  delayMicroseconds(300);
+#ifdef __SDCC
+  // Pack the driver's DPTR/B/A arguments directly to fit the application limit.
+  __asm
+    mov dptr,#_ledData
+#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
+    mov b,#9
+#else
+    mov b,#18
+#endif
+    clr a
+    lcall _neopixel_show_long_P3_4
+  __endasm;
+#else
   LED_FUNC(ledData, NUM_BYTES);
+#endif
 }
 
 void clearLeds() {

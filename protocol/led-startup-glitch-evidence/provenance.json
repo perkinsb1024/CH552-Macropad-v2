@@ -9,7 +9,7 @@
     "reportedRecurrences": 0,
     "userAcceptedAsFixed": true,
     "sixKeyHardwareValidationReported": false,
-    "integratedIntoProjectFirmwareSource": false
+    "integratedIntoProjectFirmwareSource": true
   },
   "video": {
     "path": "/Users/benperkins/Downloads/trimmed.mov",

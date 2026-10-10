@@ -1055,8 +1055,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,336 | 0 | 95 | 369 | 128 | 77 |
-| Three keys | 14,332 | 4 | 95 | 360 | 128 | 80 |
+| Six keys | 14,332 | 4 | 95 | 369 | 128 | 77 |
+| Three keys | 14,328 | 8 | 95 | 360 | 128 | 80 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks

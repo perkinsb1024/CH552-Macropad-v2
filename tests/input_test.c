@@ -38,6 +38,7 @@ volatile uint8_t protocolState;
 
 uint32_t millis(void) { return currentMs; }
 void delayMicroseconds(uint16_t us) {
+    if (us == 300) return; // LED latch wait does not advance the bootloader sequence.
     if (expectBootloader) {
         assert(us == 50000);
         assert(USB_CTRL == 0 && EA == 0 && TMOD == 0);

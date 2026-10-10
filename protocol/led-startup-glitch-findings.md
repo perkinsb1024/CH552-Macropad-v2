@@ -2,8 +2,9 @@
 
 Recorded October 9, 2026. The user accepts the LED blink glitch as fixed after
 approximately 30 attempts without recurrence using the isolated latch-interval
-test build. The two startup issues remain unresolved. The LED change is preserved
-as a trial patch; it has not been integrated into the project's firmware source.
+test build. The two startup issues remain unresolved. The validated LED change
+has been integrated into the project's firmware source; the original trial patch
+is preserved as investigation evidence.
 
 ## Top Priority: Debounce Startup Encoder Bootloader Entry
 
@@ -160,8 +161,12 @@ The ordinary C driver-call wrapper plus the new wait exceeded the three-key
 application flash limit. The final trial packs the existing driver's DPTR/B/A
 arguments directly in SDCC assembly to fit. Host builds still use the stub's
 ordinary C call. The [preserved trial patch](led-startup-glitch-latch-test.patch)
-contains only this `displayLeds()` change; the project's firmware source has not
-been modified.
+contains only this `displayLeds()` change. The validated change was subsequently
+applied to the project's firmware source, with an updated explanatory comment.
+Fresh builds of the integrated source produced HEX files identical to the trial
+builds for both variants. The change saves 4 flash bytes per variant, with no RAM
+allocation or stack-capacity change. Current memory tables in `README.md` and
+`protocol/config-v12.md` reflect the integrated measurements below.
 
 Fresh baseline and final trial builds used the installed CH55xDuino 0.0.25
 toolchain, 24MHz, 148-byte USB reservation, enabled color preview, and the actual
@@ -192,8 +197,8 @@ physical signal has not been measured, so the precise electrical failure remains
 inferred. Six-key hardware validation has not been reported.
 
 Issue 1 is resolved for the tested three-key device with the 300µs latch wait.
-Integration of the preserved trial patch into the project's firmware source
-remains pending. The unexpected red and dark startup events remain open, and
+The preserved trial patch has been integrated into the project's firmware source.
+The unexpected red and dark startup events remain open, and
 startup encoder bootloader debounce remains the top implementation priority.
 
 ## Issue 2: Unexpected All-Red LEDs
