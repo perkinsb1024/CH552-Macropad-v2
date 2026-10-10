@@ -215,6 +215,33 @@ static void testMouseButtonMasks(void) {
     }
 }
 
+static void testEveryChordPair(void) {
+    // Enumerate the specified lexicographic table independently of the formula.
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        uint8_t keys = variant ? 3 : 6;
+        uint8_t pairs = keys * (keys - 1) / 2;
+        for (uint8_t selected = 0; selected < pairs; selected++) {
+            testLoadStarterProfile(variant);
+            uint8_t offset = configTimedOffset();
+            activeConfig[5] |= 2;
+            activeConfig[offset] = selected;
+            activeConfig[offset + 1] = CONFIG_ACTION_KEY_TAP;
+            activeConfig[offset + 2] = 4 + selected;
+            seal(); assert(configValid(activeConfig, variant));
+            uint8_t index = 0;
+            for (uint8_t a = 0; a < keys; a++) {
+                for (uint8_t b = a + 1; b < keys; b++, index++) {
+                    uint8_t first = 0, second = 0;
+                    assert(!!configChord(0, a, b, &first, &second) == (index == selected));
+                    if (index == selected) assert(first == CONFIG_ACTION_KEY_TAP && second == 4 + selected);
+                    assert(!!configChord(0, b, a, &first, &second) == (index == selected));
+                    if (index == selected) assert(first == CONFIG_ACTION_KEY_TAP && second == 4 + selected);
+                }
+            }
+        }
+    }
+}
+
 static void testPersistentMouseModes(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t aux = 0; aux < 16; aux++) {
@@ -638,6 +665,7 @@ int main(void) {
     testCapacityAndStrings(CONFIG_THREE_KEYS);
     testStringBoundaries();
     testChords();
+    testEveryChordPair();
     testPersistentMouseModes();
     testMouseButtonMasks();
     testMultiClick();

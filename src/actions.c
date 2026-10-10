@@ -14,7 +14,7 @@ __pdata uint8_t buttonSecond[MAX_INPUTS];
 __pdata uint8_t buttonPressed[MAX_INPUTS];
 __pdata uint8_t buttonOrder[MAX_INPUTS];
 __pdata uint8_t lastKeyboard[8];
-__xdata uint8_t nextKeyboard[8];
+__pdata uint8_t nextKeyboard[8];
 __pdata uint8_t inputDown;
 __pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
 __pdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
@@ -51,7 +51,7 @@ __data uint8_t macroStart;
 __idata uint8_t macroRepeat;
 #endif
 // Toggle/down/up share one persistent mouse-button state; holds remain separate.
-__idata uint8_t persistentMouse;
+__pdata uint8_t persistentMouse;
 __pdata uint8_t persistentModifiers;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
@@ -182,7 +182,7 @@ static FW_BIT flushOutputs(void) {
   uint8_t i;
   uint8_t changed = 0;
   uint8_t buttons;
-  for (i = 0; i < 8; i++) {
+  for (i = 1; i < 8; i++) {
     nextKeyboard[i] = 0;
   }
   nextKeyboard[0] = persistentModifiers;
@@ -205,7 +205,8 @@ static FW_BIT flushOutputs(void) {
     }
   }
   if (changed) {
-    if (!USB_queueKeyboard(nextKeyboard)) {
+    // PSEG is checked to stay in xRAM page zero, so this widening is exact.
+    if (!USB_queueKeyboard((const __xdata uint8_t *)nextKeyboard)) {
       return 0;
     }
     for (i = 0; i < 8; i++) {
@@ -276,15 +277,19 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
-      if (first == CONFIG_ACTION_MOUSE_HOLD) break;
-      if (first & 0x20) persistentMouse &= ~second;
-      else if (first & 0x10) persistentMouse |= second;
-      else persistentMouse ^= second;
-      break;
     case CONFIG_ACTION_MODIFIER:
-      if (first & 0x20) persistentModifiers &= ~second;
-      else if (first & 0x10) persistentModifiers |= second;
-      else persistentModifiers ^= second;
+      {
+        __pdata uint8_t *state;
+        uint8_t value;
+        if (first == CONFIG_ACTION_MOUSE_HOLD) break;
+        state = actionType(first) == CONFIG_ACTION_MODIFIER ?
+                &persistentModifiers : &persistentMouse;
+        value = *state;
+        // Down clears then XORs to set; up only clears; toggle only XORs.
+        if (first & 0x30) value &= ~second;
+        if (!(first & 0x20)) value ^= second;
+        *state = value;
+      }
       break;
     case CONFIG_ACTION_RELATIVE_LAYER:
       {
@@ -697,8 +702,7 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
-    } else if (type >= CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_MOUSE_TOGGLE ||
-               type == CONFIG_ACTION_MODIFIER) {
+    } else if (type >= CONFIG_ACTION_MODIFIER) {
       // Held bindings never enter this queue; X/Y movement was handled above.
       runAction(currentFirst, currentSecond, 0, 9);
       currentFirst = 0;

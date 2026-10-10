@@ -42,12 +42,8 @@ static uint8_t pairCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS 
 #endif
 
 static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
-    uint8_t index = 0;
-    uint8_t i;
-    for (i = 0; i < a; i++) {
-        index += keys - i - 1;
-    }
-    return index + b - a - 1;
+    // Sum preceding rows of the triangular pair table; a < b < keys <= 6.
+    return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
 }
 
 uint16_t configCrc(const __xdata uint8_t *image) {
@@ -130,7 +126,7 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_MOUSE_CLICK:
             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
         case CONFIG_ACTION_MODIFIER:
-            return aux <= 2 && param != 0 && param <= 15;
+            return aux <= 2 && (uint8_t)(param - 1) < 15;
         case CONFIG_ACTION_MOUSE_TOGGLE:
             return aux <= (rotation ? 2 : 3) && param != 0;
         case CONFIG_ACTION_SCROLL:
