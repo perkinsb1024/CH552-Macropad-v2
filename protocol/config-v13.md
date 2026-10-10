@@ -838,7 +838,7 @@ The v13 configuration uses the following transport-v1 protocol. The shared
 the v13 version and validation rules in this document apply to v13 firmware.
 
 The USB device retains VID `0x1209` and PID `0xC55D`. Its product string is
-`Universal Macropad`. Keyboard and mouse reports use IDs 1 and 2; consumer
+`3-Key Macropad` or `6-Key Macropad`, matching the hardware variant. Keyboard and mouse reports use IDs 1 and 2; consumer
 controls use ID 5.
 A separate vendor-defined Application collection uses usage page `0xFF00`,
 usage `0x0001`. Report ID 3 carries 31-byte Output requests and report ID 4
@@ -991,8 +991,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,316 | 20 | 105 | 365 | 128 | 79 |
-| Three keys | 14,314 | 22 | 105 | 356 | 128 | 82 |
+| Six keys | 14,318 | 18 | 105 | 365 | 128 | 79 |
+| Three keys | 14,316 | 20 | 105 | 356 | 128 | 82 |
 
 Host suites pass on both geometries; hardware compatibility testing remains
 pending. The active configurator does not support this format.

@@ -11,7 +11,8 @@ if "--no-preview" in sys.argv:
 flags += ["-D" + arg.removeprefix("--define=") for arg in sys.argv[1:]
           if arg.startswith("--define=")]
 with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
-    suites = [("config", ["src/config.c"]), ("actions", ["src/config.c", "src/actions.c"]), ("protocol", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"]), ("usb", [])]
+    suites = [("config", ["src/config.c"]), ("actions", ["src/config.c", "src/actions.c"]), ("protocol", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"])]
+    suites += [("usb", [], variant) for variant in (0, 1)]
     suites += [("macros", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("timed_actions", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("input", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]

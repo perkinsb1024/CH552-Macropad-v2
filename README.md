@@ -147,9 +147,10 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 28 | 24 |
-| External RAM allocated (XSEG + absolute) | 492 | 501 |
-| Stack available (linker reserve) | 81 | 78 |
+| Flash used | 14,316 | 14,318 |
+| Flash remaining | 20 | 18 |
+| External RAM allocated (XSEG + absolute) | 484 | 493 |
+| Stack available (linker reserve) | 82 | 79 |
 
 ### Build Release HEX Files for Both Variants
 
@@ -255,7 +256,7 @@ _The Configurator Web App_
 No local web app installation is needed. Open the [Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) in desktop Chrome, Edge, or another browser with WebHID support.
 
 1. Plug the macropad into the computer running the browser. It must be running this firmware, rather than sitting in bootloader mode.
-2. Click **Connect macropad** and select **Universal Macropad** in the browser's device chooser
+2. Click **Connect macropad** and select **3-Key Macropad** or **6-Key Macropad** in the browser's device chooser (older firmware appears as **Universal Macropad**)
 3. Set up the keys, encoder, layers, chords, macros, timed actions and LED effects. If no valid profile is saved, the editor loads a starter profile for you to customize.
 4. Click **Save to device** and wait for the saved confirmation. Changes in the editor take effect on the hardware only after saving.
 5. Close the browser and use the macropad normally. Its saved profile survives unplugging it.
