@@ -1,0 +1,10 @@
+Entering layer two after rainbow completion and a further 1s wait
+4012ms phases=0 layer=0 pixels(R,G,B): (0,0,0) (0,0,0) (0,0,0)
+4018ms phases=0 layer=0 pixels(R,G,B): (0,0,0) (0,0,0) (0,0,0)
+4020ms phases=0 layer=1 pixels(R,G,B): (0,0,0) (0,0,0) (0,0,0)
+4020ms phases=4 layer=1 pixels(R,G,B): (255,22,7) (255,22,7) (255,22,7)
+4220ms phases=4 layer=1 pixels(R,G,B): (255,22,7) (255,22,7) (255,22,7)
+4270ms phases=3 layer=1 pixels(R,G,B): (0,0,0) (0,0,0) (0,0,0)
+4520ms phases=2 layer=1 pixels(R,G,B): (255,22,7) (255,22,7) (255,22,7)
+4770ms phases=1 layer=1 pixels(R,G,B): (0,0,0) (0,0,0) (0,0,0)
+5020ms phases=0 layer=1 pixels(R,G,B): (0,0,0) (0,0,0) (0,0,0)

@@ -1,0 +1,41 @@
+2026-10-09T18:34:26.068-07:00 Monitor started; checking firmware/bootloader every 200ms for 10 minutes
+2026-10-09T18:34:47.432-07:00 Monitor started; checking firmware/bootloader every 200ms for 10 minutes
+2026-10-09T18:34:47.462-07:00 [('firmware', 4296324262, 17825792)]
+2026-10-09T18:37:50.365-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:37:51.690-07:00 [('firmware', 4296324684, 17825792)]
+2026-10-09T18:37:53.268-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:37:55.092-07:00 [('firmware', 4296324719, 17825792)]
+2026-10-09T18:37:56.417-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:37:58.263-07:00 [('firmware', 4296324753, 17825792)]
+2026-10-09T18:37:59.849-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:01.948-07:00 [('firmware', 4296324788, 17825792)]
+2026-10-09T18:38:03.540-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:08.007-07:00 [('firmware', 4296324824, 17825792)]
+2026-10-09T18:38:09.580-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:14.031-07:00 [('firmware', 4296324860, 17825792)]
+2026-10-09T18:38:15.349-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:18.002-07:00 [('firmware', 4296324895, 17825792)]
+2026-10-09T18:38:20.641-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:23.004-07:00 [('firmware', 4296324931, 17825792)]
+2026-10-09T18:38:25.096-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:27.197-07:00 [('firmware', 4296324966, 17825792)]
+2026-10-09T18:38:27.969-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:29.800-07:00 [('firmware', 4296325000, 17825792)]
+2026-10-09T18:38:31.117-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:36.333-07:00 [('firmware', 4296325036, 17825792)]
+2026-10-09T18:38:37.708-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:39.855-07:00 [('firmware', 4296325085, 17825792)]
+2026-10-09T18:38:41.689-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:44.325-07:00 [('firmware', 4296325123, 17825792)]
+2026-10-09T18:38:45.119-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:47.489-07:00 [('firmware', 4296325163, 17825792)]
+2026-10-09T18:38:51.158-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:38:55.854-07:00 [('bootloader', 4296325207, 17825792)]
+2026-10-09T18:38:57.430-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:39:00.839-07:00 [('firmware', 4296325218, 17825792)]
+2026-10-09T18:39:04.526-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:39:08.215-07:00 [('firmware', 4296325255, 17825792)]
+2026-10-09T18:40:26.844-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:40:30.522-07:00 [('firmware', 4296325371, 17825792)]
+2026-10-09T18:40:34.181-07:00 No macropad or CH55x bootloader enumerated
+2026-10-09T18:44:47.652-07:00 Monitor stopped

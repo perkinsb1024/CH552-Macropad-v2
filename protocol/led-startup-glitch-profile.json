@@ -1,0 +1,41 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 12,
+  "variant": "three-key",
+  "startupLayer": 1,
+  "transparentBlack": false,
+  "chordWindowMs": 40,
+  "rainbowPhaseDegrees": 60,
+  "rainbowSpeed": "fast",
+  "layers": [
+    {
+      "keys": [
+        { "type": "keyTap", "usage": 29, "modifiers": 8 },
+        { "type": "keyTap", "usage": 6, "modifiers": 8 },
+        { "type": "keyTap", "usage": 25, "modifiers": 8 }
+      ],
+      "encoderButton": { "type": "relativeLayer", "offset": 1 },
+      "clockwise": { "type": "scroll", "delta": -2 },
+      "counterclockwise": { "type": "scroll", "delta": 2 },
+      "leds": [ "White", "White", "White" ],
+      "indicatorBehavior": 1,
+      "indicatorColor": 15,
+      "indicatorFullBrightness": true
+    },
+    {
+      "keys": [
+        { "type": "keyTap", "usage": 29, "modifiers": 1 },
+        { "type": "keyTap", "usage": 6, "modifiers": 1 },
+        { "type": "keyTap", "usage": 25, "modifiers": 1 }
+      ],
+      "encoderButton": { "type": "relativeLayer", "offset": 1 },
+      "clockwise": { "type": "scroll", "delta": -2 },
+      "counterclockwise": { "type": "scroll", "delta": 2 },
+      "leds": [ "Yellow", "Yellow", "Yellow" ],
+      "indicatorBehavior": 2,
+      "indicatorColor": 1,
+      "indicatorFullBrightness": true
+    }
+  ],
+  "chords": []
+}

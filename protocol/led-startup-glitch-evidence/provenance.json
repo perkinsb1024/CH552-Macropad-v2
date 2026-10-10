@@ -1,0 +1,55 @@
+{
+  "baseRevision": "37904985d503d6ea640f3a9498af5b2d1ebe50f7",
+  "branch": "experiment/usb-enumeration-warning-indicator",
+  "purpose": "Isolated LED latch-interval experiment, not a release; three-key hardware validation reported by the user",
+  "hardwareValidation": {
+    "date": "2026-10-09",
+    "variant": "three-key",
+    "attemptsApproximate": 30,
+    "reportedRecurrences": 0,
+    "userAcceptedAsFixed": true,
+    "sixKeyHardwareValidationReported": false,
+    "integratedIntoProjectFirmwareSource": false
+  },
+  "video": {
+    "path": "/Users/benperkins/Downloads/trimmed.mov",
+    "sha256": "dffac634e35557be88477ea2058669d1ecbc9d3354a994e7458c10194f0886a6",
+    "durationSeconds": 4.656666666666666
+  },
+  "frames": [
+    {
+      "path": "key1-off.png",
+      "clipPresentationTimeSeconds": 2.6020833333333333
+    },
+    {
+      "path": "key1-recovers.png",
+      "clipPresentationTimeSeconds": 2.6354166666666665
+    },
+    {
+      "path": "first-blink-ends.png",
+      "clipPresentationTimeSeconds": 2.66875
+    }
+  ],
+  "files": [
+    {
+      "path": "/Users/benperkins/Documents/PlatformIO/Projects/CH552 Macropad/protocol/led-startup-glitch-profile.json",
+      "sha256": "a0aaaba9cf8d91f08034277aa63ced1194ed74275f3b5a5c5516ce51f6d18cae"
+    },
+    {
+      "path": "/Users/benperkins/Documents/PlatformIO/Projects/CH552 Macropad/protocol/led-startup-glitch-latch-test.patch",
+      "sha256": "37c180eae584672b307f7e78426113d41dfd24bc3a5967f2207198346da1d6e9"
+    },
+    {
+      "path": "/private/tmp/macropad-led-frame-probe/latch-test-source/CH552_Universal_Macropad.ino",
+      "sha256": "0fe510be5caab90da48959cbb8a2112f945956811cbfd85799490cdc1b0645d1"
+    },
+    {
+      "path": "/private/tmp/macropad-led-frame-probe/latch-test-three-key/firmware.hex",
+      "sha256": "70c0744bbf9a88899fdef438d169350ac0f7ae880d1fb6d149ead22aae522322"
+    },
+    {
+      "path": "/private/tmp/macropad-led-frame-probe/latch-test-six-key/firmware.hex",
+      "sha256": "44cbdbce53b76a0d5c31dcd5ac423d0f919bcace3fd06afae2b1d3fe792273fb"
+    }
+  ]
+}
