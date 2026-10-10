@@ -234,16 +234,20 @@ static void testPersistentMouseModes(void) {
                 if (slot == 5) offset = configTimedOffset(); // Unreferenced macro step.
                 activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_TOGGLE;
                 activeConfig[offset + 1] = 0xFF;
-                seal(); assert(!!configValid(activeConfig, variant) == (aux <= 2));
+                seal(); assert(!!configValid(activeConfig, variant) ==
+                    (aux <= 2 || (aux == 3 && (slot == 0 || slot == 2))));
                 activeConfig[offset + 1] = 0;
                 seal(); assert(!configValid(activeConfig, variant));
-                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_HOLD;
-                activeConfig[offset + 1] = 0xFF;
-                seal(); assert(!!configValid(activeConfig, variant) == (!aux && (slot == 0 || slot == 2)));
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MODIFIER;
+                for (unsigned mask = 0; mask < 256; mask++) {
+                    activeConfig[offset + 1] = mask;
+                    seal(); assert(!!configValid(activeConfig, variant) ==
+                        (aux <= 2 && mask >= 1 && mask <= 15));
+                }
             }
         }
         testLoadStarterProfile(variant);
-        activeConfig[2] = 11; seal(); assert(!configValid(activeConfig, variant));
+        activeConfig[2] = 12; seal(); assert(!configValid(activeConfig, variant));
     }
 }
 

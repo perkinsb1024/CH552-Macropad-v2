@@ -52,6 +52,7 @@ __idata uint8_t macroRepeat;
 #endif
 // Toggle/down/up share one persistent mouse-button state; holds remain separate.
 __idata uint8_t persistentMouse;
+__pdata uint8_t persistentModifiers;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
@@ -144,7 +145,7 @@ static uint8_t mouseButtons(void) {
   uint8_t buttons = persistentMouse;
   uint8_t i;
   for (i = 0; i < MAX_INPUTS; i++) {
-    if (buttonPressed[i] && actionType(buttonFirst[i]) == CONFIG_ACTION_MOUSE_HOLD) {
+    if (buttonPressed[i] && buttonFirst[i] == CONFIG_ACTION_MOUSE_HOLD) {
       buttons |= buttonSecond[i];
     }
   }
@@ -184,6 +185,7 @@ static FW_BIT flushOutputs(void) {
   for (i = 0; i < 8; i++) {
     nextKeyboard[i] = 0;
   }
+  nextKeyboard[0] = persistentModifiers;
   for (i = 0; i < MAX_INPUTS; i++) {
     if (buttonPressed[i] && actionType(buttonFirst[i]) == CONFIG_ACTION_KEY_HOLD) {
       nextKeyboard[0] |= buttonFirst[i] >> 4;
@@ -258,7 +260,6 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       if (first) queueAction(first, second, rotation); // Text/Pause auxiliary values.
       break;
     case CONFIG_ACTION_KEY_HOLD:
-    case CONFIG_ACTION_MOUSE_HOLD:
       break;
     case CONFIG_ACTION_CONSUMER:
     case CONFIG_ACTION_CONSUMER_HOLD:
@@ -275,9 +276,15 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
+      if (first == CONFIG_ACTION_MOUSE_HOLD) break;
       if (first & 0x20) persistentMouse &= ~second;
       else if (first & 0x10) persistentMouse |= second;
       else persistentMouse ^= second;
+      break;
+    case CONFIG_ACTION_MODIFIER:
+      if (first & 0x20) persistentModifiers &= ~second;
+      else if (first & 0x10) persistentModifiers |= second;
+      else persistentModifiers ^= second;
       break;
     case CONFIG_ACTION_RELATIVE_LAYER:
       {
@@ -349,6 +356,7 @@ static void updateLayer(void) {
     currentFirst = 0;
     macroNext = 0;
     persistentMouse = 0;
+    persistentModifiers = 0;
     phase = 0;
     tempOn = 0;
     tempMouse = 0;
@@ -377,6 +385,7 @@ void actionsInit(void) {
   currentFirst = 0;
   macroNext = 0;
   persistentMouse = 0;
+  persistentModifiers = 0;
   phase = 0;
   consumerReleasePending = 0;
   consumerFirst = 0;
@@ -504,7 +513,7 @@ static void releaseAction(uint8_t input) {
   if (buttonPressed[input]) {
     // Keep a brief hold alive until its press report has been accepted.
     buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
-                           type == CONFIG_ACTION_MOUSE_HOLD ||
+                           buttonFirst[input] == CONFIG_ACTION_MOUSE_HOLD ||
                            type == CONFIG_ACTION_CONSUMER_HOLD ? 2 : 0;
   }
 }
@@ -688,7 +697,8 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
-    } else if (type >= CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_MOUSE_TOGGLE) {
+    } else if (type >= CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_MOUSE_TOGGLE ||
+               type == CONFIG_ACTION_MODIFIER) {
       // Held bindings never enter this queue; X/Y movement was handled above.
       runAction(currentFirst, currentSecond, 0, 9);
       currentFirst = 0;

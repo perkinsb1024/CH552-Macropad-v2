@@ -6,23 +6,28 @@
 
 static uint8_t reports[1024][9];
 static unsigned count, ledCalls;
-static uint8_t blocked, pending, generation, ledCommand, ledValue;
+static uint8_t blocked, pending, autoPending, generation, ledCommand, ledValue;
 uint8_t USB_queueKeyboard(const uint8_t *keys) {
     if (blocked) return 0;
     assert(count < 1024); reports[count][0] = 1;
-    memcpy(reports[count++] + 1, keys, 8); return 1;
+    memcpy(reports[count++] + 1, keys, 8);
+    if (autoPending) pending = 1;
+    return 1;
 }
 uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
     if (blocked) return 0;
     assert(count < 1024); uint8_t *r = reports[count++];
     r[0] = 2; r[1] = buttons; r[2] = x; r[3] = y;
     r[4] = (scroll & 15) == 15 ? -1 : scroll & 15; r[5] = (scroll >> 4) == 15 ? -1 : scroll >> 4;
+    if (autoPending) pending = 1;
     return 1;
 }
 uint8_t USB_queueConsumer(uint16_t usage) {
     if (blocked) return 0;
     assert(count < 1024); reports[count][0] = 5;
-    reports[count][1] = usage; reports[count++][2] = usage >> 8; return 1;
+    reports[count][1] = usage; reports[count++][2] = usage >> 8;
+    if (autoPending) pending = 1;
+    return 1;
 }
 uint8_t USB_reportsPending(void) { return pending; }
 void USB_discardReports(void) { pending = 0; }
@@ -38,7 +43,7 @@ static uint8_t start;
 static void reset(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     start = configTimedOffset();
-    blocked = pending = 0; count = ledCalls = 0;
+    blocked = pending = autoPending = 0; count = ledCalls = 0;
     actionsInit(); actionsTimedReset(0);
 }
 static void bind(uint8_t input, uint8_t macro, uint8_t repeat) {
@@ -442,7 +447,149 @@ static void testMouseSources(void) {
     assert(!actionsTimedInput()); pump(10, 20); assert(latestMouse() == 0);
 }
 
+static uint8_t latestModifiers(void) {
+    for (unsigned i = count; i > 0; i--)
+        if (reports[i - 1][0] == 1) return reports[i - 1][1];
+    return 0;
+}
+
+static void testPersistentModifiers(void) {
+    for (uint8_t mask = 1; mask <= 15; mask++) {
+        reset();
+        activeConfig[9] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[10] = mask;
+        activeConfig[11] = CONFIG_ACTION_MODIFIER_UP; activeConfig[12] = mask;
+        activeConfig[13] = CONFIG_ACTION_MODIFIER; activeConfig[14] = mask;
+        press(0, 0); pump(0, 10); assert(count == 1 && latestModifiers() == mask);
+        press(0, 10); pump(10, 20); assert(count == 1); // Down is idempotent.
+        press(1, 20); pump(20, 30); assert(count == 2 && !latestModifiers());
+        press(1, 30); pump(30, 40); assert(count == 2); // Up is idempotent.
+        press(2, 40); pump(40, 50); assert(latestModifiers() == mask);
+        press(2, 50); pump(50, 60); assert(!latestModifiers());
+    }
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[10] = 6;
+    activeConfig[11] = CONFIG_ACTION_MODIFIER; activeConfig[12] = 3;
+    activeConfig[13] = CONFIG_ACTION_MODIFIER_UP; activeConfig[14] = 4;
+    press(0, 0); pump(0, 10); press(1, 10); pump(10, 20);
+    assert(latestModifiers() == 5); // Each selected bit toggles independently.
+    press(2, 20); pump(20, 30); assert(latestModifiers() == 1);
+
+    // Persistent up cannot release a physical hold's modifiers or ordinary key.
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[10] = 6;
+    activeConfig[11] = CONFIG_ACTION_MODIFIER_UP; activeConfig[12] = 15;
+    activeConfig[13] = CONFIG_ACTION_KEY_HOLD | 0x20; activeConfig[14] = 4;
+    actionsPress(2, 0); pump(0, 10);
+    press(0, 10); pump(10, 20); assert(latestModifiers() == 6);
+    press(1, 20); pump(20, 30);
+    assert(latestModifiers() == 2 && reports[count - 1][3] == 4);
+    actionsRelease(2); pump(30, 40); assert(!latestModifiers());
+
+    // Temporary tap modifiers survive a direct persistent up, then release.
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[10] = 4;
+    activeConfig[11] = CONFIG_ACTION_MODIFIER_UP; activeConfig[12] = 15;
+    activeConfig[13] = CONFIG_ACTION_KEY_TAP | 0x60; activeConfig[14] = 5;
+    press(0, 0); pump(0, 2); press(2, 2); actionsPoll(2);
+    assert(latestModifiers() == 6 && reports[count - 1][3] == 5);
+    press(1, 3); actionsPoll(3); assert(latestModifiers() == 6);
+    pump(4, 40); assert(!latestModifiers());
+}
+
+static void testModifierMacroOrdering(void) {
+    reset();
+    autoPending = 1;
+    const uint8_t brightness[] = {
+        CONFIG_ACTION_MODIFIER_DOWN, 6, CONFIG_ACTION_CONSUMER, 0x6F,
+        CONFIG_ACTION_MODIFIER_UP, 6,
+    };
+    define(start, brightness, 3); bind(0, start, CONFIG_MACRO_REPEAT ? 2 : 1);
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    press(0, 0); pump(0, 2); assert(!count);
+    blocked = 1; pump(2, 10); assert(!count);
+    blocked = 0; actionsPoll(10); assert(count == 1 && latestModifiers() == 6);
+    pending = 1; pump(11, 20); assert(count == 1); // Modifier press must drain.
+    pending = 0; actionsPoll(20); actionsPoll(21);
+    assert(count == 2 && reports[1][0] == 5 && reports[1][1] == 0x6F);
+    blocked = 1; pump(22, 30); assert(count == 2 && latestModifiers() == 6);
+    blocked = 0; pending = 1; actionsPoll(30);
+    assert(count == 3 && reports[2][0] == 5 && !reports[2][1]);
+    pump(31, 40); assert(count == 3 && latestModifiers() == 6); // Release must drain.
+    pending = 0; actionsPoll(40);
+    blocked = 1; pump(41, 50); assert(count == 3);
+    blocked = 0; actionsPoll(50); assert(count == 4 && !latestModifiers());
+    pending = 1; pump(51, 60); assert(count == 4); // Up before next repetition.
+    autoPending = pending = 0; pump(60, 120);
+    assert(count == (CONFIG_MACRO_REPEAT ? 8 : 4));
+    if (CONFIG_MACRO_REPEAT) {
+        assert(reports[4][0] == 1 && reports[4][1] == 6);
+        assert(reports[5][0] == 5 && reports[5][1] == 0x6F);
+        assert(reports[6][0] == 5 && !reports[6][1]);
+        assert(reports[7][0] == 1 && !reports[7][1]);
+    }
+    // Macro completion and repeat boundaries retain state without an up step.
+    reset(); const uint8_t down[] = {CONFIG_ACTION_MODIFIER_DOWN, 6};
+    define(start, down, 1); bind(0, start, CONFIG_MACRO_REPEAT ? 2 : 1);
+    activeConfig[11] = CONFIG_ACTION_MODIFIER_UP; activeConfig[12] = 6;
+    press(0, 0); pump(0, 30); assert(count == 1 && latestModifiers() == 6);
+    press(1, 30); pump(30, 40); assert(!latestModifiers());
+
+    // A later direct action receives persistent modifiers while a macro pauses.
+    reset(); const uint8_t paused[] = {
+        CONFIG_ACTION_MODIFIER_DOWN, 6, CONFIG_ACTION_PAUSE, 10,
+        CONFIG_ACTION_MODIFIER_UP, 6,
+    };
+    define(start, paused, 3); bind(0, start, 1);
+    activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xEA;
+    press(0, 0); pump(0, 10); press(1, 10); actionsPoll(10);
+    assert(latestModifiers() == 6 && reports[count - 1][0] == 5 && reports[count - 1][1] == 0xEA);
+    actionsPoll(11); pump(12, 200); assert(!latestModifiers());
+}
+
+static void testModifierSourcesAndCleanup(void) {
+    reset();
+    activeConfig[9] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[10] = 6;
+    uint8_t cw = 9 + 2 * (configKeyCount() + 1);
+    activeConfig[cw] = CONFIG_ACTION_MODIFIER_UP; activeConfig[cw + 1] = 6;
+    press(0, 0); pump(0, 10); actionsRotate(1); pump(10, 20); assert(!latestModifiers());
+    reset(); uint8_t chord = start; activeConfig[5] |= 2;
+    activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[chord + 2] = 6;
+    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
+    pump(5, 20); assert(latestModifiers() == 6);
+    reset(); uint8_t timer = start; activeConfig[3] = 1 << 6;
+    memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
+    activeConfig[timer + 1] = CONFIG_ACTION_MODIFIER_DOWN; activeConfig[timer + 2] = 6;
+    activeConfig[timer + 3] = CONFIG_ACTION_MODIFIER_UP; activeConfig[timer + 4] = 6;
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0); pump(0, 10);
+    assert(latestModifiers() == 6);
+    assert(!actionsTimedInput()); pump(10, 20); assert(!latestModifiers());
+
+    reset(); const uint8_t paused[] = {
+        CONFIG_ACTION_MODIFIER_DOWN, 6, CONFIG_ACTION_PAUSE, 10,
+        CONFIG_ACTION_KEY_TAP, 4,
+    };
+    define(start, paused, 3); bind(0, start, 1);
+    press(0, 0); pump(0, 10); assert(latestModifiers() == 6);
+    // A transport-generation notification reasserts state; it is not a reset.
+    generation++; actionsPoll(10); assert(latestModifiers() == 6);
+    blocked = 1; actionsClear(); blocked = 0; pump(11, 220);
+    assert(!latestModifiers() && !keyPresses(4));
+
+    reset(); activeConfig[3] = 1; start = configTimedOffset();
+    memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0, PHYSICAL_VARIANT ? 15 : 22);
+    define(start, paused, 3); bind(0, start, 1);
+    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 0;
+    press(0, 0); pump(0, 10); press(1, 10); pump(10, 20);
+    assert(latestModifiers() == 6); // Same layer preserves state and playback.
+    activeConfig[12] = 1; blocked = 1; press(1, 20); pump(20, 30);
+    assert(latestModifiers() == 6); // Release is retried under backpressure.
+    blocked = 0; pump(30, 220);
+    assert(actionsLayer() == 1 && !latestModifiers() && !keyPresses(4));
+}
+
 int main(void) {
+    testPersistentModifiers(); testModifierMacroOrdering(); testModifierSourcesAndCleanup();
     testPersistentMouse(); testMouseDragAndScroll(); testMouseSources();
     testGlobalToggleSources();
     testGlobalToggle();

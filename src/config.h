@@ -5,8 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 12: eight mouse buttons and persistent toggle/down/up modes.
-#define CONFIG_VERSION 12
+// Format 13: persistent modifiers; mouse hold joins mouse toggle/down/up.
+#define CONFIG_VERSION 13
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
 #endif
@@ -45,10 +45,13 @@
 #define CONFIG_ACTION_KEY_HOLD         0x2
 #define CONFIG_ACTION_MOUSE_CLICK      0x3
 // Mouse click auxiliary encodes click count minus one.
-#define CONFIG_ACTION_MOUSE_HOLD       0x4
+#define CONFIG_ACTION_MODIFIER         0x4
+#define CONFIG_ACTION_MODIFIER_DOWN    0x14
+#define CONFIG_ACTION_MODIFIER_UP      0x24
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x5
 #define CONFIG_ACTION_MOUSE_DOWN       0x15
 #define CONFIG_ACTION_MOUSE_UP         0x25
+#define CONFIG_ACTION_MOUSE_HOLD       0x35 // Full first byte, not a type.
 #define CONFIG_ACTION_SCROLL           0x6
 #define CONFIG_SCROLL_HOLD             0x40
 #define CONFIG_SCROLL_HORIZONTAL       0x80
