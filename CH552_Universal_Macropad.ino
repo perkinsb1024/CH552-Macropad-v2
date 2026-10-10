@@ -116,6 +116,7 @@ void updateLeds() {
   if (startupWaiting) return;
   if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
+  __idata uint8_t colors = configLedColorOffset(layer);
   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
@@ -148,7 +149,7 @@ void updateLeds() {
     if (phases) {
       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
     } else if (keyLevel && stableState[i] &&
-               ((color = configLedColor(layer, i)) != 15 ||
+               ((color = configLedColorAt(colors, i)) != 15 ||
                 !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
       level = keyLevel;
       rainbow = 0; // Key palette 15 is Off, never Rainbow.

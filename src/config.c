@@ -273,15 +273,12 @@ uint8_t configLayerOptions(uint8_t layer) {
     return activeConfig[layerOffset(layer + 1) - 1];
 }
 
-uint8_t configLedColor(uint8_t layer, uint8_t key) {
-    uint8_t keys = configKeyCount();
-    uint8_t offset;
-    uint8_t colors;
-    if (layer >= configLayerCount() || key >= keys) {
-        return 6;
-    }
-    offset = layerOffset(layer);
-    colors = activeConfig[offset + 2 * (keys + 3) + (key >> 1)];
+uint8_t configLedColorOffset(uint8_t layer) {
+    return layerOffset(layer) + 2 * (configKeyCount() + 3);
+}
+
+uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
+    uint8_t colors = activeConfig[offset + (key >> 1)];
     return key & 1 ? colors >> 4 : colors & 15;
 }
 
@@ -302,11 +299,12 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     uint8_t keys = configKeyCount();
     uint8_t id;
     uint8_t count = (activeConfig[5] >> 1) & 63;
-    uint8_t offset = layerOffset(configLayerCount());
+    uint8_t layers = configLayerCount();
+    uint8_t offset = layerOffset(layers);
     uint8_t i;
     uint8_t swap;
     if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
-        layer >= configLayerCount()) {
+        layer >= layers) {
         return 0;
     }
     if (firstKey > secondKey) {

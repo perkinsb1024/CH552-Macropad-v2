@@ -38,15 +38,34 @@ static void testStarterFixture(uint8_t variant) {
         assert((first & 15) == CONFIG_ACTION_KEY_TAP);
         assert((first >> 4) == modifiers[i]);
         assert(second == usages[i]);
-        assert(configLedColor(0, i) == i);
+        assert(configLedColorAt(configLedColorOffset(0), i) == i);
         assert(configPalette[i][0] == colors[i][0]);
         assert(configPalette[i][1] == colors[i][1]);
         assert(configPalette[i][2] == colors[i][2]);
     }
     configBinding(0, configKeyCount(), &first, &second);
     assert(first == CONFIG_ACTION_MOUSE_CLICK && second == 4);
-    assert(configLedColor(0, 0) == 0);
-    assert(configLedColor(0, 2) == 2);
+    assert(configLedColorAt(configLedColorOffset(0), 0) == 0);
+    assert(configLedColorAt(configLedColorOffset(0), 2) == 2);
+}
+
+static void testCachedColorOffsets(uint8_t variant) {
+    testLoadStarterProfile(variant);
+    uint8_t keys = configKeyCount();
+    uint8_t layerSize = variant ? 15 : 22;
+    activeConfig[3] = 1; // Two layers, starting on layer zero.
+    for (uint8_t layer = 0; layer < 2; layer++) {
+        uint8_t expected = 9 + layer * layerSize + 2 * (keys + 3);
+        uint8_t offset = configLedColorOffset(layer);
+        assert(offset == expected);
+        // Every nibble value must decode correctly on both sides of a byte.
+        for (uint8_t color = 0; color < 16; color++) {
+            for (uint8_t key = 0; key < keys; key += 2)
+                activeConfig[expected + (key >> 1)] = color | ((15 - color) << 4);
+            for (uint8_t key = 0; key < keys; key++)
+                assert(configLedColorAt(offset, key) == (key & 1 ? 15 - color : color));
+        }
+    }
 }
 
 static void testInvalid(void) {
@@ -607,6 +626,8 @@ int main(void) {
     testExpandedLayers(1);
     testStarterFixture(CONFIG_SIX_KEYS);
     testStarterFixture(CONFIG_THREE_KEYS);
+    testCachedColorOffsets(CONFIG_SIX_KEYS);
+    testCachedColorOffsets(CONFIG_THREE_KEYS);
     testInvalid();
     testHeaderAndIgnoredFields();
     testCapacityAndStrings(CONFIG_SIX_KEYS);

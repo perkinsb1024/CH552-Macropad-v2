@@ -441,6 +441,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   uint8_t second;
   uint8_t other;
   uint8_t keys = configKeyCount();
+  __idata uint8_t chordWindow = configChordWindowMs();
   if (input > keys || (inputDown & (1 << input))) {
     return;
   }
@@ -453,7 +454,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   }
   if (pendingInput && (input < keys || oneShotReturnLayer != 0xFF)) {
     other = pendingInput - 1;
-    if (input < keys && (uint16_t)(now - pendingSince) < configChordWindowMs() &&
+    if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
         configChord(pendingLayer, other, input, &first, &second)) {
       pendingInput = 0;
       chordPartner[other] = input + 1;
@@ -476,7 +477,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   buttonFirst[input] = first;
   buttonSecond[input] = second;
   orderPress(input);
-  if (input < keys && configChordWindowMs()) {
+  if (input < keys && chordWindow) {
     for (other = 0; other < keys; other++) {
       if (configChord(effectiveLayer, input, other, &first, &second)) {
         pendingInput = input + 1;
@@ -562,8 +563,9 @@ void actionsPoll(uint16_t now) {
     resolvePending();
     updateLayer();
   }
-  if (lastReportGeneration != USB_reportGeneration()) {
-    lastReportGeneration = USB_reportGeneration();
+  i = USB_reportGeneration();
+  if (lastReportGeneration != i) {
+    lastReportGeneration = i;
     lastKeyboard[0] = 0xFF;
     // Every byte is now a valid button mask; force a mismatch even for 0xFF.
     lastMouse = ~mouseButtons();
