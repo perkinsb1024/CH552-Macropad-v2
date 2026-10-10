@@ -147,7 +147,7 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 8 | 4 |
+| Flash remaining | 10 | 6 |
 | External RAM allocated (XSEG + absolute) | 488 | 497 |
 | Stack available (linker reserve) | 80 | 77 |
 
@@ -207,6 +207,9 @@ After installing this firmware, start `pio run -t upload` and enter the bootload
 
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
 - During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
+
+Current v12 source checks that the encoder stays pressed across a 10ms startup
+window, sampling every 1ms. Hold it steadily before connecting USB.
 
 The bundled v11 release supports an optional three-second encoder hold on enabled
 layers. For an invalid profile on v11, use the power-up method.

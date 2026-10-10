@@ -24,8 +24,19 @@ static uint8_t bootloaderWaits;
 static uint8_t bootloaderRedShown;
 // A held input reads low even when setup writes high to its pull-up latch.
 static uint8_t encoderHeldAtStartup;
+static uint8_t encoderStartupProbeActive;
+static uint8_t encoderStartupReleaseAt;
+static uint8_t encoderStartupReleaseFor;
+static uint32_t encoderStartupStart;
+static uint32_t encoderStartupEntryAt;
+static uint8_t encoderStartupPin(void) {
+    if (!encoderStartupProbeActive) return encoderHeldAtStartup ? 0 : ((P3 >> 3) & 1);
+    uint32_t elapsed = currentMs - encoderStartupStart;
+    return elapsed >= encoderStartupReleaseAt &&
+           elapsed - encoderStartupReleaseAt < encoderStartupReleaseFor;
+}
 #undef P3_3
-#define P3_3 (encoderHeldAtStartup ? 0 : ((P3 >> 3) & 1))
+#define P3_3 encoderStartupPin()
 static uint8_t frames[32][9];
 static uint8_t frameCount;
 static uint8_t bytesWritten;
@@ -39,9 +50,11 @@ volatile uint8_t protocolState;
 uint32_t millis(void) { return currentMs; }
 void delayMicroseconds(uint16_t us) {
     if (us == 300) return; // LED latch wait does not advance the bootloader sequence.
+    if (us == 1000) { currentMs++; return; }
     if (expectBootloader) {
         assert(us == 50000);
         assert(USB_CTRL == 0 && EA == 0 && TMOD == 0);
+        if (encoderStartupProbeActive && !bootloaderWaits) encoderStartupEntryAt = currentMs;
         if (++bootloaderWaits == 1) return;
         assert(bootloaderWaits == 2);
         assert(bootloaderRedShown);
@@ -761,7 +774,55 @@ static void testHidBootloaderHandoff(void) {
     }
 }
 
+static void checkStartupDebounce(uint8_t invalid, uint32_t start,
+                                 uint8_t releaseAt, uint8_t releaseFor) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    saveStartupProfile();
+    if (invalid) memset(flash, 0xFF, sizeof(flash));
+    currentMs = encoderStartupStart = start;
+    encoderStartupReleaseAt = releaseAt;
+    encoderStartupReleaseFor = releaseFor;
+    encoderStartupProbeActive = expectBootloader = 1;
+    encoderStartupEntryAt = UINT32_MAX;
+    USB_CTRL = EA = TMOD = 1;
+    if (setjmp(bootloaderJump) == 0) {
+        setup();
+        assert(releaseAt <= DEBOUNCE_MS);
+        assert(encoderStartupEntryAt == UINT32_MAX);
+        assert(currentMs - start == releaseAt);
+        // Rejecting startup never arms bootloader entry on a later runtime hold.
+        encoderStartupProbeActive = 0;
+        UsbConfig = 1;
+        tick((uint16_t)(start + 20));
+        P3 &= ~8;
+        tick((uint16_t)(start + 21));
+        tick((uint16_t)(start + 31));
+        tick((uint16_t)(start + 3031));
+    } else {
+        assert(releaseAt > DEBOUNCE_MS);
+        assert(encoderStartupEntryAt - start == DEBOUNCE_MS);
+    }
+    assert(activeConfigValid == !invalid);
+    expectBootloader = encoderStartupProbeActive = 0;
+    encoderHeldAtStartup = 0;
+    P1 = P3 = 0xFF;
+}
+
+static void testStartupDebounce(void) {
+    const uint32_t starts[] = {0, 250, 65530, UINT32_MAX - 5};
+    for (uint8_t invalid = 0; invalid < 2; invalid++) {
+        for (uint8_t start = 0; start < sizeof(starts) / sizeof(starts[0]); start++) {
+            for (uint8_t release = 0; release <= DEBOUNCE_MS; release++) {
+                checkStartupDebounce(invalid, starts[start], release, 255);
+                checkStartupDebounce(invalid, starts[start], release, 1);
+            }
+            checkStartupDebounce(invalid, starts[start], 255, 1);
+        }
+    }
+}
+
 int main(void) {
+    testStartupDebounce();
     testStartupIndicatorEnumeration();
     testStartupWarningDismissal();
     testStartupRainbowEnumeration();

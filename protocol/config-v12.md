@@ -264,8 +264,12 @@ and displays the red error indication described below. The USB wait and warning
 apply only at power-up; later USB resets/reconfiguration do not restart either.
 Later resets also preserve the running layer indication and rainbow animation.
 
-Holding the encoder button while powering up always enters the bootloader;
-this recovery gesture is not configurable. Runtime encoder holds do not enter
+Holding the encoder button while powering up requests bootloader entry, including
+with an invalid profile. The firmware samples the button immediately after
+startup initialization, then every 1ms across a 10ms qualification window. Entry
+requires all eleven samples to show pressed. Any released sample ends the check;
+later presses do not restart it. A release between samples can go undetected.
+This recovery gesture is not configurable. Runtime encoder holds do not enter
 the bootloader, even with an invalid profile or layer-option bit 1 set. The
 **Enter bootloader** button in the firmware installer uses the HID command below.
 In **Always on** mode, idle keys use the
@@ -1055,8 +1059,8 @@ Recommended defaults, built with the actual 14,336-byte application limit:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute active image | Stack capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,332 | 4 | 95 | 369 | 128 | 77 |
-| Three keys | 14,328 | 8 | 95 | 360 | 128 | 80 |
+| Six keys | 14,330 | 6 | 95 | 369 | 128 | 77 |
+| Three keys | 14,326 | 10 | 95 | 360 | 128 | 80 |
 
 The absolute image occupies xRAM `0x300–0x37F`, leaving 128 bytes above it.
 Linker XSEG size omits that allocation; count it separately. The build checks
@@ -1069,7 +1073,7 @@ Stack figures are linker-reserved capacities, two bytes below finalized v11
 testing has been performed. Host regressions include all eight button bits,
 mode validation, drags, scroll signs/counts, report backpressure, reset, idle
 reports and **GET_REPORT** on both geometries. Recovery tests cover invalid and
-missing profiles, startup encoder entry, HID acknowledgement backpressure,
+missing profiles, startup encoder entry and debounce rejection, HID acknowledgement backpressure,
 malformed bootloader requests, reset cancellation and runtime holds that do not
 enter the bootloader, including consumed presses and legacy permission bits.
 

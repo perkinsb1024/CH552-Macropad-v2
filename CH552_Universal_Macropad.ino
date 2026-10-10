@@ -477,9 +477,13 @@ void setup() {
   USBInit();
   firmwareApplyConfig(0);
   errorLedChanged = rawChanged[0]; // Input initialization samples the post-USB clock.
-  if (stableState[NUM_LEDS]) {
-    enterBootloader();
-  }
+  // Only a button held through the startup sampling window requests recovery.
+  uint8_t samples = DEBOUNCE_MS;
+  do {
+    if (P3_3) return;
+    delayMicroseconds(1000);
+  } while (--samples);
+  if (!P3_3) enterBootloader();
 }
 
 void loop() {
@@ -537,14 +541,15 @@ errorLed:
     return;
   }
   actionsPoll(now);
-  if (actionsTakeLayerSelection() || lastLayer != actionsLayer()) {
-    if (lastLayer != actionsLayer()) {
-      if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
-      lastLayer = actionsLayer();
-      encoderState = readEncoder();
-      encoderMovement = 0;
-    }
-    if (!(previewOptions & LED_EFFECT_FLAG)) startLayerIndicator(lastLayer, now);
+  uint8_t selected = actionsTakeLayerSelection();
+  uint8_t layer = actionsLayer();
+  if (lastLayer != layer) {
+    if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
+    lastLayer = layer;
+    encoderState = readEncoder();
+    encoderMovement = 0;
+    selected = 1;
   }
+  if (selected && !(previewOptions & LED_EFFECT_FLAG)) startLayerIndicator(lastLayer, now);
   serviceLayerIndicator(now);
 }

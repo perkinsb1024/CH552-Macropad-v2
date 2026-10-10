@@ -1,0 +1,19 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -477,9 +477,13 @@
+   USBInit();
+   firmwareApplyConfig(0);
+   errorLedChanged = rawChanged[0]; // Input initialization samples the post-USB clock.
+-  if (stableState[NUM_LEDS]) {
+-    enterBootloader();
+-  }
++  // Only a button held through the startup sampling window requests recovery.
++  uint8_t samples = DEBOUNCE_MS;
++  do {
++    if (P3_3) return;
++    delayMicroseconds(1000);
++  } while (--samples);
++  if (!P3_3) enterBootloader();
+ }
+ 
+ void loop() {

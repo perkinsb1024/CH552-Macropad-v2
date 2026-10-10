@@ -10,15 +10,20 @@ is preserved as investigation evidence.
 
 The user designated adding debounce to the startup encoder bootloader check as
 the top priority. Require a sustained pressed state before entering the
-bootloader, rather than relying on the current single input sample. Preserve
+bootloader, rather than relying on the previous single input sample. Preserve
 intentional entry by holding the encoder button while powering on, including
 when the saved profile is invalid.
 
-This is a recorded implementation priority, not an implemented fix or a confirmed
-explanation for the unexpected red event. The debounce interval remains to be
-chosen. Verification should cover transient low samples, a released button,
-intentional held-button entry, and invalid-profile startup on both hardware
-variants.
+The 10ms startup check is now implemented, with samples every 1ms and immediate
+rejection on any observed release. A subsequent
+[debounce exploration and optimization](encoder-startup-debounce-findings.md)
+records the implementation and measurements. Simplifying the recent layer
+indicator update saves 18 flash bytes, paying for the 16-byte debounce addition.
+Both variants fit, with 10 flash bytes free for three keys and 6 for six keys.
+RAM allocation and stack capacity are unchanged. Valid/invalid-profile recovery,
+released inputs, transient low samples, and later runtime holds pass on both
+variants, with color preview enabled and disabled. Hardware validation remains
+pending; debounce is not a confirmed explanation for the unexpected red event.
 
 ## Device and Profile Context
 
@@ -155,7 +160,7 @@ An isolated source copy under `/private/tmp/macropad-led-frame-probe/` adds a
 the wait when they were already enabled; the driver retains its existing
 interrupt handling during transmission. Blink timers, layer selection, input
 debounce, and the profile format are unchanged. The encoder bootloader debounce
-priority remains pending and is not part of this test.
+change was not part of this LED test; it was implemented separately afterward.
 
 The ordinary C driver-call wrapper plus the new wait exceeded the three-key
 application flash limit. The final trial packs the existing driver's DPTR/B/A
@@ -199,7 +204,7 @@ inferred. Six-key hardware validation has not been reported.
 Issue 1 is resolved for the tested three-key device with the 300µs latch wait.
 The preserved trial patch has been integrated into the project's firmware source.
 The unexpected red and dark startup events remain open, and
-startup encoder bootloader debounce remains the top implementation priority.
+startup encoder bootloader debounce is implemented, pending hardware validation.
 
 ## Issue 2: Unexpected All-Red LEDs
 
@@ -215,6 +220,9 @@ startup encoder bootloader debounce remains the top implementation priority.
 - Many subsequent computer reconnection attempts did not reproduce the event.
 - One later bootloader entry occurred while the encoder button was accidentally
   held. The user identified that entry as expected.
+- The user subsequently reported three cases where the device appeared to enter
+  bootloader mode on its own. Additional timings or USB identities were not
+  supplied, so the reported appearances are not independently confirmed entries.
 
 ### Code and USB Findings
 
@@ -222,7 +230,7 @@ startup encoder bootloader debounce remains the top implementation priority.
   USB, disables interrupts, and calls the chip's bootloader at address `0x3800`.
 - The deliberate entry paths in this build are the startup encoder check and
   a successfully processed installer bootloader command.
-- The startup encoder check uses a single sampled input state without debounce.
+- The investigated build's startup encoder check used a single sampled input state without debounce.
   A transient low sample is a possible explanation; no such sample was captured.
 - A normal USB bus reset reapplies configuration/input state and does not repeat
   the startup encoder bootloader check.
