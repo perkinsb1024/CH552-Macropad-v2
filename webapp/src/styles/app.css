@@ -796,22 +796,22 @@ output {
   border-radius: 2px;
 }
 .brand-mark span:nth-child(1) {
-  background: #FF2020;
+  background: #FF4444;
 }
 .brand-mark span:nth-child(2) {
-  background: #40C820;
+  background: #FFCC44;
 }
 .brand-mark span:nth-child(3) {
-  background: #209696;
+  background: #44CC44;
 }
 .brand-mark span:nth-child(4) {
-  background: #FF4B00;
+  background: #EE44CC;
 }
 .brand-mark span:nth-child(5) {
-  background: #0040FF;
+  background: #6644FF;
 }
 .brand-mark span:nth-child(6) {
-  background: #FF0064;
+  background: #44CCFF;
 }
 .conn {
   display: flex;
@@ -1951,22 +1951,22 @@ output {
   height: 4px;
 }
 .mini-key-0::before {
-  background: #FF2020;
+  background: #FF4444;
 }
 .mini-key-1::before {
-  background: #40C820;
+  background: #FFCC44;
 }
 .mini-key-2::before {
-  background: #209696;
+  background: #44CC44;
 }
 .mini-key-3::before {
-  background: #FF4B00;
+  background: #EE44CC;
 }
 .mini-key-4::before {
-  background: #0040FF;
+  background: #6644FF;
 }
 .mini-key-5::before {
-  background: #FF0064;
+  background: #44CCFF;
 }
 .mini-knob {
   position: absolute;
