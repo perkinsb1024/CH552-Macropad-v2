@@ -26,6 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Historical firmware tests compare HEX files against their release commits.
+          fetch-depth: 0
           submodules: true
       - uses: actions/configure-pages@v5
       - uses: actions/setup-node@v4
