@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { firmwareChoices, previousReleases, selectedFirmware } from '../src/firmware-list.mjs';
 import { Ch552Bootloader } from '../dist/bootloader.mjs';
 import { parseHex, CODE_LIMIT } from '../src/hex.mjs';
 import { firmwareFormat, configuratorPath } from '../src/firmware-format.mjs';
@@ -112,15 +114,20 @@ function session(device, timeout = 1000) {
 
 test('UI defaults to 3-key and requires renewed confirmation after changing variants', async () => {
   class Element {
+    hidden = false;
     disabled = true;
     checked = false;
     dataset = {};
     attributes = {};
     handlers = {};
     children = [];
+    get textContent() { return this._textContent ?? ""; }
+    set textContent(value) { this._textContent = value; this.children = []; }
     append(...children) { this.children.push(...children); }
+    replaceChildren(...children) { this.children = children; }
     setAttribute(name, value) { this.attributes[name] = value; }
     addEventListener(name, handler) { this.handlers[name] = handler; }
+    focus() {}
     async emit(name) { await this.handlers[name](); }
   }
   const elements = new Map();
@@ -129,10 +136,11 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     return elements.get(id);
   };
   const buttons = [3, 6].map(keys => Object.assign(new Element(), { dataset: { variant: String(keys) } }));
+  const tabs = ['latest', 'previous', 'custom'].map(source => Object.assign(element(`tab-${source}`), { dataset: { source } }));
   const device = new FakeBootloader();
   const replacements = {
-    document: { getElementById: element, querySelectorAll: () => buttons, createElement: () => new Element() },
-    window: { isSecureContext: true, addEventListener() {} },
+    document: { getElementById: element, querySelectorAll: selector => selector === '[data-source]' ? tabs : buttons, createElement: () => new Element() },
+    window: { isSecureContext: true, location: { search: '' }, addEventListener() {} },
     navigator: { platform: 'MacIntel', usb: { requestDevice: async () => device, addEventListener() {} } },
     fetch: async path => new Response(await readFile(new URL(`../dist/${path.slice(2)}`, import.meta.url))),
   };
@@ -151,6 +159,25 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.match(element('firmware-info').textContent, /3-key/);
     assert.equal(element('connect').disabled, false);
     assert.equal(element('reboot').disabled, true);
+    const historyVersions = element('release-history').children.filter((_, index) => index % 2 === 0).map(term => term.children[0]);
+    assert.equal(historyVersions[0].textContent, `v${selectedFirmware(manifest, 3, 'latest').formatVersion}`);
+    const historical = historyVersions.find(button => button.textContent === 'v9');
+    await historical.emit('click');
+    assert.equal(element('panel-previous').hidden, false);
+    assert.equal(element('release-recommendation').dataset.tone, 'warning');
+    assert.equal(element('release-recommendation').textContent, 'The latest version is recommended for most situations');
+    assert.match(element('firmware-info').textContent, /v9 for a 3-key/);
+    assert.match(element('profile-impact').textContent, /will no longer be valid/);
+    assert.equal(element('profile-migration').hidden, true);
+    const selectedVersion = element('confirmation-label').children.find(child => typeof child !== 'string');
+    assert.match(selectedVersion.className, /previous/);
+    assert.equal(element('status').children[0].href, '#connection');
+    await historyVersions[0].emit('click');
+    assert.equal(element('panel-latest').hidden, false);
+    assert.equal(element('release-recommendation').dataset.tone, 'success');
+    assert.equal(element('release-recommendation').textContent, 'This version is recommended for most situations');
+    assert.equal(element('profile-impact').textContent, 'Installation replaces the application firmware.');
+    assert.equal(element('profile-migration').hidden, false);
     await element('connect').emit('click');
     assert.equal(element('connect').disabled, true);
     assert.equal(element('reboot').disabled, false);
@@ -166,6 +193,26 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.equal(element('install').disabled, true);
     assert.equal(buttons[1].attributes['aria-pressed'], 'true');
     assert.match(element('firmware-info').textContent, /6-key/);
+    await element('tab-previous').emit('click');
+    const previous = previousReleases(manifest, 6).find(entry => entry.formatVersion === 9);
+    const selector = element('firmware-release');
+    confirmation.checked = true;
+    selector.value = previous.name; await selector.emit('change');
+    assert.equal(confirmation.checked, false);
+    assert.equal(element('install').disabled, true);
+    assert.match(element('firmware-info').textContent, new RegExp(previous.sourceRevision));
+    assert.equal(element('download').download, previous.name);
+    const counterpart = manifest.previousFirmware.find(entry => entry.keys === 3 &&
+      entry.formatVersion === previous.formatVersion && entry.sourceRevision === previous.sourceRevision);
+    confirmation.checked = true;
+    await buttons[0].emit('click');
+    assert.equal(selector.value, counterpart.name);
+    assert.equal(element('download').download, counterpart.name);
+    assert.equal(confirmation.checked, false);
+    assert.equal(element('install').disabled, true);
+    await buttons[1].emit('click');
+    assert.equal(selector.value, previous.name);
+    assert.equal(element('download').download, previous.name);
     // Even a directly invoked click cannot erase flash without confirmation.
     await element('install').emit('click');
     assert.equal(device.commands.some(p => p[0] === 0xa4), false);
@@ -186,10 +233,12 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     confirmation.checked = true;
     await confirmation.emit('change');
     await element('install').emit('click');
-    assert.equal(element('status').textContent, 'Firmware programmed and verified.');
+    assert.equal(element('status').textContent, 'Firmware programmed and verified');
+    assert.equal(element('selection-status').hidden, false);
     const successLink = element('status').children.find(child => typeof child !== 'string');
-    assert.equal(successLink.href, expectedConfiguratorPath(manifest.firmware.find(entry => entry.keys === 6).formatVersion));
-    assert.equal(successLink.textContent, 'Open the macropad configurator to load or save your profile');
+    assert.equal(successLink.target, '_blank');
+    assert.equal(successLink.href, expectedConfiguratorPath(previous.formatVersion));
+    assert.equal(successLink.textContent, 'Open the Macropad Configurator');
   } finally {
     for (const [key, descriptor] of Object.entries(originals)) {
       if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -203,15 +252,16 @@ test('unsupported browsers replace the top beta notice before firmware loading',
     const elements = new Map();
     const element = id => {
       if (!elements.has(id)) elements.set(id, {
-        disabled: true, attributes: {},
+        disabled: true, attributes: {}, dataset: {},
+        append() {}, replaceChildren() {},
         setAttribute(name, value) { this.attributes[name] = value; },
         addEventListener() {},
       });
       return elements.get(id);
     };
     const replacements = {
-      document: { getElementById: element, querySelectorAll: () => [] },
-      window: { isSecureContext: scenario !== 'insecure' },
+      document: { getElementById: element, querySelectorAll: () => [], createElement: () => element('created') },
+      window: { isSecureContext: scenario !== 'insecure', location: { search: '' } },
       navigator: { platform: 'MacIntel', ...(scenario === 'insecure' ? { usb: {} } : {}) },
       fetch: async path => {
         // The notice must be visible even before the first request completes.
@@ -229,8 +279,8 @@ test('unsupported browsers replace the top beta notice before firmware loading',
       }
       await import(`../dist/app.mjs?compatibility=${scenario}`);
       assert.equal(element('notice-title').textContent, scenario === 'insecure'
-        ? 'A secure connection is required to install firmware'
-        : 'Unable to install firmware');
+        ? 'A Secure Connection Is Required to Install Firmware'
+        : 'Unable to Install Firmware');
       assert.equal(element('connect').disabled, true);
       assert.equal(element('install').disabled, true);
     } finally {
@@ -255,7 +305,7 @@ test('reboot requires a connection and closes the session even if the restart tr
   assert.equal(device.commands.some(p => [0xa4, 0xa5, 0xa6].includes(p[0])), false);
 });
 
-for (const entry of manifest.firmware) {
+for (const entry of [...manifest.firmware, ...manifest.previousFirmware]) {
   test(`${entry.keys}-key release is bundled intact and genuinely verified with A6 packets`, async () => {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
     assert.equal(createHash('sha256').update(content).digest('hex'), entry.sha256);
@@ -328,6 +378,62 @@ test('0x0040 alone is insufficient; matching effective options permit installati
   assert.equal(commands.at(-1), 0xa2);
 });
 
+const observedConfigReadback = Uint8Array.from(
+  'a7 fb 1a 00 1f 00 ff ff ff ff 03 00 00 00 ff 52 5d 73 00 02 05 00 83 5d 42 be 00 00 00 00'
+    .split(' '), byte => parseInt(byte, 16));
+
+test('observed CH552 v2.5.0 readback with second byte 0xFB permits a verified firmware upload', async () => {
+  for (const keys of [3, 6]) {
+    const device = new FakeBootloader(), client = session(device);
+    device.version = [2, 5, 0];
+    device.id = [...observedConfigReadback.slice(22, 26)];
+    const receive = device.transferIn.bind(device);
+    device.transferIn = async endpoint => {
+      const result = await receive(endpoint);
+      if (device.packet[0] === 0xa7) {
+        const bytes = observedConfigReadback.slice();
+        result.data = new DataView(bytes.buffer);
+      }
+      return result;
+    };
+    const entry = selectedFirmware(manifest, keys, 'latest');
+    const hex = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url), 'utf8');
+    const image = parseHex(hex);
+    await client.connect();
+    await client.flash(image);
+    assert.deepEqual(device.flash.slice(0, image.length), image);
+    assert.ok(device.commands.some(packet => packet[0] === 0xa6));
+    assert.equal(device.commands.at(-1)[0], 0xa2);
+    assert.equal(device.opened, false);
+  }
+});
+
+test('nonzero second A7 byte still rejects malformed or mismatched readback before programming', async () => {
+  for (const [reason, damage] of [
+    ['unexpected reply command', bytes => { bytes[0] = 0xa8; }],
+    ['invalid reply length', bytes => { bytes[2] = 21; }],
+    ['invalid reply length', bytes => { bytes[2] = 27; }],
+    ['missing configuration fields', bytes => { bytes[4] = 1; }],
+    ['boot options did not match', bytes => { bytes[10] = 2; }],
+  ]) {
+    const device = new FakeBootloader(), client = session(device);
+    await client.connect();
+    const receive = device.transferIn.bind(device);
+    device.transferIn = async endpoint => {
+      const result = await receive(endpoint);
+      if (device.packet[0] === 0xa7) {
+        const bytes = observedConfigReadback.slice();
+        damage(bytes);
+        result.data = new DataView(bytes.buffer);
+      }
+      return result;
+    };
+    await assert.rejects(client.flash(new Uint8Array(64)), new RegExp(`Configuration readback failed: ${reason}`));
+    assert.equal(device.commands.some(packet => [0xa3, 0xa4, 0xa5, 0xa6, 0xa2].includes(packet[0])), false);
+    assert.equal(device.opened, false);
+  }
+});
+
 test('initialization failure reports the actual reply and stops before erase', async () => {
   const device = new FakeBootloader(), client = session(device);
   device.errorOn = 0xa8;
@@ -380,4 +486,49 @@ test('validates HEX boundaries, checksums, overlap, EOF, and FF alignment paddin
 test('the beta UI includes platform sources and the published source/license', async () => {
   const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8');
   for (const text of ['Beta', 'Windows', 'macOS', 'Linux', 'zadig.akeo.ie', 'MODE="0660"', 'udevadm.html', 'upstream-LICENSE.txt', 'verification-fix.patch']) assert.ok(html.includes(text), text);
+});
+
+
+test('all historical releases match their exact committed HEX, metadata and checksums', async () => {
+  const source = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
+  assert.equal(source.firmware.length, 30);
+  assert.equal(manifest.previousFirmware.length, source.firmware.length);
+  for (const entry of manifest.previousFirmware) {
+    const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
+    const recorded = execFileSync('git', ['show', `${entry.releaseCommit}:releases/${entry.name}`]);
+    assert.deepEqual(content, recorded);
+    assert.equal(createHash('sha256').update(content).digest('hex'), entry.sha256);
+    assert.equal(parseHex(content.toString()).length, entry.bytes);
+    const header = execFileSync('git', ['show', `${entry.releaseCommit}:src/config.h`], { encoding: 'utf8' });
+    assert.equal(Number(/#define CONFIG_VERSION\s+(\d+)/.exec(header)[1]), entry.formatVersion);
+    assert.equal(configuratorPath(entry.formatVersion, currentFormatVersion), expectedConfiguratorPath(entry.formatVersion));
+    if (entry.formatVersion >= 6) assert.equal(firmwareFormat(parseHex(content.toString()), entry.keys), entry.formatVersion);
+  }
+});
+
+test('historical selection retains the default release and cannot cross board variants', () => {
+  for (const keys of [3, 6]) {
+    assert.equal(selectedFirmware(manifest, keys), manifest.firmware.find(entry => entry.keys === keys));
+    const choices = firmwareChoices(manifest, keys);
+    assert.equal(choices.length, 15);
+    assert.ok(choices.every(entry => entry.keys === keys));
+    for (const entry of choices) {
+      assert.equal(selectedFirmware(manifest, keys, entry.name), entry);
+      assert.equal(selectedFirmware(manifest, keys === 3 ? 6 : 3, entry.name), undefined);
+    }
+    assert.equal(selectedFirmware(manifest, keys, 'missing'), undefined);
+  }
+});
+
+test('previous release choices show each version once and select its newest build', () => {
+  for (const keys of [3, 6]) {
+    const choices = previousReleases(manifest, keys);
+    assert.deepEqual(choices.map(entry => entry.formatVersion), [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    for (const entry of choices) {
+      const builds = firmwareChoices(manifest, keys).filter(build => build.formatVersion === entry.formatVersion);
+      assert.ok(builds.every(build => build.publishedAt <= entry.publishedAt));
+      assert.ok(manifest.releaseNotes[entry.formatVersion]?.length);
+    }
+  }
+  assert.match(manifest.releaseNotes[11], /32ms/);
 });

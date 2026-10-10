@@ -8,7 +8,7 @@ import { cloneProfile, defaultProfile, emptyLayer } from '../model/defaults';
 import { chordSlot, matchesChord } from '../model/chords';
 import { actionProblem, slotLabel, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
-import { encoderBootloaderWarnings, selfReferentialLayerWarnings } from '../model/layerWarnings';
+import { selfReferentialLayerWarnings } from '../model/layerWarnings';
 import { timedToggleWarnings } from '../model/timedWarnings';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
@@ -121,7 +121,6 @@ export function redo(): void {
 export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
-export const bootloaderWarnings = computed(() => (profile.value ? encoderBootloaderWarnings(profile.value) : []));
 export const unusedMacros = computed(() => profile.value ? untriggeredMacros(profile.value) : []);
 export const timerWarnings = computed(() => (profile.value ? timedToggleWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
@@ -156,7 +155,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {

@@ -94,7 +94,6 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
       undo: (draft) => { draft.layers[i]!.indicatorColor = oldLayer.indicatorColor; },
     });
     change(`${label} · Indicator brightness`, oldLayer.indicatorFullBrightness, newLayer.indicatorFullBrightness, (v) => v ? 'Full brightness' : 'Dim', (draft) => { draft.layers[i]!.indicatorFullBrightness = oldLayer.indicatorFullBrightness; });
-    change(`${label} · Encoder bootloader entry`, oldLayer.bootloaderFromRun, newLayer.bootloaderFromRun, (v) => v ? 'Enabled' : 'Disabled', (draft) => { draft.layers[i]!.bootloaderFromRun = oldLayer.bootloaderFromRun; });
   }
   const oldChords = new Map(before.chords.map((chord) => [chordId(chord), chord]));
   const newChords = new Map(after.chords.map((chord) => [chordId(chord), chord]));

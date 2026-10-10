@@ -1,6 +1,6 @@
 import { visibleText } from './strings';
 import { ledSummary } from './ledControl';
-import { ActionCode, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER } from './constants';
+import { ActionCode, MOD_ALT, MOD_CTRL, MOD_GUI, MOD_SHIFT, MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, MOUSE_BUTTONS, PREVIOUS_LAYER } from './constants';
 import type { Action, ActionType } from './types';
 import { keyName } from '../keys/keyboard';
 import { consumerName } from '../keys/consumer';
@@ -29,6 +29,8 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'mouseClick', code: ActionCode.MouseClick, label: 'Mouse click', group: 'Mouse', needsRelease: false, hint: 'Click one or more mouse buttons.' },
   { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
   { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
+  { type: 'mouseDown', code: ActionCode.MouseDown, label: 'Mouse down', group: 'Mouse', needsRelease: false, hint: 'Keep selected mouse buttons down until Mouse up, toggle, a layer change or reset. Repeated down leaves them down.' },
+  { type: 'mouseUp', code: ActionCode.MouseUp, label: 'Mouse up', group: 'Mouse', needsRelease: false, hint: 'Release selected persistent mouse buttons from any input or macro. Physical holds and clicks stay independent.' },
   { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical or horizontal wheel step, or repeat while held.' },
   { type: 'mouseX', code: ActionCode.MouseX, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
   { type: 'mouseY', code: ActionCode.MouseY, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
@@ -79,6 +81,8 @@ export function blankAction(type: ActionType): Action {
       return { type, usage: 0x04, modifiers: 0 };
     case 'mouseClick':
     case 'mouseHold':
+    case 'mouseDown':
+    case 'mouseUp':
     case 'mouseToggle':
       return { type, buttons: MOUSE_LEFT };
     case 'scroll':
@@ -107,11 +111,9 @@ export function modifierNames(mask: number): string[] {
 }
 
 export function mouseButtonNames(mask: number): string[] {
-  const names: string[] = [];
-  if (mask & MOUSE_LEFT) names.push('Left');
-  if (mask & MOUSE_RIGHT) names.push('Right');
-  if (mask & MOUSE_MIDDLE) names.push('Middle');
-  return names;
+  // Keep historical summary order (Left, Right, Middle), then numbered buttons.
+  return [MOUSE_BUTTONS[0], MOUSE_BUTTONS[2], MOUSE_BUTTONS[1], ...MOUSE_BUTTONS.slice(3)]
+    .filter(button => mask & button.bit).map(button => button.label);
 }
 
 /** Short label used on key caps and lists. */
@@ -133,6 +135,10 @@ export function summarize(action: Action): string {
       return `${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
       return `Hold ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+    case 'mouseDown':
+      return `Down ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+    case 'mouseUp':
+      return `Up ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseToggle':
       return `Toggle ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'scroll':
@@ -175,6 +181,8 @@ export function actionTooltip(action: Action): string {
     }
     case 'string': return `${label}: ${action.text.length ? `“${visibleText(action.text)}”` : 'Empty text'}`;
     case 'mouseHold':
+    case 'mouseDown':
+    case 'mouseUp':
     case 'mouseToggle': return `${label}: ${mouseButtonNames(action.buttons).join(' + ') || '?'}`;
     case 'consumerHold': return `${label}: ${consumerName(action.usage)}`;
     case 'relativeLayer':

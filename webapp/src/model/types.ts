@@ -11,6 +11,8 @@ export type Action =
   | { type: 'mouseClick'; buttons: number; clicks?: number }
   | { type: 'mouseHold'; buttons: number }
   | { type: 'mouseToggle'; buttons: number }
+  | { type: 'mouseDown'; buttons: number }
+  | { type: 'mouseUp'; buttons: number }
   | { type: 'scroll'; delta: number; hold?: boolean; horizontal?: boolean }
   | { type: 'consumer'; usage: number }
   | { type: 'consumerHold'; usage: number }
@@ -33,7 +35,6 @@ export interface Layer {
   counterclockwise: Action;
   /** Palette index per physical key, length 3 or 6. */
   leds: number[];
-  bootloaderFromRun: boolean;
   indicatorBehavior: LayerIndicatorBehavior;
   indicatorColor: number;
   indicatorFullBrightness: boolean;

@@ -64,6 +64,7 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
+| [v12](protocol/config-v12.md) | - Mouse buttons 1–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
@@ -83,7 +84,7 @@ Below are the the primary firmware features added with each version
 >
 > Pre-built v11 firmware files are available for [three-key](releases/ch552-macropad-3-key-f87ca744.hex) and [six-key](releases/ch552-macropad-6-key-f87ca744.hex) macropads, built from source revision `f87ca744`. This version adds multi-step **Macros** with **Pause** and repeat support, a 32ms pause between characters in **Type text**, and shared global **Mouse toggle** state. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) to configure your macropad. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
+Use the [frozen v11 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v11/) with those release files. Current source and the root configurator use v12; no v12 release has been generated. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -142,13 +143,13 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current firmware, in bytes:
+Memory in the current firmware, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 56 | 52 |
-| External RAM allocated (XSEG + absolute) | 488 | 497 |
-| Stack available (linker reserve) | 82 | 79 |
+| Flash remaining | 28 | 24 |
+| External RAM allocated (XSEG + absolute) | 492 | 501 |
+| Stack available (linker reserve) | 81 | 78 |
 
 ### Build Release HEX Files for Both Variants
 
@@ -205,7 +206,13 @@ _An example of using a temporary button to enter the bootloader before uploading
 After installing this firmware, start `pio run -t upload` and enter the bootloader when the uploader begins waiting:
 
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
-- During use: **Hold** the encoder button for three seconds. This requires the active layer's **Allow bootloader entry by long-pressing the encoder button** option to be enabled in a saved profile.
+- During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
+
+Current v12 source checks that the encoder stays pressed across a 10ms startup
+window, sampling every 1ms. Hold it steadily before connecting USB.
+
+The bundled v11 release supports an optional three-second encoder hold on enabled
+layers. For an invalid profile on v11, use the power-up method.
 
 If the device cannot run the firmware, use the hardware method above to recover it.
 
@@ -227,7 +234,7 @@ No local web app installation is needed. Open the [Macropad Configurator](https:
 4. Click **Save to device** and wait for the saved confirmation. Changes in the editor take effect on the hardware only after saving.
 5. Close the browser and use the macropad normally. Its saved profile survives unplugging it.
 
-On first use, or when the saved profile is invalid, the keys and encoder stay inactive and one red LED blinks until you save a valid profile. This is expected; the USB configurator connection still works.
+On first use, or when the saved profile is invalid, key and encoder actions stay inactive and one red LED blinks until you save a valid profile. The USB configurator connection still works. V12 also accepts **Enter bootloader** from the firmware installer in this state.
 
 **Scroll** offers **Vertical / Horizontal** axis selection, with **Up / Down** or **Left / Right** direction controls. Both axes support taps and held repeats with the same 100ms interval. Horizontal scrolling requires v9 firmware.
 
@@ -237,7 +244,7 @@ On first use, or when the saved profile is invalid, the keys and encoder stay in
 
 Definitions allocate storage only when present: two bytes per step plus a one-byte terminator (the last sequence can use the image boundary). Repeats cost no extra configuration bytes. Strings share the normal pool. Held actions and nested macros are unavailable. Layer switches must be the final step, and macros containing them must have **Repeat count** set to 1. Playback streams steps through one active macro instead of filling the eight-event queue; later queued actions wait, and new invocations are dropped if that queue fills. Immediate actions may interleave, and an effective layer change cancels playback.
 
-Configuration format 11 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
+Configuration format 12 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
@@ -247,6 +254,14 @@ the wheel button; rotation and timers remain single steps. Release stops new
 scroll repeats while already accepted steps finish. Held scrolling waits at
 least 100ms after each complete step, giving about ten steps per second at
 step 1; pointer holds retain their 8ms interval.
+
+V12 supports **Left**, **Right**, **Middle** and **Button 4** through **Button 8**.
+Extra-button behavior depends on the host and application, especially buttons 6–8.
+**Mouse down** and **Mouse up** set and clear selected bits of the same global
+persistent state used by **Mouse toggle**. Repeated down/up is idempotent; macro
+completion leaves the state intact, while layer changes and resets clear it.
+Physical **Mouse hold** and temporary clicks remain independent. Use **Mouse down**
+→ **Move pointer X**/**Move pointer Y** → **Mouse up** for a macro drag.
 
 **Mouse click** offers **Single / Double / Custom**. **Custom** shows a slider for
 3–16 clicks. The selected mouse buttons are pressed and released for each click,
@@ -258,11 +273,21 @@ use independent handling. Legacy double-click bindings (v7 and earlier) migrate 
 
 **LED control** includes brightness presets, rainbow speed/phase, and **Set all LEDs** for a temporary bright or dim color or rainbow, always on or blinking 1–8 times. Always-on effects persist until restored, replaced, or a layer change. Clearing or completing an effect restores normal lighting without replaying the layer's blink/timed indication. Saved layer settings remain independent.
 
+At power-up with a valid profile, LEDs stay dark while waiting for USB enumeration.
+If enumeration has not completed after one second, **Key 1** starts blinking yellow.
+Successful enumeration or pressing **Key 1** clears the warning and starts normal
+operation with the configured
+layer indication. The dismissal press does not run its assigned action; release
+the key before pressing it again. Manual dismissal allows local operation, while
+keyboard and mouse output still require USB enumeration. The warning is startup
+only; later USB resets do not restart it. An invalid profile takes priority and
+shows the existing blinking red error LED instead.
+
 **Relative both brightnesses** starts from the brighter current indicator/key brightness, applies the signed step once through **Off** → **Dim** → **Bright** → **Off**, and sets both to the result. Configured policies resolve to the current layer's saved indicator brightness and **Bright** key feedback first. Earlier firmware stepped each brightness independently; synchronized stepping requires updated firmware, with no profile conversion.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 11](protocol/config-v11.md) for the complete format reference.
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 12](protocol/config-v12.md) for the complete format reference.
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -302,6 +327,7 @@ The production files are written to `webapp/dist/`. This repository's [GitHub Ac
 - Missing CH55xDuino component: Install board package version 0.0.25 and check `CH55XDUINO_PACKAGE_DIR` if you use a custom location
 - Upload cannot find the device: Use a USB-A to USB-C cable with data pins (this cheap board omits the necessary 5.1k pulldown resistors for USB-C cables to supply power), wait for the upload prompt, and enter the bootloader within ten seconds. Factory firmware generally needs the hardware method.
 - Macropad does not appear in the browser: Use a supported desktop browser, HTTPS or localhost, and this firmware. Reconnect USB after uploading.
+- **Key 1** blinks yellow after a one-second startup delay: USB enumeration has not completed. Check the USB data cable and connection, or wait for the computer to finish recognizing the device. Enumeration clears the warning automatically. Press **Key 1** to dismiss it manually; that press does not run its assigned action, and keyboard/mouse output still requires USB enumeration.
 - One red LED blinks and inputs do nothing: Connect the configurator and save a valid profile
 - The wrong keys respond: Check the physical variant in `platformio.ini`, clean the build, and upload again
 
@@ -310,5 +336,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v11.md)
+- [Configuration format](protocol/config-v12.md)
 - [USB configuration protocol](protocol/hid-v1.md)

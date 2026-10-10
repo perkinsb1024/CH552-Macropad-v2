@@ -28,6 +28,14 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
+Format 12 retains transport version 1, GET_INFO layout and action mask `0xFFFF`.
+Its configuration version identifies mouse buttons 1–8 and type-5 auxiliary modes
+0 toggle, 1 down and 2 up. Mouse report ID 2 is five bytes: ID, eight button bits,
+X, Y, then signed four-bit vertical Wheel (low nibble) and horizontal AC Pan
+(high nibble), each with logical range -1–+1. **GET_REPORT** and idle reports
+retain all button bits and zero relative fields. See the standalone
+[configuration format 12 reference](config-v12.md).
+
 Format 11 reports action mask `0xFFFF`. **Execute macro** uses type `0xF`,
 **LED control** uses type `0xE`, **Consumer tap** uses type `0x7`, and
 **Consumer hold** uses type `0x8`. **Type text** and **Pause** use full first
@@ -115,9 +123,9 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 Format 7 adds timer records and temporary LED-control commands without changing
 transport v1. See [config-v7.md](config-v7.md). V7 firmware accepts format 6 images, which its editor can migrate before saving
-v7. Current v11 firmware accepts only format 11; the current editor migrates older
-profiles before explicitly saving v11. Firmware updates leave older DataFlash
-profiles unchanged, with inputs inactive until a valid v11 profile is saved.
+v7. Current v12 firmware accepts only format 12; the current editor migrates older
+profiles before explicitly saving v12. Firmware updates leave older DataFlash
+profiles unchanged, with inputs inactive until a valid v12 profile is saved.
 Format 10 changes timer records without changing the HID transport or action
 mask. Format 11 adds macros and pauses and remaps action types without changing
 the transport version or GET_INFO layout.

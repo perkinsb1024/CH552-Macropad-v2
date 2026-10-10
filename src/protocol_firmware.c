@@ -4,7 +4,7 @@
 #include "storage.h"
 
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
-void firmwareApplyConfig(void);
+void firmwareApplyConfig(FW_BIT restartIndicator);
 
 #define PROTOCOL_VERSION 1
 #define PROTOCOL_GET_INFO 1
@@ -16,6 +16,7 @@ void firmwareApplyConfig(void);
 #define PROTOCOL_COMMIT_WRITE 7
 #define PROTOCOL_ABORT_WRITE 8
 #define PROTOCOL_PREVIEW_COLOR 9
+#define PROTOCOL_ENTER_BOOTLOADER 10
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -110,6 +111,8 @@ static uint8_t processRequest(void) {
     return PROTOCOL_BAD_RANGE;
   }
   switch (opcode) {
+    case PROTOCOL_ENTER_BOOTLOADER:
+      break; // Main loop enters only after the successful reply is queued.
     case PROTOCOL_GET_INFO:
       protocolReply[7] = 14;
       for (i = 0; i < sizeof(protocolInfo); i++)
@@ -183,7 +186,7 @@ static uint8_t processRequest(void) {
         activeConfig[i] = stagedConfig[i];
       }
       activeConfigValid = 1;
-      firmwareApplyConfig();
+      firmwareApplyConfig(1);
       uploadState = 2;
       break;
 #if ENABLE_COLOR_PREVIEW
@@ -209,7 +212,7 @@ void protocolPoll(uint16_t now) {
   if (resetPending) {
     uploadState = 0;
     protocolState = 0;
-    firmwareApplyConfig();
+    firmwareApplyConfig(0);
     resetPending = 0;
     USB_EP1_receiveReady();
     return;
@@ -239,6 +242,10 @@ void protocolPoll(uint16_t now) {
   }
   // A reset during a save abandons its reply; flash still has to finish safely.
   if (!resetPending && USB_EP1_sendConfig(protocolReply)) {
+    if (protocolInbox[4] == PROTOCOL_ENTER_BOOTLOADER && !protocolReply[8]) {
+      protocolState = 3;
+      return;
+    }
     protocolState = 0;
     USB_EP1_receiveReady();
   }

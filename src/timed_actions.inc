@@ -17,8 +17,9 @@ void actionsTimedReset(uint8_t tick) {
 
 static ACTION_BIT timedEvent(uint8_t tick) {
   uint8_t offset = configTimedOffset();
+  uint8_t count = configTimedCount();
   ACTION_BIT consume = 0;
-  for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
+  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t age = timedAge[i];
     uint8_t action = 0;
     uint8_t flags = activeConfig[offset + 5];
@@ -73,7 +74,8 @@ ACTION_BIT actionsTimedInput(void) {
 
 static void resetLayerTimers(void) {
   uint8_t offset = configTimedOffset();
-  for (uint8_t i = 0; i < configTimedCount(); i++, offset += CONFIG_TIMED_SIZE) {
+  uint8_t count = configTimedCount();
+  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t scope = activeConfig[offset + 5] & 7;
     if (scope) {
       timedAge[i] = 0;

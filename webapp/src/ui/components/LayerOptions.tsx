@@ -1,6 +1,6 @@
 import { LayerIndicatorBehavior } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
-import { bootloaderWarnings, connection, profile, selectedLayer, updateProfile } from '../store';
+import { connection, profile, selectedLayer, updateProfile } from '../store';
 
 import { ColorPreview } from './ColorPreview';
 import { IconChevron } from './Icons';
@@ -19,11 +19,8 @@ export function LayerOptions() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
-  const bootloaderWarning = bootloaderWarnings.value.find((warning) => warning.slot?.layer === li);
   const rainbowAvailable = connection.value.kind !== 'connected' || connection.value.connection.info.paletteVersion >= 3;
   const rainbow = rainbowAvailable && layer.indicatorBehavior !== LayerIndicatorBehavior.None;
-  const toggle = (key: 'bootloaderFromRun') => (e: Event) =>
-    updateProfile((d) => { d.layers[li]![key] = (e.target as HTMLInputElement).checked; });
   return (
     <details class="card layer-options" ref={element => {
       if (element && !initializedLayerOptions.has(element)) {
@@ -102,17 +99,6 @@ export function LayerOptions() {
         )}
       </div>
 
-      <details class="layer-advanced">
-        <summary>Advanced</summary>
-        <label class="check">
-          <input type="checkbox" checked={layer.bootloaderFromRun} onChange={toggle('bootloaderFromRun')} />
-          <span>
-            <strong>Allow bootloader entry by long-pressing the encoder button</strong>
-            <span class="hint">Hold for three seconds. Uses the layer active when the hold begins.</span>
-          </span>
-        </label>
-        {bootloaderWarning && <p class="hint warn" role="status">{bootloaderWarning.message}</p>}
-      </details>
     </details>
   );
 }

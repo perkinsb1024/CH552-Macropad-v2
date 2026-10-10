@@ -5,13 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 11: dynamic macros, repeats and pauses. Comparison switches are
-// retained for the reproducible experiment harness (fixed pairs use v12).
-#define CONFIG_VERSION (CONFIG_MACRO_STYLE == 1 ? 12 : 11)
-// Experiment: 1 = fixed pairs; 2 = NUL-terminated dynamic sequences.
-#ifndef CONFIG_MACRO_STYLE
-#define CONFIG_MACRO_STYLE 2
-#endif
+// Format 12: eight mouse buttons and persistent toggle/down/up modes.
+#define CONFIG_VERSION 12
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
 #endif
@@ -52,6 +47,8 @@
 // Mouse click auxiliary encodes click count minus one.
 #define CONFIG_ACTION_MOUSE_HOLD       0x4
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x5
+#define CONFIG_ACTION_MOUSE_DOWN       0x15
+#define CONFIG_ACTION_MOUSE_UP         0x25
 #define CONFIG_ACTION_SCROLL           0x6
 #define CONFIG_SCROLL_HOLD             0x40
 #define CONFIG_SCROLL_HORIZONTAL       0x80
@@ -120,9 +117,9 @@
 
 #define CONFIG_MOUSE_MOVE_HOLD         0x10
 
-// Per-layer option byte: full brightness bit 0, encoder bootloader bit 1, indicator bits 2–3, palette bits 4–7.
+// Per-layer option byte: full brightness bit 0, deprecated/ignored bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01
-#define CONFIG_LAYER_OPT_BOOTLOADER_RUN  0x02
+#define CONFIG_LAYER_OPT_UNUSED         0x02 // Deprecated; accepted and ignored.
 #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
 #define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C
 #define CONFIG_LAYER_OPT_COLOR_SHIFT     4
@@ -153,7 +150,9 @@ uint8_t configKeyCount(void);
 #endif
 uint8_t configChordWindowMs(void);
 uint8_t configLayerOptions(uint8_t layer);
-uint8_t configLedColor(uint8_t layer, uint8_t key);
+// Call once per frame with a valid layer, then read packed colors by key.
+uint8_t configLedColorOffset(uint8_t layer);
+uint8_t configLedColorAt(uint8_t offset, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
 FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index);

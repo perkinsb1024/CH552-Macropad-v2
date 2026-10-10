@@ -1,9 +1,9 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
-import { MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
+import { MOUSE_BUTTONS, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
 import { normalizeText, visibleText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
@@ -18,21 +18,24 @@ import { ScrollTest } from './ScrollTest';
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
 
 function MouseButtons({ value, onChange }: { value: number; onChange(v: number): void }) {
-  const buttons = [
-    { bit: MOUSE_LEFT, label: 'Left' },
-    { bit: MOUSE_MIDDLE, label: 'Middle' },
-    { bit: MOUSE_RIGHT, label: 'Right' },
-  ];
+  const buttons = MOUSE_BUTTONS;
+  const [showMore, setShowMore] = useState(!!(value & 0xE0));
+  useEffect(() => {
+    if (value & 0xE0) setShowMore(true);
+  }, [value]);
+  const buttonControl = (b: typeof buttons[number]) => (
+    <label key={b.bit} class={`chip ${value & b.bit ? 'chip-on' : ''}`}>
+      <input type="checkbox" checked={!!(value & b.bit)} onChange={(e) => onChange((e.target as HTMLInputElement).checked ? value | b.bit : value & ~b.bit)} />
+      {b.label}
+    </label>
+  );
   return (
     <div class="field">
       <span class="field-label">Mouse buttons</span>
-      <div class="chips">
-        {buttons.map((b) => (
-          <label key={b.bit} class={`chip ${value & b.bit ? 'chip-on' : ''}`}>
-            <input type="checkbox" checked={!!(value & b.bit)} onChange={(e) => onChange((e.target as HTMLInputElement).checked ? value | b.bit : value & ~b.bit)} />
-            {b.label}
-          </label>
-        ))}
+      <div class="chips mouse-button-picker">
+        {buttons.slice(0, 5).map(buttonControl)}
+        <button type="button" class="inline-link" aria-expanded={showMore} onClick={() => setShowMore(!showMore)}>{showMore ? 'Less' : 'More'}</button>
+        {showMore && buttons.slice(5).map(buttonControl)}
       </div>
     </div>
   );
@@ -275,9 +278,12 @@ export function Inspector() {
         <KeyPicker usage={action.usage} modifiers={action.modifiers} onChange={(usage, modifiers) => update({ ...action, usage, modifiers })} />
       )}
 
-      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle') && (
+      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle' || action.type === 'mouseDown' || action.type === 'mouseUp') && (
         <MouseButtons value={action.buttons} onChange={(buttons) => update({ ...action, buttons })} />
       )}
+
+      {(action.type === 'mouseDown' || action.type === 'mouseUp' || action.type === 'mouseToggle') && <p class="hint">Persistent mouse state is shared across inputs and macros. Layer changes and resets clear it; macro completion does not.</p>}
+      {'buttons' in action && <p class="hint">Buttons 4–8 depend on your operating system and application. Browser Back/Forward mappings are common for buttons 4/5, but are not guaranteed.</p>}
 
       {action.type === 'mouseClick' && (
         <div class="field">
@@ -295,7 +301,7 @@ export function Inspector() {
         </div>
       )}
 
-      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle') && (
+      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle' || action.type === 'mouseDown' || action.type === 'mouseUp') && (
         <p class="hint"><button type="button" class="inline-link" onClick={() => setShowScrollTest(true)}>Click here</button> to test your configured mouse events.</p>
       )}
 

@@ -1,7 +1,7 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
   PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
-  LAYER_OPT_BOOTLOADER_RUN, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
+  LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
@@ -81,13 +81,15 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (!isSupportedUsage(b1)) return `Unsupported key usage 0x${b1.toString(16)}`;
       return { type: type === ActionCode.KeyTap ? 'keyTap' : 'keyHold', usage: b1, modifiers: aux };
     case ActionCode.MouseClick:
-      if ((version < 8 && nonZeroAux) || b1 < 1 || b1 > 7) return 'Invalid mouse click settings';
+      if ((version < 8 && nonZeroAux) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse click settings';
       return { type: 'mouseClick', buttons: b1, ...(aux ? { clicks: aux + 1 } : {}) };
     case ActionCode.MouseHold:
+      if (rotation) return 'Mouse hold bound to rotation';
+      if (nonZeroAux || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse button mask';
+      return { type: 'mouseHold', buttons: b1 };
     case ActionCode.MouseToggle:
-      if (rotation && type === ActionCode.MouseHold) return 'Mouse hold bound to rotation';
-      if (nonZeroAux || b1 < 1 || b1 > 7) return 'Invalid mouse button mask';
-      return { type: type === ActionCode.MouseHold ? 'mouseHold' : 'mouseToggle', buttons: b1 };
+      if (aux > (version >= 12 ? 2 : 0) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid persistent mouse settings';
+      return { type: aux === 1 ? 'mouseDown' : aux === 2 ? 'mouseUp' : 'mouseToggle', buttons: b1 };
     case ActionCode.Scroll:
       if ((version < 8 ? nonZeroAux : version === 8 ? aux !== 0 && aux !== 4 : !!(aux & 3)) || b1 === 0x80) return 'Invalid scroll settings';
       if (rotation && (aux & 4)) return 'Scroll hold bound to rotation';
@@ -130,7 +132,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
@@ -184,13 +186,13 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       leds.push(i & 1 ? byte >> 4 : byte & 15);
     }
     const options = image[base + size - 1]!;
+    // Bit 1 is the deprecated runtime bootloader permission; accept and ignore it.
     const layer: Layer = {
       keys: actions.slice(0, keys),
       encoderButton: actions[keys]!,
       clockwise: actions[keys + 1]!,
       counterclockwise: actions[keys + 2]!,
       leds,
-      bootloaderFromRun: !!(options & LAYER_OPT_BOOTLOADER_RUN),
       indicatorBehavior: (options >> LAYER_OPT_INDICATOR_SHIFT) & 3,
       indicatorColor: options >> 4,
       indicatorFullBrightness: !!(options & LAYER_OPT_FULL_BRIGHTNESS),

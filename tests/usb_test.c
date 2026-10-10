@@ -79,23 +79,46 @@ static void testQueue(void) {
     assert(UEP1_T_LEN == 9 && UpPoint1_Busy);
     USB_EP1_reset();
     assert(!USB_reportsPending());
-    assert(USB_queueMouse(1, 3, -2, 1));
-    assert(USB_queueMouse(0, 0, 0, 0));
+    assert(USB_queueMousePacked(1, 3, -2, 1));
+    assert(USB_queueMousePacked(0, 0, 0, 0));
     USB_reportPoll(3);
     assert(Ep1Buffer[66] == 3 && Ep1Buffer[67] == 254 && Ep1Buffer[68] == 1);
     USB_EP1_IN();
     USB_reportPoll(4);
     assert(Ep1Buffer[65] == 0 && Ep1Buffer[66] == 0 && Ep1Buffer[68] == 0);
     USB_EP1_IN();
-    assert(USB_queueMouse(0x85, 0, 0, -1));
+    assert(USB_queueMousePacked(0x85, 0, 0, 0xF0));
     USB_reportPoll(5);
-    assert(UEP1_T_LEN == 5 && Ep1Buffer[65] == 0xc5 && Ep1Buffer[68] == 0);
+    assert(UEP1_T_LEN == 5 && Ep1Buffer[65] == 0x85 && Ep1Buffer[68] == 0xF0);
     USB_EP1_IN();
-    assert(USB_queueMouse(0x85, 0, 0, 1));
+    assert(USB_queueMousePacked(0x85, 0, 0, 0x10));
     USB_reportPoll(6);
-    assert(Ep1Buffer[65] == 0x45 && Ep1Buffer[68] == 0);
+    assert(Ep1Buffer[65] == 0x85 && Ep1Buffer[68] == 0x10);
     uint8_t state[9];
-    assert(USB_getReport(2, 0, state) == 5 && state[1] == 5 && state[4] == 0);
+    assert(USB_getReport(2, 0, state) == 5 && state[1] == 0x85 && state[4] == 0);
+}
+
+static void testEightButtonsAndPackedScroll(void) {
+    const uint8_t scrolls[] = {0, 1, 15, 16, 240, 0x11, 0xFF};
+    for (unsigned buttons = 0; buttons < 256; buttons++) {
+        for (unsigned axis = 0; axis < sizeof scrolls; axis++) {
+            reset();
+            // Fill the queue: rejection must not replace saved state.
+            for (unsigned i = 0; i < 8; i++) assert(USB_queueMousePacked(buttons, 127, -127, scrolls[axis]));
+            assert(!USB_queueMousePacked(buttons ^ 255, 0, 0, 0));
+            uint8_t state[9];
+            assert(USB_getReport(2, 0, state) == 5);
+            assert(state[1] == buttons && !state[2] && !state[3] && !state[4]);
+            for (unsigned i = 0; i < 8; i++) {
+                USB_reportPoll(i);
+                assert(UEP1_T_LEN == 5 && Ep1Buffer[65] == buttons);
+                assert(Ep1Buffer[66] == 127 && Ep1Buffer[67] == 129 && Ep1Buffer[68] == scrolls[axis]);
+                USB_EP1_IN();
+            }
+            USB_setIdle(2, 1); USB_reportPoll(12);
+            assert(Ep1Buffer[65] == buttons && !Ep1Buffer[66] && !Ep1Buffer[67] && !Ep1Buffer[68]);
+        }
+    }
 }
 
 static void testControlReports(void) {
@@ -152,7 +175,7 @@ static void testGetReportAndIdle(void) {
     assert(UEP0_T_LEN == 8 && Ep0Buffer[0] == 1 && Ep0Buffer[1] == 2);
     USB_EP0_IN();
     assert(UEP0_T_LEN == 1 && Ep0Buffer[0] == 9);
-    assert(USB_queueMouse(1, 2, 3, 4));
+    assert(USB_queueMousePacked(1, 2, 3, 4));
     setupRequest(0xA1, 1, 0x102, 0, 5);
     assert(UEP0_T_LEN == 5 && Ep0Buffer[1] == 1 && Ep0Buffer[2] == 0 && Ep0Buffer[4] == 0);
     assert(USB_queueConsumer(0x1E9));
@@ -235,8 +258,11 @@ static void testHorizontalDescriptor(void) {
             case 0x08: usage = value; break;
             case 0x80:
                 if (id == 2) {
+                    if (bits == 0) assert(size == 1 && count == 8 && minimum == 0 && maximum == 1 && value == 2);
+                    if (bits == 8) assert(size == 8 && count == 2 && minimum == -127 && maximum == 127 && value == 6);
+                    if (bits == 24) assert(usage == 0x38 && size == 4 && count == 1 && minimum == -1 && maximum == 1 && value == 6);
                     if (usage == 0x000c0238) {
-                        assert(bits == 6 && size == 2 && count == 1);
+                        assert(bits == 28 && size == 4 && count == 1);
                         assert(minimum == -1 && maximum == 1 && value == 6);
                         pans++;
                     }
@@ -275,6 +301,7 @@ static void testSetupLengthSaturation(void) {
 int main(void) {
     testSetupLengthSaturation();
     testHorizontalDescriptor();
+    testEightButtonsAndPackedScroll();
     testQueue();
     testControlReports();
     testGetReportAndIdle();

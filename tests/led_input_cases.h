@@ -28,7 +28,7 @@ static void testTimedLighting(void) {
     P1 = P3 = 0xFF;
     previewOptions = 0;
     currentMs = 0;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     assert(ledData[0] == 255);
     advanceTimedTo(4096);
     assert(ledSettings[2] == 0 && ledSettings[3] == 1 && ledData[0] == 0);
@@ -45,7 +45,7 @@ static void testTimedLighting(void) {
 #if CONFIG_TIMED_RESUME
     P1 = P3 = 0xFF;
     currentMs = 0;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     advanceTimedTo(4085);
     P1 &= ~0x02;
     loop(); // Raw edge, not yet debounced.
@@ -59,7 +59,7 @@ static void testTimedLighting(void) {
     for (uint8_t i = 0; i < sizeof(starts) / sizeof(starts[0]); i++) {
         P1 = P3 = 0xFF;
         currentMs = starts[i];
-        firmwareApplyConfig();
+        firmwareApplyConfig(1);
         actionsTimedInput();
         uint32_t due = (starts[i] & ~15UL) + 4096;
         assert(starts[i] + 4096 - due < 16);
@@ -78,7 +78,7 @@ static void testTimedLighting(void) {
     P1 = P3 = 0xFF;
     activeConfig[offset] = 255; activeConfig[offset + 5] = 128 | 56;
     currentMs = 0;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     for (uint16_t tick = 1; tick < 2048; tick++) {
         advanceTimedTo((uint32_t)tick << 12);
         assert(ledSettings[2] == 3);
@@ -108,7 +108,7 @@ static void testConsumedPhysicalInput(void) {
     activeConfigValid = 1;
     previewOptions = 0;
     currentMs = 0;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     advanceTimedTo(4096);
     P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
     assert(ledSettings[3] == 3); // Resume works; the key's Dim command did not.
@@ -116,12 +116,12 @@ static void testConsumedPhysicalInput(void) {
     P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
     assert(ledSettings[3] == 1); // The next distinct press is normal.
     // A due timer and debounced wake press in the same loop still consume once.
-    P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
+    P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig(1);
     advanceTimedTo(4085); P1 &= ~2; loop();
     advanceTimedTo(4096);
     assert(ledSettings[3] == 3);
     P1 = P3 = 0xFF;
-    currentMs = 0; firmwareApplyConfig();
+    currentMs = 0; firmwareApplyConfig(1);
     advanceTimedTo(4096);
     // One clockwise detent starting at 11; partial transitions do not wake.
     const uint8_t sequence[] = {2, 0, 1, 3};
@@ -133,14 +133,15 @@ static void testConsumedPhysicalInput(void) {
     assert(ledSettings[3] == 3); // Completed detent resumes and is consumed.
     for (uint8_t i = 0; i < 4; i++) { P3 = (P3 & ~3) | sequence[i]; currentMs++; loop(); }
     assert(ledSettings[3] == 1);
-    // Encoder button may still enter the bootloader even when its binding is consumed.
-    P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig();
+    // A consumed encoder press has no runtime bootloader shortcut.
+    P1 = P3 = 0xFF; currentMs = 0; firmwareApplyConfig(1);
     advanceTimedTo(4096);
     P3 &= ~8; currentMs++; loop(); currentMs += 10; loop();
-    assert(allowRunBootloader);
     expectBootloader = 1;
-    if (!setjmp(bootloaderJump)) { currentMs += 3000; loop(); assert(0); }
+    if (setjmp(bootloaderJump)) assert(0 && "Consumed runtime hold must not enter bootloader");
+    currentMs += 3000; loop();
     expectBootloader = 0;
+
 }
 
 static uint8_t effectComponent(uint8_t value, uint8_t dim) {
@@ -153,7 +154,7 @@ static void testTemporaryEffects(void) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
         activeConfig[9 + size - 1] = 1 | (behavior << 2); // Bright red.
-        P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+        P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
         startLayerIndicator(0, currentMs);
         assert(layerIndicatorPhasesLeft == (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 :
                behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER ? 2 : 0));
@@ -184,7 +185,7 @@ static void testTemporaryEffects(void) {
         for (uint8_t blinks = 0; blinks <= 8; blinks++) {
             testLoadStarterProfile(PHYSICAL_VARIANT);
             P1 = P3 = 0xFF; previewOptions = 0; activeConfigValid = 1;
-            currentMs = 1000; firmwareApplyConfig();
+            currentMs = 1000; firmwareApplyConfig(1);
             firmwareLedAction(CONFIG_LED_INDICATOR_SET, 0);
             uint8_t command = blinks ? CONFIG_LED_EFFECT_ON + blinks : CONFIG_LED_EFFECT_ON;
             if (dim) command |= CONFIG_LED_EFFECT_DIM;
@@ -232,7 +233,7 @@ static void testTemporaryEffects(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfig[9] = activeConfig[10] = 0;
     activeConfig[9 + 2 * (NUM_LEDS + 3)] = 10; // Key 0: blue.
-    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
     firmwareLedAction(CONFIG_LED_EFFECT_ON, 0); // Bright red.
     P1 &= ~2; currentMs = 1; loop(); currentMs = 11; loop();
     assert((previewOptions & LED_EFFECT_FLAG) && ledData[2] == 255 && ledData[1] == 0);
@@ -254,7 +255,7 @@ static void testTemporaryEffects(void) {
     firmwareLedAction(CONFIG_LED_EFFECT_ON, 4);
     currentMs += 500; loop(); assert((previewOptions >> 4) == 4 && !layerIndicatorPhasesLeft);
     // Config application cancels the overlay; UI preview also replaces it cleanly.
-    firmwareApplyConfig(); assert(!previewOptions && !layerIndicatorPhasesLeft);
+    firmwareApplyConfig(1); assert(!previewOptions && !layerIndicatorPhasesLeft);
 #if ENABLE_COLOR_PREVIEW
     firmwareLedAction(CONFIG_LED_EFFECT_BLINK_8, 15);
     firmwarePreviewColor(0xA5);
@@ -268,7 +269,7 @@ static void testTemporaryEffects(void) {
     activeConfig[9] = CONFIG_ACTION_SET_LAYER; activeConfig[10] = 0;
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
     activeConfig[9 + 2 * size - 1] = 0xAD; // Bright blue, always-on.
-    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
     firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
     actionsPress(0, 0); loop(); assert(previewOptions & LED_EFFECT_FLAG);
     actionsRelease(0);
@@ -283,7 +284,7 @@ static void testTemporaryEffects(void) {
     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = (0xF0 | CONFIG_ACTION_LED_CONTROL); activeConfig[timer + 2] = CONFIG_LED_EFFECT_ON;
     activeConfig[timer + 3] = (0x00 | CONFIG_ACTION_LED_CONTROL); activeConfig[timer + 4] = CONFIG_LED_EFFECT_RESTORE;
-    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig();
+    P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
     advanceTimedTo(4096); assert(previewOptions == 0xFF);
     uint8_t before = frameCount;
     P1 &= ~2; currentMs++; loop(); currentMs += 10; loop();
@@ -302,7 +303,7 @@ static void testLedControls(void) {
     P1 = P3 = 0xFF;
     previewOptions = 0;
     currentMs = 200;
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     memcpy(image, activeConfig, CONFIG_SIZE);
     assert(ledSettings[0] == 2 && ledSettings[1] == 1 && ledSettings[2] == 3 && ledSettings[3] == 3);
     for (uint8_t kind = 0; kind < 2; kind++) {
@@ -402,7 +403,7 @@ static void testLedControls(void) {
     firmwareLedAction(CONFIG_LED_RESTORE, 0);
     assert(ledSettings[0] == 2 && ledSettings[1] == 1 && ledSettings[2] == 3 && ledSettings[3] == 3);
     firmwareLedAction(CONFIG_LED_BOTH_SET, 0);
-    firmwareApplyConfig();
+    firmwareApplyConfig(1);
     assert(ledSettings[2] == 3 && ledSettings[3] == 3);
     P1 = P3 = 0xFF;
     stableState[0] = 0;
@@ -423,7 +424,7 @@ static void testSynchronizedBrightness(void) {
         for (uint8_t mode = 0; mode < 4; mode++) {
             activeConfig[9 + size - 1] = !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
             activeConfig[9 + 2 * size - 1] = full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
-            firmwareApplyConfig();
+            firmwareApplyConfig(1);
             actionsRotate(0); // Resolve configured brightness from the current layer.
             assert(actionsLayer() == 1);
             uint8_t image[CONFIG_SIZE];

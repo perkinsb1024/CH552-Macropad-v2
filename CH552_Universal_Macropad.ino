@@ -26,7 +26,6 @@
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define RAINBOW_DRIFT_MASK 3 // Fastest drift: mask+1 frames; each drift slot is half as fast.
 #define DEBOUNCE_MS     10
-#define ENTER_BOOTLOADER_MS 3000
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
 #define LED_EFFECT_FLAG 2 // Unused by color preview; shares the alternate option byte.
 
@@ -60,7 +59,6 @@ __idata uint16_t rawChanged[7];
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
 __idata uint8_t lastLayer;
-ACTION_BIT allowRunBootloader;
 __pdata uint8_t layerIndicatorPhasesLeft;
 __pdata uint8_t layerIndicatorDeadline;
 __idata uint8_t rainbowChanged;
@@ -73,11 +71,28 @@ __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with acti
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
-// With invalid config, actions are inactive: reuse this timer for the error LED.
-__xdata uint16_t encoderPressedMs;
+static ACTION_BIT startupWaiting;
+static ACTION_BIT startupWarning;
+__xdata uint16_t errorLedChanged;
 
 void displayLeds() {
+  // Allow the LEDs to latch the previous frame before another transmission.
+  delayMicroseconds(300);
+#ifdef __SDCC
+  // Pack the driver's DPTR/B/A arguments directly to fit the application limit.
+  __asm
+    mov dptr,#_ledData
+#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
+    mov b,#9
+#else
+    mov b,#18
+#endif
+    clr a
+    lcall _neopixel_show_long_P3_4
+  __endasm;
+#else
   LED_FUNC(ledData, NUM_BYTES);
+#endif
 }
 
 void clearLeds() {
@@ -98,8 +113,10 @@ uint8_t indicatorBrightness(uint8_t options) {
 }
 
 void updateLeds() {
+  if (startupWaiting) return;
   if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
+  __idata uint8_t colors = configLedColorOffset(layer);
   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
@@ -132,7 +149,7 @@ void updateLeds() {
     if (phases) {
       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
     } else if (keyLevel && stableState[i] &&
-               ((color = configLedColor(layer, i)) != 15 ||
+               ((color = configLedColorAt(colors, i)) != 15 ||
                 !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
       level = keyLevel;
       rainbow = 0; // Key palette 15 is Off, never Rainbow.
@@ -285,7 +302,7 @@ void firmwarePreviewColor(uint8_t options) {
   if (!options && !activeConfigValid) {
     clearLeds();
     ledData[1] = 255;
-    encoderPressedMs = millis();
+    errorLedChanged = millis();
     displayLeds();
   } else {
     updateLeds();
@@ -298,10 +315,8 @@ void startLayerIndicator(uint8_t layer, uint16_t now) {
   if (!(previewOptions & LED_EFFECT_FLAG)) {
     uint8_t behavior = (configLayerOptions(layer) >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
     layerIndicatorPhasesLeft = 0;
-    if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ||
-        behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) {
-      layerIndicatorPhasesLeft = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 : 2 * (layer + 1);
-    }
+    if (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON) layerIndicatorPhasesLeft = 6;
+    if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER) layerIndicatorPhasesLeft = 2 * (layer + 1);
   }
   layerIndicatorDeadline = (uint8_t)((now >> 1) + LAYER_INDICATOR_PHASE_TICKS);
   updateLeds();
@@ -334,12 +349,12 @@ void enterBootloader() {
     ledPtr[2] = 0;
     ledPtr += 3;
   }
-  displayLeds();
-
   USB_CTRL = 0;
   EA = 0;                     // Disabling all interrupts is required.
   TMOD = 0;
+  // Keep USB disconnected for 100ms; split the wait so both LED frames latch.
   delayMicroseconds(50000);
+  displayLeds();
   delayMicroseconds(50000);
 #ifdef __SDCC
   __asm__ ("lcall #0x3800");  // Jump to bootloader code
@@ -367,15 +382,15 @@ void scanButton(uint8_t input, uint16_t now) {
   if (pressed != stableState[input] &&
       (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
+    if (startupWaiting) {
+      if (startupWarning && pressed) startupWaiting = 0;
+      return; // Consume dismissal; its release has no matching action press.
+    }
 #if ENABLE_COLOR_PREVIEW
     if (colorPreviewActive) firmwarePreviewColor(0);
-    if (!activeConfigValid) return;
 #endif
+    if (!activeConfigValid) return;
     if (pressed) {
-      if (input == NUM_LEDS) {
-        allowRunBootloader = configLayerOptions(actionsLayer()) & CONFIG_LAYER_OPT_BOOTLOADER_RUN;
-        encoderPressedMs = now;
-      }
       if (!actionsTimedInput()) actionsPress(input, now);
     } else {
       actionsRelease(input);
@@ -395,9 +410,7 @@ void scanEncoder() {
 #endif
   movement = encoderTransitions[(encoderState << 2) | state];
   encoderState = state;
-#if ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) return;
-#endif
   if (movement == 0) {
     encoderMovement = 0; // A skipped state is not a complete detent.
   } else {
@@ -414,7 +427,7 @@ void scanEncoder() {
   }
 }
 
-void firmwareApplyConfig(void) {
+void firmwareApplyConfig(ACTION_BIT restartIndicator) {
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
@@ -423,40 +436,38 @@ void firmwareApplyConfig(void) {
   ledSettings[0] = (activeConfig[8] >> 4) & 3;
   ledSettings[1] = activeConfig[8] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
-#if !ENABLE_COLOR_PREVIEW
-  if (!activeConfigValid) {
-    encoderPressedMs = now;
-    ledData[1] = 255;
-    displayLeds();
-    return;
-  }
-#endif
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
     rawChanged[i] = now;
   }
   encoderState = readEncoder();
-#if ENABLE_COLOR_PREVIEW
   if (!activeConfigValid) {
+#if ENABLE_COLOR_PREVIEW
     if (!previewOptions) firmwarePreviewColor(0);
+#else
+    errorLedChanged = now;
+    ledData[1] = 255;
+    displayLeds();
+#endif
     return;
   }
-#endif
   actionsClear();
   encoderMovement = 0;
   lastLayer = actionsLayer();
-  allowRunBootloader = 0;
-  layerIndicatorPhasesLeft = 0;
-  rainbowChanged = (uint8_t)now;
-  rainbowHue = 0;
-  for (uint8_t i = 0; i < NUM_LEDS; i++) rainbowDrift[i] = 0;
-  // Enumeration reapplies config: wait for SET_CONFIGURATION to avoid an extra blink.
-  if (UsbConfig) startLayerIndicator(lastLayer, now);
-  else updateLeds();
+  // USB resets reapply input state without restarting LED animation or indication.
+  if (restartIndicator) {
+    layerIndicatorPhasesLeft = 0;
+    rainbowChanged = (uint8_t)now;
+    rainbowHue = 0;
+    for (uint8_t i = 0; i < NUM_LEDS; i++) rainbowDrift[i] = 0;
+    startLayerIndicator(lastLayer, now);
+  } else updateLeds();
 }
 
 void setup() {
   protocolInit();
+  startupWaiting = activeConfigValid;
+  startupWarning = 0;
   P1 |= KEY_P1_MASK;
   P1_MOD_OC |= KEY_P1_MASK;
   P1_DIR_PU |= KEY_P1_MASK;
@@ -464,11 +475,16 @@ void setup() {
   P3_MOD_OC = (P3_MOD_OC | INPUT_P3_MASK) & ~0x10;
   P3_DIR_PU |= INPUT_P3_MASK | 0x10; // P3.4 is the push-pull LED output.
   clearLeds();
-  firmwareApplyConfig();
   USBInit();
-  if (readButton(NUM_LEDS)) {
-    enterBootloader();
-  }
+  firmwareApplyConfig(0);
+  errorLedChanged = rawChanged[0]; // Input initialization samples the post-USB clock.
+  // Only a button held through the startup sampling window requests recovery.
+  uint8_t samples = DEBOUNCE_MS;
+  do {
+    if (P3_3) return;
+    delayMicroseconds(1000);
+  } while (--samples);
+  if (!P3_3) enterBootloader();
 }
 
 void loop() {
@@ -476,16 +492,15 @@ void loop() {
   uint16_t now = clock;
   USB_reportPoll(now);
   protocolPoll(now);
-#if !ENABLE_COLOR_PREVIEW
-  if (!activeConfigValid) {
-    if ((uint16_t)(now - encoderPressedMs) >= 500) {
-      encoderPressedMs = now;
-      ledData[1] ^= 255;
-      displayLeds();
-    }
+  if (protocolState == 3) enterBootloader();
+  if (startupWaiting) {
+    scanButton(0, now);
+    if (UsbConfig || !startupWaiting) {
+      startupWaiting = startupWarning = 0;
+      firmwareApplyConfig(1);
+    } else goto errorLed;
     return;
   }
-#endif
   // Process due timers before physical input so resume/input actions win this frame.
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
@@ -510,29 +525,32 @@ void loop() {
     }
     updateLeds();
   }
-#if ENABLE_COLOR_PREVIEW
-  if (!activeConfigValid) {
-    if (!previewOptions && (uint16_t)(now - encoderPressedMs) >= 500) {
-      encoderPressedMs = now;
-      ledData[1] ^= 255;
+errorLed:
+  if (startupWaiting || !activeConfigValid) {
+    if (!previewOptions && (uint16_t)(now - errorLedChanged) >= 500) {
+      errorLedChanged = now;
+      uint8_t color = ~ledData[1];
+      if (startupWaiting) {
+        // The warning starts with a dark phase; first yellow appears at 1000ms.
+        if (!startupWarning) color = 0;
+        startupWarning = 1;
+        ledData[0] = color;
+      }
+      ledData[1] = color;
       displayLeds();
     }
     return;
   }
-#endif
   actionsPoll(now);
-  if (actionsTakeLayerSelection() || lastLayer != actionsLayer()) {
-    if (lastLayer != actionsLayer()) {
-      if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
-      lastLayer = actionsLayer();
-      encoderState = readEncoder();
-      encoderMovement = 0;
-    }
-    if (!(previewOptions & LED_EFFECT_FLAG)) startLayerIndicator(lastLayer, now);
+  uint8_t selected = actionsTakeLayerSelection();
+  uint8_t layer = actionsLayer();
+  if (lastLayer != layer) {
+    if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
+    lastLayer = layer;
+    encoderState = readEncoder();
+    encoderMovement = 0;
+    selected = 1;
   }
+  if (selected && !(previewOptions & LED_EFFECT_FLAG)) startLayerIndicator(lastLayer, now);
   serviceLayerIndicator(now);
-  if (allowRunBootloader && stableState[NUM_LEDS] &&
-      (uint16_t)(now - encoderPressedMs) >= ENTER_BOOTLOADER_MS) {
-    enterBootloader();
-  }
 }

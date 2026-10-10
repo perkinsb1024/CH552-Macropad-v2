@@ -23,17 +23,17 @@ uint8_t USB_queueKeyboard(const uint8_t *keys) {
     return 1;
 }
 
-uint8_t USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
     if (blocked || count == reportLimit) {
         return 0;
     }
     assert(count < 64);
     reports[count][0] = 2;
-    reports[count][1] = buttons & 7;
+    reports[count][1] = buttons;
     reports[count][2] = x;
     reports[count][3] = y;
-    reports[count][4] = buttons & 0x80 ? 0 : wheel;
-    reports[count][5] = buttons & 0x80 ? wheel : 0;
+    reports[count][4] = (scroll & 15) == 15 ? -1 : scroll & 15;
+    reports[count][5] = (scroll >> 4) == 15 ? -1 : scroll >> 4;
     reportTimes[count] = reportNow;
     count++;
     return 1;

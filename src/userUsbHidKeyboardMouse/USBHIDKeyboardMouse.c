@@ -283,27 +283,22 @@ FW_BIT USB_queueKeyboard(const __xdata uint8_t *keys) USB_CRITICAL {
   return queueKeyboard(keys);
 }
 
-static FW_BIT queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) {
+static FW_BIT queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
-  mouseState = buttons & 7;
-  // AC Pan uses two formerly-padding bits. Scroll playback emits unit steps.
-  if (buttons & 0x80) {
-    buttons = mouseState | ((uint8_t)wheel << 6);
-    wheel = 0;
-  }
+  mouseState = buttons;
   __xdata uint8_t *report = reportQueue[reportHead];
   report[0] = 2;
   report[1] = buttons;
   report[2] = x;
   report[3] = y;
-  report[4] = wheel;
+  report[4] = scroll;
   return queueReport(5);
 }
 
-FW_BIT USB_queueMouse(uint8_t buttons, int8_t x, int8_t y, int8_t wheel) USB_CRITICAL {
-  return queueMouse(buttons, x, y, wheel);
+FW_BIT USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) USB_CRITICAL {
+  return queueMousePacked(buttons, x, y, scroll);
 }
 
 static FW_BIT queueConsumer(uint16_t usage) {
@@ -341,7 +336,7 @@ void USB_reportPoll(uint16_t now) USB_CRITICAL {
         if (report == 1) {
           queueKeyboard(keyboardState);
         } else if (report == 2) {
-          queueMouse(mouseState, 0, 0, 0);
+          queueMousePacked(mouseState, 0, 0, 0);
         } else {
           queueConsumer(consumerState);
         }
@@ -378,7 +373,11 @@ uint8_t USB_asciiUsage(uint8_t c) {
   return _asciimap[c];
 }
 
-void USB_setIdle(uint8_t report, uint8_t rate) {
+#ifdef __SDCC
+#pragma save
+#pragma nooverlay
+#endif
+void USB_setIdle(uint8_t report, USB_ISR_PARAM uint8_t rate) {
   if (!report) {
     USB_globalIdleRate = rate;
     USB_idleRate = mouseIdleRate = consumerIdleRate = rate;
@@ -399,7 +398,8 @@ uint8_t USB_getIdle(uint8_t report) {
   return 0;
 }
 
-uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
+uint8_t USB_getReport(uint8_t report, USB_ISR_PARAM uint8_t output,
+                      __xdata uint8_t * USB_ISR_PARAM data) {
   uint8_t i;
   data[0] = report;
   if (report == 1) {
@@ -424,3 +424,6 @@ uint8_t USB_getReport(uint8_t report, uint8_t output, __xdata uint8_t *data) {
   }
   return 0;
 }
+#ifdef __SDCC
+#pragma restore
+#endif

@@ -5,7 +5,7 @@ import { FORMAT_VERSION, variantName } from '../../model/constants';
 import { UnsavedChanges } from './UnsavedChanges';
 import { siteUrl } from '../../site';
 
-function ConnectMenu() {
+function ConnectMenu({ disabled = false }: { disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -19,10 +19,10 @@ function ConnectMenu() {
   return (
     <div class="menu" ref={ref}>
       <div class="btn-group">
-        <button class="btn btn-primary" onClick={() => void connectHid()} disabled={!hidSupported} title={hidSupported ? 'Choose a macropad via WebHID' : 'WebHID is unavailable in this browser'}>
+        <button class="btn btn-primary" onClick={() => void connectHid()} disabled={disabled || !hidSupported} title={disabled ? 'Macropad already connected or an operation is in progress' : hidSupported ? 'Choose a macropad via WebHID' : 'WebHID is unavailable in this browser'}>
           <IconConnect /> Connect macropad
         </button>
-        <button class="btn btn-primary btn-icon" aria-label="More connection options" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button class="btn btn-primary btn-icon" disabled={disabled} aria-label="More connection options" aria-expanded={open} onClick={() => setOpen(!open)}>
           <IconChevron />
         </button>
       </div>
@@ -64,6 +64,27 @@ function SaveButton() {
 
 export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
   const headerRef = useRef<HTMLElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const outside = (event: PointerEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMoreOpen(false);
+        moreButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', outside);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [moreOpen]);
   useEffect(() => {
     const header = headerRef.current;
     const app = header?.parentElement;
@@ -118,21 +139,28 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
 
       <div class="conn">
         {c.kind === 'disconnected' && (
-          <span class="pill pill-muted"><span class="dot" /> Not connected</span>
+          <span class="pill pill-muted" title="Not connected"><span class="dot" /> <span class="connection-name">Not connected</span></span>
         )}
         {c.kind === 'connecting' && (
-          <span class="pill pill-muted"><span class="spinner" /> Connecting to {c.label}…</span>
+          <span class="pill pill-muted" title={`Connecting to ${c.label}…`}><span class="spinner" /> <span class="connection-name">Connecting to {c.label}…</span></span>
         )}
         {c.kind === 'connected' && (
           <span class={`pill ${c.connection.transport.kind === 'simulator' ? 'pill-sim' : 'pill-ok'}`} title={`${variantName(c.connection.info.variant)} · ${c.connection.info.keyCount} keys · format v${c.connection.info.formatVersion}`}>
-            <span class="dot" /> {c.connection.transport.name}
-            {!c.connection.status.flashValid && <span class="pill-flag" title="Device profile is missing, old or invalid; device inputs are inactive"><IconWarning /> Device profile is missing, old or invalid</span>}
+            <span class="dot" /> <span class="connection-name">{c.connection.transport.name}</span>
+            {!c.connection.status.flashValid && <span class="pill-flag" title="Device profile is missing, old or invalid; device inputs are inactive"><IconWarning /> <span class="connection-name">Device profile is missing, old or invalid</span></span>}
           </span>
         )}
         {!readOnly && dirty.value && profile.value && <UnsavedChanges />}
       </div>
 
       <div class="actions">
+        {c.kind === 'disconnected' && saveState.value.phase !== 'busy' && <ConnectMenu />}
+        {c.kind === 'connected' && !readOnly && (canSave.value || saveState.value.phase === 'busy') && <SaveButton />}
+        <div class={`toolbar-more ${moreOpen ? 'is-open' : ''}`} ref={moreRef}>
+          <button ref={moreButtonRef} class="btn toolbar-more-trigger" type="button" aria-expanded={moreOpen} aria-controls="toolbar-options" onClick={() => setMoreOpen(!moreOpen)}>More <IconChevron /></button>
+          <div id="toolbar-options" class="toolbar-options" onClick={(event) => {
+            if ((event.target as HTMLElement).closest('button:not(:disabled), a')) setMoreOpen(false);
+          }}>
         <a class="btn" href={siteUrl(readOnly ? './' : 'liveView/')} target="_blank" rel="noreferrer">{!readOnly && <IconEye />}{readOnly ? 'Configurator' : 'Live View'}</a>
         {!readOnly && profile.value && <>
           <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo"><IconRefresh mirrored /> Undo</button>
@@ -143,14 +171,13 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
             <button class="btn" onClick={readOnly ? () => void loadFromDevice() : confirmRead} disabled={saveState.value.phase === 'busy'} title="Read the profile stored on the device">
               <IconReadDevice /> Read from device
             </button>
-            {!readOnly && <SaveButton />}
             <button class="btn" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
               <IconClose /> Disconnect
             </button>
           </>
-        ) : (
-          <ConnectMenu />
-        )}
+        ) : null}
+          </div>
+        </div>
       </div>
     </header>
   );

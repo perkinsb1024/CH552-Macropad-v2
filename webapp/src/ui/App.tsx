@@ -143,8 +143,16 @@ export function App() {
         </main>
       )}
       <footer class="footer">
-        <span>Universal Macropad · config format v{FORMAT_VERSION} · transport v{TRANSPORT_VERSION}</span>
-        <a href={siteUrl('versions/')}>Older firmware configurators</a>
+        <span class="footer-identity">
+          <span>Universal Macropad</span>
+          <span class="footer-version">Config format v{FORMAT_VERSION}</span>
+          <span class="footer-version">Transport v{TRANSPORT_VERSION}</span>
+        </span>
+        <span>
+          <a href={siteUrl('versions/')}>Older firmware configurators</a>
+          {' · '}
+          <a href={siteUrl('webUploader/')}>Web-based firmware uploader</a>
+        </span>
         <span class="muted">Saves write the device's 128-byte DataFlash and read it back before reporting success.</span>
       </footer>
       <Dialog />

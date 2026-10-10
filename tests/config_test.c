@@ -28,7 +28,7 @@ static void testStarterFixture(uint8_t variant) {
     assert(configStartupLayer() == 0);
     assert(configKeyCount() == (variant ? 3 : 6));
     assert(configChordWindowMs() == 40);
-    assert(configLayerOptions(0) == CONFIG_LAYER_OPT_BOOTLOADER_RUN);
+    assert(configLayerOptions(0) == CONFIG_LAYER_OPT_UNUSED);
     activeConfig[9 + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
     seal();
     assert(configValid(activeConfig, variant));
@@ -38,15 +38,34 @@ static void testStarterFixture(uint8_t variant) {
         assert((first & 15) == CONFIG_ACTION_KEY_TAP);
         assert((first >> 4) == modifiers[i]);
         assert(second == usages[i]);
-        assert(configLedColor(0, i) == i);
+        assert(configLedColorAt(configLedColorOffset(0), i) == i);
         assert(configPalette[i][0] == colors[i][0]);
         assert(configPalette[i][1] == colors[i][1]);
         assert(configPalette[i][2] == colors[i][2]);
     }
     configBinding(0, configKeyCount(), &first, &second);
     assert(first == CONFIG_ACTION_MOUSE_CLICK && second == 4);
-    assert(configLedColor(0, 0) == 0);
-    assert(configLedColor(0, 2) == 2);
+    assert(configLedColorAt(configLedColorOffset(0), 0) == 0);
+    assert(configLedColorAt(configLedColorOffset(0), 2) == 2);
+}
+
+static void testCachedColorOffsets(uint8_t variant) {
+    testLoadStarterProfile(variant);
+    uint8_t keys = configKeyCount();
+    uint8_t layerSize = variant ? 15 : 22;
+    activeConfig[3] = 1; // Two layers, starting on layer zero.
+    for (uint8_t layer = 0; layer < 2; layer++) {
+        uint8_t expected = 9 + layer * layerSize + 2 * (keys + 3);
+        uint8_t offset = configLedColorOffset(layer);
+        assert(offset == expected);
+        // Every nibble value must decode correctly on both sides of a byte.
+        for (uint8_t color = 0; color < 16; color++) {
+            for (uint8_t key = 0; key < keys; key += 2)
+                activeConfig[expected + (key >> 1)] = color | ((15 - color) << 4);
+            for (uint8_t key = 0; key < keys; key++)
+                assert(configLedColorAt(offset, key) == (key & 1 ? 15 - color : color));
+        }
+    }
 }
 
 static void testInvalid(void) {
@@ -182,7 +201,7 @@ static void testChords(void) {
 }
 
 static void testMouseButtonMasks(void) {
-    const uint8_t types[] = {CONFIG_ACTION_MOUSE_CLICK, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_MOUSE_TOGGLE};
+    const uint8_t types[] = {CONFIG_ACTION_MOUSE_CLICK, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_MOUSE_TOGGLE, CONFIG_ACTION_MOUSE_DOWN, CONFIG_ACTION_MOUSE_UP};
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t action = 0; action < sizeof(types); action++) {
             for (uint16_t buttons = 0; buttons < 256; buttons++) {
@@ -190,9 +209,41 @@ static void testMouseButtonMasks(void) {
                 activeConfig[9] = types[action];
                 activeConfig[10] = buttons;
                 seal();
-                assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
+                assert(configValid(activeConfig, variant) == (buttons >= 1));
             }
         }
+    }
+}
+
+static void testPersistentMouseModes(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        for (uint8_t aux = 0; aux < 16; aux++) {
+            for (uint8_t slot = 0; slot < 6; slot++) {
+                testLoadStarterProfile(variant);
+                uint8_t offset = 9;
+                if (slot == 1) offset = 9 + (variant ? 8 : 14);
+                if (slot == 2) {
+                    activeConfig[5] |= 2;
+                    offset = configTimedOffset() - 2;
+                    activeConfig[offset - 1] = 0;
+                }
+                if (slot == 3 || slot == 4) {
+                    activeConfig[3] |= 1 << 6;
+                    offset = configTimedOffset() + (slot == 3 ? 1 : 3);
+                }
+                if (slot == 5) offset = configTimedOffset(); // Unreferenced macro step.
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_TOGGLE;
+                activeConfig[offset + 1] = 0xFF;
+                seal(); assert(!!configValid(activeConfig, variant) == (aux <= 2));
+                activeConfig[offset + 1] = 0;
+                seal(); assert(!configValid(activeConfig, variant));
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_HOLD;
+                activeConfig[offset + 1] = 0xFF;
+                seal(); assert(!!configValid(activeConfig, variant) == (!aux && (slot == 0 || slot == 2)));
+            }
+        }
+        testLoadStarterProfile(variant);
+        activeConfig[2] = 11; seal(); assert(!configValid(activeConfig, variant));
     }
 }
 
@@ -218,7 +269,7 @@ static void testMultiClick(void) {
                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_CLICK;
                     activeConfig[offset + 1] = buttons;
                     seal();
-                    assert(configValid(activeConfig, variant) == (buttons >= 1 && buttons <= 7));
+                    assert(configValid(activeConfig, variant) == (buttons >= 1));
                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MACRO;
                     seal();
                     assert(!configValid(activeConfig, variant));
@@ -575,12 +626,15 @@ int main(void) {
     testExpandedLayers(1);
     testStarterFixture(CONFIG_SIX_KEYS);
     testStarterFixture(CONFIG_THREE_KEYS);
+    testCachedColorOffsets(CONFIG_SIX_KEYS);
+    testCachedColorOffsets(CONFIG_THREE_KEYS);
     testInvalid();
     testHeaderAndIgnoredFields();
     testCapacityAndStrings(CONFIG_SIX_KEYS);
     testCapacityAndStrings(CONFIG_THREE_KEYS);
     testStringBoundaries();
     testChords();
+    testPersistentMouseModes();
     testMouseButtonMasks();
     testMultiClick();
     testActions();

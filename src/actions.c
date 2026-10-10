@@ -50,8 +50,8 @@ __data uint8_t macroStart;
 #if CONFIG_MACRO_REPEAT
 __idata uint8_t macroRepeat;
 #endif
-// All toggle actions share one mouse-button state; held outputs remain separate.
-__idata uint8_t toggledMouse;
+// Toggle/down/up share one persistent mouse-button state; holds remain separate.
+__idata uint8_t persistentMouse;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
@@ -141,7 +141,7 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
 }
 
 static uint8_t mouseButtons(void) {
-  uint8_t buttons = toggledMouse;
+  uint8_t buttons = persistentMouse;
   uint8_t i;
   for (i = 0; i < MAX_INPUTS; i++) {
     if (buttonPressed[i] && actionType(buttonFirst[i]) == CONFIG_ACTION_MOUSE_HOLD) {
@@ -155,7 +155,7 @@ static uint8_t mouseButtons(void) {
 }
 
 static FW_BIT movePointer(uint8_t type, int8_t delta) {
-  return USB_queueMouse(mouseButtons(),
+  return USB_queueMousePacked(mouseButtons(),
                         type == CONFIG_ACTION_MOUSE_X ? delta : 0,
                         type == CONFIG_ACTION_MOUSE_Y ? delta : 0, 0);
 }
@@ -212,7 +212,7 @@ static FW_BIT flushOutputs(void) {
   }
   buttons = mouseButtons();
   if (buttons != lastMouse) {
-    if (!USB_queueMouse(buttons, 0, 0, 0)) {
+    if (!USB_queueMousePacked(buttons, 0, 0, 0)) {
       return 0;
     }
     lastMouse = buttons;
@@ -275,7 +275,9 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
-      toggledMouse ^= second;
+      if (first & 0x20) persistentMouse &= ~second;
+      else if (first & 0x10) persistentMouse |= second;
+      else persistentMouse ^= second;
       break;
     case CONFIG_ACTION_RELATIVE_LAYER:
       {
@@ -346,7 +348,7 @@ static void updateLayer(void) {
     }
     currentFirst = 0;
     macroNext = 0;
-    toggledMouse = 0;
+    persistentMouse = 0;
     phase = 0;
     tempOn = 0;
     tempMouse = 0;
@@ -374,7 +376,7 @@ void actionsInit(void) {
   eventUsed = 0;
   currentFirst = 0;
   macroNext = 0;
-  toggledMouse = 0;
+  persistentMouse = 0;
   phase = 0;
   consumerReleasePending = 0;
   consumerFirst = 0;
@@ -439,6 +441,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   uint8_t second;
   uint8_t other;
   uint8_t keys = configKeyCount();
+  __idata uint8_t chordWindow = configChordWindowMs();
   if (input > keys || (inputDown & (1 << input))) {
     return;
   }
@@ -451,7 +454,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   }
   if (pendingInput && (input < keys || oneShotReturnLayer != 0xFF)) {
     other = pendingInput - 1;
-    if (input < keys && (uint16_t)(now - pendingSince) < configChordWindowMs() &&
+    if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
         configChord(pendingLayer, other, input, &first, &second)) {
       pendingInput = 0;
       chordPartner[other] = input + 1;
@@ -474,7 +477,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   buttonFirst[input] = first;
   buttonSecond[input] = second;
   orderPress(input);
-  if (input < keys && configChordWindowMs()) {
+  if (input < keys && chordWindow) {
     for (other = 0; other < keys; other++) {
       if (configChord(effectiveLayer, input, other, &first, &second)) {
         pendingInput = input + 1;
@@ -560,10 +563,12 @@ void actionsPoll(uint16_t now) {
     resolvePending();
     updateLayer();
   }
-  if (lastReportGeneration != USB_reportGeneration()) {
-    lastReportGeneration = USB_reportGeneration();
+  i = USB_reportGeneration();
+  if (lastReportGeneration != i) {
+    lastReportGeneration = i;
     lastKeyboard[0] = 0xFF;
-    lastMouse = 0xFF;
+    // Every byte is now a valid button mask; force a mismatch even for 0xFF.
+    lastMouse = ~mouseButtons();
     if (consumerOwner) {
       i = consumerOwner - 1;
       consumerFirst = buttonFirst[i];
@@ -619,11 +624,7 @@ void actionsPoll(uint16_t now) {
   }
   if (!currentFirst) {
     if (macroNext) {
-#if CONFIG_MACRO_STYLE == 1
-      c = macroNext == (uint8_t)(macroStart + 4);
-#else
       c = macroNext >= CONFIG_SIZE - 1 || !activeConfig[macroNext];
-#endif
       if (c) {
 #if CONFIG_MACRO_REPEAT
         if (macroRepeat) {
@@ -668,14 +669,13 @@ void actionsPoll(uint16_t now) {
       macroRepeat = currentFirst >> 4;
 #endif
       currentFirst = 0;
-    } else if (type == CONFIG_ACTION_MOUSE_TOGGLE) {
-      toggledMouse ^= currentSecond;
-      currentFirst = 0;
     } else if (type == CONFIG_ACTION_SCROLL) {
       int8_t delta = currentSecond;
       if (!delta) {
         currentFirst = 0;
-      } else if (USB_queueMouse(mouseButtons() | (currentFirst & CONFIG_SCROLL_HORIZONTAL), 0, 0, delta < 0 ? -1 : 1)) {
+      } else if (USB_queueMousePacked(mouseButtons(), 0, 0,
+                 currentFirst & CONFIG_SCROLL_HORIZONTAL ?
+                   (delta < 0 ? 0xF0 : 0x10) : (delta < 0 ? 0x0F : 0x01))) {
         currentSecond = delta < 0 ? delta + 1 : delta - 1;
         if (!currentSecond) {
           scrollRepeated = now; // Wait after the whole step, including large deltas.
@@ -688,7 +688,7 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
-    } else if (type >= CONFIG_ACTION_CONSUMER) {
+    } else if (type >= CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_MOUSE_TOGGLE) {
       // Held bindings never enter this queue; X/Y movement was handled above.
       runAction(currentFirst, currentSecond, 0, 9);
       currentFirst = 0;

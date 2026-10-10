@@ -66,10 +66,16 @@ export class Ch552Bootloader {
             // A7: four-byte header, two-byte field mask, then config words.
             // CH552 boot options are config word 1's low byte (reply[10]).
             // Only bits 0–1 are effective; see DeqingSun/vnproch551 main.cpp.
+            // A7's second byte is not a reliable status field: a CH552 v2.5.0
+            // returned 0xFB with valid readback. Validate the command/payload.
             const actualBootOptions = data.getUint8(10) & 0x03;
-            if (data.getUint8(0) !== 0xa7 || data.getUint8(1) !== 0 || data.getUint16(2, true) < 22 || data.byteLength < 4 + data.getUint16(2, true) || (data.getUint16(4, true) & 0x07) !== 0x07 || actualBootOptions !== expectedBootOptions) {
+            const failure = data.getUint8(0) !== 0xa7 ? 'unexpected reply command'
+              : data.getUint16(2, true) < 22 || data.byteLength < 4 + data.getUint16(2, true) ? 'invalid reply length'
+              : (data.getUint16(4, true) & 0x07) !== 0x07 ? 'missing configuration fields'
+              : actualBootOptions !== expectedBootOptions ? 'boot options did not match' : null;
+            if (failure) {
               const reply = Array.from(new Uint8Array(data.buffer, data.byteOffset, data.byteLength), b => b.toString(16).padStart(2, '0')).join(' ');
-              throw new Error(`Configuration readback failed: expected boot options 0x${expectedBootOptions.toString(16)}, received 0x${actualBootOptions.toString(16)} (reply: ${reply}). Application flash was not erased; reconnect in bootloader mode before retrying.`);
+              throw new Error(`Configuration readback failed: ${failure}; expected boot options 0x${expectedBootOptions.toString(16)}, received 0x${actualBootOptions.toString(16)} (reply: ${reply}). Application flash was not erased; reconnect in bootloader mode before retrying.`);
             }
             expectedBootOptions = null;
             this.onStatus('Boot configuration readback verified.');

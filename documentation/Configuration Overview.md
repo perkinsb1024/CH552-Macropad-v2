@@ -35,7 +35,17 @@ This guide covers the current configurator and its supported three-key and six-k
 4. The configurator loads the saved profile from your device. If the macropad has no valid profile, the configurator defaults to a starter profile instead
 5. Make your changes, click **Save to device**, and wait for **Saved** before unplugging it
 
-If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Simply save a new profile to activate it.
+If the macropad blinks one red LED, that indicates there is no saved profile (or an invalid saved profile). Save a new profile to activate it. V12 firmware also accepts the **Enter bootloader** command from the firmware installer in this state.
+
+With a valid profile, the macropad stays dark while the computer recognizes it
+over USB. If that takes more than one second, **Key 1** starts blinking yellow.
+The warning clears automatically when USB enumeration completes, and normal
+operation starts with the configured layer indication. You can also press
+**Key 1** to dismiss the warning; that press does not run its assigned action.
+Release the key before pressing it again. Manual dismissal allows local actions
+and lighting, but keyboard and mouse output still require USB enumeration.
+The yellow warning only applies at startup. An invalid profile displays the red
+error indication instead and requires saving a valid profile.
 
 ### Practice without Hardware
 
@@ -98,7 +108,7 @@ An action is what the macropad does. A trigger is what makes it happen.
 | Timer | Runs its action whenever its interval expires. The timer can optionally restart when you interact with the macropad |
 | **On next input** after a timer | Runs once when you next press a key or use the wheel, after that timer has fired |
 
-There are no separate user-configurable double-tap or long-press triggers for ordinary actions. **Key hold** means “keep this action held while I hold the button,” rather than “wait before starting.” The only exception is the optional three-second wheel button hold to enter firmware update mode (this is an advanced setting mostly used for development, I recommend leaving it off).
+There are no separate user-configurable double-tap or long-press triggers for ordinary actions. **Key hold** means “keep this action held while I hold the button,” rather than “wait before starting.” In v12, firmware update mode is entered through the installer or by holding the encoder while connecting USB.
 
 Actions that need a button release—**Key hold**, **Mouse hold**, **Layer while held**, and pointer movement set to **Hold**—cannot be used for wheel rotation or timer actions as those triggers have no button to release.
 
@@ -121,19 +131,31 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 | --- | --- |
 | **Mouse click** | Clicks your selected mouse button or buttons 1–16 times: choose **Single**, **Double**, or **Custom** |
 | **Mouse hold** | Keeps the selected mouse buttons down while you hold the macropad button; useful for dragging |
+| **Mouse down** | Sets selected persistent button bits; repeated down leaves them down |
+| **Mouse up** | Clears selected persistent bits from any input or macro; repeated up leaves them released |
 | **Mouse toggle** | Flips the selected mouse buttons between down and released. All toggle actions share the same state, so another input or macro can toggle them off. Changing layers also clears toggled mouse buttons |
 | **Scroll** | Sends a scroll step. Choose **Vertical** with **Up**/**Down**, or **Horizontal** with **Left**/**Right**, and a **Wheel step** from 1–127 (horizontal requires v9 firmware) |
 | **Move pointer X** | Moves left or right by the selected amount, from 1–127 |
 | **Move pointer Y** | Moves up or down by the selected amount, from 1–127 |
 
-**Mouse toggle** shares one state across keys, wheel inputs, chords, timers and macros.
-For example, a key can toggle **Left** on and a macro can toggle **Left** off.
-Each selected button flips independently. A button kept down by **Mouse hold**
-stays down until you release that held input, even if its toggle state is off.
-Macro toggles run when playback reaches their step; direct toggle bindings act
-immediately.
+In v12, **Mouse toggle**, **Mouse down** and **Mouse up** share one persistent state
+across keys, wheel inputs, chords, timers and macros. Each selected bit operates
+independently. Down sets bits, up clears them, and toggle flips them. Repeated
+down/up is idempotent. For example, one key can start a drag with **Mouse down**
+and another can end it with **Mouse up**. A macro can use **Mouse down** →
+**Move pointer X**/**Move pointer Y** → **Mouse up**, with **Pause** steps as needed.
+A physical **Mouse hold** or temporary click keeps its buttons down independently.
+Macro completion and physical release leave persistent state intact; layer
+changes and resets clear it. Direct bindings act immediately, while macro steps
+run in playback order. Down/up are available for rotation and both timer slots.
 
-Mouse button actions offer **Left**, **Middle**, and **Right**. You can select more than one (though that's not typically useful... How often do you press more than one mouse button at once?)
+Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
+**Button 8**, including combinations. Extra-button support depends on the host
+and application. Buttons 4/5 often mean Back/Forward; those meanings are not
+guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
+may not observe buttons 6–8 even when another application can use them.
+Buttons 4–8 and down/up require v12 firmware. The bundled v11 release supports
+three buttons and global **Mouse toggle**; use its frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
 slot when you switch to **Single** or **Double** and back. The duration hint is rounded
@@ -529,7 +551,7 @@ some actions wait for the macro to finish, while others act immediately:
 | Behavior | Actions triggered while a macro is running |
 | --- | --- |
 | Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X** and **Move pointer Y** set to **Tap**, and another **Execute macro** |
-| Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
+| Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Mouse down**, **Mouse up**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
 
 Changing the active layer cancels the rest of the macro and clears waiting
 actions. *This also applies to a layer-switching step inside a macro:* the layer
@@ -612,11 +634,13 @@ Save an export somewhere you can find it again. A device save and a backup serve
 
 The browser also keeps a local draft. On reconnect, it may ask whether to use the draft or load from the device. Choose the draft to continue browser edits, or the device copy to start from what is already saved on hardware. Browser drafts can disappear when browser data is cleared and are separate from the device's saved profile; keep an exported backup for anything you want to preserve.
 
-### Advanced: Optional Firmware Update Shortcut
+### Enter Firmware Update Mode
 
-Under **Layer options → Advanced**, **Allow bootloader entry by long-pressing the encoder button** enables firmware update mode when you hold the wheel button for three seconds. It uses the layer active when the hold begins.
+With v12 firmware, click **Enter bootloader** in the [firmware installer](../webUploader/), select the running macropad, then click **Connect bootloader**. This works even without a valid saved profile. The LEDs turn red when the device enters update mode.
 
-This option is for updating the device software, not editing a profile. It can interrupt an encoder hold action, so leave it disabled on layers where you regularly hold that button. If you enter update mode accidentally, unplug and reconnect normally. Holding the wheel button while plugging in also enters update mode, independently of this setting. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) when you actually need an update.
+Holding the encoder button while connecting USB remains available with every version of this firmware. Runtime encoder holds do not enter update mode in v12. Older firmware may support an optional three-second hold on enabled layers; its configurator controls that option.
+
+Firmware update mode is for replacing device software. Use **Save to device** to change a profile. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) for hardware bootloader entry if the firmware cannot run.
 
 ## Example Configurations
 
@@ -656,6 +680,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | --- | --- |
 | Device does not appear in the chooser | Use desktop Chrome or Edge, the hosted configurator, a USB-A to USB-C cable (you'll need a dongle on Macs), and a macropad running this project's firmware. Reconnect after installing firmware. These boards will not power on with a USB-C to USB-C cable. Linux users may need the [device access setup](../webapp/README.md#linux-device-access) |
 | One red LED blinks and controls do nothing | Connect and save a valid profile |
+| **Key 1** blinks yellow after a one-second startup delay | USB enumeration has not completed. Check the USB data cable and connection, or wait for the computer to recognize the device. Enumeration clears the warning automatically. Press **Key 1** to dismiss it manually; keyboard/mouse output still requires enumeration |
 | All LEDs are red and controls do nothing | Device is in bootloader mode (firmware update mode). Unplug and replug the device without holding the wheel button |
 | My edits have no effect | Click **Save to device** and wait for **Saved**. Check that you are connected to hardware, rather than a simulator |
 | Clicking a layer tab does not update the device | Tabs only affect what you're currently edit. Use a saved layer-switch action on the macropad |
@@ -666,11 +691,11 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10/v11 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v12 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
-| Holding the wheel button disconnects the device | Disable the three-second bootloader option on that layer if you need ordinary wheel-button hold actions. Unplug and replug the device without holding any buttons to leave update mode |
-| The mouse seems stuck dragging | Use any **Mouse toggle** action selecting that button to toggle it off, or change layers to clear toggled buttons. Release any **Mouse hold** inputs too |
+| Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |
+| The mouse seems stuck dragging | Use **Mouse up** for that button in v12, or change layers to clear persistent buttons. With v11, use **Mouse toggle** to flip the shared state. Release any **Mouse hold** inputs too |
 | LEDs do not look like the editor | Check layer indicators, key colors, temporary effects, and brightness overrides. Use **Restore all configured LED settings** to restore saved behavior |
 | LEDs do not light up at all | The absolute cheapest versions of these macropads do not include LEDs. Someone skilled with a soldering iron can add them, but it's probably easier to buy a macropad that already includes them |
 | My device has older firmware | Follow the configurator's compatibility notice or use **Older firmware configurators**. Older editors may have fewer features than this guide |
@@ -729,7 +754,7 @@ The same cancellation can happen when the unconsumed input's normal binding chan
 
 [Back to index](#index)
 
-**Mouse click**, **Mouse hold** and **Mouse toggle** also offer **Click here** to
+**Mouse click**, **Mouse hold**, **Mouse toggle**, **Mouse down** and **Mouse up** also offer **Click here** to
 open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**
 next to its click counter, so held and toggled outputs can be checked. Releases
 outside the test area are tracked; leaving the browser clears the display until

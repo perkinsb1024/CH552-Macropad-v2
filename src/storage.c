@@ -12,7 +12,8 @@ uint8_t storageRead(uint8_t offset) {
 }
 
 static FW_BIT writeByte(uint8_t offset, uint8_t value) {
-  if (storageRead(offset) != value) {
+  if (storageRead(offset) == value) return 1;
+  {
 #ifdef __SDCC
     __bit enabled = EA;
     EA = 0; // Protect the DataFlash registers and safe-mode unlock sequence.
