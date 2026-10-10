@@ -180,13 +180,16 @@ static FW_BIT addUsage(uint8_t usage) {
 
 static FW_BIT flushOutputs(void) {
   uint8_t i;
-  uint8_t changed = 0;
   uint8_t buttons;
+  uint8_t consumerHigh = consumerFirst >> 4;
   // Release the previous consumer before changing its temporary modifiers.
   if (consumerReleasePending) return 0;
   if (consumerFirst) {
-    consumerModifiers = actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED ?
-                        consumerFirst >> 4 : 0;
+    consumerModifiers = 0;
+    if (actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED) {
+      consumerModifiers = consumerHigh;
+      consumerHigh = 0;
+    }
   }
   for (i = 1; i < 8; i++) {
     nextKeyboard[i] = 0;
@@ -207,10 +210,10 @@ static FW_BIT flushOutputs(void) {
   }
   for (i = 0; i < 8; i++) {
     if (nextKeyboard[i] != lastKeyboard[i]) {
-      changed = 1;
+      break;
     }
   }
-  if (changed) {
+  if (i < 8) {
     // PSEG is checked to stay in xRAM page zero, so this widening is exact.
     if (!USB_queueKeyboard((const __xdata uint8_t *)nextKeyboard)) {
       return 0;
@@ -227,8 +230,7 @@ static FW_BIT flushOutputs(void) {
     lastMouse = buttons;
   }
   if (consumerFirst) {
-    if (!USB_queueConsumer(((uint16_t)(actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED ?
-                            0 : consumerFirst >> 4) << 8) | consumerSecond)) {
+    if (!USB_queueConsumer(((uint16_t)consumerHigh << 8) | consumerSecond)) {
       return 0;
     }
     consumerFirst = 0;
@@ -277,10 +279,12 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       consumerSecond = second;
       // Modified output releases before a replacement changes its modifiers.
       // A tap also releases an interrupted physical consumer hold.
-      if (consumerModifiers || (consumerOwner && actionType(first) != CONFIG_ACTION_CONSUMER_HOLD))
+      // Only types 4/7/8 reach here; bit 3 distinguishes hold from both taps.
+      if (consumerModifiers || (consumerOwner && !(first & CONFIG_ACTION_CONSUMER_HOLD)))
         consumerReleasePending = 1;
-      else if (actionType(first) == CONFIG_ACTION_CONSUMER_HOLD) consumerReleasePending = 0;
-      consumerOwner = actionType(first) == CONFIG_ACTION_CONSUMER_HOLD ? input + 1 : 0;
+      else if (first & CONFIG_ACTION_CONSUMER_HOLD) consumerReleasePending = 0;
+      consumerOwner = 0;
+      if (first & CONFIG_ACTION_CONSUMER_HOLD) consumerOwner = input + 1;
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
       layerSelectionPending = 1;

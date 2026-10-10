@@ -215,7 +215,7 @@ The action types are:
 | 1 | **Keyboard tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
 | 2 | **Keyboard hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
 | 3 | **Mouse click** | **Click count** minus one (`0`–`15` = 1–16 clicks) | Button mask 1–255 |
-| 4 | **Media / system with modifiers** | Ctrl/Shift/Alt/GUI modifier mask 0–15 | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF` |
+| 4 | **Media / system with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF` |
 | 5 | **Mouse toggle** / **Mouse down** / **Mouse up** / **Mouse hold** | `0` = toggle, `1` = down, `2` = up, `3` = physical hold; 4–15 reject | Button mask 1–255 |
 | 6 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
 | 7 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |

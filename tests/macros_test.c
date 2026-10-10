@@ -473,6 +473,14 @@ static void testModifiedConsumer(void) {
         if (mask) assertModifiers(index++, 0);
         assert(!latestModifiers());
     }
+    // All twelve-bit high nibbles remain usages, never temporary modifiers.
+    for (uint8_t aux = 0; aux < 16; aux++) for (uint8_t type = 7; type <= 8; type++) {
+        reset(); activeConfig[9] = (aux << 4) | type; activeConfig[10] = 0x24;
+        actionsPress(0, 0); actionsPoll(0);
+        assert(count == 1); assertConsumer(0, ((uint16_t)aux << 8) | 0x24);
+        actionsRelease(0); pump(1, 20);
+        assert(count == 2); assertConsumer(1, 0); assert(!latestModifiers());
+    }
     // Removing temporary ownership preserves physical keys and modifiers.
     reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
     activeConfig[11] = 0x22; activeConfig[12] = 4;
