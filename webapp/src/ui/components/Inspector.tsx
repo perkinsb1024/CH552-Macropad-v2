@@ -17,6 +17,69 @@ import { ScrollTest } from './ScrollTest';
 
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
 
+function ConsumerUsageInput({ usage, onChange }: { usage: number; onChange(usage: number): void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const value = draft ?? usage.toString(16).toUpperCase().padStart(3, '0');
+  const valid = /^[0-9a-f]{1,3}$/i.test(value) && parseInt(value, 16) > 0;
+  const commit = () => {
+    if (valid) onChange(parseInt(value, 16));
+    setDraft(null);
+  };
+  return <input class="mono" value={value} maxLength={3} aria-label="Consumer usage in hex"
+    aria-invalid={!valid} title="Enter a hexadecimal usage from 001 to FFF"
+    onInput={(e) => {
+      const input = e.currentTarget;
+      const cursor = input.selectionStart;
+      const beforeCursor = cursor === null ? null : input.value.slice(0, cursor).replace(/[^0-9a-f]/gi, '').length;
+      const filtered = input.value.replace(/[^0-9a-f]/gi, '');
+      if (input.value !== filtered) {
+        input.value = filtered;
+        if (beforeCursor !== null) input.setSelectionRange(beforeCursor, beforeCursor);
+      }
+      setDraft(filtered);
+    }}
+    onBlur={commit}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter') e.currentTarget.blur();
+      if (e.key === 'Escape') setDraft(null);
+    }} />;
+}
+
+function ConsumerControl({ action, onChange }: {
+  action: Extract<Action, { type: 'consumer' | 'consumerHold' }>;
+  onChange(action: Action): void;
+}) {
+  const [customSelected, setCustomSelected] = useState(false);
+  const custom = customSelected || !CONSUMER_USAGES.some((c) => c.usage === action.usage);
+  return (
+        <div class="field">
+          <span class="field-label">Control</span>
+          <select value={custom ? 'custom' : action.usage} onChange={(e) => {
+            const v = (e.target as HTMLSelectElement).value;
+            setCustomSelected(v === 'custom');
+            if (v !== 'custom') onChange({ ...action, usage: Number(v) });
+          }}>
+            {CONSUMER_GROUPS.map((group) => (
+              <optgroup key={group} label={group}>
+                {CONSUMER_USAGES.filter((c) => c.group === group).map((c) => <option key={c.usage} value={c.usage}>{c.name}</option>)}
+              </optgroup>
+            ))}
+            <optgroup label="Advanced"><option value="custom">Custom usage…</option></optgroup>
+          </select>
+          {custom && (
+            <div class="row">
+              <span class="mono">0x</span>
+              <ConsumerUsageInput key={action.usage} usage={action.usage}
+                onChange={(usage) => onChange({ ...action, usage })} />
+              <span class="hint">12-bit HID Consumer Page usage</span>
+            </div>
+          )}
+          <span class="hint">Brightness controls are honored by some hosts and monitors only.</span>
+          {action.type === 'consumerHold' && <span class="hint">The host decides whether a held control repeats. The newest media action wins; previous holds are not restored. Holds continue across layer changes until release.</span>}
+        </div>
+  );
+}
+
 function MouseButtons({ value, onChange }: { value: number; onChange(v: number): void }) {
   const buttons = MOUSE_BUTTONS;
   const [showMore, setShowMore] = useState(!!(value & 0xE0));
@@ -85,7 +148,6 @@ export function Inspector() {
   const layerCount = p?.layers.length ?? 0;
   const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed, macro, macros: p?.macros, macroCount: p?.macros?.length ?? 0 }) : null;
   const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
-  const custom = useMemo(() => (action?.type === 'consumer' || action?.type === 'consumerHold') && !CONSUMER_USAGES.some((c) => c.usage === action.usage), [action]);
   const savedStrings = useMemo(() => {
     if (!p) return [];
     const strings = new Set<string>();
@@ -337,32 +399,7 @@ export function Inspector() {
       )}
 
       {(action.type === 'consumer' || action.type === 'consumerHold') && (
-        <div class="field">
-          <span class="field-label">Control</span>
-          <select value={custom ? 'custom' : action.usage} onChange={(e) => {
-            const v = (e.target as HTMLSelectElement).value;
-            update({ ...action, usage: v === 'custom' ? 0x001 : Number(v) });
-          }}>
-            {CONSUMER_GROUPS.map((group) => (
-              <optgroup key={group} label={group}>
-                {CONSUMER_USAGES.filter((c) => c.group === group).map((c) => <option key={c.usage} value={c.usage}>{c.name}</option>)}
-              </optgroup>
-            ))}
-            <optgroup label="Advanced"><option value="custom">Custom usage…</option></optgroup>
-          </select>
-          {custom && (
-            <div class="row">
-              <span class="mono">0x</span>
-              <input class="mono" value={action.usage.toString(16).toUpperCase().padStart(3, '0')} maxLength={3} aria-label="Consumer usage in hex" onInput={(e) => {
-                const n = parseInt((e.target as HTMLInputElement).value, 16);
-                if (!Number.isNaN(n)) update({ ...action, usage: n & 0xfff });
-              }} />
-              <span class="hint">12-bit HID Consumer Page usage</span>
-            </div>
-          )}
-          <span class="hint">Brightness controls are honored by some hosts and monitors only.</span>
-          {action.type === 'consumerHold' && <span class="hint">The host decides whether a held control repeats. The newest media action wins; previous holds are not restored. Holds continue across layer changes until release.</span>}
-        </div>
+        <ConsumerControl key={JSON.stringify(slot) + action.type} action={action} onChange={update} />
       )}
 
       {action.type === 'string' && (
