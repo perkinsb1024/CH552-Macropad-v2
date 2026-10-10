@@ -62,6 +62,13 @@ function SaveButton() {
   );
 }
 
+function HistoryButtons() {
+  return <>
+    <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo"><IconRefresh mirrored /> Undo</button>
+    <button class="btn" onClick={redo} disabled={!canRedo.value} title="Redo (⌘⇧Z / Ctrl+Shift+Z)" aria-label="Redo"><IconRefresh /> Redo</button>
+  </>;
+}
+
 export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
   const headerRef = useRef<HTMLElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -126,7 +133,7 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [readOnly]);
   return (
-    <header class="topbar" ref={headerRef}>
+    <header class={`topbar${readOnly ? ' topbar-live-view' : ''}`} ref={headerRef}>
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
           <span /><span /><span /><span /><span /><span />
@@ -154,24 +161,23 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
       </div>
 
       <div class="actions">
+        {readOnly && <a class="btn toolbar-configurator" href={siteUrl('./')} target="_blank" rel="noreferrer">Configurator</a>}
         {c.kind === 'disconnected' && saveState.value.phase !== 'busy' && <ConnectMenu />}
+        {!readOnly && profile.value && <div class="toolbar-history"><HistoryButtons /></div>}
         {c.kind === 'connected' && !readOnly && (canSave.value || saveState.value.phase === 'busy') && <SaveButton />}
         <div class={`toolbar-more ${moreOpen ? 'is-open' : ''}`} ref={moreRef}>
           <button ref={moreButtonRef} class="btn toolbar-more-trigger" type="button" aria-expanded={moreOpen} aria-controls="toolbar-options" onClick={() => setMoreOpen(!moreOpen)}>More <IconChevron /></button>
           <div id="toolbar-options" class="toolbar-options" onClick={(event) => {
             if ((event.target as HTMLElement).closest('button:not(:disabled), a')) setMoreOpen(false);
           }}>
-        <a class="btn" href={siteUrl(readOnly ? './' : 'liveView/')} target="_blank" rel="noreferrer">{!readOnly && <IconEye />}{readOnly ? 'Configurator' : 'Live View'}</a>
-        {!readOnly && profile.value && <>
-          <button class="btn" onClick={undo} disabled={!canUndo.value} title="Undo (⌘Z / Ctrl+Z)" aria-label="Undo"><IconRefresh mirrored /> Undo</button>
-          <button class="btn" onClick={redo} disabled={!canRedo.value} title="Redo (⌘⇧Z / Ctrl+Shift+Z)" aria-label="Redo"><IconRefresh /> Redo</button>
-        </>}
+        <a class={`btn${readOnly ? ' toolbar-configurator-overflow' : ''}`} href={siteUrl(readOnly ? './' : 'liveView/')} target="_blank" rel="noreferrer">{!readOnly && <IconEye />}{readOnly ? 'Configurator' : 'Live View'}</a>
+        {!readOnly && profile.value && <div class="toolbar-history-overflow"><HistoryButtons /></div>}
         {c.kind === 'connected' ? (
           <>
             <button class="btn" onClick={readOnly ? () => void loadFromDevice() : confirmRead} disabled={saveState.value.phase === 'busy'} title="Read the profile stored on the device">
               <IconReadDevice /> Read from device
             </button>
-            <button class="btn" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
+            <button class="btn toolbar-disconnect" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
               <IconClose /> Disconnect
             </button>
           </>

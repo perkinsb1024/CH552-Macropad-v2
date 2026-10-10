@@ -833,26 +833,71 @@ output {
   gap: 8px;
   min-width: 0;
 }
-.toolbar-more { position: relative; }
-.toolbar-more-trigger { display: none; }
-.toolbar-options { display: flex; align-items: center; gap: 8px; }
-@media (max-width: 1400px) {
-  .toolbar-more-trigger { display: inline-flex; }
-  .toolbar-options {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    width: 210px;
-    padding: 6px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--bg-elev);
-    box-shadow: var(--shadow);
-    z-index: 20;
+.toolbar-history { display: flex; align-items: center; gap: 8px; }
+.toolbar-history-overflow { display: none; }
+.toolbar-configurator { display: none; }
+.toolbar-more { position: relative; margin-left: auto; }
+.toolbar-more-trigger { display: inline-flex; }
+.toolbar-options {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 224px;
+  max-width: calc(100vw - 24px);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow);
+  z-index: 20;
+}
+/* Raise the header stacking context above toasts while More is open. */
+.topbar:has(.toolbar-more.is-open) { z-index: 61; }
+.toolbar-more.is-open .toolbar-options { display: flex; flex-direction: column; align-items: stretch; gap: 6px; z-index: 61; }
+.toolbar-options .btn {
+  justify-content: flex-start;
+  min-height: 36px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--bg) 70%, var(--bg-elev));
+}
+.toolbar-options .btn:hover:not(:disabled),
+.toolbar-options .btn:focus-visible:not(:disabled) {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.toolbar-history-overflow > .btn { flex: 1; min-width: 0; }
+.toolbar-options .toolbar-disconnect {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger-soft) 55%, var(--bg-elev));
+}
+.toolbar-options .toolbar-disconnect:hover:not(:disabled),
+.toolbar-options .toolbar-disconnect:focus-visible:not(:disabled) {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+@media (min-width: 901px) and (max-width: 1200px), (max-width: 520px) {
+  .toolbar-history { display: none; }
+  .toolbar-history-overflow { display: flex; gap: 6px; }
+}
+@media (min-width: 1401px) {
+  .topbar-live-view .toolbar-configurator { display: inline-flex; }
+  .topbar-live-view .toolbar-configurator-overflow { display: none; }
+  .topbar-live-view .toolbar-more-trigger { display: none; }
+  .topbar-live-view .toolbar-options {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    position: static;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
   }
-  .toolbar-more.is-open .toolbar-options { display: flex; flex-direction: column; align-items: stretch; }
-  .toolbar-options .btn { justify-content: flex-start; }
 }
 .menu {
   position: relative;
