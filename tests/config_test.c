@@ -265,11 +265,11 @@ static void testPersistentMouseModes(void) {
                     (aux <= 2 || (aux == 3 && (slot == 0 || slot == 2))));
                 activeConfig[offset + 1] = 0;
                 seal(); assert(!configValid(activeConfig, variant));
-                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MODIFIER;
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_CONSUMER_MODIFIED;
                 for (unsigned mask = 0; mask < 256; mask++) {
                     activeConfig[offset + 1] = mask;
                     seal(); assert(!!configValid(activeConfig, variant) ==
-                        (aux <= 2 && mask >= 1 && mask <= 15));
+                        (mask >= 1));
                 }
             }
         }

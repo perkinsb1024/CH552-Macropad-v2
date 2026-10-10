@@ -74,7 +74,7 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
   );
 }
 
-/** The same modifier chips are used by shortcuts and persistent actions. */
+/** The same modifier chips are used by shortcuts and modified consumer actions. */
 export function ModifierPicker({ modifiers, onChange }: { modifiers: number; onChange(modifiers: number): void }) {
   return <div class="field">
     <span class="field-label">Modifiers</span>

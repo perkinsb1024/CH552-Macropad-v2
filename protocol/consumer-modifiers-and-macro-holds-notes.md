@@ -1,18 +1,17 @@
 # Consumer Modifiers and Macro Hold Support Notes
 
-These notes capture the discussion of self-contained modified consumer actions
-and keyboard holds inside macros. The broader alternatives remain design
-context. The persistent modifier path now has a firmware-only v13 implementation;
-see [implementation and measurements](v13-modifier-implementation.md) and the
-standalone [v13 binary reference](config-v13.md).
+These notes retain the design history of modified consumer actions and keyboard
+holds in macros. The current decision is to remove persistent modifier actions:
+a fine-brightness direction required seven macro bytes plus two binding bytes.
+The replacement uses type `0x4` for a self-contained two-byte consumer tap,
+with an eight-bit usage parameter and four modifier bits in the auxiliary nibble.
+**Mouse hold** remains at `0x35`, consolidated with persistent mouse actions.
 
-The current exploratory path is persistent modifier down/up/toggle actions,
-using an action type freed by consolidating mouse hold with mouse
-down/up/toggle. This would let macros bracket existing consumer taps and other
-actions with modifiers. Both hardware variants now fit without feature cuts,
-with net flash increases of 4/6 bytes and stack reserves increased to 79/82
-bytes. The details below retain the exploratory design rationale; configurator
-and migration work and host hardware verification remain outstanding.
+See [consumer implementation and measurements](v13-consumer-modifier-implementation.md)
+for the current experiment, [config-v13.md](config-v13.md) for its complete format,
+and [the earlier persistent modifier measurements](v13-modifier-implementation.md)
+for the superseded implementation. The historical proposals below explain the
+tradeoffs; they do not describe the currently implemented type `0x4`.
 
 ## Motivation and Current Behavior
 
@@ -76,10 +75,9 @@ actions alongside the proposed encoding would preserve these controls.
 
 All sixteen low-nibble action types are already allocated in version 12.
 The proposed encoding consequently needs an extension or reallocation in a new
-configuration format; it cannot simply take an unused type. No particular
-encoding or migration strategy has been finalized. The current exploratory path
-below instead reuses that type space for persistent modifier actions, retaining
-the existing 12-bit consumer actions unchanged.
+configuration format; it cannot simply take an unused type. The implemented replacement now uses this encoding at type `0x4`, after
+consolidating mouse hold into type `0x5`. The existing twelve-bit consumer
+actions remain unchanged. The persistent modifier proposal below is historical.
 
 ## Host Use Cases and Limits
 
@@ -234,13 +232,11 @@ complexity outweigh the benefits for this device; finding that space may require
 cutting other features. The per-run release proposal remains investigation
 context, not an implementation plan.
 
-Investigate persistent modifier down/up/toggle actions as the current exploratory
-path forward. This narrower design follows the existing persistent mouse state
-model and allows explicit release midway through a macro. Self-contained
-modified consumer taps remain a separate alternative, with their encoding and
-lifecycle still undecided.
+Replace persistent modifier actions with self-contained modified consumer taps.
+Keep the existing useful flash/RAM optimizations and consolidated mouse encoding.
+Measure the cost without pursuing additional aggressive optimizations.
 
-## Current Exploratory Path: Persistent Modifier Actions
+## Superseded Exploratory Path: Persistent Modifier Actions
 
 ### Proposed Encoding
 
@@ -366,11 +362,10 @@ Relevant code is in `src/actions.c`, `src/config.c`, `src/config.h`,
 `src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c`, and the configurator's action
 model, validation, serialization, and inspector. The standalone firmware format
 reference is now `protocol/config-v13.md`; `protocol/config-v12.md` describes the
-outgoing format and unchanged active configurator.
+outgoing published format and its frozen configurator.
 
 Preserve or increase stack capacity where possible; the starting reserves were
-78 bytes on the six-key pad and 81 bytes on the three-key pad, and the v13
-implementation reserves 79/82 bytes. Both variants have measured flash and RAM
+78 bytes on the six-key pad and 81 bytes on the three-key pad, and both v13 implementations reserve 79/82 bytes. Both variants have measured flash and RAM
 costs recorded in the implementation findings. An active configurator transition
 must also follow the project's frozen configurator archive requirements before
 changing the active editor.

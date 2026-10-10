@@ -12,46 +12,46 @@ let validator: ReturnType<typeof createFirmwareValidator>;
 beforeAll(() => { validator = createFirmwareValidator(); });
 afterAll(() => validator.close());
 afterEach(() => vi.unstubAllGlobals());
-const types = ['modifierToggle', 'modifierDown', 'modifierUp'] as const;
+const type = 'consumerModified' as const;
 
-it.each([0, 1] as const)('round-trips every persistent modifier mask at all action sites on variant %s', variant => {
-  for (const [mode, type] of types.entries()) for (let modifiers = 1; modifiers <= 15; modifiers++) {
-    const action: Action = { type, modifiers };
-    expect(encodeAction(action, new Map())).toEqual([mode << 4 | 4, modifiers]);
+it.each([0, 1] as const)('round-trips every consumer modifier mask at all action sites on variant %s', variant => {
+  for (const usage of [1, 0x6f, 0xff]) for (let modifiers = 0; modifiers <= 15; modifiers++) {
+    const action: Action = { type, usage, modifiers };
+    expect(encodeAction(action, new Map())).toEqual([modifiers << 4 | 4, usage]);
     expect(actionNeedsRelease(action)).toBe(false);
     const p = defaultProfile(variant); p.layers = [p.layers[0]!];
     p.layers[0]!.keys.fill(action); p.layers[0]!.encoderButton = action;
     p.layers[0]!.clockwise = action; p.layers[0]!.counterclockwise = action;
     p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action }];
     p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action, resumeAction: action }];
-    p.macros = [{ actions: [action, { type: 'consumer', usage: 0x6f }, { type: 'modifierUp', modifiers }] }];
+    p.macros = [{ actions: [action, { type: 'consumer', usage: 0x192 }] }];
     p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats: 2 };
     const image = encodeProfile(p);
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
     expect(validator.accepts(image, variant)).toBe(true);
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
   }
-  expect(summarize({ type: 'modifierDown', modifiers: 6 })).toBe('Down Shift + Alt');
-  expect(actionTooltip({ type: 'modifierUp', modifiers: 6 })).toBe('Modifier up: Shift + Alt');
+  expect(summarize({ type, usage: 0x6f, modifiers: 6 })).toBe('Shift + Alt + Brightness up');
+  expect(actionTooltip({ type, usage: 0x70, modifiers: 6 })).toBe('Media / system with modifiers: Shift + Alt + Brightness down');
 });
 
-it.each([0, 1] as const)('matches firmware reserved modes and mask validation on variant %s', variant => {
+it.each([0, 1] as const)('matches firmware usage validation on variant %s', variant => {
   const p = defaultProfile(variant); p.layers = [p.layers[0]!];
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, action: { type: 'none' } }];
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: { type: 'none' }, resumeAction: { type: 'none' } }];
-  p.macros = [{ actions: [{ type: 'modifierDown', modifiers: 1 }] }];
+  p.macros = [{ actions: [{ type, usage: 1, modifiers: 0 }] }];
   const end = variant ? 24 : 31;
   for (const offset of [9, variant ? 15 : 21, variant ? 17 : 23, variant ? 19 : 25, end + 1, end + 4, end + 6, end + 9]) {
     for (let aux = 0; aux < 16; aux++) for (const mask of [0, 1, 15, 16, 255]) {
       const image = encodeProfile(p); image.set([aux << 4 | 4, mask], offset); sealImage(image);
-      const valid = aux <= 2 && mask >= 1 && mask <= 15;
+      const valid = mask >= 1;
       expect(decodeImage(image).ok).toBe(valid);
       expect(validator.accepts(image, variant)).toBe(valid);
     }
   }
 }, 20000);
 
-it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting them as modifiers on variant %s', variant => {
+it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting them as consumer taps on variant %s', variant => {
   const p = defaultProfile(variant); p.layers = [p.layers[0]!];
   const hold: Action = { type: 'mouseHold', buttons: 0x88 };
   p.layers[0]!.keys[0] = hold; p.layers[0]!.encoderButton = hold;
@@ -79,14 +79,28 @@ it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting 
   expect(storage.has(draftKey(variant))).toBe(true);
 });
 
-it.each(types)('rejects invalid editor masks and pre-v13 JSON/drafts for %s', type => {
-  const p = defaultProfile(0); p.layers[0]!.keys[0] = { type, modifiers: 6 };
+it('rejects invalid editor values and pre-v13 JSON/drafts', () => {
+  const p = defaultProfile(0); p.layers[0]!.keys[0] = { type, usage: 0x6f, modifiers: 6 };
   const json = JSON.parse(exportProfile(p)); json.version = 12;
   expect(() => importProfile(JSON.stringify(json))).toThrow('version 13');
   vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ formatVersion: 12, profile: p }) });
   expect(loadDraft(0)).toBeNull();
-  for (const modifiers of [0, 16, -1, 1.5, NaN]) {
-    p.layers[0]!.keys[0] = { type, modifiers };
-    expect(() => encodeProfile(p)).toThrow('modifier');
+  for (const modifiers of [16, -1, 1.5, NaN]) {
+    p.layers[0]!.keys[0] = { type, usage: 0x6f, modifiers };
+    expect(() => encodeProfile(p)).toThrow(/modifier/i);
   }
+  for (const usage of [0, 256, -1, 1.5, NaN]) {
+    p.layers[0]!.keys[0] = { type, usage, modifiers: 6 };
+    expect(() => encodeProfile(p)).toThrow('0x01–0xFF');
+  }
+});
+
+it('rejects obsolete persistent modifier JSON and drafts instead of silently reinterpreting them', () => {
+  const p = defaultProfile(0);
+  const json = JSON.parse(exportProfile(p));
+  json.layers[0].keys[0] = { type: 'modifierDown', modifiers: 6 };
+  expect(() => importProfile(JSON.stringify(json))).toThrow();
+  const draft = JSON.stringify({ formatVersion: 13, profile: { ...p, layers: json.layers } });
+  vi.stubGlobal('localStorage', { getItem: () => draft });
+  expect(loadDraft(0)).toBeNull();
 });

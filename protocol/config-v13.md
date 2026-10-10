@@ -15,7 +15,7 @@
 | HID transport version | 1 |
 
 This standalone reference specifies the version 13 firmware binary image and
-transport. It supports persistent modifier toggle/down/up actions and places
+transport. It supports eight-bit consumer taps with optional modifiers and places
 **Mouse hold** in auxiliary mode 3 of the shared mouse action type. Dynamic
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
@@ -38,12 +38,12 @@ version 1. Firmware accepts only v13. Older DataFlash remains readable and
 unchanged, with physical action bindings inactive until a valid v13 image is
 explicitly uploaded. Firmware updates do not migrate or erase profiles.
 
-V12 images cannot be relabeled as v13: type `0x4` now operates on persistent
-modifiers. Browser conversion decodes old **Mouse hold** records as physical
+V12 images cannot be relabeled as v13: type `0x4` now encodes a consumer tap
+with modifiers. Browser conversion decodes old **Mouse hold** records as physical
 holds, then encodes them as `35 mask` at every action site and recomputes the
 version and CRC. The binary section layouts, existing mouse toggle/down/up modes,
 and 12-bit consumer usages retain their meanings. Imported JSON and drafts keep
-their named action semantics. Persistent modifier actions require version 13 in
+their named action semantics. Modified consumer actions require version 13 in
 JSON and drafts; older version declarations containing those actions reject.
 
 ## Header and Rainbow Settings
@@ -215,7 +215,7 @@ The action types are:
 | 1 | **Keyboard tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
 | 2 | **Keyboard hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
 | 3 | **Mouse click** | **Click count** minus one (`0`–`15` = 1–16 clicks) | Button mask 1–255 |
-| 4 | **Modifier toggle** / **Modifier down** / **Modifier up** | `0` = toggle, `1` = down, `2` = up; 3–15 reject | Ctrl/Shift/Alt/GUI mask 1–15; upper four bits must be zero |
+| 4 | **Media / system with modifiers** | Ctrl/Shift/Alt/GUI modifier mask 0–15 | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF` |
 | 5 | **Mouse toggle** / **Mouse down** / **Mouse up** / **Mouse hold** | `0` = toggle, `1` = down, `2` = up, `3` = physical hold; 4–15 reject | Button mask 1–255 |
 | 6 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
 | 7 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
@@ -233,10 +233,11 @@ combine them with bitwise OR. Mouse button bits are `1` = **Left**, `2` = **Righ
 and `4` = **Middle**. Bits 3–7 select **Button 4** through **Button 8** (`08`,
 `10`, `20`, `40`, `80` respectively). Any nonzero byte mask 1–255 is valid;
 each selected bit operates independently. Zero is invalid for every mouse-button
-action. Type 4 auxiliary values 3–15 and type 5 auxiliary values 4–15 reject.
+action. All type 4 auxiliary values are valid; type 5 auxiliary values 4–15 reject.
 Type 5 auxiliary value 3 is physical **Mouse hold**, prohibited in macros,
-encoder rotation and both timer action slots. Consumer actions
-accept nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Type Text** must
+encoder rotation and both timer action slots. Type 4 is a tap in every context.
+Type 7 and 8 consumer actions accept nonzero 12-bit HID Consumer Page usages
+`0x001`–`0xFFF`. **Type Text** must
 point to the start of a complete NULL-terminated pool string, including for
 empty text. Type 0 auxiliary values other than 0, 1 and 2 reject.
 
@@ -454,57 +455,49 @@ Use **Mouse hold** for a physical drag; **Mouse down** → pointer movement →
 timed press. Down/up are allowed on rotation and both timer slots and as macro
 steps, without adding configuration bytes beyond ordinary two-byte records.
 
-## Persistent Modifier State
+## Consumer Taps With Modifiers
 
-**Modifier toggle**, **Modifier down** and **Modifier up** share one global
-four-bit persistent mask, initially zero, across keys, encoder press/rotation,
-chords, timer expiry/follow-up and macro steps. A zero parameter or any upper
-parameter bit is invalid; auxiliary values 3–15 reject in every context.
+**Media / system with modifiers** uses type `0x4`, the auxiliary nibble for a
+modifier mask, and the parameter byte for a Consumer Page usage. All sixteen
+modifier masks are valid, including zero; a zero usage rejects. Modifier bits
+are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**, and `8` = **GUI**, reported as
+left keyboard modifiers. Usages above `0xFF` require the existing twelve-bit
+**Consumer tap** or **Consumer hold** actions, which have no action-specific
+modifiers. There is no modified hold mode or firmware usage lookup table.
 
-| Action | Full First Byte | Operation |
-| --- | --- | --- |
-| **Modifier toggle** | `04` | `state ^= modifiers` |
-| **Modifier down** | `14` | `state |= modifiers` |
-| **Modifier up** | `24` | `state &= ~modifiers` |
-
-Bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**, `8` = **GUI**, reported
-as the corresponding left keyboard modifiers. Each selected bit operates
-independently. Down/up is idempotent and creates no ownership count. Up can
-clear persistent bits set by any input or macro. Keyboard reports combine
-persistent state, physical **Keyboard hold** modifiers, and temporary
-**Keyboard tap** modifiers using bitwise OR. Up cannot release modifiers still
-contributed by those holds or taps. Toggle changes persistent state regardless
-of what is currently reported. An already-matching report needs no new edge.
-
-Releasing a trigger, normal macro completion and repetition boundaries retain
-persistent modifiers. Explicit up can release them midway through a macro.
-Effective-layer changes, configuration application and action reset clear them
-alongside persistent mouse state. USB reset/reconfiguration through configuration
-application cancels playback and clears state. A report-generation change alone
-reasserts current outputs; it does not itself clear persistent state.
-
-Direct actions execute immediately; macro steps execute in playback order.
-Changed keyboard reports must be accepted and drained before dependent macro
-steps advance. Consumer taps complete their release before a following modifier
-up step; keyboard release reports drain before the next dependent step, including
-under transport backpressure. For example:
+This tap is allowed on keys, encoder press/rotation, chords, both timer action
+fields and macro steps. It occupies two bytes with no macro required. For example:
 
 ```text
-14 06    Modifier down: Shift + Alt
-07 6F    Consumer tap: Brightness Up
-24 06    Modifier up: Shift + Alt
+64 6F    Shift + Alt with Brightness Up
+64 70    Shift + Alt with Brightness Down
 ```
 
-This sends modifier press, consumer press, consumer release, then modifier
-release. Host interpretation of modified consumer usages requires hardware
-verification. The existing latest-wins consumer lane remains unchanged.
+The temporary modifier mask combines with physical **Keyboard hold** modifiers
+and temporary **Keyboard tap** modifiers using bitwise OR. The shared USB FIFO
+orders any changed keyboard report before the consumer press, and the consumer
+release before removing the temporary modifiers. Queue rejection retries the
+unfinished stage. Removing the consumer mask preserves modifiers and ordinary
+keys contributed by physical holds and keyboard taps. The action uses up to
+four reports; an unchanged keyboard state needs no additional keyboard report.
+Macro playback waits for these reports to drain before dependent steps or the
+next repetition start. Trigger release has no effect on the tap lifecycle.
 
-Persistent modifiers affect all simultaneous output, including direct consumer
-and mouse actions that interleave with playback, later keyboard taps and
-**Type Text**. They cannot be isolated to one action at the host. A missing up
-step leaves modifiers active after completion and across repetitions until
-explicitly changed or reset. One input can clear state established by another;
-there is no per-macro ownership or automatic per-run release.
+Modified and unmodified actions share the latest-wins consumer lane. A new action
+replaces an unsent press. When replacing output with temporary modifiers, the
+old consumer release is queued before changing the modifier mask and sending
+the new press. Previous held consumer usages are not restored. A modified tap
+also releases an interrupted physical consumer hold before its own fresh press.
+
+An effective-layer change cancels pending consumer taps and schedules their
+release before modifier cleanup. Configuration application and action reset
+clear temporary ownership and retry release reports under backpressure; USB
+reset/reconfiguration follows that configuration-application lifecycle. A
+report-generation change alone follows the current output state. Normal tap
+completion removes its modifier contribution automatically. Simultaneous output
+may inherit modifiers while they are active because the host sees one combined
+keyboard state. Host interpretation of modified consumer usages depends on the
+host and requires hardware verification.
 
 ## Action Encoding Examples
 
@@ -512,8 +505,7 @@ there is no per-macro ownership or automatic per-run release.
 | --- | --- | --- |
 | **Mouse click** | `0x03 \| ((clicks - 1) << 4)` | Mouse button mask 1–255 |
 | **Mouse hold** | `0x35` | Mouse button mask 1–255 |
-| **Modifier down** | `0x14` | Modifier mask 1–15 |
-| **Modifier up** | `0x24` | Modifier mask 1–15 |
+| **Media / system with modifiers** | `0x04 \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
 | **Mouse down** | `0x15` | Mouse button mask 1–255 |
 | **Mouse up** | `0x25` | Mouse button mask 1–255 |
 | **Nothing** | `0x00` | `0x00` |
@@ -738,7 +730,7 @@ timers or strings requires remapping every macro reference in bindings and
 both timer action fields. Macro steps cannot reference other macros.
 
 Allowed steps are **Keyboard tap**, **Type Text**, **Mouse click**, **Mouse toggle**, **Mouse down**, **Mouse up**,
-**Modifier toggle**, **Modifier down**, **Modifier up**,
+**Media / system with modifiers**,
 **Scroll Tap**, **Consumer tap**, persistent/one-shot **Set layer** and **Relative
 layer**, X/Y movement in **Tap** mode, **LED control**, and **Pause**.
 **Nothing** is represented by the single-byte terminator rather than a step.
@@ -754,7 +746,7 @@ steps into the event queue. Accepted key/mouse reports, releases and consumer-ta
 releases complete before the next step starts. Each repetition reloads the
 original actions; string indices and mouse click counts reset. The image is
 never modified by playback. Later queued actions wait behind the sequence.
-Immediate physical/timer LED, consumer, persistent mouse/modifier and layer actions retain their
+Immediate physical/timer LED, consumer, persistent mouse and layer actions retain their
 normal dispatch behavior and may interleave with or interrupt a macro.
 
 Keys, encoder press/rotation, chords, timer expiry and timer resume may invoke a
@@ -767,15 +759,15 @@ for other queued output.
 
 An actual effective-layer change, configuration application, USB reset/
 reconfiguration through configuration application, or `actionsClear()` cancels active
-and queued macros and clears the global persistent mouse and modifier states. A macro's own layer step
+and queued macros and clears persistent mouse state and temporary consumer
+modifiers after consumer release. A macro's own layer step
 therefore ends its remaining steps if the effective layer changes. Selecting the
 same effective layer continues. A macro consumes an armed one-shot selection
 once at invocation. Steps do not consume another one-shot selection as physical
 input would. Relative steps resolve against the then-effective layer.
 
-Macro **Mouse toggle**, **Mouse down**, **Mouse up**, **Modifier toggle**,
-**Modifier down** and **Modifier up** steps update their respective global
-persistent state as direct actions. There is no per-trigger or per-macro
+Macro **Mouse toggle**, **Mouse down** and **Mouse up** steps update global
+persistent mouse state as direct actions. There is no per-trigger or per-macro
 ownership. Macro consumers use the existing
 latest-wins consumer lane;
 a new physical consumer action can interrupt it. No held-action lifecycle or

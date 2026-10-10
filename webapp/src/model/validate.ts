@@ -47,10 +47,9 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (!Number.isInteger(action.modifiers) || action.modifiers < 0 || action.modifiers > 15) return 'Modifier mask is out of range.';
       if (action.usage === 0 && action.modifiers === 0) return 'Choose a key or at least one modifier.';
       return null;
-    case 'modifierToggle':
-    case 'modifierDown':
-    case 'modifierUp':
-      return Number.isInteger(action.modifiers) && action.modifiers >= 1 && action.modifiers <= 15 ? null : 'Choose at least one modifier (Ctrl, Shift, Alt or GUI).';
+    case 'consumerModified':
+      if (!Number.isInteger(action.usage) || action.usage < 1 || action.usage > 0xff) return 'Consumer usage must be 0x01–0xFF.';
+      return Number.isInteger(action.modifiers) && action.modifiers >= 0 && action.modifiers <= 15 ? null : 'Modifier mask is out of range.';
     case 'mouseClick':
     case 'mouseHold':
     case 'mouseDown':

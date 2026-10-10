@@ -18,16 +18,17 @@ import { ScrollTest } from './ScrollTest';
 
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
 
-function ConsumerUsageInput({ usage, onChange }: { usage: number; onChange(usage: number): void }) {
+function ConsumerUsageInput({ usage, onChange, reduced = false }: { usage: number; onChange(usage: number): void; reduced?: boolean }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const value = draft ?? usage.toString(16).toUpperCase().padStart(3, '0');
-  const valid = /^[0-9a-f]{1,3}$/i.test(value) && parseInt(value, 16) > 0;
+  const digits = reduced ? 2 : 3;
+  const value = draft ?? usage.toString(16).toUpperCase().padStart(digits, '0');
+  const valid = /^[0-9a-f]{1,3}$/i.test(value) && parseInt(value, 16) > 0 && parseInt(value, 16) <= (reduced ? 0xff : 0xfff);
   const commit = () => {
     if (valid) onChange(parseInt(value, 16));
     setDraft(null);
   };
-  return <input class="mono" value={value} maxLength={3} aria-label="Consumer usage in hex"
-    aria-invalid={!valid} title="Enter a hexadecimal usage from 001 to FFF"
+  return <input class="mono" value={value} maxLength={digits} aria-label="Consumer usage in hex"
+    aria-invalid={!valid} title={reduced ? "Enter a hexadecimal usage from 01 to FF" : "Enter a hexadecimal usage from 001 to FFF"}
     onInput={(e) => {
       const input = e.currentTarget;
       const cursor = input.selectionStart;
@@ -47,11 +48,13 @@ function ConsumerUsageInput({ usage, onChange }: { usage: number; onChange(usage
 }
 
 function ConsumerControl({ action, onChange }: {
-  action: Extract<Action, { type: 'consumer' | 'consumerHold' }>;
+  action: Extract<Action, { type: 'consumer' | 'consumerHold' | 'consumerModified' }>;
   onChange(action: Action): void;
 }) {
+  const reduced = action.type === 'consumerModified';
+  const choices = CONSUMER_USAGES.filter(c => !reduced || c.usage <= 0xff);
   const [customSelected, setCustomSelected] = useState(false);
-  const custom = customSelected || !CONSUMER_USAGES.some((c) => c.usage === action.usage);
+  const custom = customSelected || !choices.some((c) => c.usage === action.usage);
   return (
         <div class="field">
           <span class="field-label">Control</span>
@@ -62,7 +65,7 @@ function ConsumerControl({ action, onChange }: {
           }}>
             {CONSUMER_GROUPS.map((group) => (
               <optgroup key={group} label={group}>
-                {CONSUMER_USAGES.filter((c) => c.group === group).map((c) => <option key={c.usage} value={c.usage}>{c.name}</option>)}
+                {choices.filter((c) => c.group === group).map((c) => <option key={c.usage} value={c.usage}>{c.name}</option>)}
               </optgroup>
             ))}
             <optgroup label="Advanced"><option value="custom">Custom usage…</option></optgroup>
@@ -70,9 +73,9 @@ function ConsumerControl({ action, onChange }: {
           {custom && (
             <div class="row">
               <span class="mono">0x</span>
-              <ConsumerUsageInput key={action.usage} usage={action.usage}
+              <ConsumerUsageInput key={action.usage} usage={action.usage} reduced={reduced}
                 onChange={(usage) => onChange({ ...action, usage })} />
-              <span class="hint">12-bit HID Consumer Page usage</span>
+              <span class="hint">{reduced ? "8-bit" : "12-bit"} HID Consumer Page usage</span>
             </div>
           )}
           <span class="hint">Brightness controls are honored by some hosts and monitors only.</span>
@@ -186,10 +189,12 @@ export function Inspector() {
     const remembered = rememberedAction(slot, type);
     if (remembered) { update(remembered); return; }
     const next = blankAction(type);
-    // Carry over compatible fields so switching Tap ↔ Hold keeps the key.
-    if ('usage' in next && 'usage' in action && 'modifiers' in next && 'modifiers' in action) update({ ...next, usage: action.usage, modifiers: action.modifiers });
-    else if ('modifiers' in next && 'modifiers' in action) update({ ...next, modifiers: action.modifiers || 1 });
-    else if ((next.type === 'consumer' || next.type === 'consumerHold') && (action.type === 'consumer' || action.type === 'consumerHold')) update({ ...next, usage: action.usage });
+    // Carry compatible values within the keyboard or media family.
+    if ((next.type === 'consumer' || next.type === 'consumerHold' || next.type === 'consumerModified') &&
+        (action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified')) {
+      const usage = next.type === 'consumerModified' && action.usage > 0xff ? next.usage : action.usage;
+      update(next.type === 'consumerModified' ? { ...next, usage, modifiers: action.type === 'consumerModified' ? action.modifiers : next.modifiers } : { ...next, usage });
+    } else if ((next.type === 'keyTap' || next.type === 'keyHold') && (action.type === 'keyTap' || action.type === 'keyHold')) update({ ...next, usage: action.usage, modifiers: action.modifiers });
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
     else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta,
@@ -338,7 +343,7 @@ export function Inspector() {
           : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative starts from the brighter current brightness, applies the step once, and sets both to the result. As configured resolves to the current layer indicator brightness and bright key feedback. Common presets include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
       </>}
 
-      {(action.type === 'modifierToggle' || action.type === 'modifierDown' || action.type === 'modifierUp') && (
+      {action.type === 'consumerModified' && (
         <ModifierPicker modifiers={action.modifiers} onChange={(modifiers) => update({ ...action, modifiers })} />
       )}
 
@@ -404,7 +409,7 @@ export function Inspector() {
         </div>
       )}
 
-      {(action.type === 'consumer' || action.type === 'consumerHold') && (
+      {(action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified') && (
         <ConsumerControl key={JSON.stringify(slot) + action.type} action={action} onChange={update} />
       )}
 

@@ -22,7 +22,7 @@ function change(node: Node, value: string) { (node.props.onChange as (event: unk
 it('places Media Hold after Media Tap and preserves custom usage when changing either way', () => {
   start({ type: 'consumer', usage: 0xabc });
   const media = nodes(selects()[0]!.props.children).find(n => n.type === 'optgroup' && n.props.label === 'Media')!;
-  expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerHold']);
+  expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerHold', 'consumerModified']);
   change(selects()[0]!, 'consumerHold');
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'consumerHold', usage: 0xabc });
   const control = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'ConsumerControl')!;

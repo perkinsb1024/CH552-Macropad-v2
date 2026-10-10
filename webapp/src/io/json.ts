@@ -111,10 +111,8 @@ function action(v: unknown, what: string): Action {
     case 'keyTap':
     case 'keyHold':
       return { type, usage: int(v.usage ?? 0, `${what} usage`), modifiers: int(v.modifiers ?? 0, `${what} modifiers`) };
-    case 'modifierToggle':
-    case 'modifierDown':
-    case 'modifierUp':
-      return { type, modifiers: int(v.modifiers, `${what} modifiers`) };
+    case 'consumerModified':
+      return { type, usage: int(v.usage, `${what} usage`), modifiers: int(v.modifiers ?? 0, `${what} modifiers`) };
     case 'mouseClick': {
       const clicks = v.clicks === undefined ? 1 : int(v.clicks, `${what} clicks`);
       return { type, buttons: int(v.buttons, `${what} buttons`), ...(clicks !== 1 ? { clicks } : {}) };
@@ -229,7 +227,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(isPreviousLayer)) throw new ImportError('Previous layer requires profile version 7.');
   const allActions = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action),
     ...(profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(profile.macros ?? []).flatMap(m => m.actions)];
-  if (Number(raw.version) < 13 && allActions.some(a => a.type === 'modifierToggle' || a.type === 'modifierDown' || a.type === 'modifierUp')) throw new ImportError('Persistent modifier actions require profile version 13.');
+  if (Number(raw.version) < 13 && allActions.some(a => a.type === 'consumerModified')) throw new ImportError('Modified consumer actions require profile version 13.');
   if (Number(raw.version) < 12 && allActions.some(a => a.type === 'mouseDown' || a.type === 'mouseUp' || ('buttons' in a && a.buttons > 7))) throw new ImportError('Mouse down/up and buttons 4–8 require profile version 12.');
   if (Number(raw.version) < 11 && allActions.some(a => a.type === 'macro' || a.type === 'pause')) throw new ImportError('Macros and pauses require profile version 11.');
   if (Number(raw.version) < 9 && allActions.some(a => a.type === 'scroll' && a.horizontal)) throw new ImportError('Horizontal scrolling requires profile version 9.');

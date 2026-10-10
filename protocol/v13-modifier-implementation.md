@@ -1,6 +1,10 @@
 # V13 Persistent Modifier Implementation and Measurements
 
-The firmware fits both hardware variants without removing any features. Relative
+This records the superseded persistent modifier implementation. The current
+replacement and its measurements are in
+[v13-consumer-modifier-implementation.md](v13-consumer-modifier-implementation.md).
+
+The firmware at the recorded checkpoint fits both hardware variants without removing any features. Relative
 to the starting v12 source, the final six-key build adds 4 flash bytes and the
 three-key build adds 6. Both gain one byte of linker-reserved stack capacity,
 reaching 79 and 82 bytes respectively, above the requested 64-byte minimum.

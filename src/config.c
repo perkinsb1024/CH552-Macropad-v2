@@ -123,10 +123,10 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
                    keyboardUsageValid(param);
+        case CONFIG_ACTION_CONSUMER_MODIFIED:
+            return param != 0; // Eight-bit usage; all four modifier bits are valid.
         case CONFIG_ACTION_MOUSE_CLICK:
             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
-        case CONFIG_ACTION_MODIFIER:
-            return aux <= 2 && (uint8_t)(param - 1) < 15;
         case CONFIG_ACTION_MOUSE_TOGGLE:
             return aux <= (rotation ? 2 : 3) && param != 0;
         case CONFIG_ACTION_SCROLL:

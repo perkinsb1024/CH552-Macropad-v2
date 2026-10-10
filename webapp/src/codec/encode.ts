@@ -34,13 +34,10 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>,
       return [code, action.offset & 0xff];
     case 'oneShotRelativeLayer':
       return [code | 0x10, action.offset & 0xff];
+    case 'consumerModified':
     case 'keyTap':
     case 'keyHold':
       return [code | ((action.modifiers & 15) << 4), action.usage & 0xff];
-    case 'modifierToggle':
-    case 'modifierDown':
-    case 'modifierUp':
-      return [code, action.modifiers];
     case 'mouseClick':
       return [code | (((action.clicks ?? 1) - 1) << 4), action.buttons & 255];
     case 'mouseHold':

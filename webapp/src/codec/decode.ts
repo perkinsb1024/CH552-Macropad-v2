@@ -83,14 +83,14 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     case ActionCode.MouseClick:
       if ((version < 8 && nonZeroAux) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse click settings';
       return { type: 'mouseClick', buttons: b1, ...(aux ? { clicks: aux + 1 } : {}) };
-    case ActionCode.ModifierToggle:
+    case ActionCode.ConsumerModified:
       if (version < 13) {
         if (rotation) return 'Mouse hold bound to rotation';
         if (nonZeroAux || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse button mask';
         return { type: 'mouseHold', buttons: b1 };
       }
-      if (aux > 2 || b1 < 1 || b1 > 15) return 'Invalid persistent modifier settings';
-      return { type: aux === 1 ? 'modifierDown' : aux === 2 ? 'modifierUp' : 'modifierToggle', modifiers: b1 };
+      if (!b1) return 'Consumer usage is zero';
+      return { type: 'consumerModified', usage: b1, modifiers: aux };
     case ActionCode.MouseToggle:
       if (version >= 13 && aux === 3) {
         if (rotation) return 'Mouse hold bound to rotation';

@@ -52,13 +52,13 @@ __idata uint8_t macroRepeat;
 #endif
 // Toggle/down/up share one persistent mouse-button state; holds remain separate.
 __pdata uint8_t persistentMouse;
-__pdata uint8_t persistentModifiers;
 __pdata uint8_t timedAge[CONFIG_TIMED_MAX];
 // High interval-counter bits occupy the same positions as record bits 3-5.
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX];
 __idata uint8_t timedFraction[CONFIG_TIMED_MAX];
 __pdata uint8_t timedClock;
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.
+__pdata uint8_t consumerModifiers; // Temporary ownership in the latest-wins lane.
 __pdata uint8_t consumerReleasePending;
 __data uint8_t consumerFirst;
 __data uint8_t consumerSecond;
@@ -182,10 +182,16 @@ static FW_BIT flushOutputs(void) {
   uint8_t i;
   uint8_t changed = 0;
   uint8_t buttons;
+  // Release the previous consumer before changing its temporary modifiers.
+  if (consumerReleasePending) return 0;
+  if (consumerFirst) {
+    consumerModifiers = actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED ?
+                        consumerFirst >> 4 : 0;
+  }
   for (i = 1; i < 8; i++) {
     nextKeyboard[i] = 0;
   }
-  nextKeyboard[0] = persistentModifiers;
+  nextKeyboard[0] = consumerModifiers;
   for (i = 0; i < MAX_INPUTS; i++) {
     if (buttonPressed[i] && actionType(buttonFirst[i]) == CONFIG_ACTION_KEY_HOLD) {
       nextKeyboard[0] |= buttonFirst[i] >> 4;
@@ -221,7 +227,8 @@ static FW_BIT flushOutputs(void) {
     lastMouse = buttons;
   }
   if (consumerFirst) {
-    if (!USB_queueConsumer(((uint16_t)(consumerFirst >> 4) << 8) | consumerSecond)) {
+    if (!USB_queueConsumer(((uint16_t)(actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED ?
+                            0 : consumerFirst >> 4) << 8) | consumerSecond)) {
       return 0;
     }
     consumerFirst = 0;
@@ -262,34 +269,27 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       break;
     case CONFIG_ACTION_KEY_HOLD:
       break;
+    case CONFIG_ACTION_CONSUMER_MODIFIED:
     case CONFIG_ACTION_CONSUMER:
     case CONFIG_ACTION_CONSUMER_HOLD:
       // Consumers share one latest-wins lane, independent of queued key taps.
       consumerFirst = first;
       consumerSecond = second;
-      // A tap interrupts a held usage with a release before its fresh press.
-      // Format 11 consumer codes are tap=7 (odd), hold=8 (even).
-      if (!(first & 1)) consumerReleasePending = 0;
-      else if (consumerOwner) consumerReleasePending = 1;
-      consumerOwner = !(first & 1) ? input + 1 : 0;
+      // Modified output releases before a replacement changes its modifiers.
+      // A tap also releases an interrupted physical consumer hold.
+      if (consumerModifiers || (consumerOwner && actionType(first) != CONFIG_ACTION_CONSUMER_HOLD))
+        consumerReleasePending = 1;
+      else if (actionType(first) == CONFIG_ACTION_CONSUMER_HOLD) consumerReleasePending = 0;
+      consumerOwner = actionType(first) == CONFIG_ACTION_CONSUMER_HOLD ? input + 1 : 0;
       break;
     case CONFIG_ACTION_MOMENTARY_LAYER:
       layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
-    case CONFIG_ACTION_MODIFIER:
-      {
-        __pdata uint8_t *state;
-        uint8_t value;
-        if (first == CONFIG_ACTION_MOUSE_HOLD) break;
-        state = actionType(first) == CONFIG_ACTION_MODIFIER ?
-                &persistentModifiers : &persistentMouse;
-        value = *state;
-        // Down clears then XORs to set; up only clears; toggle only XORs.
-        if (first & 0x30) value &= ~second;
-        if (!(first & 0x20)) value ^= second;
-        *state = value;
-      }
+      if (first == CONFIG_ACTION_MOUSE_HOLD) break;
+      // Down clears then XORs to set; up only clears; toggle only XORs.
+      if (first & 0x30) persistentMouse &= ~second;
+      if (!(first & 0x20)) persistentMouse ^= second;
       break;
     case CONFIG_ACTION_RELATIVE_LAYER:
       {
@@ -361,7 +361,6 @@ static void updateLayer(void) {
     currentFirst = 0;
     macroNext = 0;
     persistentMouse = 0;
-    persistentModifiers = 0;
     phase = 0;
     tempOn = 0;
     tempMouse = 0;
@@ -390,8 +389,8 @@ void actionsInit(void) {
   currentFirst = 0;
   macroNext = 0;
   persistentMouse = 0;
-  persistentModifiers = 0;
   phase = 0;
+  consumerModifiers = 0;
   consumerReleasePending = 0;
   consumerFirst = 0;
   consumerOwner = 0;
@@ -421,7 +420,7 @@ void actionsClear(void) {
   lastKeyboard[0] = 0xFF;
   lastMouse = 0xFF;
   consumerReleasePending = !USB_queueConsumer(0);
-  flushOutputs(); // Unaccepted releases are retried by actionsPoll.
+  flushOutputs(); // Consumer backpressure also defers keyboard/mouse cleanup.
 }
 
 uint8_t actionsDropped(uint8_t rotation) {
@@ -592,6 +591,7 @@ void actionsPoll(uint16_t now) {
   if (consumerReleasePending) {
     if (USB_queueConsumer(0)) {
       consumerReleasePending = 0;
+      consumerModifiers = 0;
     } else {
       return;
     }
@@ -702,7 +702,7 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
-    } else if (type >= CONFIG_ACTION_MODIFIER) {
+    } else if (type >= CONFIG_ACTION_CONSUMER_MODIFIED) {
       // Held bindings never enter this queue; X/Y movement was handled above.
       runAction(currentFirst, currentSecond, 0, 9);
       currentFirst = 0;

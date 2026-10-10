@@ -41,7 +41,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         parsed.profile = migrateLegacyProfile(parsed.profile, parsed.formatVersion ?? 2);
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action),
           ...(parsed.profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(parsed.profile.macros ?? []).flatMap(m => m.actions)];
-        if ((parsed.formatVersion ?? 2) < 13 && actions.some(a => a.type === 'modifierToggle' || a.type === 'modifierDown' || a.type === 'modifierUp')) continue;
+        if ((parsed.formatVersion ?? 2) < 13 && actions.some(a => a.type === 'consumerModified')) continue;
         if ((parsed.formatVersion ?? 2) < 12 && actions.some(a => a.type === 'mouseDown' || a.type === 'mouseUp' || ('buttons' in a && a.buttons > 7))) continue;
         if ((parsed.formatVersion ?? 2) < 6 && actions.some((a) => a.type === 'ledControl')) continue;
         if ((parsed.formatVersion ?? 2) < 7 && (parsed.profile.timedActions?.length || actions.some(a => a.type === 'ledControl' && a.command.startsWith('effect')))) continue;
