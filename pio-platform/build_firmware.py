@@ -193,7 +193,18 @@ def upload_image(build, bootcfg, image, message):
     run(uploader, "-r", "10", "-t", "CH552", "-c", bootcfg, image)
 
 
-def upload(build, bootcfg):
+def upload(build, bootcfg, hid_bootloader="no"):
+    if hid_bootloader not in ("yes", "no"):
+        raise ValueError("custom_hid_bootloader must be yes or no")
+    if hid_bootloader == "yes":
+        from bootloader import BootloaderError, UnsafeDeviceError, enter_bootloader
+
+        try:
+            enter_bootloader()
+        except UnsafeDeviceError:
+            raise
+        except (BootloaderError, OSError) as error:
+            print(f"Automatic bootloader entry unavailable: {error}", flush=True)
     upload_image(
         build,
         bootcfg,

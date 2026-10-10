@@ -24,3 +24,4 @@ with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
         print(f"Passed {name} {variant}", flush=True)
 
 subprocess.run(["python3", str(ROOT / "tests/build_layout_test.py")], check=True)
+subprocess.run(["python3", str(ROOT / "tests/bootloader_test.py")], check=True)

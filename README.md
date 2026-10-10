@@ -201,9 +201,35 @@ _An example of using a temporary button to enter the bootloader before uploading
 > [!CAUTION]
 > Warning: Avoid bridging adjacent pins, especially ground (pin 14). Shorting a supply to ground can damage the board or USB port
 
-### Later Uploads: Use the Encoder Button
+### Later Uploads: Enter the Bootloader
 
-After installing this firmware, start `pio run -t upload` and enter the bootloader when the uploader begins waiting:
+By default, **Upload** (`pio run -t upload`) waits for browser or manual
+bootloader entry and does not use the native HID helper. With v12 or later
+firmware, click **Enter Bootloader** in the [browser firmware installer](webUploader/)
+before starting **Upload**, or hold the encoder button while reconnecting USB
+when the uploader starts waiting.
+
+The optional native HID helper may require macOS **Input Monitoring** permission
+for VS Code or the terminal. The helper uses shared access on macOS because
+exclusive access to the keyboard interface can be rejected even with that
+permission enabled. Open failures include the native macOS error details.
+Browser or encoder entry avoids using this helper.
+
+To use the helper, install its dependency once from the project folder using
+PlatformIO's Python interpreter:
+
+```sh
+~/.platformio/penv/bin/python -m pip install --target .pio/hidapi -r pio-platform/requirements-hid.txt
+```
+
+The **Enter Bootloader (Optional HID)** task (`pio run -t bootloader`) requests
+entry without building or uploading firmware. To also enable native HID entry
+before **Upload**, set `custom_hid_bootloader = yes` in `platformio.ini`;
+the default is `no`. Close any configurator or installer connection first,
+and connect only the macropad you want to update. Reinstall the helper if you
+delete `.pio/`.
+
+Bootloader entry methods:
 
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
 - During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.

@@ -47,6 +47,7 @@ def run_upload(target, source, env):
         str(project),
         str(build),
         str(board.get("upload.bootcfg")),
+        env.GetProjectOption("custom_hid_bootloader", "no"),
     ]
     return subprocess.call(command)
 

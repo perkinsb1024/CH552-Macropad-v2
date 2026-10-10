@@ -13,6 +13,20 @@ script = project / "pio-platform" / "build_firmware.py"
 erase_source = project / "pio-platform" / "erase_config.c"
 
 
+def run_bootloader(target, source, env):
+    return subprocess.call([sys.executable, str(project / "pio-platform" / "bootloader.py")])
+
+
+env.AddCustomTarget(
+    name="bootloader",
+    dependencies=[],
+    actions=run_bootloader,
+    title="Enter Bootloader (Optional HID)",
+    description="Native HID helper; macOS may require Input Monitoring permission. Browser or encoder entry also works.",
+    always_build=True,
+)
+
+
 def run_erase_config(target, source, env):
     command = [
         sys.executable,
