@@ -64,7 +64,7 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
-| [v12](protocol/config-v12.md) | - Mouse buttons 1–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags |
+| [v12](protocol/config-v12.md) | - Mouse buttons 1–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags<br> - **Enter bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
@@ -82,9 +82,9 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v11 firmware files are available for [three-key](releases/ch552-macropad-3-key-f87ca744.hex) and [six-key](releases/ch552-macropad-6-key-f87ca744.hex) macropads, built from source revision `f87ca744`. This version adds multi-step **Macros** with **Pause** and repeat support, a 32ms pause between characters in **Type text**, and shared global **Mouse toggle** state. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v12 firmware files are available for [three-key](releases/ch552-macropad-3-key-acabfaa1.hex) and [six-key](releases/ch552-macropad-6-key-acabfaa1.hex) macropads, built from source revision `acabfaa1`. This version adds mouse buttons 1–8 and persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags, plus **Enter bootloader** from the browser firmware installer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [frozen v11 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v11/) with those release files. Current source and the root configurator use v12; no v12 release has been generated. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
+Use the [current v12 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these release files. Both three-key and six-key builds have passed hardware validation. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -208,10 +208,10 @@ After installing this firmware, start `pio run -t upload` and enter the bootload
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
 - During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
 
-Current v12 source checks that the encoder stays pressed across a 10ms startup
+V12 firmware checks that the encoder stays pressed across a 10ms startup
 window, sampling every 1ms. Hold it steadily before connecting USB.
 
-The bundled v11 release supports an optional three-second encoder hold on enabled
+Older v11 firmware supports an optional three-second encoder hold on enabled
 layers. For an invalid profile on v11, use the power-up method.
 
 If the device cannot run the firmware, use the hardware method above to recover it.

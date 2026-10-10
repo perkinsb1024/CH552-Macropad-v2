@@ -256,12 +256,11 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v11 firmware from revision
-`f87ca744`: [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
-[six-key](../releases/ch552-macropad-6-key-f87ca744.hex). Use the frozen v11 editor
-with these releases. Current source/editor use v12; no v12 release has been
-generated. V11 hardware testing passed on both geometries; v12 has automated
-coverage and native builds but no hardware compatibility results yet.
+The release HEX files and bundled uploader use v12 firmware from revision
+`acabfaa1`: [three-key](../releases/ch552-macropad-3-key-acabfaa1.hex) and
+[six-key](../releases/ch552-macropad-6-key-acabfaa1.hex). Use the current v12 editor
+with these releases. V12 host tests, native builds and hardware validation
+pass on both geometries.
 Older-firmware connections link to the matching archive and updater. Back up
 profiles, update firmware, then load/import and explicitly save in its matching
 editor. V11 migration to v12 preserves actions, macros, timer units and storage.

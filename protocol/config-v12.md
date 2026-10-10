@@ -18,10 +18,11 @@ This standalone reference specifies format 12 firmware and its web configurator:
 dynamically stored macros, 1–16 executions per invocation, and **Pause** actions.
 Timed actions use six bytes each. Format 12 adds eight mouse buttons and explicit
 persistent **Mouse down** / **Mouse up** actions. The USB mouse report remains five
-bytes by packing the two scroll axes into separate signed nibbles. Checked-in
-release HEX files and the uploader's default firmware remain v11 from revision
-`f87ca744`; no v12 release has been generated. V12 host tests and native builds
-pass on both board geometries; v12 hardware compatibility testing remains pending.
+bytes by packing the two scroll axes into separate signed nibbles. The pre-built v12
+release HEX files and the uploader's default firmware use source revision
+`acabfaa1`: [three-key](../releases/ch552-macropad-3-key-acabfaa1.hex) and
+[six-key](../releases/ch552-macropad-6-key-acabfaa1.hex). Host tests, native builds
+and hardware validation pass on both board geometries.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -1069,8 +1070,8 @@ loads all 128 bytes from DataFlash before any image use; absolute storage does
 not rely on the ordinary XSEG startup clear loop.
 
 Stack figures are linker-reserved capacities, one byte below finalized v11
-(79/82). No v12 hardware
-testing has been performed. Host regressions include all eight button bits,
+(79/82). Both three-key and six-key v12 release builds have passed hardware
+validation. Host regressions include all eight button bits,
 mode validation, drags, scroll signs/counts, report backpressure, reset, idle
 reports and **GET_REPORT** on both geometries. Recovery tests cover invalid and
 missing profiles, startup encoder entry and debounce rejection, HID acknowledgement backpressure,

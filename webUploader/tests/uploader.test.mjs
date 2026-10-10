@@ -491,7 +491,7 @@ test('the beta UI includes platform sources and the published source/license', a
 
 test('all historical releases match their exact committed HEX, metadata and checksums', async () => {
   const source = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
-  assert.equal(source.firmware.length, 30);
+  assert.equal(source.firmware.length, 32);
   assert.equal(manifest.previousFirmware.length, source.firmware.length);
   for (const entry of manifest.previousFirmware) {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
@@ -499,8 +499,11 @@ test('all historical releases match their exact committed HEX, metadata and chec
     assert.deepEqual(content, recorded);
     assert.equal(createHash('sha256').update(content).digest('hex'), entry.sha256);
     assert.equal(parseHex(content.toString()).length, entry.bytes);
-    const header = execFileSync('git', ['show', `${entry.releaseCommit}:src/config.h`], { encoding: 'utf8' });
-    assert.equal(Number(/#define CONFIG_VERSION\s+(\d+)/.exec(header)[1]), entry.formatVersion);
+    // Older HEX files have no constant identity; recover their format from source.
+    if (entry.formatVersion < 6) {
+      const header = execFileSync('git', ['show', `${entry.releaseCommit}:src/config.h`], { encoding: 'utf8' });
+      assert.equal(Number(/#define CONFIG_VERSION\s+(\d+)/.exec(header)[1]), entry.formatVersion);
+    }
     assert.equal(configuratorPath(entry.formatVersion, currentFormatVersion), expectedConfiguratorPath(entry.formatVersion));
     if (entry.formatVersion >= 6) assert.equal(firmwareFormat(parseHex(content.toString()), entry.keys), entry.formatVersion);
   }
@@ -510,7 +513,7 @@ test('historical selection retains the default release and cannot cross board va
   for (const keys of [3, 6]) {
     assert.equal(selectedFirmware(manifest, keys), manifest.firmware.find(entry => entry.keys === keys));
     const choices = firmwareChoices(manifest, keys);
-    assert.equal(choices.length, 15);
+    assert.equal(choices.length, 16);
     assert.ok(choices.every(entry => entry.keys === keys));
     for (const entry of choices) {
       assert.equal(selectedFirmware(manifest, keys, entry.name), entry);
@@ -523,7 +526,7 @@ test('historical selection retains the default release and cannot cross board va
 test('previous release choices show each version once and select its newest build', () => {
   for (const keys of [3, 6]) {
     const choices = previousReleases(manifest, keys);
-    assert.deepEqual(choices.map(entry => entry.formatVersion), [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    assert.deepEqual(choices.map(entry => entry.formatVersion), [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
     for (const entry of choices) {
       const builds = firmwareChoices(manifest, keys).filter(build => build.formatVersion === entry.formatVersion);
       assert.ok(builds.every(build => build.publishedAt <= entry.publishedAt));

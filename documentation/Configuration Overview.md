@@ -154,8 +154,9 @@ Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
 and application. Buttons 4/5 often mean Back/Forward; those meanings are not
 guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
 may not observe buttons 6–8 even when another application can use them.
-Buttons 4–8 and down/up require v12 firmware. The bundled v11 release supports
-three buttons and global **Mouse toggle**; use its frozen configurator.
+Buttons 4–8 and down/up are supported by the bundled v12 release and current
+configurator. Older v11 firmware supports three buttons and global **Mouse toggle**;
+use its frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
 slot when you switch to **Single** or **Double** and back. The duration hint is rounded
@@ -491,9 +492,9 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are supported by the [pre-built v11 release firmware](../README.md#how-to-compile-the-firmware)
-and the current configurator. Older firmware uses its matching archived editor
-and does not support macros.
+Macros are supported by the [pre-built v12 release firmware](../README.md#how-to-compile-the-firmware)
+and the current configurator. Older firmware uses its matching archived editor;
+macros require v11 or later.
 
 1. Open **Macros** and choose **Add macro**
 2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence

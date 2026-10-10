@@ -2,13 +2,12 @@
 
 *This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
-The bundled default firmware uses configuration format v11, built from revision
-`f87ca744`: [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
-[six-key](../releases/ch552-macropad-6-key-f87ca744.hex). Use the frozen
-[v11 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v11/)
-with these files. Current source/editor support v12; no v12 release has been
-generated. The installer reads each bundled HEX's format and links to its
-matching editor. Back up profiles before updating; older profiles remain in
+The bundled default firmware uses configuration format v12, built from revision
+`acabfaa1`: [three-key](../releases/ch552-macropad-3-key-acabfaa1.hex) and
+[six-key](../releases/ch552-macropad-6-key-acabfaa1.hex). Use the current
+[v12 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+with these files. Both hardware variants have passed v12 hardware validation.
+The installer reads each bundled HEX's format and links to its matching editor. Back up profiles before updating; older profiles remain in
 DataFlash with actions inactive until explicitly migrated and saved.
 
 The static page is built into `webapp/dist/webUploader/` for the existing GitHub Pages site. Its URL after deployment is:
@@ -144,7 +143,7 @@ variant retains the selected version when a matching build is available.
 Downloads and installation use the selected entry's SHA-256, size, variant and
 matching configurator link.
 
-`firmware-history/` contains 30 exact historical HEX files for formats 2–10, with
+`firmware-history/` contains 32 exact historical HEX files for formats 2–11, with
 release commits, publication timestamps and SHA-256 checksums in `index.json`. These are recovered files,
 not regenerated builds. Early firmware constructs **GET_INFO** without a constant
 identity record; its format metadata comes from `src/config.h` at the recorded
