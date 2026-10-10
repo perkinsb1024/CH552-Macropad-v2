@@ -13,7 +13,7 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
-  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 12', (variant) => {
+  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 13', (variant) => {
     const profile = defaultProfile(variant);
     profile.layers[0]!.indicatorBehavior = 1;
     profile.layers[0]!.indicatorColor = 8;
@@ -28,7 +28,7 @@ describe('default profile image headers', () => {
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[2]).toBe(12);
+    expect(upgraded[2]).toBe(13);
     expect(upgraded[8]).toBe(legacy[8]! | 0x60);
     expect([...upgraded.subarray(9)]).toEqual([...encodeProfile(profile).subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
@@ -45,12 +45,12 @@ describe('default profile image headers', () => {
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 0C 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 0D 01 00 00');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 0C 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('4D 50 0D 01 00 01');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -87,6 +87,9 @@ describe('every action type round-trips', () => {
     { type: 'mouseClick', buttons: 7, clicks: 2 },
     { type: 'mouseHold', buttons: 4 },
     { type: 'mouseToggle', buttons: 2 },
+    { type: 'modifierToggle', modifiers: 1 },
+    { type: 'modifierDown', modifiers: 6 },
+    { type: 'modifierUp', modifiers: 15 },
     { type: 'mouseDown', buttons: 128 },
     { type: 'mouseUp', buttons: 255 },
     { type: 'scroll', delta: -127 },
@@ -147,7 +150,7 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x1c, 0xff]);
-    expect(image[2]).toBe(12);
+    expect(image[2]).toBe(13);
     image[9] = 0x2c;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -213,7 +216,7 @@ describe('rotation restrictions', () => {
   });
   it('decoder rejects hold on rotation', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    image[23] = 0x04; // clockwise → mouse hold
+    image[23] = 0x35; // clockwise → mouse hold
     image[24] = 1;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -318,7 +321,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 13;
+    image[2] = 14;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });

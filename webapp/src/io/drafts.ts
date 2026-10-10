@@ -28,7 +28,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
     const key = draftKey(variant);
     const keys = [key];
     if (!localStorage.getItem(`${key}:cleared`)) {
-      for (const version of [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
+      for (const version of [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
       keys.push(legacyDraftKey(variant));
     }
     for (const source of keys) {
@@ -36,11 +36,12 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         const raw = localStorage.getItem(source);
         if (!raw) continue;
         const parsed = JSON.parse(raw) as Draft;
-        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
+        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
         if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) continue;
         parsed.profile = migrateLegacyProfile(parsed.profile, parsed.formatVersion ?? 2);
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action),
           ...(parsed.profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(parsed.profile.macros ?? []).flatMap(m => m.actions)];
+        if ((parsed.formatVersion ?? 2) < 13 && actions.some(a => a.type === 'modifierToggle' || a.type === 'modifierDown' || a.type === 'modifierUp')) continue;
         if ((parsed.formatVersion ?? 2) < 12 && actions.some(a => a.type === 'mouseDown' || a.type === 'mouseUp' || ('buttons' in a && a.buttons > 7))) continue;
         if ((parsed.formatVersion ?? 2) < 6 && actions.some((a) => a.type === 'ledControl')) continue;
         if ((parsed.formatVersion ?? 2) < 7 && (parsed.profile.timedActions?.length || actions.some(a => a.type === 'ledControl' && a.command.startsWith('effect')))) continue;

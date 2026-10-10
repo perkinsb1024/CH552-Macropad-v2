@@ -41,8 +41,8 @@ it.each([0, 1] as const)('matches firmware reserved-mode validation at every tri
       const timer = (variant ? 24 : 31) + 3;
       const offset = slot === 'key' ? 9 : slot === 'rotation' ? (variant ? 17 : 23) : slot === 'chord' ? timer - 2 : slot === 'expiry' ? timer + 1 : slot === 'resume' ? timer + 3 : timer + 6;
       image.set([aux << 4 | 5, 128], offset); sealImage(image);
-      expect(decodeImage(image).ok).toBe(aux <= 2);
-      expect(validator.accepts(image, variant)).toBe(aux <= 2);
+      expect(decodeImage(image).ok).toBe(aux <= 2 || (aux === 3 && (slot === 'key' || slot === 'chord')));
+      expect(validator.accepts(image, variant)).toBe(aux <= 2 || (aux === 3 && (slot === 'key' || slot === 'chord')));
       image[offset + 1] = 0; sealImage(image);
       expect(decodeImage(image).ok).toBe(false);
       expect(validator.accepts(image, variant)).toBe(false);
@@ -83,7 +83,7 @@ it('migrates v11 macro, text and timer data without altering action bytes or sto
   const original = JSON.stringify({ formatVersion: 11, profile: p, meta: { profileName: 'Drag' }, savedAt: 'old' });
   const storage = new Map([[key, original]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
-  expect(loadDraft(0)).toMatchObject({ formatVersion: 12, profile: p, savedAt: 'old' });
+  expect(loadDraft(0)).toMatchObject({ formatVersion: 13, profile: p, savedAt: 'old' });
   expect(storage.get(key)).toBe(original); expect(storage.has(draftKey(0))).toBe(false);
   clearDraft(0); expect(loadDraft(0)).toBeNull(); expect(storage.get(key)).toBe(original);
 });

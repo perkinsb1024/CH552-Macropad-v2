@@ -25,7 +25,8 @@ it('places Media Hold after Media Tap and preserves custom usage when changing e
   expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerHold']);
   change(selects()[0]!, 'consumerHold');
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'consumerHold', usage: 0xabc });
-  expect(selects()[1]!.props.value).toBe('custom');
+  const control = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'ConsumerControl')!;
+  expect(nodes((control.type as (p: unknown) => unknown)(control.props)).find(n => n.type === 'select')!.props.value).toBe('custom');
   change(selects()[0]!, 'consumer');
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'consumer', usage: 0xabc });
 });

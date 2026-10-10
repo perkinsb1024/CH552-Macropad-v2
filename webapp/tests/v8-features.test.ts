@@ -67,7 +67,7 @@ it.each([0, 1] as const)('round-trips held scrolling on keys, chords and wheel p
   expect(summarize(hold)).toBe('Scroll up 127 (hold)');
 });
 
-it.each([[0x0f, 1], [0x14, 1], [0xF4, 7], [0x30, 0], [0, 1], [0x10, 0], [8, 0], [0x16, 1], [0x26, 1], [0x96, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
+it.each([[0x0f, 1], [0x34, 1], [0xF4, 7], [0x30, 0], [0, 1], [0x10, 0], [8, 0], [0x16, 1], [0x26, 1], [0x96, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
   const image = encodeProfile(defaultProfile(0));
   image.set([first, second], 9); sealImage(image);
   expect(decodeImage(image).ok).toBe(false);

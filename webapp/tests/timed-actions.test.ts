@@ -28,7 +28,7 @@ describe('v10 timed-action images', () => {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[2]).toBe(12);
+      expect(image[2]).toBe(13);
       expect((image[3]! >> 6) | ((image[4]! >> 7) << 2)).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
@@ -74,7 +74,7 @@ describe('v10 timed-action images', () => {
       const valid = defaultProfile(0); valid.timedActions = [timer()];
       const image = encodeProfile(valid);
       const offset = 53 + (resume ? 3 : 1);
-      const bytes = action.type === 'keyHold' ? [2, 4] : action.type === 'mouseHold' ? [4, 1] : action.type === 'momentaryLayer' ? [10, 0] : [28, 1];
+      const bytes = action.type === 'keyHold' ? [2, 4] : action.type === 'mouseHold' ? [0x35, 1] : action.type === 'momentaryLayer' ? [10, 0] : [28, 1];
       image.set(bytes, offset); sealImage(image);
       expect(decodeImage(image).ok).toBe(false);
       expect(firmwareAccepts(image, 0)).toBe(false);

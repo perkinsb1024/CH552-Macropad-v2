@@ -20,9 +20,10 @@ transport. It supports persistent modifier toggle/down/up actions and places
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
 
-The active web configurator remains on version 12. There is no v13 configurator,
-JSON/draft schema, migration implementation or published firmware release.
-Version 13 images must be prepared separately and validated by the firmware.
+The active web configurator edits v13 images and uses version 13 JSON profiles
+and a separate v13 draft namespace. It imports older profiles and binary images
+into the current model. The frozen v12 editor remains available under
+`versions/format-v12/` for devices advertising format 12.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -38,14 +39,12 @@ unchanged, with physical action bindings inactive until a valid v13 image is
 explicitly uploaded. Firmware updates do not migrate or erase profiles.
 
 V12 images cannot be relabeled as v13: type `0x4` now operates on persistent
-modifiers. A future v12 conversion must translate **Mouse hold** records from
-`04 mask` to `35 mask` at every action site and recompute the version and CRC.
-The binary section layouts, existing mouse toggle/down/up modes, and 12-bit
-consumer usages retain their meanings. No migration or configurator work is
-included in this firmware implementation. Before a later active-editor format
-transition, the finalized v12 configurator must be frozen and tested under
-`webapp/public/versions/format-v12/` with provenance, checksums, archive indexing
-and routing, following `webapp/archives/README.md`.
+modifiers. Browser conversion decodes old **Mouse hold** records as physical
+holds, then encodes them as `35 mask` at every action site and recomputes the
+version and CRC. The binary section layouts, existing mouse toggle/down/up modes,
+and 12-bit consumer usages retain their meanings. Imported JSON and drafts keep
+their named action semantics. Persistent modifier actions require version 13 in
+JSON and drafts; older version declarations containing those actions reject.
 
 ## Header and Rainbow Settings
 

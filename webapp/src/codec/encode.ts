@@ -37,6 +37,10 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>,
     case 'keyTap':
     case 'keyHold':
       return [code | ((action.modifiers & 15) << 4), action.usage & 0xff];
+    case 'modifierToggle':
+    case 'modifierDown':
+    case 'modifierUp':
+      return [code, action.modifiers];
     case 'mouseClick':
       return [code | (((action.clicks ?? 1) - 1) << 4), action.buttons & 255];
     case 'mouseHold':

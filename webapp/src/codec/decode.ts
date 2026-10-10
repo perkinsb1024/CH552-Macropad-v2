@@ -83,11 +83,19 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     case ActionCode.MouseClick:
       if ((version < 8 && nonZeroAux) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse click settings';
       return { type: 'mouseClick', buttons: b1, ...(aux ? { clicks: aux + 1 } : {}) };
-    case ActionCode.MouseHold:
-      if (rotation) return 'Mouse hold bound to rotation';
-      if (nonZeroAux || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse button mask';
-      return { type: 'mouseHold', buttons: b1 };
+    case ActionCode.ModifierToggle:
+      if (version < 13) {
+        if (rotation) return 'Mouse hold bound to rotation';
+        if (nonZeroAux || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid mouse button mask';
+        return { type: 'mouseHold', buttons: b1 };
+      }
+      if (aux > 2 || b1 < 1 || b1 > 15) return 'Invalid persistent modifier settings';
+      return { type: aux === 1 ? 'modifierDown' : aux === 2 ? 'modifierUp' : 'modifierToggle', modifiers: b1 };
     case ActionCode.MouseToggle:
+      if (version >= 13 && aux === 3) {
+        if (rotation) return 'Mouse hold bound to rotation';
+        return b1 < 1 ? 'Invalid mouse button mask' : { type: 'mouseHold', buttons: b1 };
+      }
       if (aux > (version >= 12 ? 2 : 0) || b1 < 1 || (version < 12 && b1 > 7)) return 'Invalid persistent mouse settings';
       return { type: aux === 1 ? 'mouseDown' : aux === 2 ? 'mouseUp' : 'mouseToggle', buttons: b1 };
     case ActionCode.Scroll:
@@ -132,7 +140,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;

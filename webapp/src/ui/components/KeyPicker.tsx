@@ -66,20 +66,25 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
         </div>
         {capturing && <span class="hint">Listening. Some shortcuts are intercepted by the OS or browser and cannot be captured; pick them from the list instead.</span>}
       </div>
-      <div class="field">
-        <span class="field-label">Modifiers</span>
-        <div class="chips">
-          {MODS.map((m) => (
-            <label key={m.bit} class={`chip ${modifiers & m.bit ? 'chip-on' : ''}`}>
-              <input type="checkbox" checked={!!(modifiers & m.bit)} onChange={(e) => onChange(usage, (e.target as HTMLInputElement).checked ? modifiers | m.bit : modifiers & ~m.bit)} />
-              {m.label}
-            </label>
-          ))}
-        </div>
-      </div>
+      <ModifierPicker modifiers={modifiers} onChange={(mask) => onChange(usage, mask)} />
       <div class="preview">
         <ShortcutPills usage={usage} modifiers={modifiers} />
       </div>
     </div>
   );
+}
+
+/** The same modifier chips are used by shortcuts and persistent actions. */
+export function ModifierPicker({ modifiers, onChange }: { modifiers: number; onChange(modifiers: number): void }) {
+  return <div class="field">
+    <span class="field-label">Modifiers</span>
+    <div class="chips">
+      {MODS.map((m) => (
+        <label key={m.bit} class={`chip ${modifiers & m.bit ? 'chip-on' : ''}`}>
+          <input type="checkbox" checked={!!(modifiers & m.bit)} onChange={(e) => onChange((e.target as HTMLInputElement).checked ? modifiers | m.bit : modifiers & ~m.bit)} />
+          {m.label}
+        </label>
+      ))}
+    </div>
+  </div>;
 }

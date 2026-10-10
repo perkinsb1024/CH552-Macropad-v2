@@ -26,6 +26,9 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'none', code: ActionCode.None, label: 'Nothing', group: 'None', needsRelease: false, hint: 'Leave this input unassigned.' },
   { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
   { type: 'keyHold', code: ActionCode.KeyHold, label: 'Key hold', group: 'Keyboard', needsRelease: true, hint: 'Hold a key combination while the button is held.' },
+  { type: 'modifierToggle', code: ActionCode.ModifierToggle, label: 'Modifier toggle', group: 'Keyboard', needsRelease: false, hint: 'Toggle selected modifiers independently. They stay active until toggled off, released by Modifier up, a layer change or reset.' },
+  { type: 'modifierDown', code: ActionCode.ModifierDown, label: 'Modifier down', group: 'Keyboard', needsRelease: false, hint: 'Keep selected modifiers down until Modifier up, toggle, a layer change or reset. Repeated down leaves them down; macro completion does not release them.' },
+  { type: 'modifierUp', code: ActionCode.ModifierUp, label: 'Modifier up', group: 'Keyboard', needsRelease: false, hint: 'Release selected persistent modifiers. Physical Key hold and temporary Key tap modifiers stay independent.' },
   { type: 'mouseClick', code: ActionCode.MouseClick, label: 'Mouse click', group: 'Mouse', needsRelease: false, hint: 'Click one or more mouse buttons.' },
   { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
   { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
@@ -79,6 +82,10 @@ export function blankAction(type: ActionType): Action {
     case 'keyTap':
     case 'keyHold':
       return { type, usage: 0x04, modifiers: 0 };
+    case 'modifierToggle':
+    case 'modifierDown':
+    case 'modifierUp':
+      return { type, modifiers: MOD_CTRL };
     case 'mouseClick':
     case 'mouseHold':
     case 'mouseDown':
@@ -131,6 +138,10 @@ export function summarize(action: Action): string {
       const combo = parts.length ? parts.join(' + ') : 'No key';
       return action.type === 'keyHold' ? `Hold ${combo}` : combo;
     }
+    case 'modifierToggle':
+    case 'modifierDown':
+    case 'modifierUp':
+      return `${action.type === 'modifierDown' ? 'Down' : action.type === 'modifierUp' ? 'Up' : 'Toggle'} ${modifierNames(action.modifiers).join(' + ') || '?'}`;
     case 'mouseClick':
       return `${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
@@ -179,6 +190,9 @@ export function actionTooltip(action: Action): string {
       if (action.usage) parts.push(keyName(action.usage));
       return `${label}: ${parts.join(' + ') || 'No key'}`;
     }
+    case 'modifierToggle':
+    case 'modifierDown':
+    case 'modifierUp': return `${label}: ${modifierNames(action.modifiers).join(' + ') || '?'}`;
     case 'string': return `${label}: ${action.text.length ? `“${visibleText(action.text)}”` : 'Empty text'}`;
     case 'mouseHold':
     case 'mouseDown':

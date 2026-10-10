@@ -8,6 +8,9 @@ export type Action =
   | { type: 'none' }
   | { type: 'keyTap'; usage: number; modifiers: number }
   | { type: 'keyHold'; usage: number; modifiers: number }
+  | { type: 'modifierToggle'; modifiers: number }
+  | { type: 'modifierDown'; modifiers: number }
+  | { type: 'modifierUp'; modifiers: number }
   | { type: 'mouseClick'; buttons: number; clicks?: number }
   | { type: 'mouseHold'; buttons: number }
   | { type: 'mouseToggle'; buttons: number }

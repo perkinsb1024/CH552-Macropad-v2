@@ -6,6 +6,7 @@ export function legacyV10Codes(image: Uint8Array): void {
   const layers = (image[3]! & 7) + 1;
   const size = layerSize(variant);
   const remap = (offset: number) => {
+    if (image[offset] === 0x35) image[offset] = 4; // v13 mouse hold back to v11/v12
     const type = image[offset]! & 15;
     if (type >= 4 && type <= 14) image[offset] = (image[offset]! & 240) | (type + 1);
   };

@@ -11,6 +11,7 @@ import { isMacroLayerSwitch, macroSwitchesLayer } from '../../model/macros';
 import { actionProblem, slotLabel } from '../../model/validate';
 import { getAction, layerName, profile, rememberedAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
 import { ColorPreview } from './ColorPreview';
+import { ModifierPicker } from './KeyPicker';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 import { ScrollTest } from './ScrollTest';
@@ -187,6 +188,7 @@ export function Inspector() {
     const next = blankAction(type);
     // Carry over compatible fields so switching Tap ↔ Hold keeps the key.
     if ('usage' in next && 'usage' in action && 'modifiers' in next && 'modifiers' in action) update({ ...next, usage: action.usage, modifiers: action.modifiers });
+    else if ('modifiers' in next && 'modifiers' in action) update({ ...next, modifiers: action.modifiers || 1 });
     else if ((next.type === 'consumer' || next.type === 'consumerHold') && (action.type === 'consumer' || action.type === 'consumerHold')) update({ ...next, usage: action.usage });
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
@@ -335,6 +337,10 @@ export function Inspector() {
           ? 'Lighting overrides apply across layers. Indicator brightness preserves its configured visibility mode.'
           : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative starts from the brighter current brightness, applies the step once, and sets both to the result. As configured resolves to the current layer indicator brightness and bright key feedback. Common presets include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
       </>}
+
+      {(action.type === 'modifierToggle' || action.type === 'modifierDown' || action.type === 'modifierUp') && (
+        <ModifierPicker modifiers={action.modifiers} onChange={(modifiers) => update({ ...action, modifiers })} />
+      )}
 
       {(action.type === 'keyTap' || action.type === 'keyHold') && (
         <KeyPicker usage={action.usage} modifiers={action.modifiers} onChange={(usage, modifiers) => update({ ...action, usage, modifiers })} />
