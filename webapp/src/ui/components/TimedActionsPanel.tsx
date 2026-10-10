@@ -1,7 +1,7 @@
 import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
-import { canInsertSlot, insertSlotAction, canSwapSlots, capacity, draggedMacro, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
-import { canApplyDraggedMacro, canApplyShortcut, dropPosition, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
+import { canInsertSlot, insertSlotAction, canSwapSlots, capacity, draggedTimer, timerDrop, moveTimer, draggedMacro, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
+import { canApplyDraggedMacro, canApplyShortcut, dropPosition, draggedShortcut, endShortcutDrag, setRoundedDragImage, startTimerDrag, shortcutDragOver, shortcutDrop } from '../drag';
 import { ActionLabel } from './ActionLabel';
 import { IconChevron, IconPlus, IconTrash } from './Icons';
 
@@ -67,6 +67,36 @@ export function clampTicks(value: string): number {
 export function TimedActionsPanel() {
   const p = profile.value!;
   const timers = p.timedActions ?? [];
+  const gapTarget = (event: DragEvent) => {
+    let closest: { index: number; position: 'before' | 'after'; distance: number } | null = null;
+    (event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[data-timer]').forEach((row, index) => {
+      const rect = row.getBoundingClientRect();
+      for (const position of ['before', 'after'] as const) {
+        const distance = Math.abs(event.clientY - (position === 'before' ? rect.top : rect.bottom));
+        if (!closest || distance < closest.distance) closest = { index, position, distance };
+      }
+    });
+    return closest as { index: number; position: 'before' | 'after'; distance: number } | null;
+  };
+  const hoverTimer = (event: DragEvent, index: number, position: 'before' | 'after' | 'swap') => {
+    const source = draggedTimer.value;
+    if (source === null) return;
+    event.stopPropagation();
+    const valid = source !== index && !(position === 'before' && source === index - 1)
+      && !(position === 'after' && source === index + 1);
+    timerDrop.value = valid ? { index, position } : null;
+    slotDrop.value = null;
+    if (valid) event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = valid ? 'move' : 'none';
+  };
+  const dropTimer = (event: DragEvent, index: number, position: 'before' | 'after' | 'swap') => {
+    const source = draggedTimer.value;
+    if (source === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    moveTimer(source, index, position);
+    endShortcutDrag();
+  };
   const unavailable = timers.length >= MAX_TIMED_ACTIONS ? `Maximum ${MAX_TIMED_ACTIONS} timed actions.`
     : (capacity.value?.remaining ?? 0) < TIMED_ENTRY_SIZE ? 'Not enough storage (6 bytes needed).' : '';
   const add = () => {
@@ -79,12 +109,33 @@ export function TimedActionsPanel() {
   return <details class="card timed-actions">
     <summary class="card-head"><h2>Timed Actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2><IconChevron /></summary>
     {!timers.length && <p class="empty">Repeat an action on a timer, or after inactivity. Each timer uses 6 bytes.</p>}
-    <div class="timer-list">
+    <p class="hint">Drag a timer's header to rearrange them. Each timer keeps its settings and actions.</p>
+    <div class="timer-list timed-list" onDragOver={(event) => {
+      if (draggedTimer.value === null || (event.target as HTMLElement).closest('[data-timer]')) return;
+      const target = gapTarget(event);
+      if (target) hoverTimer(event, target.index, target.position);
+    }} onDrop={(event) => {
+      if (draggedTimer.value === null || (event.target as HTMLElement).closest('[data-timer]')) return;
+      const target = gapTarget(event);
+      if (target) dropTimer(event, target.index, target.position);
+    }}>
       {timers.map((timer, index) => {
         const select = (resume: boolean): Slot => ({ kind: 'timed', layer: 0, index, resume });
         const active = (resume: boolean) => selectedSlot.value?.kind === 'timed' && selectedSlot.value.index === index && selectedSlot.value.resume === resume;
-        return <article class="timer-row" key={index}>
-          <header class="card-head"><strong>Timer {index + 1}</strong>
+        const intent = timerDrop.value?.index === index ? timerDrop.value.position : null;
+        return <article class={`timer-row timed-row ${draggedTimer.value === index ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''}`} data-timer={index} key={index}
+          onDragOverCapture={(event) => {
+            if (draggedTimer.value !== null) hoverTimer(event, index, dropPosition(event, 'vertical'));
+          }} onDropCapture={(event) => {
+            if (draggedTimer.value !== null) dropTimer(event, index, dropPosition(event, 'vertical'));
+          }}>
+          {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
+          <header class="card-head timer-drag-handle" draggable title="Drag to reorder timers"
+            onDragStart={(event) => {
+              if ((event.target as HTMLElement).closest('button')) { event.preventDefault(); return; }
+              event.stopPropagation();
+              startTimerDrag(event, index);
+            }} onDragEnd={endShortcutDrag}><strong class="timer-drag-label">Timer {index + 1}</strong>
             <button class="btn btn-icon btn-danger" aria-label={`Remove timer ${index + 1}`} onClick={() => {
               updateProfile((draft) => { draft.timedActions!.splice(index, 1); if (!draft.timedActions!.length) delete draft.timedActions; });
               const slot = selectedSlot.value;

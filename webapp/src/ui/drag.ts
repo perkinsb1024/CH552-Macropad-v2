@@ -2,7 +2,7 @@ import { signal } from '@preact/signals';
 import type { Shortcut } from '../model/shortcuts';
 import type { Action, Slot } from '../model/types';
 import { actionProblem } from '../model/validate';
-import { draggedMacro, macroDrop, draggedSlot, getAction, profile, selectedSlot, setAction, slotDrop, type DropPosition } from './store';
+import { draggedTimer, timerDrop, draggedMacro, macroDrop, draggedSlot, getAction, profile, selectedSlot, setAction, slotDrop, type DropPosition } from './store';
 
 export const draggedShortcut = signal<Shortcut | null>(null);
 
@@ -46,6 +46,8 @@ export function setRoundedDragImage(event: DragEvent, source = event.currentTarg
 
 export function endShortcutDrag(): void {
   draggedShortcut.value = null;
+  draggedTimer.value = null;
+  timerDrop.value = null;
   draggedMacro.value = null;
   macroDrop.value = null;
   slotDrop.value = null;
@@ -70,6 +72,17 @@ export function startMacroDrag(event: DragEvent, index: number): void {
   draggedMacro.value = index;
   event.dataTransfer?.setData('application/x-macropad-macro', String(index));
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copyMove';
+}
+
+/** Timer headers move definitions; individual action buttons move bindings. */
+export function startTimerDrag(event: DragEvent, index: number): void {
+  const label = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>('.timer-drag-label');
+  setRoundedDragImage(event, label ?? null);
+  endShortcutDrag();
+  draggedSlot.value = null;
+  draggedTimer.value = index;
+  event.dataTransfer?.setData('application/x-macropad-timer', String(index));
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
 }
 
 function draggedAssignment(): Action | null {

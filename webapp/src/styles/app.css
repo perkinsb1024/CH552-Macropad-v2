@@ -2428,10 +2428,10 @@ output {
 
 .text-action-preview { display: inline-block; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 
-.macro-row { position: relative; }
-.macro-row.is-dragging { opacity: 0.45; }
-.macro-row.is-drop-target { outline: 2px solid #1680ff; outline-offset: 2px; }
-.macro-drag-handle[draggable="true"] { cursor: grab; }
-.macro-row > .drop-line { left: 0; right: 0; height: 3px; }
-.macro-row > .drop-line-before { top: -7px; transform: translateY(-50%); }
-.macro-row > .drop-line-after { bottom: -7px; transform: translateY(50%); }
+:is(.macro-row, .timed-row) { position: relative; }
+:is(.macro-row, .timed-row).is-dragging { opacity: 0.45; }
+:is(.macro-row, .timed-row).is-drop-target { outline: 2px solid #1680ff; outline-offset: 2px; }
+:is(.macro-drag-handle, .timer-drag-handle)[draggable="true"] { cursor: grab; }
+:is(.macro-row, .timed-row) > .drop-line { left: 0; right: 0; height: 3px; }
+:is(.macro-row, .timed-row) > .drop-line-before { top: -7px; transform: translateY(-50%); }
+:is(.macro-row, .timed-row) > .drop-line-after { bottom: -7px; transform: translateY(50%); }

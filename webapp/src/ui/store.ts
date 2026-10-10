@@ -60,6 +60,8 @@ export const selectedSlot = signal<Slot | null>(null);
 export const draggedSlot = signal<Slot | null>(null);
 /** The layer currently being moved with native drag and drop. */
 export const draggedLayer = signal<number | null>(null);
+export const draggedTimer = signal<number | null>(null);
+export const timerDrop = signal<{ index: number; position: DropPosition } | null>(null);
 export const draggedMacro = signal<number | null>(null);
 export const macroDrop = signal<{ index: number; position: DropPosition } | null>(null);
 export type DropPosition = 'before' | 'after' | 'swap';
@@ -534,6 +536,19 @@ export function moveMacro(source: number, target: number, position: DropPosition
   updateProfile(draft => reorderMacros(draft, order));
   const slot = selectedSlot.value;
   if (slot?.kind === 'macro') selectedSlot.value = { ...slot, index: order.indexOf(slot.index) };
+}
+
+/** Move all timer settings and both actions together. */
+export function moveTimer(source: number, target: number, position: DropPosition): void {
+  const timers = profile.value?.timedActions;
+  if (!timers?.[source] || !timers[target] || source === target) return;
+  let order = timers.map((_, index) => index);
+  if (position === 'swap') [order[source], order[target]] = [order[target]!, order[source]!];
+  else order = insertionOrder(order, source, target, position);
+  if (order.every((index, destination) => index === destination)) return;
+  updateProfile(draft => { draft.timedActions = order.map(index => draft.timedActions![index]!); });
+  const slot = selectedSlot.value;
+  if (slot?.kind === 'timed') selectedSlot.value = { ...slot, index: order.indexOf(slot.index) };
 }
 
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';
