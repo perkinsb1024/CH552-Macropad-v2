@@ -1,7 +1,7 @@
 import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
-import { canInsertSlot, insertSlotAction, canSwapSlots, capacity, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
-import { canApplyShortcut, dropPosition, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
+import { canInsertSlot, insertSlotAction, canSwapSlots, capacity, draggedMacro, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
+import { canApplyDraggedMacro, canApplyShortcut, dropPosition, draggedShortcut, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { ActionLabel } from './ActionLabel';
 import { IconChevron, IconPlus, IconTrash } from './Icons';
 
@@ -10,7 +10,7 @@ const initializedResumeSections = new WeakSet<HTMLDetailsElement>();
 
 export function timedBindingDrag(slot: Slot, insertion = false) {
   const same = (other: Slot | null) => other !== null && JSON.stringify(other) === JSON.stringify(slot);
-  const invalid = draggedShortcut.value ? !canApplyShortcut(draggedShortcut.value, slot)
+  const invalid = draggedMacro.value !== null ? !canApplyDraggedMacro(slot) : draggedShortcut.value ? !canApplyShortcut(draggedShortcut.value, slot)
     : draggedSlot.value && !same(draggedSlot.value) && !canSwapSlots(draggedSlot.value, slot);
   const end = () => { draggedSlot.value = null; slotDrop.value = null; };
   return {

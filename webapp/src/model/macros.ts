@@ -40,3 +40,27 @@ export function untriggeredMacros(profile: Profile): number[] {
   const used = new Set(actions.filter(action => action.type === 'macro').map(action => action.macro));
   return (profile.macros ?? []).flatMap((_, index) => used.has(index) ? [] : [index]);
 }
+
+/** Reorder definitions while preserving the macro invoked by every binding. */
+export function reorderMacros(profile: Profile, order: number[]): void {
+  const macros = profile.macros ?? [];
+  if (order.length !== macros.length || new Set(order).size !== macros.length
+    || order.some(index => !Number.isInteger(index) || !macros[index])) return;
+  profile.macros = order.map(index => macros[index]!);
+  const remap = (action: Action): Action => {
+    if (action.type !== 'macro') return action;
+    const index = order.indexOf(action.macro);
+    return index < 0 ? action : { ...action, macro: index };
+  };
+  for (const layer of profile.layers) {
+    layer.keys = layer.keys.map(remap);
+    layer.encoderButton = remap(layer.encoderButton);
+    layer.clockwise = remap(layer.clockwise);
+    layer.counterclockwise = remap(layer.counterclockwise);
+  }
+  for (const chord of profile.chords) chord.action = remap(chord.action);
+  for (const timer of profile.timedActions ?? []) {
+    timer.action = remap(timer.action);
+    timer.resumeAction = remap(timer.resumeAction);
+  }
+}

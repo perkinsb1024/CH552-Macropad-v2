@@ -2,7 +2,8 @@ import { Fragment } from 'preact';
 import { computeCapacity } from '../../model/capacity';
 import { isMacroLayerSwitch, macroSwitchesLayer, removeMacro } from '../../model/macros';
 import type { Action, Slot } from '../../model/types';
-import { canInsertSlot, capacity, draggedSlot, insertSlotAction, profile, selectedSlot, slotDrop, updateProfile } from '../store';
+import { canInsertSlot, capacity, draggedMacro, macroDrop, moveMacro, draggedSlot, insertSlotAction, profile, selectedSlot, slotDrop, updateProfile } from '../store';
+import { dropPosition, endShortcutDrag, startMacroDrag } from '../drag';
 import { ActionLabel } from './ActionLabel';
 import { IconChevron, IconClock, IconPlus, IconTrash } from './Icons';
 import { timedBindingDrag } from './TimedActionsPanel';
@@ -22,6 +23,36 @@ export function MacrosPanel() {
     });
     return closest as { slot: Slot; position: 'before' | 'after'; distance: number } | null;
   };
+  const macroGapTarget = (event: DragEvent) => {
+    let closest: { index: number; position: 'before' | 'after'; distance: number } | null = null;
+    (event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[data-macro]').forEach((row, index) => {
+      const rect = row.getBoundingClientRect();
+      for (const position of ['before', 'after'] as const) {
+        const distance = Math.abs(event.clientY - (position === 'before' ? rect.top : rect.bottom));
+        if (!closest || distance < closest.distance) closest = { index, position, distance };
+      }
+    });
+    return closest as { index: number; position: 'before' | 'after'; distance: number } | null;
+  };
+  const hoverMacro = (event: DragEvent, index: number, position: 'before' | 'after' | 'swap') => {
+    const source = draggedMacro.value;
+    if (source === null) return;
+    event.stopPropagation();
+    const valid = source !== index && !(position === 'before' && source === index - 1)
+      && !(position === 'after' && source === index + 1);
+    macroDrop.value = valid ? { index, position } : null;
+    slotDrop.value = null;
+    if (valid) event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = valid ? 'move' : 'none';
+  };
+  const dropMacro = (event: DragEvent, index: number, position: 'before' | 'after' | 'swap') => {
+    const source = draggedMacro.value;
+    if (source === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    moveMacro(source, index, position);
+    endShortcutDrag();
+  };
   const insertionStep = (index: number) => {
     const actions = macros[index]!.actions;
     const firstSwitch = actions.findIndex(isMacroLayerSwitch);
@@ -36,9 +67,31 @@ export function MacrosPanel() {
   return <details class="card macros-panel">
     <summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
     <p class="hint">Add steps, then assign <strong>Execute macro</strong> to a key, encoder, chord, or timer. Macros that do not switch layers can be repeated up to 16 times. Pauses give applications time to respond.</p>
-    <div class="timer-list">
-      {macros.map((macro, index) => <article class="timer-row" data-macro={index} tabIndex={-1} key={index}>
-        <header class="card-head"><strong>Macro {index + 1}</strong>
+    <p class="hint">Drag a macro's header to rearrange them. Existing <strong>Execute macro</strong> actions will be updated. Drop onto a key, encoder, chord, or timer action to assign it.</p>
+    <div class="timer-list macro-list" onDragOver={(event) => {
+      if (draggedMacro.value === null || (event.target as HTMLElement).closest('[data-macro]')) return;
+      const target = macroGapTarget(event);
+      if (target) hoverMacro(event, target.index, target.position);
+    }} onDrop={(event) => {
+      if (draggedMacro.value === null || (event.target as HTMLElement).closest('[data-macro]')) return;
+      const target = macroGapTarget(event);
+      if (target) dropMacro(event, target.index, target.position);
+    }}>
+      {macros.map((macro, index) => {
+        const intent = macroDrop.value?.index === index ? macroDrop.value.position : null;
+        return <article class={`timer-row macro-row ${draggedMacro.value === index ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''}`} data-macro={index} tabIndex={-1} key={index}
+          onDragOverCapture={(event) => {
+            if (draggedMacro.value !== null) hoverMacro(event, index, dropPosition(event, 'vertical'));
+          }} onDropCapture={(event) => {
+            if (draggedMacro.value !== null) dropMacro(event, index, dropPosition(event, 'vertical'));
+          }}>
+        {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
+        <header class="card-head macro-drag-handle" draggable title="Drag to reorder macros or assign this macro to an action"
+          onDragStart={(event) => {
+            if ((event.target as HTMLElement).closest('button')) { event.preventDefault(); return; }
+            event.stopPropagation();
+            startMacroDrag(event, index);
+          }} onDragEnd={endShortcutDrag}><strong class="macro-drag-label">Macro {index + 1}</strong>
           <button class="btn btn-icon btn-danger" aria-label={`Remove macro ${index + 1} and its bindings`} title="Remove macro and clear its bindings" onClick={() => {
             updateProfile(draft => removeMacro(draft, index));
             const slot = selectedSlot.value;
@@ -93,7 +146,7 @@ export function MacrosPanel() {
           <button class="btn btn-ghost" disabled={!canAddStep(index)} onClick={() => addStep(index, { type: 'pause', ticks: 16 })}><IconClock /> Add pause</button>
           <button class="btn macro-add-step" disabled={!canAddStep(index)} onClick={() => addStep(index, { type: 'keyTap', usage: 4, modifiers: 0 })}><IconPlus /> Add step</button>
         </div>
-      </article>)}
+      </article>; })}
     </div>
     <button class="btn btn-primary" disabled={(capacity.value?.remaining ?? 0) < 4} onClick={() => {
       updateProfile(draft => { (draft.macros ??= []).push({ actions: [{ type: 'keyTap', usage: 4, modifiers: 0 }] }); });

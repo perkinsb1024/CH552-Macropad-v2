@@ -1,4 +1,4 @@
-import { untriggeredMacros } from '../model/macros';
+import { reorderMacros, untriggeredMacros } from '../model/macros';
 import { computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
@@ -60,6 +60,8 @@ export const selectedSlot = signal<Slot | null>(null);
 export const draggedSlot = signal<Slot | null>(null);
 /** The layer currently being moved with native drag and drop. */
 export const draggedLayer = signal<number | null>(null);
+export const draggedMacro = signal<number | null>(null);
+export const macroDrop = signal<{ index: number; position: DropPosition } | null>(null);
 export type DropPosition = 'before' | 'after' | 'swap';
 export const slotDrop = signal<{ slot: Slot; position: DropPosition; rowBoundary?: boolean } | null>(null);
 export const layerDrop = signal<{ index: number; position: DropPosition } | null>(null);
@@ -519,6 +521,19 @@ export function swapLayers(source: number, target: number): void {
   const order = Array.from({ length: p.layers.length }, (_, index) => index);
   [order[source], order[target]] = [order[target]!, order[source]!];
   applyLayerOrder(order);
+}
+
+/** Move a complete macro and keep the selected step attached to its definition. */
+export function moveMacro(source: number, target: number, position: DropPosition): void {
+  const macros = profile.value?.macros;
+  if (!macros?.[source] || !macros[target] || source === target) return;
+  let order = macros.map((_, index) => index);
+  if (position === 'swap') [order[source], order[target]] = [order[target]!, order[source]!];
+  else order = insertionOrder(order, source, target, position);
+  if (order.every((index, destination) => index === destination)) return;
+  updateProfile(draft => reorderMacros(draft, order));
+  const slot = selectedSlot.value;
+  if (slot?.kind === 'macro') selectedSlot.value = { ...slot, index: order.indexOf(slot.index) };
 }
 
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';

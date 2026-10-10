@@ -1,4 +1,5 @@
 import { useEffect } from 'preact/hooks';
+import { installDragAutoScroll } from './dragAutoScroll';
 import { siteUrl } from '../site';
 import { FORMAT_VERSION } from '../model/constants';
 import { TRANSPORT_VERSION } from '../protocol/packet';
@@ -69,6 +70,8 @@ export function App() {
       window.removeEventListener('keydown', onRepeat);
     };
   }, []);
+
+  useEffect(() => installDragAutoScroll(), []);
 
   useEffect(() => {
     const onDelete = (event: KeyboardEvent) => {

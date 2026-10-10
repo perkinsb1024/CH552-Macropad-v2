@@ -1,14 +1,13 @@
 import { signal } from '@preact/signals';
 import type { Shortcut } from '../model/shortcuts';
-import type { Slot } from '../model/types';
+import type { Action, Slot } from '../model/types';
 import { actionProblem } from '../model/validate';
-import { draggedSlot, getAction, profile, selectedSlot, setAction, slotDrop, type DropPosition } from './store';
+import { draggedMacro, macroDrop, draggedSlot, getAction, profile, selectedSlot, setAction, slotDrop, type DropPosition } from './store';
 
 export const draggedShortcut = signal<Shortcut | null>(null);
 
 /** Snapshot an isolated, clipped copy so Chrome cannot include the page behind rounded corners. */
-export function setRoundedDragImage(event: DragEvent): void {
-  const source = event.currentTarget as HTMLElement | null;
+export function setRoundedDragImage(event: DragEvent, source = event.currentTarget as HTMLElement | null): void {
   if (!source || !event.dataTransfer) return;
   const rect = source.getBoundingClientRect();
   const preview = source.cloneNode(true) as HTMLElement;
@@ -47,11 +46,14 @@ export function setRoundedDragImage(event: DragEvent): void {
 
 export function endShortcutDrag(): void {
   draggedShortcut.value = null;
+  draggedMacro.value = null;
+  macroDrop.value = null;
   slotDrop.value = null;
 }
 
 export function startShortcutDrag(event: DragEvent, shortcut: Shortcut): void {
   setRoundedDragImage(event);
+  endShortcutDrag();
   draggedSlot.value = null;
   slotDrop.value = null;
   draggedShortcut.value = shortcut;
@@ -59,14 +61,39 @@ export function startShortcutDrag(event: DragEvent, shortcut: Shortcut): void {
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy';
 }
 
-export function canApplyShortcut(shortcut: Shortcut, slot: Slot): boolean {
+/** A macro can be moved among definitions or copied to an invocation binding. */
+export function startMacroDrag(event: DragEvent, index: number): void {
+  const label = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>('.macro-drag-label');
+  setRoundedDragImage(event, label ?? null);
+  endShortcutDrag();
+  draggedSlot.value = null;
+  draggedMacro.value = index;
+  event.dataTransfer?.setData('application/x-macropad-macro', String(index));
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copyMove';
+}
+
+function draggedAssignment(): Action | null {
+  if (draggedMacro.value !== null) return { type: 'macro', macro: draggedMacro.value, repeats: 1 };
+  return draggedShortcut.value?.action ?? null;
+}
+
+function canApplyAction(action: Action, slot: Slot): boolean {
   const p = profile.value;
-  return !!p && !!getAction(p, slot) && !actionProblem(shortcut.action, {
+  return !!p && !!getAction(p, slot) && !actionProblem(action, {
     layerCount: p.layers.length,
-    macro: slot.kind === 'macro',
+    macro: slot.kind === 'macro', timed: slot.kind === 'timed',
     macros: p.macros, macroCount: p.macros?.length ?? 0,
     rotation: slot.kind === 'timed' || slot.kind === 'clockwise' || slot.kind === 'counterclockwise',
   });
+}
+
+export function canApplyShortcut(shortcut: Shortcut, slot: Slot): boolean {
+  return canApplyAction(shortcut.action, slot);
+}
+
+export function canApplyDraggedMacro(slot: Slot): boolean {
+  const action = draggedMacro.value !== null ? draggedAssignment() : null;
+  return !!action && canApplyAction(action, slot);
 }
 
 export function applyShortcut(shortcut: Shortcut, slot: Slot): void {
@@ -75,12 +102,13 @@ export function applyShortcut(shortcut: Shortcut, slot: Slot): void {
   selectedSlot.value = slot;
 }
 
-/** Presets replace the hovered binding, including at its edges. */
+/** Presets and macro invocations replace the hovered binding, including at its edges. */
 export function shortcutDragOver(event: DragEvent, slot: Slot): boolean {
-  const shortcut = draggedShortcut.value;
-  if (!shortcut) return false;
+  const action = draggedAssignment();
+  if (!action) return false;
   event.stopPropagation();
-  const valid = canApplyShortcut(shortcut, slot);
+  const valid = canApplyAction(action, slot);
+  macroDrop.value = null;
   slotDrop.value = valid ? { slot, position: 'swap' } : null;
   if (valid) event.preventDefault();
   if (event.dataTransfer) event.dataTransfer.dropEffect = valid ? 'copy' : 'none';
@@ -88,11 +116,14 @@ export function shortcutDragOver(event: DragEvent, slot: Slot): boolean {
 }
 
 export function shortcutDrop(event: DragEvent, slot: Slot): boolean {
-  const shortcut = draggedShortcut.value;
-  if (!shortcut) return false;
+  const action = draggedAssignment();
+  if (!action) return false;
   event.preventDefault();
   event.stopPropagation();
-  applyShortcut(shortcut, slot);
+  if (canApplyAction(action, slot)) {
+    setAction(slot, { ...action });
+    selectedSlot.value = slot;
+  }
   endShortcutDrag();
   return true;
 }
