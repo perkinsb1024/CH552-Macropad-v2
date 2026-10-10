@@ -588,8 +588,39 @@ static void testModifierSourcesAndCleanup(void) {
     assert(actionsLayer() == 1 && !latestModifiers() && !keyPresses(4));
 }
 
+static void testModifierMixedReports(void) {
+    reset();
+    memcpy(activeConfig + start, "a", 2); activeConfig[4] = 2; start += 2;
+    const uint8_t mixed[] = {
+        CONFIG_ACTION_MODIFIER_DOWN, 6,
+        CONFIG_ACTION_KEY_TAP | 0x80, 5,
+        CONFIG_ACTION_MOUSE_CLICK, 1,
+        CONFIG_ACTION_SCROLL, 1,
+        CONFIG_ACTION_MOUSE_X, 3,
+        CONFIG_ACTION_STRING, 0,
+        CONFIG_ACTION_MODIFIER_UP, 6,
+        CONFIG_ACTION_STRING, 0,
+    };
+    define(start, mixed, 8); bind(0, start, 1);
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    press(0, 0); pump(0, 250); assert(count == 12);
+    assert(reports[0][0] == 1 && reports[0][1] == 6);
+    assert(reports[1][0] == 1 && reports[1][1] == 14 && reports[1][3] == 5);
+    assert(reports[2][0] == 1 && reports[2][1] == 6 && !reports[2][3]);
+    assert(reports[3][0] == 2 && reports[3][1] == 1);
+    assert(reports[4][0] == 2 && !reports[4][1]);
+    assert(reports[5][0] == 2 && reports[5][4] == 1);
+    assert(reports[6][0] == 2 && reports[6][2] == 3);
+    assert(reports[7][0] == 1 && reports[7][1] == 6 && reports[7][3] == 'a');
+    assert(reports[8][0] == 1 && reports[8][1] == 6 && !reports[8][3]);
+    assert(reports[9][0] == 1 && !reports[9][1]);
+    assert(reports[10][0] == 1 && !reports[10][1] && reports[10][3] == 'a');
+    assert(reports[11][0] == 1 && !reports[11][1] && !reports[11][3]);
+}
+
 int main(void) {
     testPersistentModifiers(); testModifierMacroOrdering(); testModifierSourcesAndCleanup();
+    testModifierMixedReports();
     testPersistentMouse(); testMouseDragAndScroll(); testMouseSources();
     testGlobalToggleSources();
     testGlobalToggle();

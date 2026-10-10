@@ -1,14 +1,18 @@
 # Consumer Modifiers and Macro Hold Support Notes
 
 These notes capture the discussion of self-contained modified consumer actions
-and keyboard holds inside macros. They describe possible changes, not implemented
-features or a finalized configuration format.
+and keyboard holds inside macros. The broader alternatives remain design
+context. The persistent modifier path now has a firmware-only v13 implementation;
+see [implementation and measurements](v13-modifier-implementation.md) and the
+standalone [v13 binary reference](config-v13.md).
 
 The current exploratory path is persistent modifier down/up/toggle actions,
 using an action type freed by consolidating mouse hold with mouse
 down/up/toggle. This would let macros bracket existing consumer taps and other
-actions with modifiers. It is not implemented; the details below are a design
-proposal for investigation and measurement.
+actions with modifiers. Both hardware variants now fit without feature cuts,
+with net flash increases of 4/6 bytes and stack reserves increased to 79/82
+bytes. The details below retain the exploratory design rationale; configurator
+and migration work and host hardware verification remain outstanding.
 
 ## Motivation and Current Behavior
 
@@ -17,7 +21,7 @@ a brightness key adjusts brightness in smaller steps. The user observed roughly
 6–7% steps normally and approximately 1% steps with those modifiers. These are
 observations, not precision guarantees made by the firmware.
 
-Current **Media / system** actions send a Consumer Page usage without an
+Existing **Media / system** actions send a Consumer Page usage without an
 action-specific keyboard modifier mask. **Key tap** and **Key hold** have a
 four-bit modifier mask, but cannot encode a consumer usage.
 
@@ -63,7 +67,7 @@ The controls discussed fit within eight bits:
 | Next/previous track | `0xB5` / `0xB6` |
 
 Usage values are defined in the [USB HID Usage Tables](https://usb.org/sites/default/files/hut1_5.pdf).
-Keyboard brightness controls are not currently listed in the configurator's
+Keyboard brightness controls are not currently listed in the v12 configurator's
 named consumer choices; they would need to be entered as custom usages.
 
 Launch and browser usages often exceed eight bits: Calculator is `0x192`,
@@ -345,25 +349,28 @@ production configurator under `webapp/public/versions/format-v12/`, following
 `webapp/archives/README.md`, including provenance, checksums, archive indexing
 and editor routing. Preserve existing archives unchanged.
 
-The persistent modifier mask logically needs one byte of state; actual linked
-RAM and flash costs remain unmeasured. This design is expected to be narrower
-than general macro keyboard holds, but the earlier resource estimates do not
-measure this proposal. Build and measure both hardware variants while
-preserving the stack reserve. Verify mouse hold relocation, mode validation,
+The persistent modifier mask needs one byte of state. The measured firmware
+implementation adds 4/6 flash bytes after optimization, adds one total allocated
+RAM byte, and increases stack reserve by one byte on both variants. The earlier
+resource estimates describe other proposals, not this measured implementation.
+Host suites cover mouse hold relocation, mode validation,
 modifier overlap with physical holds and temporary taps, report ordering under
 backpressure, repeated macros, interleaved direct actions, and cleanup on layer
-changes, configuration application and USB reset before selecting a final
-implementation.
+changes and action reset. The USB reset path uses configuration application and
+action reset. Hardware verification remains necessary before a production
+decision; see the implementation findings for detailed scope and measurements.
 
 ## Implementation Constraints
 
 Relevant code is in `src/actions.c`, `src/config.c`, `src/config.h`,
 `src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c`, and the configurator's action
-model, validation, serialization, and inspector. The current standalone format
-reference is `protocol/config-v12.md`.
+model, validation, serialization, and inspector. The standalone firmware format
+reference is now `protocol/config-v13.md`; `protocol/config-v12.md` describes the
+outgoing format and unchanged active configurator.
 
-Preserve or increase stack capacity where possible; current reserves are 78 bytes
-on the six-key pad and 81 bytes on the three-key pad. Measure flash and RAM costs
-for both variants before selecting a design. A configuration format transition
+Preserve or increase stack capacity where possible; the starting reserves were
+78 bytes on the six-key pad and 81 bytes on the three-key pad, and the v13
+implementation reserves 79/82 bytes. Both variants have measured flash and RAM
+costs recorded in the implementation findings. An active configurator transition
 must also follow the project's frozen configurator archive requirements before
 changing the active editor.
