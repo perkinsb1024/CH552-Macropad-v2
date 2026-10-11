@@ -135,16 +135,14 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 | **Mouse up** | Clears selected persistent bits from any input or macro; repeated up leaves them released |
 | **Mouse toggle** | Flips the selected mouse buttons between down and released. All toggle actions share the same state, so another input or macro can toggle them off. Changing layers also clears toggled mouse buttons |
 | **Scroll** | Sends a scroll step. Choose **Vertical** with **Up**/**Down**, or **Horizontal** with **Left**/**Right**, and a **Wheel step** from 1–127 (horizontal requires v9 firmware) |
-| **Move pointer X** | Moves left or right by the selected amount, from 1–127 |
-| **Move pointer Y** | Moves up or down by the selected amount, from 1–127 |
-| **Move pointer X/Y** | Moves both axes together; each axis uses 0–60 mouse counts in steps of 4, with its own direction |
+| **Move mouse** | Choose **Axis**: **X** moves left or right, **Y** moves up or down, and **Both** moves both axes together |
 
 In v12, **Mouse toggle**, **Mouse down** and **Mouse up** share one persistent state
 across keys, wheel inputs, chords, timers and macros. Each selected bit operates
 independently. Down sets bits, up clears them, and toggle flips them. Repeated
 down/up is idempotent. For example, one key can start a drag with **Mouse down**
 and another can end it with **Mouse up**. A macro can use **Mouse down** →
-**Move pointer X**, **Move pointer Y**, or **Move pointer X/Y** → **Mouse up**, with **Pause** steps as needed.
+**Move mouse** → **Mouse up**, with **Pause** steps as needed.
 A physical **Mouse hold** or temporary click keeps its buttons down independently.
 Macro completion and physical release leave persistent state intact; layer
 changes and resets clear it. Direct bindings act immediately, while macro steps
@@ -172,9 +170,18 @@ backwards, swap **Up**/**Down** or **Left**/**Right**. Under **Scroll direction*
 and click counters for each mouse button. Save edits to the macropad before
 testing; the modal warns if you have unsaved changes.
 
-Pointer movement uses relative mouse counts; screen distance depends on the
-computer's pointer speed and acceleration. **Move pointer X/Y** sends both axes
-in one report. Set an axis to zero to leave it stationary.
+Under **Move mouse**, choose **Behavior** (**Tap** or **Hold**) for a button
+or chord, then **Axis**. For **X** or **Y**, choose
+**Direction** and an **Amount** from 1–127. **Both** provides separate
+horizontal and vertical directions and amounts from 0–60 in steps of 4, sending
+both axes in one report. Set an axis to zero to leave it stationary. When first
+switching to **Both**, the current amount is rounded to a multiple of 4 and capped
+at 60; the other axis starts at 4. Switching back restores that axis's previous
+settings when available. Pointer movement uses relative mouse counts; screen
+distance depends on the computer's pointer speed and acceleration.
+
+If **Both** amounts are zero, the sidebar shows **Mouse actions without movement**.
+Click a listed action to edit it. This warning does not block saving or upload.
 
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held
@@ -239,7 +246,8 @@ You can have up to seven layers on a three-key macropad, or five on a six-key ma
 ![Layer 2 selected for editing while Layer 1 remains the startup layer](../images/configuration-overview/06-layers.png)
 
 - Click a layer tab to edit it
-- **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). **Global** chords and timers assigned to **All layers** are already shared. Layer-specific timers keep their original assignment
+- **Add layer** creates a new blank layer with unassigned keys and wheel controls, LEDs off, and no local chords. The new layer is selected immediately
+- To copy the selected layer, open the arrow beside **Add layer** and choose **Duplicate current layer**. This copies its key colors, wheel settings, options, and local chords to a new layer and selects it. **Global** chords and timers assigned to **All layers** are already shared. Layer-specific timers keep their original assignment
 - Choose the **Startup layer** in **Profile**. This is the layer used when the device starts and after a configuration save
 - The trash button beside the layer tabs removes the selected layer, its bindings, and its local chords after confirmation. **Global** chords are preserved. At least one layer must remain. If you remove the startup layer, **Layer 1** becomes the startup layer
 - After removing a layer, review all layer-switch actions. A target may become unavailable or now refer to another layer at that number
@@ -555,7 +563,7 @@ some actions wait for the macro to finish, while others act immediately:
 
 | Behavior | Actions triggered while a macro is running |
 | --- | --- |
-| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X**, **Move pointer Y**, and **Move pointer X/Y** set to **Tap**, and another **Execute macro** |
+| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move mouse** set to **Tap**, and another **Execute macro** |
 | Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Mouse down**, **Mouse up**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
 
 Changing the active layer cancels the rest of the macro and clears waiting
@@ -660,7 +668,7 @@ Firmware update mode is for replacing device software. Use **Save to device** to
 ### Two Layers: Editing and Music
 
 1. Configure your editing layer
-2. Click **Add layer** to copy it, then replace the new layer's keys with **Play / pause**, **Next track**, and **Mute**
+2. Click **Add layer** to create a blank layer, then assign its keys to **Play / pause**, **Next track**, and **Mute**
 3. On the music layer, use **Volume down** and **Volume up** for the wheel turns
 4. Give each layer an **Always on** indicator in a different color
 5. Add a **Keys 1 + 2** chord with **Relative layer → +1**, then click its **globe** to make it apply to all layers

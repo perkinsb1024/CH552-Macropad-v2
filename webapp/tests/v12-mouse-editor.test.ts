@@ -28,7 +28,7 @@ it.each(['key', 'clockwise', 'timed', 'macro'])('offers explicit down/up without
   selectedSlot.value = slot; setAction(slot, { type: 'mouseDown', buttons: 0x88 });
   const tree = nodes(Inspector());
   for (const type of ['mouseDown', 'mouseUp']) expect(tree.find(n => n.type === 'option' && n.props.value === type)?.props.disabled).toBeFalsy();
-  expect(tree.some(n => n.props['aria-label'] === 'Movement behavior' || n.props['aria-label'] === 'Scroll behavior')).toBe(false);
+  expect(tree.some(n => n.props['aria-label'] === 'Behavior' || n.props['aria-label'] === 'Scroll behavior')).toBe(false);
   const selector = tree.find(n => n.type === 'select')!;
   (selector.props.onChange as (e: unknown) => void)({ target: { value: 'mouseUp' } });
   expect(getAction(profile.value, slot)).toEqual({ type: 'mouseUp', buttons: 0x88 });

@@ -91,8 +91,8 @@ export function ProfileViewer() {
           <div class="tabs" role="tablist" aria-label="Layers">
             {p.layers.map((_, i) => <button key={i} class={`tab ${selectedLayer.value === i ? 'tab-active' : ''}`}
               role="tab" aria-selected={selectedLayer.value === i} onClick={() => { selectedLayer.value = i; }}>
-              <span class="tab-index">{i + 1}</span><span class="tab-name">{layerName(i)}</span>
-              {deviceLayer === i && <span class="tab-badge">device</span>}
+              <span class="tab-name">{layerName(i)}</span>
+              {deviceLayer === i && <span class="tab-badge">active</span>}
             </button>)}
           </div>
           {(mismatch || !knownLayer) && <div class="viewer-layer-status" aria-live="polite">

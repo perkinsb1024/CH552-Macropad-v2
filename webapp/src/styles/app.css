@@ -446,6 +446,10 @@ output {
 .scroll-direction {
   margin-top: 8px;
 }
+.direction-first > .scroll-direction {
+  margin-top: 0;
+  margin-bottom: 11px;
+}
 .layer-indicator-options {
   gap: 12px;
 }
@@ -1179,21 +1183,6 @@ output {
   border-bottom-color: var(--accent);
   font-weight: 600;
 }
-.tab-index {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background: var(--bg-sunken);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--fg-muted);
-}
-.tab-active .tab-index {
-  background: var(--accent);
-  color: var(--accent-fg);
-}
 .tab-badge {
   font-size: 10.5px;
   padding: 1px 6px;
@@ -1205,7 +1194,39 @@ output {
   letter-spacing: 0.04em;
 }
 .tab-add {
-  color: var(--fg-faint);
+  color: var(--fg);
+}
+.layer-add-menu {
+  display: flex;
+  align-self: stretch;
+}
+.layer-add-buttons {
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--bg-elev);
+}
+.layer-add-buttons > .tab {
+  margin-bottom: 0;
+  border-bottom: 0;
+  white-space: nowrap;
+}
+.layer-add-buttons > .tab:first-child {
+  border-radius: var(--radius-sm) 0 0 0;
+}
+.layer-add-buttons > .layer-add-trigger {
+  padding-inline: 8px;
+  border-radius: 0 var(--radius-sm) 0 0;
+  border-left: 1px solid var(--line-strong);
+}
+.layer-add-menu .menu-list {
+  min-width: 100%;
+  width: max-content;
+  max-width: calc(100vw - 48px);
+}
+.layer-add-menu .menu-list button:focus-visible {
+  background: var(--bg-sunken);
 }
 .tab.is-dragging, .keycap.is-dragging, .enc-part.is-dragging, .chord-main.is-dragging, .timer-action.is-dragging {
   opacity: 0.45;

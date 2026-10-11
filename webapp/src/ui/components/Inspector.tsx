@@ -17,6 +17,10 @@ import { IconTrash } from './Icons';
 import { ScrollTest } from './ScrollTest';
 
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
+type PointerAction = Extract<Action, { type: 'mouseX' | 'mouseY' | 'mouseXY' }>;
+function isPointerAction(action: Action): action is PointerAction {
+  return action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY';
+}
 
 function ConsumerUsageInput({ usage, onChange, reduced = false }: { usage: number; onChange(usage: number): void; reduced?: boolean }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -108,16 +112,17 @@ function MouseButtons({ value, onChange }: { value: number; onChange(v: number):
   );
 }
 
-function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest, children, min = 1, max = 127, step = 1 }: {
+function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, hint, value, onChange, onTest, children, directionFirst = false, min = 1, max = 127, step = 1 }: {
   label: string;
   directionLabel: string;
   negativeLabel: string;
   positiveLabel: string;
-  hint: string;
+  hint?: string;
   value: number;
   onChange(v: number): void;
   onTest?(): void;
   children?: ComponentChildren;
+  directionFirst?: boolean;
   min?: number;
   max?: number;
   step?: number;
@@ -134,12 +139,7 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
     setZeroNegative(nextNegative);
     if (magnitude) onChange((nextNegative ? -1 : 1) * magnitude);
   };
-  return (
-    <div class="field">
-      <span class="field-label">{label} <output>{magnitude}</output></span>
-      <input type="range" min={min} max={max} step={step} value={magnitude} aria-label={label} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
-      <span class="hint">{hint}</span>
-      {children}
+  const direction = (
       <div class="field scroll-direction">
         <span class="field-label">{directionLabel}</span>
         <div class="segmented" role="group" aria-label={directionLabel}>
@@ -148,6 +148,15 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
         </div>
         {onTest && <span class="hint">Some computers may invert these settings, in which case you will need to swap {negativeLabel.toLowerCase()} and {positiveLabel.toLowerCase()}. <button type="button" class="inline-link" onClick={onTest}>Click here</button> to test the scrolling behavior.</span>}
       </div>
+  );
+  return (
+    <div class={`field${directionFirst ? ' direction-first' : ''}`}>
+      {directionFirst && direction}
+      <span class="field-label">{label} <output>{magnitude}</output></span>
+      <input type="range" min={min} max={max} step={step} value={magnitude} aria-label={label} onInput={(e) => setMagnitude(Number((e.target as HTMLInputElement).value))} />
+      {hint && <span class="hint">{hint}</span>}
+      {children}
+      {!directionFirst && direction}
     </div>
   );
 }
@@ -195,6 +204,7 @@ export function Inspector() {
     (action.command === 'rainbowPhaseRelative' || action.command === 'rainbowSpeedRelative')
     ? [-2, -1, 1, 2] : [-1, 1];
   const setType = (type: ActionType) => {
+    if (type === 'mouseX' && isPointerAction(action)) return;
     if (type === action.type) return;
     setAction(slot, action);
     const remembered = rememberedAction(slot, type);
@@ -214,7 +224,23 @@ export function Inspector() {
     else update(next);
   };
 
-  const selectableActions = ACTION_DESCRIPTORS.filter(d => macro
+  const setMovementAxis = (type: PointerAction['type']) => {
+    if (!isPointerAction(action) || action.type === type) return;
+    setAction(slot, action);
+    const remembered = rememberedAction(slot, type);
+    const hold = !rotation && action.hold ? { hold: true } : {};
+    if (remembered && isPointerAction(remembered)) {
+      update({ ...remembered, hold: hold.hold });
+    } else if (type === 'mouseXY') {
+      const delta = action.type === 'mouseXY' ? action.x : action.delta;
+      const amount = Math.sign(delta) * Math.max(4, Math.min(60, Math.round(Math.abs(delta) / 4) * 4));
+      update({ type, x: action.type === 'mouseY' ? 4 : amount, y: action.type === 'mouseY' ? amount : 4, ...hold });
+    } else {
+      const delta = action.type === 'mouseXY' ? (type === 'mouseX' ? action.x : action.y) || 4 : action.delta;
+      update({ type, delta, ...hold });
+    }
+  };
+  const selectableActions = ACTION_DESCRIPTORS.filter(d => d.type !== 'mouseY' && d.type !== 'mouseXY').filter(d => macro
     ? d.type !== 'macro' && d.type !== 'none' && !d.needsRelease
     : d.type !== 'pause');
   const singleRun = action.type === 'macro' && macroSwitchesLayer(p.macros?.[action.macro]?.actions ?? []);
@@ -235,19 +261,19 @@ export function Inspector() {
 
       <label class="field">
         <span class="field-label">Action</span>
-        <select value={action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
+        <select value={isPointerAction(action) ? 'mouseX' : action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
           {!actionDescriptor && <option value={action.type} disabled>Unsupported saved action</option>}
           {GROUPS.filter(group => selectableActions.some(d => d.group === group)).map((group) => (
             <optgroup key={group} label={group}>
               {selectableActions.filter(d => d.group === group).map((d) => (
                 <option key={d.type} value={d.type} disabled={rotation && d.needsRelease}>
-                  {d.label}{rotation && d.needsRelease ? ' (buttons only)' : ''}
+                  {d.type === 'mouseX' ? 'Move mouse' : d.label}{rotation && d.needsRelease ? ' (buttons only)' : ''}
                 </option>
               ))}
             </optgroup>
           ))}
         </select>
-        <span class="hint">{actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
+        <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
       </label>
 
       {macro && isMacroLayerSwitch(action) && <p class="hint">A layer switch must be the final macro step. Macros containing a layer switch must run once, even if the target layer is already active.</p>}
@@ -400,30 +426,40 @@ export function Inspector() {
           </div>
         </DirectionalStep>
       )}
-      {action.type === 'mouseX' && (
-        <DirectionalStep label="Horizontal move" directionLabel="Pointer direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Mouse counts per repeat.' : 'Mouse counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
-      )}
-      {action.type === 'mouseY' && (
-        <DirectionalStep label="Vertical move" directionLabel="Pointer direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Mouse counts per repeat.' : 'Mouse counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
-      )}
-
-      {action.type === 'mouseXY' && <>
-        <DirectionalStep label="Horizontal move" directionLabel="Horizontal direction" negativeLabel="Left" positiveLabel="Right" hint="Mouse counts in steps of 4; zero leaves this axis stationary." min={0} max={60} step={4} value={action.x} onChange={x => update({ ...action, x })} />
-        <DirectionalStep label="Vertical move" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" hint="Both axes move in the same report. Screen distance depends on pointer settings." min={0} max={60} step={4} value={action.y} onChange={y => update({ ...action, y })} />
-      </>}
-
       {(action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY') && (
         <div class="field">
           {!rotation && <>
-            <span class="field-label">{action.type === 'scroll' ? 'Scroll behavior' : 'Movement behavior'}</span>
-            <div class="segmented" role="group" aria-label={action.type === 'scroll' ? 'Scroll behavior' : 'Movement behavior'}>
+            <span class="field-label">{action.type === 'scroll' ? 'Scroll behavior' : 'Behavior'}</span>
+            <div class="segmented" role="group" aria-label={action.type === 'scroll' ? 'Scroll behavior' : 'Behavior'}>
               <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
               <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
             </div>
           </>}
-          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8ms while held; release to stop.' : 'Sends one step per press.'}</span>
+          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8ms while held; release to stop.' : action.type === 'scroll' ? 'Sends one step per press.' : 'Sends one move event per press.'}</span>
         </div>
       )}
+
+      {isPointerAction(action) && <div class="field">
+        <span class="field-label">Axis</span>
+        <div class="segmented" role="group" aria-label="Axis">
+          {([['mouseX', 'X'], ['mouseY', 'Y'], ['mouseXY', 'Both']] as const).map(([type, label]) => (
+            <button type="button" class={action.type === type ? 'is-selected' : ''} aria-pressed={action.type === type} onClick={() => setMovementAxis(type)}>{label}</button>
+          ))}
+        </div>
+        <span class="hint">{action.type === 'mouseXY' ? 'Mouse counts in steps of 4, actual distance depends on computer settings.' : 'Actual mouse distance depends on computer settings.'}</span>
+      </div>}
+
+      {action.type === 'mouseX' && (
+        <DirectionalStep directionFirst label="Amount" directionLabel="Direction" negativeLabel="Left" positiveLabel="Right" hint={action.hold ? 'Mouse counts per repeat.' : undefined} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+      )}
+      {action.type === 'mouseY' && (
+        <DirectionalStep directionFirst label="Amount" directionLabel="Direction" negativeLabel="Up" positiveLabel="Down" hint={action.hold ? 'Mouse counts per repeat.' : undefined} value={action.delta} onChange={(delta) => update({ ...action, delta })} />
+      )}
+
+      {action.type === 'mouseXY' && <>
+        <DirectionalStep directionFirst label="Horizontal amount" directionLabel="Horizontal direction" negativeLabel="Left" positiveLabel="Right" min={0} max={60} step={4} value={action.x} onChange={x => update({ ...action, x })} />
+        <DirectionalStep directionFirst label="Vertical amount" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" min={0} max={60} step={4} value={action.y} onChange={y => update({ ...action, y })} />
+      </>}
 
       {(action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified') && (
         <ConsumerControl key={JSON.stringify(slot) + action.type} action={action} onChange={update} />
