@@ -1,5 +1,9 @@
 # V14 Hold Implementation Findings
 
+The initial sections record firmware `67b34d0`. The Action Ordering Follow-Up
+below records the subsequent reordered source; use [Configuration V14](config-v14.md)
+for the current allocation.
+
 Recorded 2026-10-11 on `experiment/modifier-media-hold`, starting from main
 `934fa05b9ea3977bb49d5658bda00d44d23caca2`. Both requested features fit using
 optimization alone. No existing features were cut or degraded, every action
@@ -195,3 +199,80 @@ configurator was intentionally left unchanged; v14 codec/editor migration is
 not part of this result. The local experiment rules were recorded in the
 checkout's excluded `AGENTS.md`, and optimization findings were also saved in
 the excluded `potential_optimizations.md`.
+
+## Action Ordering Follow-Up
+
+The subsequent action-ordering task starts from documentation commit `4d7f3f1`
+and firmware `67b34d0` on `experiment/modifier-media-hold`. Source changes are in
+the working tree; the user requested implementation and measurement for this
+follow-up, without a new commit request. The earlier sections retain the initial
+implementation's measurements and type allocation.
+
+The accepted proposal fits without feature cuts or further optimization. The
+unused alternatives with Reserved at D or E were not needed or measured.
+
+| Type | Current Action |
+| --- | --- |
+| `0` | **Nothing**; auxiliary `1` = **Pause**, auxiliary `2` = **Type Text** |
+| `1` | **Keyboard tap** |
+| `2` | **Keyboard hold** |
+| `3` | **Mouse click** |
+| `4` | **Mouse toggle / down / up / hold** |
+| `5` | **Scroll tap / hold** |
+| `6` | **Single-axis mouse movement** |
+| `7` | **Combined mouse movement** |
+| `8` | **Consumer tap**, twelve-bit usage |
+| `9` | **Consumer hold**, twelve-bit usage |
+| `A` | **Media / system with modifiers**, tap, eight-bit usage |
+| `B` | **Media / system hold with modifiers**, eight-bit usage |
+| `C` | **Set layer / Momentary layer / Relative layer**, all six modes |
+| `D` | **LED control** |
+| `E` | **Execute macro** |
+| `F` | Reserved; all auxiliary/parameter combinations reject |
+
+In `src/actions.c` and `src/config.c`, media types 8–B now use bit 0 to select
+hold and bit 1 to select modified eight-bit usage. `(type & 0xD) == 9` recognizes
+both consumer holds, while pointer types 6/7 retain their even/odd decoding and
+shared mask. The compile-time guard checks the new consumer and pointer IDs.
+Macro playback's immediate-action cutoff now starts at **Mouse toggle**, type 4,
+which includes persistent mouse modes and all consumer/layer/LED actions after
+scroll/pointer processing. Leaving that cutoff tied to the modified-consumer
+ID would incorrectly process persistent mouse and unmodified media macro steps;
+the existing macro drag regression caught this during implementation. The
+incorrect intermediate builds are excluded from the accepted measurements.
+
+Type-0 validation uses the named **Pause** and **Type Text** auxiliary values;
+playback uses their full first-byte constants. GET_INFO advertises `0x7FFF`,
+derived from the reserved ID, with transport 1 and format 14 unchanged. Header
+constants, raw modified-media/chord test fixtures and protocol assertions were
+updated. The complete v14 reference now describes this map, including all v13
+conversion requirements. Earlier unpublished v14 images require source-aware
+conversion or recreation; their shared version byte does not identify allocation.
+
+| Build | Six-Key Flash | Three-Key Flash | Free Bytes, Six/Three | Stack, Six/Three |
+| --- | ---: | ---: | --- | --- |
+| Before reorder (`67b34d0`) | 14,332 | 14,330 | 4/6 | 81/84 |
+| Reordered firmware | 14,330 | 14,328 | 6/8 | 81/84 |
+
+The reorder saves 2 flash bytes per variant. PSEG (105), ordinary XSEG (365/356),
+absolute active image (128), USB DMA (148) and stack capacity are unchanged.
+These savings depend on the compiler and complete allocation; they are not an
+independent main optimization. Applying the reorder to main requires the full
+v14 feature/format work and source-aware migration, followed by size measurement
+and validation. No additional optimization candidates or feature degradations
+were applied.
+
+Both native builds use the real 14,336-byte limit and pass layout/startup checks.
+Host suites pass with preview enabled and disabled. New validation coverage
+exhausts every reserved-type auxiliary/parameter combination across key, rotation,
+chord, timer expiry/resume and macro-tail contexts on both variants. Raw type-0
+validation verifies the **Pause**-before-**Type Text** auxiliary order, including
+string-start bounds. Existing playback tests verify text, pauses, macros, drag,
+all consumer forms, modifier ownership/backpressure and layer holds.
+
+Artifacts are preserved under `/private/tmp/macropad-v14-ordering/`: source
+snapshots, `ordering.patch`, final build directories `final-0` and `final-1`,
+logs `final-0.log`, `final-1.log`, `final-host.log` and
+`final-host-no-preview.log`. Toolchain and memory placement match the initial
+implementation. Hardware validation remains outstanding. Configurator/migration
+code, archives and released firmware remain unchanged.

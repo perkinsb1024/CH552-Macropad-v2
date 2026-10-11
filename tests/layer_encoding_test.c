@@ -84,7 +84,7 @@ static void testRelativeHoldRetention(void) {
     actionsRelease(1); assert(actionsLayer() == 0);
     // Either chord key releases the resolved hold.
     setupLayers(3, 0); uint8_t tail = configTimedOffset(); activeConfig[5] |= 2;
-    activeConfig[tail] = 0; activeConfig[tail + 1] = 0x69; activeConfig[tail + 2] = 2;
+    activeConfig[tail] = 0; activeConfig[tail + 1] = (0x60 | CONFIG_ACTION_SET_LAYER); activeConfig[tail + 2] = 2;
     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     actionsPress(0, 0); actionsPress(1, 1); assert(actionsLayer() == 2);
     actionsRelease(1); assert(actionsLayer() == 0);

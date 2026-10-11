@@ -132,7 +132,7 @@ static void chunks(void) {
 static void testReads(void) {
     reset();
     request(1, 0, 0, 0);
-    assert(sent[21] == 0xFF && sent[22] == 0xF7); // Type B reserved; F executes a macro.
+    assert(sent[21] == 0xFF && sent[22] == 0x7F); // Type F reserved; E executes a macro.
     assert(sent[8] == 0 && sent[7] == 14);
     assert(memcmp(sent + 9, "UMAC", 4) == 0);
     assert(sent[16] == (PHYSICAL_VARIANT ? 3 : 6) && sent[19] == 128);

@@ -81,15 +81,12 @@ __idata uint8_t scrollFraction;
 
 #define actionType(first) ((uint8_t)((first) & 15))
 
-// These compact consumer predicates depend on the saved-format type allocation.
+// These compact consumer/pointer predicates depend on the saved-format allocation.
 // Revisit them and remeasure both builds when changing the action numbering.
-#if ((CONFIG_ACTION_CONSUMER_MODIFIED | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD) & 3) || \
-    !(CONFIG_ACTION_CONSUMER & 3) || !(CONFIG_ACTION_CONSUMER_HOLD & 3) || \
-    ((CONFIG_ACTION_CONSUMER | CONFIG_ACTION_CONSUMER_MODIFIED) & 8) || \
-    !(CONFIG_ACTION_CONSUMER_HOLD & 8) || !(CONFIG_ACTION_CONSUMER_MODIFIED_HOLD & 8) || \
-    ((CONFIG_ACTION_CONSUMER_HOLD & 0xD) != 8) || \
-    ((CONFIG_ACTION_CONSUMER_MODIFIED_HOLD & 0xD) != 8)
-#error Consumer type predicates require updating for this action allocation.
+#if CONFIG_ACTION_CONSUMER != 0x8 || CONFIG_ACTION_CONSUMER_HOLD != 0x9 || \
+    CONFIG_ACTION_CONSUMER_MODIFIED != 0xA || CONFIG_ACTION_CONSUMER_MODIFIED_HOLD != 0xB || \
+    CONFIG_ACTION_MOUSE_AXIS != 0x6 || CONFIG_ACTION_MOUSE_XY != 0x7
+#error Action type predicates require updating for this action allocation.
 #endif
 
 static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
@@ -169,7 +166,7 @@ static uint8_t mouseButtons(void) {
 static FW_BIT movePointer(uint8_t first, uint8_t second) {
   int8_t x = second;
   int8_t y;
-  if (first & 1) { // Combined movement (type D).
+  if (first & 1) { // Combined movement (type 7).
     x = ((second & 15) + 1) << 2;
     y = ((second >> 4) + 1) << 2;
     if (first & CONFIG_MOUSE_X_NEGATIVE) x = -x;
@@ -209,9 +206,9 @@ static FW_BIT flushOutputs(void) {
   if (consumerReleasePending) return 0;
   if (consumerFirst) {
     consumerModifiers = 0;
-    // Pending consumers are types 4/7/8/A; only modified types 4/8 have
-    // both low bits clear. Keep bytes intact so rejected writes can retry.
-    if (!(consumerFirst & 3)) {
+    // Pending consumers are types 8/9/A/B; bit 1 selects modifiers.
+    // Keep bytes intact so rejected writes can retry.
+    if (consumerFirst & 2) {
       consumerModifiers = consumerHigh;
       consumerHigh = 0;
     }
@@ -305,12 +302,12 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       consumerSecond = second;
       // Modified output releases before a replacement changes its modifiers.
       // A modified hold preserves an ordinary tap's pending release too.
-      // Only types 4/7/8/A reach here; bit 3 distinguishes both holds from taps.
+      // Only types 8/9/A/B reach here; bit 0 distinguishes holds from taps.
       if (actionType(first) == CONFIG_ACTION_CONSUMER_HOLD && !consumerModifiers)
         consumerReleasePending = 0;
       else if (consumerModifiers || consumerOwner) consumerReleasePending = 1;
       consumerOwner = 0;
-      if (first & 8) consumerOwner = input + 1;
+      if (first & 1) consumerOwner = input + 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
       if (first == CONFIG_ACTION_MOUSE_HOLD) break;
@@ -550,7 +547,7 @@ static void releaseAction(uint8_t input) {
     // Keep a brief hold alive until its press report has been accepted.
     buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
                            buttonFirst[input] == CONFIG_ACTION_MOUSE_HOLD ||
-                           (type & 0xD) == CONFIG_ACTION_CONSUMER_MODIFIED_HOLD ? 2 : 0;
+                           (type & 0xD) == CONFIG_ACTION_CONSUMER_HOLD ? 2 : 0;
   }
 }
 
@@ -733,7 +730,7 @@ void actionsPoll(uint16_t now) {
         pointerRepeated = now;
         currentFirst = 0;
       }
-    } else if (type >= CONFIG_ACTION_CONSUMER_MODIFIED) {
+    } else if (type >= CONFIG_ACTION_MOUSE_TOGGLE) {
       // Held bindings never enter this queue; X/Y movement was handled above.
       runAction(currentFirst, currentSecond, 0, 9);
       currentFirst = 0;

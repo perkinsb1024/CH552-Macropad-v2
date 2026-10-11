@@ -125,10 +125,10 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_CONSUMER_MODIFIED_HOLD:
         case CONFIG_ACTION_CONSUMER:
         case CONFIG_ACTION_CONSUMER_HOLD:
-            // Bit 3 selects hold; only unmodified types 7/A may use the
+            // Bit 0 selects hold; only unmodified types 8/9 may use the
             // auxiliary nibble to make an otherwise-zero usage nonzero.
-            if (rotation && (type & 8)) return 0;
-            return param != 0 || ((type & 3) && aux != 0);
+            if (rotation && (type & 1)) return 0;
+            return param != 0 || (!(type & 2) && aux != 0);
         case CONFIG_ACTION_MOUSE_CLICK:
             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
         case CONFIG_ACTION_MOUSE_TOGGLE:
@@ -152,9 +152,9 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_NONE:
             if (!aux) return param == 0;
 #if CONFIG_MACRO_PAUSE
-            if (aux == 2) return 1;
+            if (aux == (CONFIG_ACTION_PAUSE >> 4)) return 1;
 #endif
-            if (aux != 1 || param >= validationUsed) return 0;
+            if (aux != (CONFIG_ACTION_STRING >> 4) || param >= validationUsed) return 0;
             return param == 0 || validationImage[validationPool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
             if ((aux & (uint8_t)(8 | (rotation << 1))) || (aux & 3) == 3) return 0;

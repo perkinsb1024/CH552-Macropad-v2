@@ -528,7 +528,7 @@ static void testModifiedConsumer(void) {
         assert(count == 2); assertConsumer(1, 0); assert(!latestModifiers());
     }
     // Removing temporary ownership preserves physical keys and modifiers.
-    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
     activeConfig[11] = 0x22; activeConfig[12] = 4;
     actionsPress(1, 0); pump(0, 2);
     press(0, 2); pump(2, 10);
@@ -536,7 +536,7 @@ static void testModifiedConsumer(void) {
     assertConsumer(3, 0); assertModifiers(4, 2); assert(reports[4][3] == 4);
     actionsRelease(1); pump(10, 20); assert(!latestModifiers());
     // Direct modified consumers overlap temporary keyboard taps too.
-    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x70;
+    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x70;
     activeConfig[11] = 0x91; activeConfig[12] = 5;
     press(1, 0); actionsPoll(0); press(0, 1); actionsPoll(1);
     assertModifiers(1, 15); assertConsumer(2, 0x70);
@@ -544,7 +544,7 @@ static void testModifiedConsumer(void) {
     assert(reports[4][3] == 5); pump(3, 30); assert(!latestModifiers());
 }
 static void testModifiedConsumerBackpressure(void) {
-    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
     blocked = 1; press(0, 0); pump(0, 10); assert(!count);
     // Fill the queue after each report, forcing retries at every boundary.
     blocked = 0; reportLimit = 1; actionsPoll(10);
@@ -556,7 +556,7 @@ static void testModifiedConsumerBackpressure(void) {
     pump(31, 40); assert(count == 3);
     reportLimit = 4; actionsPoll(40); assert(count == 4); assertModifiers(3, 0);
     // Generation invalidation reasserts the mask while release is rejected.
-    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
     press(0, 0); actionsPoll(0); generation++; blocked = 1;
     actionsPoll(1); assert(count == 2 && latestModifiers() == 6);
     blocked = 0; pump(2, 10); assert(!latestModifiers());
@@ -564,9 +564,9 @@ static void testModifiedConsumerBackpressure(void) {
 static void testModifiedConsumerReplacement(void) {
     // Latest-wins replacement releases the old consumer before changing masks.
     for (uint8_t replacement = 0; replacement < 3; replacement++) {
-        reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+        reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
         activeConfig[11] = replacement == 0 ? CONFIG_ACTION_CONSUMER :
-                           replacement == 1 ? CONFIG_ACTION_CONSUMER_HOLD : 0x94;
+                           replacement == 1 ? CONFIG_ACTION_CONSUMER_HOLD : (0x90 | CONFIG_ACTION_CONSUMER_MODIFIED);
         activeConfig[12] = replacement == 2 ? 0x70 : 0xE9;
         press(0, 0); actionsPoll(0); assert(count == 2);
         blocked = 1; actionsPress(1, 1); actionsPoll(1);
@@ -579,14 +579,14 @@ static void testModifiedConsumerReplacement(void) {
     }
     // A modified tap interrupts a held 12-bit usage, without restoring it.
     reset(); activeConfig[9] = 0x20 | CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0x24;
-    activeConfig[11] = 0x64; activeConfig[12] = 0x6f;
+    activeConfig[11] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[12] = 0x6f;
     actionsPress(0, 0); actionsPoll(0); assertConsumer(0, 0x224);
     press(1, 1); actionsPoll(1);
     assertConsumer(1, 0); assertModifiers(2, 6); assertConsumer(3, 0x6f);
     pump(2, 10); assertConsumer(4, 0); assertModifiers(5, 0);
     actionsRelease(0); pump(10, 20); assert(count == 6);
     // An unsent modified action can be replaced without emitting its usage.
-    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
     activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;
     blocked = 1; press(0, 0); actionsPoll(0); press(1, 1);
     blocked = 0; pump(2, 20); assert(!latestModifiers());
@@ -594,7 +594,7 @@ static void testModifiedConsumerReplacement(void) {
         assert(reports[i][0] != 5 || reports[i][1] != 0x6f);
 }
 static void testModifiedConsumerMacrosAndSources(void) {
-    reset(); const uint8_t brightness[] = {0x64, 0x6f, CONFIG_ACTION_KEY_TAP, 4};
+    reset(); const uint8_t brightness[] = {(0x60 | CONFIG_ACTION_CONSUMER_MODIFIED), 0x6f, CONFIG_ACTION_KEY_TAP, 4};
     define(start, brightness, 2); bind(0, start, CONFIG_MACRO_REPEAT ? 2 : 1);
     autoPending = 1; press(0, 0); actionsPoll(0); // Invocation.
     actionsPoll(1); actionsPoll(2);
@@ -609,23 +609,23 @@ static void testModifiedConsumerMacrosAndSources(void) {
     for (unsigned i = 0; i < count; i++) if (reports[i][0] == 1 && reports[i][3]) assert(!reports[i][1]);
 
     reset(); uint8_t cw = 9 + 2 * (configKeyCount() + 1);
-    activeConfig[cw] = 0x64; activeConfig[cw + 1] = 0x70;
+    activeConfig[cw] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[cw + 1] = 0x70;
     actionsRotate(1); pump(0, 20); assert(count == 4 && !latestModifiers());
     reset(); activeConfig[5] |= 2;
     uint8_t chord = configTimedOffset() - 3;
-    activeConfig[chord] = 0; activeConfig[chord + 1] = 0x64; activeConfig[chord + 2] = 0x6f;
+    activeConfig[chord] = 0; activeConfig[chord + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[chord + 2] = 0x6f;
     actionsPress(0, 0); actionsPress(1, 5); pump(5, 20);
     assert(count == 4 && !latestModifiers());
     reset(); uint8_t timer = configTimedOffset(); activeConfig[3] |= 1 << 6;
-    activeConfig[timer] = 0; activeConfig[timer + 1] = 0x64; activeConfig[timer + 2] = 0x6f;
-    activeConfig[timer + 3] = 0x64; activeConfig[timer + 4] = 0x70;
+    activeConfig[timer] = 0; activeConfig[timer + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[timer + 2] = 0x6f;
+    activeConfig[timer + 3] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[timer + 4] = 0x70;
     actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0); pump(0, 10);
     assert(count == 4 && !latestModifiers());
     actionsTimedInput(); pump(10, 20); assert(count == 8 && !latestModifiers());
 }
 static void testModifiedConsumerCleanup(void) {
     for (uint8_t layer = 0; layer < 2; layer++) {
-        reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+        reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
         activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
         press(0, 0); actionsPoll(0); assert(count == 2);
         blocked = 1;

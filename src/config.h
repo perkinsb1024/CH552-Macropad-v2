@@ -41,16 +41,33 @@
 
 // Action numbers are part of the saved format. V14 assignments are provisional.
 #define CONFIG_ACTION_NONE             0x0
+#define CONFIG_ACTION_PAUSE            0x10 // Full first byte; parameter: 16ms units.
+#define CONFIG_ACTION_STRING           0x20 // Full first byte; parameter: pool offset.
 #define CONFIG_ACTION_KEY_TAP          0x1
 #define CONFIG_ACTION_KEY_HOLD         0x2
-#define CONFIG_ACTION_MOUSE_CLICK      0x3
-// Mouse click auxiliary encodes click count minus one.
-#define CONFIG_ACTION_CONSUMER_MODIFIED 0x4
-#define CONFIG_ACTION_MOUSE_TOGGLE     0x5
-#define CONFIG_ACTION_MOUSE_DOWN       0x15
-#define CONFIG_ACTION_MOUSE_UP         0x25
-#define CONFIG_ACTION_MOUSE_HOLD       0x35 // Full first byte, not a type.
-#define CONFIG_ACTION_SCROLL           0x6
+#define CONFIG_ACTION_MOUSE_CLICK      0x3 // Auxiliary: click count minus one.
+#define CONFIG_ACTION_MOUSE_TOGGLE     0x4
+#define CONFIG_ACTION_MOUSE_DOWN       0x14
+#define CONFIG_ACTION_MOUSE_UP         0x24
+#define CONFIG_ACTION_MOUSE_HOLD       0x34 // Full first byte, not a type.
+#define CONFIG_ACTION_SCROLL           0x5
+#define CONFIG_ACTION_MOUSE_AXIS       0x6
+#define CONFIG_ACTION_MOUSE_XY         0x7
+// Consumer types 8-B: bit 0 selects hold; bit 1 selects eight-bit modified usage.
+#define CONFIG_ACTION_CONSUMER         0x8
+#define CONFIG_ACTION_CONSUMER_HOLD    0x9
+#define CONFIG_ACTION_CONSUMER_MODIFIED 0xA
+#define CONFIG_ACTION_CONSUMER_MODIFIED_HOLD 0xB
+#define CONFIG_ACTION_SET_LAYER        0xC
+#define CONFIG_ACTION_MOMENTARY_LAYER  0x2C // Full first byte: layer mode 2.
+#define CONFIG_ACTION_RELATIVE_LAYER   0x4C // Full first byte: relative, persistent.
+#define CONFIG_ACTION_LED_CONTROL      0xD
+#define CONFIG_ACTION_MACRO            0xE
+#define CONFIG_ACTION_RESERVED         0xF
+#define CONFIG_ACTION_MASK (0xFFFFu ^ (1u << CONFIG_ACTION_RESERVED))
+#define CONFIG_LAYER_RELATIVE          0x40
+#define CONFIG_LAYER_HOLD              0x20
+
 #define CONFIG_SCROLL_HOLD             0x40
 #define CONFIG_SCROLL_HORIZONTAL       0x80
 #define CONFIG_SCROLL_MODE_MASK        0x30
@@ -78,22 +95,6 @@
 #if CONFIG_SCROLL_SLOW_X < 1 || CONFIG_SCROLL_SLOW_X > 8 || CONFIG_SCROLL_FAST_X < 1 || CONFIG_SCROLL_FAST_X > 8 || CONFIG_SCROLL_SLOW_Y < 1 || CONFIG_SCROLL_SLOW_Y > 8 || CONFIG_SCROLL_FAST_Y < 1 || CONFIG_SCROLL_FAST_Y > 8
 #error Scroll acceleration X/Y presets must be in the range 1-8
 #endif
-#define CONFIG_ACTION_CONSUMER         0x7
-#define CONFIG_ACTION_CONSUMER_HOLD    0xA
-#define CONFIG_ACTION_CONSUMER_MODIFIED_HOLD 0x8
-// Full first byte: type None with auxiliary value 1.
-#define CONFIG_ACTION_STRING           0x10
-#define CONFIG_ACTION_PAUSE            0x20 // Parameter: 16 ms units, 0-255.
-#define CONFIG_ACTION_SET_LAYER        0x9
-#define CONFIG_ACTION_MOMENTARY_LAYER  0x29 // Full first byte: Set layer mode 2.
-#define CONFIG_ACTION_RELATIVE_LAYER   0x49 // Full first byte: relative, persistent.
-#define CONFIG_LAYER_RELATIVE          0x40
-#define CONFIG_LAYER_HOLD              0x20
-#define CONFIG_ACTION_MOUSE_AXIS       0xC
-#define CONFIG_ACTION_MOUSE_XY          0xD
-#define CONFIG_ACTION_LED_CONTROL      0xE
-#define CONFIG_ACTION_MACRO            0xF
-
 // LED command byte; the auxiliary nibble carries its value.
 #define CONFIG_LED_PHASE_SET       0x00
 #define CONFIG_LED_PHASE_RELATIVE  0x01

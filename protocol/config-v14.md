@@ -45,15 +45,29 @@ format at every binding and macro-step site, then re-encode using this document:
 
 | V13 Action | V14 Record |
 | --- | --- |
-| **Consumer hold**, type `8`, auxiliary usage-high nibble | Type `A`, with the same auxiliary nibble and parameter |
-| **Momentary layer**, full first byte `0A` | Full first byte `29`, with the same target parameter |
-| Persistent **Relative layer**, full first byte `0B` | Full first byte `49`, with the same signed offset |
-| One-shot **Relative layer**, full first byte `1B` | Full first byte `59`, with the same signed offset |
+| **Type Text**, full first byte `10` | Full first byte `20`, same pool offset |
+| **Pause**, full first byte `20` | Full first byte `10`, same duration |
+| **Media / system with modifiers**, type `4` | Type `A`, same modifier mask and usage |
+| **Mouse toggle / down / up / hold**, type `5` | Type `4`, same mode and button mask |
+| **Scroll**, type `6` | Type `5`, same flags and signed delta |
+| **Consumer tap**, type `7` | Type `8`, same twelve-bit usage |
+| **Consumer hold**, type `8` | Type `9`, same twelve-bit usage |
+| **Set layer**, full first bytes `09` / `19` | Full first bytes `0C` / `1C`, same target |
+| **Momentary layer**, full first byte `0A` | Full first byte `2C`, same target |
+| **Relative layer**, full first bytes `0B` / `1B` | Full first bytes `4C` / `5C`, same signed offset |
+| **Single-axis mouse movement**, type `C` | Type `6`, same flags and signed delta |
+| **Combined mouse movement**, type `D` | Type `7`, same flags and magnitudes |
+| **LED control**, type `E` | Type `D`, same auxiliary value and command |
+| **Execute macro**, type `F` | Type `E`, same repeats and macro address |
 
-All other v13 action encodings and binary section sizes retain their meanings.
-The converter must set the new version and recompute CRC. It must decode before
-rewriting: old types `8` and `A` mean different actions in v14. Conversion and
-new JSON/draft schemas have not been implemented. Type `B` is reserved in v14.
+**Nothing**, **Keyboard tap**, **Keyboard hold** and **Mouse click** retain their
+v13 encodings. Binary section sizes retain their meanings. The converter must
+set the new version and recompute CRC. Decode the source format before rewriting
+at every action site, including both timer fields and the complete macro tail;
+in-place substitution without source decoding can confuse the reassigned types.
+Conversion and new JSON/draft schemas have not been implemented. Type `F` is
+reserved in v14. Earlier provisional v14 allocations are also incompatible with
+this map; the version byte alone does not distinguish unpublished allocations.
 
 ## Header and Rainbow Settings
 
@@ -219,34 +233,34 @@ The action types are:
 | Type | Action | Auxiliary data | Parameter |
 | --- | --- | --- | --- |
 | 0 | **Nothing** | `0` | `0` |
-| 0 | **Type Text** (full first byte `0x10`) | `1` | **String**-pool offset |
-| 0 | **Pause** (full first byte `0x20`) | `2` | Unsigned delay in 16ms units, 0–255 |
+| 0 | **Pause** (full first byte `0x10`) | `1` | Unsigned delay in 16ms units, 0–255 |
+| 0 | **Type Text** (full first byte `0x20`) | `2` | **String**-pool offset |
 | 1 | **Keyboard tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
 | 2 | **Keyboard hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
 | 3 | **Mouse click** | **Click count** minus one (`0`–`15` = 1–16 clicks) | Button mask 1–255 |
-| 4 | **Media / system with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF` |
-| 5 | **Mouse toggle** / **Mouse down** / **Mouse up** / **Mouse hold** | `0` = toggle, `1` = down, `2` = up, `3` = physical hold; 4–15 reject | Button mask 1–255 |
-| 6 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
-| 7 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
-| 8 | **Media / system hold with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF`; physical release ends the hold |
-| 9 | **Set layer** / **Momentary layer** / **Relative layer** | Bits 0–1: `00` persistent, `01` one-shot, `10` hold, `11` reserved; bit 2 selects relative; bit 3 reserved | Absolute layer index (persistent/one-shot also allow `0xFF` for previous persistent layer), or signed relative offset -6 to +6 |
-| A | **Consumer hold** | High four bits of the usage | Low eight bits of the usage; physical release ends the hold |
-| B | Reserved | All values reject | All values reject |
-| C | **Single-axis mouse movement** | Bit 0 selects hold; bit 1 selects Y instead of X; bits 2–3 reserved | Signed 8-bit delta from -127 to +127 |
-| D | **Combined mouse movement** | Bit 0 selects hold; bit 1 negates X; bit 2 negates Y; bit 3 reserved | Low nibble: X magnitude; high nibble: Y magnitude; each incremented by 1, then multiplied by 4 |
-| E | **LED control** | Value or signed step (see below) | Full command byte (see below) |
-| F | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
+| 4 | **Mouse toggle** / **Mouse down** / **Mouse up** / **Mouse hold** | `0` = toggle, `1` = down, `2` = up, `3` = physical hold; 4–15 reject | Button mask 1–255 |
+| 5 | **Scroll Tap** / **Scroll Hold** | Bit 2 (`4`) selects hold; bit 3 (`8`) selects horizontal; values `0`, `4`, `8`, `12` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
+| 6 | **Single-axis mouse movement** | Bit 0 selects hold; bit 1 selects Y instead of X; bits 2–3 reserved | Signed 8-bit delta from -127 to +127 |
+| 7 | **Combined mouse movement** | Bit 0 selects hold; bit 1 negates X; bit 2 negates Y; bit 3 reserved | Low nibble: X magnitude; high nibble: Y magnitude; each incremented by 1, then multiplied by 4 |
+| 8 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
+| 9 | **Consumer hold** | High four bits of the usage | Low eight bits of the usage; physical release ends the hold |
+| A | **Media / system with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF` |
+| B | **Media / system hold with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF`; physical release ends the hold |
+| C | **Set layer** / **Momentary layer** / **Relative layer** | Bits 0–1: `00` persistent, `01` one-shot, `10` hold, `11` reserved; bit 2 selects relative; bit 3 reserved | Absolute layer index (persistent/one-shot also allow `0xFF` for previous persistent layer), or signed relative offset -6 to +6 |
+| D | **LED control** | Value or signed step (see below) | Full command byte (see below) |
+| E | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
+| F | Reserved | All values reject | All values reject |
 
 Keyboard modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**, and `8` = **GUI**;
 combine them with bitwise OR. Mouse button bits are `1` = **Left**, `2` = **Right**,
 and `4` = **Middle**. Bits 3–7 select **Button 4** through **Button 8** (`08`,
 `10`, `20`, `40`, `80` respectively). Any nonzero byte mask 1–255 is valid;
 each selected bit operates independently. Zero is invalid for every mouse-button
-action. All type 4 and 8 auxiliary values are valid; type 5 auxiliary values 4–15 reject.
-Type 5 auxiliary value 3 is physical **Mouse hold**, prohibited in macros,
-encoder rotation and both timer action slots. Type 4 is a tap in every context.
-Type 8 is a physical hold, prohibited in macros, encoder rotation and both timer
-action slots. Types 7 and A accept nonzero 12-bit HID Consumer Page usages
+action. All type A and B auxiliary values are valid; type 4 auxiliary values 4–15 reject.
+Type 4 auxiliary value 3 is physical **Mouse hold**, prohibited in macros,
+encoder rotation and both timer action slots. Type A is a tap in every context.
+Type B is a physical hold, prohibited in macros, encoder rotation and both timer
+action slots. Types 8 and 9 accept nonzero 12-bit HID Consumer Page usages
 `0x001`–`0xFFF`. **Type Text** must
 point to the start of a complete NULL-terminated pool string, including for
 empty text. Type 0 auxiliary values other than 0, 1 and 2 reject.
@@ -258,15 +272,15 @@ main-loop delays can lengthen these times. Inputs, timers and LEDs continue to
 be serviced; later queued actions wait for text playback to finish. Applications
 may still require an explicit **Pause** before Enter in a macro.
 
-Type 9 combines all layer modes. Auxiliary bit 2 selects absolute (`0`) or
+Type C combines all layer modes. Auxiliary bit 2 selects absolute (`0`) or
 relative (`1`) selection. Bits 0–1 select persistent (`00`), one-shot (`01`) or
 hold (`10`); mode `11` and auxiliary bit 3 always reject.
 
 | Mode | Absolute First Byte | Relative First Byte |
 | --- | --- | --- |
-| Persistent | `09` | `49` |
-| One-shot | `19` | `59` |
-| Hold | `29` | `69` |
+| Persistent | `0C` | `4C` |
+| One-shot | `1C` | `5C` |
+| Hold | `2C` | `6C` |
 
 Persistent selection changes the selected base layer. One-shot selection makes
 that base layer active for the next resolved physical input action, then returns
@@ -308,16 +322,16 @@ A chord-eligible press keeps the one-shot layer active through its chord window.
 The resolved single-key or chord action consumes it. The selected action runs
 to completion after returning, and held outputs retain their bindings until release.
 
-For **Scroll** and **Single-axis mouse movement** (type `0xC`), interpret the
+For **Scroll** and **Single-axis mouse movement** (type `0x6`), interpret the
 parameter as a signed 8-bit two's-complement value. `0x01`–`0x7F` mean +1 to
 +127; `0x81`–`0xFF` mean -127 to -1; `0x00` means zero movement. Reject `0x80`
 (-128), so every accepted delta can be safely negated.
 
-For type `0xC`, auxiliary bit 1 (record byte 0, bit 5) selects the axis:
+For type `0x6`, auxiliary bit 1 (record byte 0, bit 5) selects the axis:
 clear means X, set means Y. Auxiliary bits 2–3 (record bits 6–7) must be zero.
 The configurator exposes this action as **Move pointer X** and **Move pointer Y**.
 
-For **Combined mouse movement** (type `0xD`), the parameter's low nibble is the
+For **Combined mouse movement** (type `0x7`), the parameter's low nibble is the
 X magnitude and its high nibble is the Y magnitude. Decode each as an unsigned
 integer 0–15, add 1, then multiply by 4. Auxiliary bit 1 (record bit 5) negates X;
 auxiliary bit 2 (record bit 6) negates Y. Auxiliary bit 3 (record bit 7) must be
@@ -332,8 +346,8 @@ and repeats while held, at an 8ms interval when USB is ready and queued actions
 have finished. Releasing a key, the encoder button, or either chord key stops
 new repeats. Held inputs retain their original bindings across layer changes.
 Repeat reports are skipped when USB is busy; they do not accumulate for later
-playback. Both axes of a combined hold repeat together. Type `0xC` accepts
-auxiliary values 0–3; type `0xD` accepts 0–7, subject to trigger restrictions.
+playback. Both axes of a combined hold repeat together. Type `0x6` accepts
+auxiliary values 0–3; type `0x7` accepts 0–7, subject to trigger restrictions.
 
 Pointer deltas are relative HID mouse counts. Screen distance depends on host
 pointer speed and acceleration, and is not guaranteed to equal pixels.
@@ -346,9 +360,9 @@ For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
 With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for **Keyboard hold** actions).
 
-## LED Control Action E
+## LED Control Action D
 
-Record byte 0 is `(value << 4) | 0xE`; byte 1 is the full command ID.
+Record byte 0 is `(value << 4) | 0xD`; byte 1 is the full command ID.
 For commands `00`–`0D`, the `0xF` absolute sentinel means **As configured** (the earlier proposed `0xFF`
 value occupies only four bits here). Relative values use four-bit two's complement:
 `1..7` represent +1..+7 and `9..F` represent -7..-1. Zero and -8 are invalid.
@@ -364,7 +378,7 @@ value occupies only four bits here). Relative values use four-bit two's compleme
 | `06` | **Set key-press brightness** | 0=**Off**, 1=**Dim**, 2=**Bright**, F=configured |
 | `07` | **Relative key-press brightness** | Signed nonzero step |
 | `08` | **Set both brightness policies** | 0=**Off**, 1=**Dim**, 2=**Bright**, F=configured |
-| `09` | **Relative both brightness policies** | Signed nonzero step; step from the brighter resolved policy and set both to the result |
+| `0C` | **Relative both brightness policies** | Signed nonzero step; step from the brighter resolved policy and set both to the result |
 | `0A` | **Restore all configured LED settings** | Only 0 |
 | `0B` | **Set common brightness preset** | Preset index 0..4 |
 | `0C` | **Relative common brightness preset** | Signed nonzero step |
@@ -462,7 +476,7 @@ values. Only palette indices are stored in the configuration image.
 `((clicks - 1) << 4) | 0x03`; the second byte is the mouse button mask.
 For example, `[0x03, 0x01]` is one left click, `[0x13, 0x01]` is two left clicks,
 and `[0xF3, 0x01]` is sixteen left clicks. Counts 1–16 require no additional
-configuration bytes. Type `0xF` is **Execute macro**, defined below.
+configuration bytes. Type `0xE` is **Execute macro**, defined below.
 
 The nominal duration is `(8 * clicks + 200 * (clicks - 1)) / 1000` seconds,
 before additional transport/playback latency.
@@ -510,8 +524,8 @@ steps, without adding configuration bytes beyond ordinary two-byte records.
 
 ## Consumer Taps and Holds With Modifiers
 
-**Media / system with modifiers** uses type `0x4` for a tap.
-**Media / system hold with modifiers** uses type `0x8` for a physical hold.
+**Media / system with modifiers** uses type `0xA` for a tap.
+**Media / system hold with modifiers** uses type `0xB` for a physical hold.
 Both use the auxiliary nibble as a modifier mask and the parameter byte as a
 Consumer Page usage. All sixteen modifier masks are valid, including zero; a
 zero usage rejects. Modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**,
@@ -525,10 +539,10 @@ both timer action fields and macro steps reject them. Each action occupies two
 bytes with no macro required. For example:
 
 ```text
-64 6F    Shift + Alt with Brightness Up, tap
-64 70    Shift + Alt with Brightness Down, tap
-68 6F    Shift + Alt with Brightness Up, hold
-68 70    Shift + Alt with Brightness Down, hold
+6A 6F    Shift + Alt with Brightness Up, tap
+6A 70    Shift + Alt with Brightness Down, tap
+6B 6F    Shift + Alt with Brightness Up, hold
+6B 70    Shift + Alt with Brightness Down, hold
 ```
 
 The temporary modifier mask combines with physical **Keyboard hold** modifiers
@@ -567,39 +581,39 @@ modified consumer usages depends on the host and requires hardware verification.
 | Action | First byte | Second byte |
 | --- | --- | --- |
 | **Mouse click** | `0x03 \| ((clicks - 1) << 4)` | Mouse button mask 1–255 |
-| **Mouse hold** | `0x35` | Mouse button mask 1–255 |
-| **Media / system with modifiers** | `0x04 \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
-| **Media / system hold with modifiers** | `0x08 \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
-| **Mouse down** | `0x15` | Mouse button mask 1–255 |
-| **Mouse up** | `0x25` | Mouse button mask 1–255 |
+| **Mouse hold** | `0x34` | Mouse button mask 1–255 |
+| **Media / system with modifiers** | `0x0A \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
+| **Media / system hold with modifiers** | `0x0B \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
+| **Mouse down** | `0x14` | Mouse button mask 1–255 |
+| **Mouse up** | `0x24` | Mouse button mask 1–255 |
 | **Nothing** | `0x00` | `0x00` |
-| **Type Text** | `0x10` | Offset of a complete NULL-terminated string in the shared pool |
-| **Pause** | `0x20` | Duration in 16ms units, 0–255 |
-| **Execute macro** | `0x0F \| ((repeats - 1) << 4)` | Absolute address of a macro step |
-| **Consumer Tap** | `0x07 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
-| **Consumer Hold** | `0x0A \| ((usage >> 8) << 4)` | `usage & 0xFF` |
-| **Set layer**, persistent | `0x09` | Layer index or `0xFF` |
-| **Set layer**, one-shot | `0x19` | Layer index or `0xFF` |
-| **Momentary layer** | `0x29` | Layer index |
-| **Relative layer**, persistent | `0x49` | Signed offset -6–+6 |
-| **Relative layer**, one-shot | `0x59` | Signed offset -6–+6 |
-| **Relative layer**, hold | `0x69` | Signed offset -6–+6 |
-| **Move pointer X**, **Tap** | `0x0C` | Signed delta, -127–127; reject `0x80` |
-| **Move pointer Y**, **Hold** | `0x3C` | Signed delta, -127–127; reject `0x80` |
-| **Move pointer X/Y**, X=-8, Y=+64, **Tap** | `0x2D` | `0xF1` |
-| **Move pointer X/Y**, X=+64, Y=-8, **Hold** | `0x5D` | `0x1F` |
-| **Scroll Tap** | `0x06` | Signed wheel step, -127–127 |
-| **Scroll Hold** | `0x46` | Signed vertical wheel step, -127–127 |
-| **Scroll Tap**, **Horizontal** | `0x86` | Signed horizontal step, -127–127 |
-| **Scroll Hold**, **Horizontal** | `0xC6` | Signed horizontal step, -127–127 |
+| **Type Text** | `0x20` | Offset of a complete NULL-terminated string in the shared pool |
+| **Pause** | `0x10` | Duration in 16ms units, 0–255 |
+| **Execute macro** | `0x0E \| ((repeats - 1) << 4)` | Absolute address of a macro step |
+| **Consumer Tap** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
+| **Consumer Hold** | `0x09 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
+| **Set layer**, persistent | `0x0C` | Layer index or `0xFF` |
+| **Set layer**, one-shot | `0x1C` | Layer index or `0xFF` |
+| **Momentary layer** | `0x2C` | Layer index |
+| **Relative layer**, persistent | `0x4C` | Signed offset -6–+6 |
+| **Relative layer**, one-shot | `0x5C` | Signed offset -6–+6 |
+| **Relative layer**, hold | `0x6C` | Signed offset -6–+6 |
+| **Move pointer X**, **Tap** | `0x06` | Signed delta, -127–127; reject `0x80` |
+| **Move pointer Y**, **Hold** | `0x36` | Signed delta, -127–127; reject `0x80` |
+| **Move pointer X/Y**, X=-8, Y=+64, **Tap** | `0x27` | `0xF1` |
+| **Move pointer X/Y**, X=+64, Y=-8, **Hold** | `0x57` | `0x1F` |
+| **Scroll Tap** | `0x05` | Signed wheel step, -127–127 |
+| **Scroll Hold** | `0x45` | Signed vertical wheel step, -127–127 |
+| **Scroll Tap**, **Horizontal** | `0x85` | Signed horizontal step, -127–127 |
+| **Scroll Hold**, **Horizontal** | `0xC5` | Signed horizontal step, -127–127 |
 
 **Type Text** shares low-nibble type 0 with **Nothing**: auxiliary 0 is **Nothing** and must
-have parameter 0; auxiliary 1 is **Type Text**, and auxiliary 2 is **Pause**. Other auxiliary values reject. Empty
+have parameter 0; auxiliary 1 is **Pause**, and auxiliary 2 is **Type Text**. Other auxiliary values reject. Empty
 text still requires a valid pool offset pointing at a NULL byte.
 These are two-byte binding records; the macro tail instead uses a single `00`
 terminator with no parameter, as specified under Macros and pauses.
 
-**Consumer Hold** occupies low-nibble type A; **Consumer Tap** uses type 7.
+**Consumer Hold** occupies low-nibble type 9; **Consumer Tap** uses type 8.
 Both retain nonzero 12-bit HID Consumer Page usages `0x001`–`0xFFF`. **Hold** is
 allowed on keys, encoder press and chords, but rejects on wheel rotation and on
 both timer action slots. It adds no configuration bytes.
@@ -609,8 +623,8 @@ horizontal scrolling. Only auxiliary values 0, 4, 8 and 12 are accepted. Acceler
 and reject. **Hold** rejects on rotation and both timer action slots. -128 rejects;
 zero is a firmware no-op.
 
-Type `0x3` encodes **Mouse click** and type `0xF` encodes **Execute macro**. A full first byte
-of `0x10` for **Type Text** uses low-nibble type 0 with auxiliary value 1.
+Type `0x3` encodes **Mouse click** and type `0xE` encodes **Execute macro**. A full first byte
+of `0x20` for **Type Text** uses low-nibble type 0 with auxiliary value 2.
 
 ## Consumer Ownership and Release
 
@@ -785,7 +799,7 @@ parameter would be outside the image. Zero parameter bytes inside actions do
 not terminate a sequence. Each terminator changes the parity of subsequent
 action boundaries; neither absolute nor tail-relative even alignment is required.
 
-**Execute macro** is `((repeats - 1) << 4) | 0x0F`, followed by its absolute start
+**Execute macro** is `((repeats - 1) << 4) | 0x0E`, followed by its absolute start
 address. Repeats range from 1 through 16. The address must satisfy all of:
 
 - `macroStart <= address < 128`;
@@ -848,7 +862,7 @@ latest-wins consumer lane;
 a new physical consumer action can interrupt it. No held-action lifecycle or
 nested macro stack is provided.
 
-**Pause** is `20 nn`, with duration `nn * 16ms`, from 0 to 4,080ms. It is valid
+**Pause** is `10 nn`, with duration `nn * 16ms`, from 0 to 4,080ms. It is valid
 as a direct binding or macro step, and uses the existing nonblocking deadline
 state. Inputs, timers, LEDs and USB continue to be serviced while it waits. It
 starts after preceding output drains; the next step starts no earlier than its
@@ -861,16 +875,16 @@ Example, with a single six-key layer and no chords/timers: store `chrome\0` at
 
 ```text
 81 2C   Keyboard tap: GUI+Space
-20 10   Pause: 16 * 16 = 256ms
-10 00   Type Text: string-pool offset 0
+10 10   Pause: 16 * 16 = 256ms
+20 00   Type Text: string-pool offset 0
 01 28   Keyboard tap: Enter
 00      End sequence
 ```
 
-Bind a trigger to `0F 26` (one execution, absolute address `0x26` = 38).
+Bind a trigger to `0E 26` (one execution, absolute address `0x26` = 38).
 The layer binding itself already occupies its normal two bytes; added data is
 7 string bytes plus 9 macro bytes. Repeating once costs no extra data; two
-executions change the binding to `1F 26`. UI automation timing is application-
+executions change the binding to `1E 26`. UI automation timing is application-
 dependent; the example's delay has host-test coverage, not an OS-level guarantee.
 
 A standalone sequence of N steps normally costs `2*N + 1` bytes; an empty
@@ -941,7 +955,7 @@ delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
 GET_INFO advertises configuration format 14, palette version 3, and
-action mask `0xF7FF` (all low-nibble types except reserved type B). The maximum layer count is 5 for six keys and 7 for three
+action mask `0x7FFF` (all low-nibble types except reserved type F). The maximum layer count is 5 for six keys and 7 for three
 keys; image capacity is 128 bytes. The format version identifies the action map:
 the mask alone cannot distinguish submodes of a shared action type or determine
 modifier/hold support. Transport version remains 1.
@@ -983,7 +997,7 @@ GET_INFO returns 14 data bytes (offsets below are relative to reply data):
 | 9 | Maximum layers | `5` or `7` |
 | 10 | Image capacity | `128` |
 | 11 | Palette version | `3` |
-| 12–13 | Action mask | `0xF7FF`, little endian (`FF F7`) |
+| 12–13 | Action mask | `0x7FFF`, little endian (`FF 7F`) |
 
 GET_STATUS returns six data bytes: flash-valid flag (0 or 1), current layer,
 startup layer, upload state, dropped button-action count, and dropped
@@ -1066,8 +1080,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,332 | 4 | 105 | 365 | 128 | 81 |
-| Three keys | 14,330 | 6 | 105 | 356 | 128 | 84 |
+| Six keys | 14,330 | 6 | 105 | 365 | 128 | 81 |
+| Three keys | 14,328 | 8 | 105 | 356 | 128 | 84 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass layout/startup checks. Hardware validation is outstanding. The active

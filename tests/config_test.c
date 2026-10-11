@@ -339,8 +339,8 @@ static void testActions(void) {
         param = 0;
         if (type == CONFIG_ACTION_KEY_TAP || type == CONFIG_ACTION_KEY_HOLD) {
             param = 0x04;
-        } else if (type >= CONFIG_ACTION_MOUSE_CLICK &&
-                   type <= CONFIG_ACTION_MOUSE_TOGGLE) {
+        } else if (type == CONFIG_ACTION_MOUSE_CLICK ||
+                   type == CONFIG_ACTION_MOUSE_TOGGLE || type == CONFIG_ACTION_CONSUMER_MODIFIED) {
             param = 1;
         } else if (type == CONFIG_ACTION_SCROLL ||
                    type == CONFIG_ACTION_MOUSE_AXIS ||
@@ -356,7 +356,7 @@ static void testActions(void) {
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();
-        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO && type != 0xB));
+        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO && type != CONFIG_ACTION_RESERVED));
     }
         testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;
@@ -591,7 +591,45 @@ static void testScrollAxisValidation(void) {
     }
 }
 
+static void testTypeZeroAndReserved(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        // Key, rotation, chord, timer expiry/resume and unreferenced macro step.
+        for (uint8_t slot = 0; slot < 6; slot++) {
+            for (uint8_t aux = 0; aux < 16; aux++) {
+                for (unsigned param = 0; param < 256; param++) {
+                    testLoadStarterProfile(variant);
+                    uint8_t offset = 9;
+                    if (slot == 1) offset += 2 * (configKeyCount() + 1);
+                    if (slot == 2) {
+                        offset = configTimedOffset() + 1;
+                        activeConfig[5] |= 2;
+                    }
+                    if (slot == 3 || slot == 4) {
+                        offset = configTimedOffset() + (slot == 3 ? 1 : 3);
+                        activeConfig[3] |= 1 << 6;
+                    }
+                    uint8_t pool = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
+                    activeConfig[4] = 4;
+                    memcpy(activeConfig + pool, "A\0B", 4);
+                    if (slot == 5) offset = pool + 4;
+                    activeConfig[offset] = (aux << 4) | CONFIG_ACTION_RESERVED;
+                    activeConfig[offset + 1] = param;
+                    seal(); assert(!configValid(activeConfig, variant));
+                    // Raw type-0 bytes verify the new Pause-before-Text encoding.
+                    // Macro zero terminators have a separate single-byte layout.
+                    if (slot == 5) continue;
+                    activeConfig[offset] = aux << 4;
+                    seal(); assert(!!configValid(activeConfig, variant) ==
+                        ((!aux && !param) || (aux == 1 && CONFIG_MACRO_PAUSE) ||
+                         (aux == 2 && (param == 0 || param == 2))));
+                }
+            }
+        }
+    }
+}
+
 int main(void) {
+    testTypeZeroAndReserved();
     testConsumerHoldEncoding();
     testScrollHoldValidation();
     for (uint8_t variant = 0; variant < 2; variant++) {
