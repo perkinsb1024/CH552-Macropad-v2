@@ -258,11 +258,11 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v13 firmware from revision
-`0a3b6da6`: [three-key](../releases/ch552-macropad-3-key-0a3b6da6.hex) and
-[six-key](../releases/ch552-macropad-6-key-0a3b6da6.hex). The frozen [v13 editor](public/versions/format-v13/index.html) matches
-these releases; the active editor uses format v14. Automated tests and native builds pass on both geometries;
-the user has completed v13 hardware validation.
+The release HEX files and bundled uploader use v14 firmware from revision
+`518f6bd3`: [three-key](../releases/ch552-macropad-3-key-518f6bd3.hex) and
+[six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). The [active v14 editor](index.html) matches
+these releases. Automated tests and native builds pass on both geometries;
+the user has completed v14 hardware validation.
 Older-firmware connections link to the matching archive and updater. Back up
 profiles, update firmware, then load/import and explicitly save in the active
 editor. Older imports preserve action semantics, macros, timer units and storage.
@@ -397,4 +397,4 @@ analysis includes relative holds.
 
 The finalized v13 editor and live view are frozen at `public/versions/format-v13/`
 with source provenance and checksums. Published v13 firmware connects through
-that editor; the shared uploader continues to bundle the published v13 release.
+that editor; the shared uploader offers v13 as a previous release and v14 as the latest release.

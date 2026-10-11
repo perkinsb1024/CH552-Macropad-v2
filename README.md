@@ -61,10 +61,11 @@ These macropads omit the necessary 5.1kΩ pull-down resistors to enable 5V outpu
 
 ## Firmware Version History
 
-Below are the the primary firmware features added with each version
+Below are the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
+| [v14](protocol/config-v14.md) | - **Media / system with modifiers** now supports **Hold**<br> - Added support for **Relative layer while held**<br> *This version also reorganized action types to keep logical groups together* |
 | [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier key support for 8-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
 | [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags<br> - **Enter bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
@@ -76,7 +77,7 @@ Below are the the primary firmware features added with each version
 | [v5](protocol/config-v5.md) | - Configurable global **Rainbow phase** (spacing) and **Rainbow speed**, with four choices for each. |
 | [v4](protocol/config-v4.md) | - More layers: up to five on six-key macropads or seven on three-key macropads.<br> - **Relative layer** offsets expand to −6 through +6. |
 | [v3](protocol/config-v3.md) | - **On for 1.5 seconds** replaces **Blink once** for **Layer indicator**<br> - **Off** key colors can be transparent, letting the idle layer lighting show through<br> - **Rainbow** becomes available for timed and blinking layer indications. |
-| [v2](protocol/config-v2.md) | - **Full Brightness** / **Dim** layer indicators<br> - Global chords<br> - Signed **Relative layer** steps and one-shot layer switching<br> - Held pointer movement<br> - On-device color previews<br> - *This was the first format with a published firmware release and archived configurator* |
+| [v2](protocol/config-v2.md) | - **Full Brightness** / **Dim** layer indicators<br> - Global chords<br> - Signed **Relative layer** steps and one-shot layer switching<br> - Held pointer movement<br> - On-device color previews<br> *This was the first format with a published firmware release and archived configurator* |
 | v1 (initial prototype) | - Browser configuration over WebHID, with profiles saved on the device<br> - Up to four layers<br> - Independent key, wheel-button and wheel-direction bindings<br> - Two-key chords<br> - Keyboard, mouse, media and **Type text** actions<br> - Per-key colors and layer indications, including **Rainbow** lighting. |
 
 ## How to Compile the Firmware
@@ -84,9 +85,9 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v13 firmware files are available for [three-key](releases/ch552-macropad-3-key-0a3b6da6.hex) and [six-key](releases/ch552-macropad-6-key-0a3b6da6.hex) macropads, built from source revision `0a3b6da6`. This version adds fine single-axis and simultaneous X/Y pointer movement, optional modifiers for eight-bit **Media / system** taps, and USB names that identify the hardware variant. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v14 firmware files are available for [three-key](releases/ch552-macropad-3-key-518f6bd3.hex) and [six-key](releases/ch552-macropad-6-key-518f6bd3.hex) macropads, built from source revision `518f6bd3`. This version adds **Media / system hold with modifiers** and **Relative layer while held**, with reorganized action encoding and older-profile migration in the configurator. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [v13 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v13/) with these v13 release files. The [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) supports format v14 source firmware. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v13. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
+Use the [current v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v14 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v14. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -149,8 +150,8 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash used | 14,326 | 14,328 |
-| Flash remaining | 10 | 8 |
+| Flash used | 14,328 | 14,330 |
+| Flash remaining | 8 | 6 |
 | USB DMA RAM | 148 | 148 |
 | Paged external RAM (PSEG) | 105 | 105 |
 | Ordinary external RAM (XSEG) | 356 | 365 |
@@ -244,7 +245,7 @@ Bootloader entry methods:
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
 - During use with v12 or later firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
 
-Current v13 source checks that the encoder stays pressed across a 10ms startup
+Current v14 firmware checks that the encoder stays pressed across a 10ms startup
 window, sampling every 1ms. Hold it steadily before connecting USB.
 
 Older v11 firmware supports an optional three-second encoder hold on enabled
@@ -280,7 +281,7 @@ On first use, or when the saved profile is invalid, key and encoder actions stay
 
 Definitions allocate storage only when present: two bytes per step plus a one-byte terminator (the last sequence can use the image boundary). Repeats cost no extra configuration bytes. Strings share the normal pool. Held actions and nested macros are unavailable. Layer switches must be the final step, and macros containing them must have **Repeat count** set to 1. Playback streams steps through one active macro instead of filling the eight-event queue; later queued actions wait, and new invocations are dropped if that queue fills. Immediate actions may interleave, and an effective layer change cancels playback.
 
-Configuration format 12 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
+Configuration format 14 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
 **Media / system hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous

@@ -21,7 +21,7 @@ actions support both single-axis movement and combined pointer movement. Dynamic
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
 
-The pre-built v13 release files use source revision `0a3b6da6`: [three-key](../releases/ch552-macropad-3-key-0a3b6da6.hex) and [six-key](../releases/ch552-macropad-6-key-0a3b6da6.hex). Native builds and automated regressions pass on both variants. Hardware validation testing passed as well.
+The pre-built v13 release files use source revision `0a3b6da6`: [three-key](../webUploader/firmware-history/ch552-macropad-3-key-0a3b6da6.hex) and [six-key](../webUploader/firmware-history/ch552-macropad-6-key-0a3b6da6.hex). Native builds and automated regressions pass on both variants. Hardware validation testing passed as well.
 
 The active web configurator edits v13 images and uses version 13 JSON profiles
 and a separate v13 draft namespace. It imports older profiles and binary images

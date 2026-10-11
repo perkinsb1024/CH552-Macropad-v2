@@ -5,7 +5,7 @@
 | Size | 128 bytes |
 | Unused bytes | `0` |
 | Multibyte values | Little endian |
-| Byte offsets and action codes | Provisional allocation for format version 14 |
+| Byte offsets and action codes | Finalized allocation for format version 14 |
 | Header size | 9 bytes |
 | Layer count | 1–5 for six keys; 1–7 for three keys |
 | Action record size | 2 bytes |
@@ -15,7 +15,7 @@
 | HID transport version | 1 |
 
 This standalone reference specifies the version 14 firmware binary image and
-transport. Action numbering is provisional until the format is finalized.
+transport. Action numbering is finalized for the v14 release.
 It supports eight-bit consumer taps and physical holds with optional modifiers,
 twelve-bit unmodified consumer actions, and absolute/relative layer selection
 in persistent, one-shot and hold modes. All action records remain two bytes.
@@ -25,8 +25,9 @@ timed actions and LED features retain their complete encodings below.
 The active configurator encodes version 14 images and exports JSON version 14.
 It supports the action map below, including modified consumer holds and relative
 layer holds. It imports binary versions 2–13, JSON versions 1–13 and older local
-drafts by decoding their source format before v14 encoding. No v14 firmware
-release or hardware validation is claimed here.
+drafts by decoding their source format before v14 encoding.
+
+The pre-built v14 release files use source revision `518f6bd3`: [three-key](../releases/ch552-macropad-3-key-518f6bd3.hex) and [six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). Native builds and automated regressions pass on both variants. The user has completed hardware validation.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -94,7 +95,7 @@ older imports remain editable and exportable, with saving blocked until repaired
 
 Published v13 firmware uses the frozen editor at `versions/format-v13/`.
 Connecting it to the active editor offers that archive. The shared firmware
-installer continues to provide published v13 firmware.
+installer provides v14 as the latest release and v13 as a previous release.
 
 ## Header and Rainbow Settings
 
@@ -1111,10 +1112,9 @@ The current native builds use the following allocations, in bytes:
 | Three keys | 14,328 | 8 | 105 | 356 | 128 | 84 |
 
 Host suites pass with color preview enabled and disabled, and both native
-builds pass layout/startup checks. Hardware validation is outstanding. The active
-v14 configurator supports this encoding. Action numbering is provisional;
-changing it requires updated validation, dispatch, documentation and new size
-measurements. No released HEX files were generated for v14.
+builds pass layout/startup checks and match the supplied release HEX files.
+The user has completed hardware validation. The active v14 configurator supports
+the finalized encoding used by these releases.
 
 Build both hardware variants with the real 14,336-byte application limit:
 

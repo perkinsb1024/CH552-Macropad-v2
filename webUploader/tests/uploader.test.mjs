@@ -161,12 +161,16 @@ test('UI defaults to 3-key and requires renewed confirmation after changing vari
     assert.equal(element('reboot').disabled, true);
     const historyVersions = element('release-history').children.filter((_, index) => index % 2 === 0).map(term => term.children[0]);
     assert.equal(historyVersions[0].textContent, `v${selectedFirmware(manifest, 3, 'latest').formatVersion}`);
-    const historical = historyVersions.find(button => button.textContent === 'v9');
+    const historical = historyVersions.find(button => button.textContent === 'v13');
     await historical.emit('click');
     assert.equal(element('panel-previous').hidden, false);
     assert.equal(element('release-recommendation').dataset.tone, 'warning');
     assert.equal(element('release-recommendation').textContent, 'The latest version is recommended for most situations');
-    assert.match(element('firmware-info').textContent, /v9 for a 3-key/);
+    assert.match(element('firmware-info').textContent, /v13 for a 3-key/);
+    await buttons[1].emit('click');
+    assert.match(element('firmware-info').textContent, /v13 for a 6-key/);
+    await buttons[0].emit('click');
+    assert.match(element('firmware-info').textContent, /v13 for a 3-key/);
     assert.match(element('profile-impact').textContent, /will no longer be valid/);
     assert.equal(element('profile-migration').hidden, true);
     const selectedVersion = element('confirmation-label').children.find(child => typeof child !== 'string');
@@ -491,7 +495,7 @@ test('the beta UI includes platform sources and the published source/license', a
 
 test('all historical releases match their exact committed HEX, metadata and checksums', async () => {
   const source = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
-  assert.equal(source.firmware.length, 36);
+  assert.equal(source.firmware.length, 38);
   assert.equal(manifest.previousFirmware.length, source.firmware.length);
   for (const entry of manifest.previousFirmware) {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
@@ -515,7 +519,7 @@ test('historical selection retains the default release and cannot cross board va
   for (const keys of [3, 6]) {
     assert.equal(selectedFirmware(manifest, keys), manifest.firmware.find(entry => entry.keys === keys));
     const choices = firmwareChoices(manifest, keys);
-    assert.equal(choices.length, 18);
+    assert.equal(choices.length, 19);
     assert.ok(choices.every(entry => entry.keys === keys));
     for (const entry of choices) {
       assert.equal(selectedFirmware(manifest, keys, entry.name), entry);
@@ -538,5 +542,6 @@ test('previous release choices show each version once and select its newest buil
   assert.match(manifest.releaseNotes[11], /32ms/);
   assert.match(manifest.releaseNotes[12], /Mouse down/);
   assert.match(manifest.releaseNotes[13], /simultaneous X\/Y/i);
-  assert.ok(manifest.firmware.every(entry => entry.formatVersion === 13));
+  assert.match(manifest.releaseNotes[14], /hold with modifiers/);
+  assert.ok(manifest.firmware.every(entry => entry.formatVersion === 14));
 });
