@@ -26,7 +26,7 @@ it.each([0, 1] as const)('round-trips all 255 masks and new modes on variant %s'
   }
   expect(encodeAction({ type: 'mouseDown', buttons: 128 }, new Map())).toEqual([0x15, 128]);
   expect(encodeAction({ type: 'mouseUp', buttons: 255 }, new Map())).toEqual([0x25, 255]);
-  expect(summarize({ type: 'mouseDown', buttons: 0x88 })).toBe('Down Button 4+Button 8');
+  expect(summarize({ type: 'mouseDown', buttons: 0x88 })).toBe('Mouse Down Button 4+Button 8');
   expect(actionTooltip({ type: 'mouseUp', buttons: 128 })).toBe('Mouse up: Button 8');
 });
 

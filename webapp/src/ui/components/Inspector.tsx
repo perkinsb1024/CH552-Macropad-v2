@@ -17,6 +17,17 @@ import { IconTrash } from './Icons';
 import { ScrollTest } from './ScrollTest';
 
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
+type MouseButtonAction = Extract<Action, { type: 'mouseClick' | 'mouseHold' | 'mouseToggle' | 'mouseDown' | 'mouseUp' }>;
+const MOUSE_BEHAVIORS = [
+  { type: 'mouseClick', label: 'Click', hint: 'Press and release the selected buttons.' },
+  { type: 'mouseHold', label: 'Hold', hint: 'Hold the selected buttons until you release the physical button.' },
+  { type: 'mouseToggle', label: 'Toggle', hint: 'Press once to hold; press again to release.' },
+  { type: 'mouseDown', label: 'Down', hint: 'Press the selected buttons and leave them down.' },
+  { type: 'mouseUp', label: 'Up', hint: 'Release buttons held by Down or Toggle.' },
+] as const;
+function isMouseButtonAction(action: Action): action is MouseButtonAction {
+  return MOUSE_BEHAVIORS.some(behavior => behavior.type === action.type);
+}
 type PointerAction = Extract<Action, { type: 'mouseX' | 'mouseY' | 'mouseXY' }>;
 function isPointerAction(action: Action): action is PointerAction {
   return action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY';
@@ -205,6 +216,7 @@ export function Inspector() {
     ? [-2, -1, 1, 2] : [-1, 1];
   const setType = (type: ActionType) => {
     if (type === 'mouseX' && isPointerAction(action)) return;
+    if (type === 'mouseClick' && isMouseButtonAction(action)) return;
     if (type === action.type) return;
     setAction(slot, action);
     const remembered = rememberedAction(slot, type);
@@ -224,6 +236,14 @@ export function Inspector() {
     else update(next);
   };
 
+  const setMouseBehavior = (type: MouseButtonAction['type']) => {
+    if (!isMouseButtonAction(action) || action.type === type || (type === 'mouseHold' && rotation)) return;
+    setAction(slot, action);
+    const remembered = rememberedAction(slot, type);
+    const next = remembered && isMouseButtonAction(remembered) ? remembered : blankAction(type);
+    if (isMouseButtonAction(next)) update({ ...next, buttons: action.buttons });
+  };
+
   const setMovementAxis = (type: PointerAction['type']) => {
     if (!isPointerAction(action) || action.type === type) return;
     setAction(slot, action);
@@ -240,7 +260,8 @@ export function Inspector() {
       update({ type, delta, ...hold });
     }
   };
-  const selectableActions = ACTION_DESCRIPTORS.filter(d => d.type !== 'mouseY' && d.type !== 'mouseXY').filter(d => macro
+  const selectableActions = ACTION_DESCRIPTORS.filter(d => d.type !== 'mouseY' && d.type !== 'mouseXY' &&
+    !MOUSE_BEHAVIORS.some(behavior => behavior.type === d.type && behavior.type !== 'mouseClick')).filter(d => macro
     ? d.type !== 'macro' && d.type !== 'none' && !d.needsRelease
     : d.type !== 'pause');
   const singleRun = action.type === 'macro' && macroSwitchesLayer(p.macros?.[action.macro]?.actions ?? []);
@@ -261,7 +282,7 @@ export function Inspector() {
 
       <label class="field">
         <span class="field-label">Action</span>
-        <select value={isPointerAction(action) ? 'mouseX' : action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
+        <select value={isPointerAction(action) ? 'mouseX' : isMouseButtonAction(action) ? 'mouseClick' : action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
           {!actionDescriptor && <option value={action.type} disabled>Unsupported saved action</option>}
           {GROUPS.filter(group => selectableActions.some(d => d.group === group)).map((group) => (
             <optgroup key={group} label={group}>
@@ -273,7 +294,7 @@ export function Inspector() {
             </optgroup>
           ))}
         </select>
-        <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
+        <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : isMouseButtonAction(action) ? 'Click, hold, toggle, press, or release mouse buttons.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
       </label>
 
       {macro && isMacroLayerSwitch(action) && <p class="hint">A layer switch must be the final macro step. Macros containing a layer switch must run once, even if the target layer is already active.</p>}
@@ -388,12 +409,23 @@ export function Inspector() {
         <KeyPicker usage={action.usage} modifiers={action.modifiers} onChange={(usage, modifiers) => update({ ...action, usage, modifiers })} />
       )}
 
-      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle' || action.type === 'mouseDown' || action.type === 'mouseUp') && (
+      {isMouseButtonAction(action) && <>
+        <label class="field">
+          <span class="field-label">Behavior</span>
+          <select aria-label="Mouse behavior" aria-describedby="mouse-behavior-hint" value={action.type}
+            onChange={e => setMouseBehavior((e.target as HTMLSelectElement).value as MouseButtonAction['type'])}>
+            {MOUSE_BEHAVIORS.map(behavior => <option key={behavior.type} value={behavior.type} disabled={behavior.type === 'mouseHold' && rotation}>{behavior.label}</option>)}
+          </select>
+          <span class="hint" id="mouse-behavior-hint">
+            {MOUSE_BEHAVIORS.find(behavior => behavior.type === action.type)?.hint}
+            {rotation && <> Hold is not available on this input.</>}
+          </span>
+        </label>
         <MouseButtons value={action.buttons} onChange={(buttons) => update({ ...action, buttons })} />
-      )}
+      </>}
 
       {(action.type === 'mouseDown' || action.type === 'mouseUp' || action.type === 'mouseToggle') && <p class="hint">Persistent mouse state is shared across inputs and macros. Layer changes and resets clear it; macro completion does not.</p>}
-      {'buttons' in action && <p class="hint">Buttons 4–8 depend on your operating system and application. Browser Back/Forward mappings are common for buttons 4/5, but are not guaranteed.</p>}
+      {'buttons' in action && (action.buttons & 0xF8) !== 0 && <p class="hint">Buttons 4–8 depend on your operating system and application. Browser Back/Forward mappings are common for buttons 4/5, but are not guaranteed.</p>}
 
       {action.type === 'mouseClick' && (
         <div class="field">
@@ -411,7 +443,7 @@ export function Inspector() {
         </div>
       )}
 
-      {(action.type === 'mouseClick' || action.type === 'mouseHold' || action.type === 'mouseToggle' || action.type === 'mouseDown' || action.type === 'mouseUp') && (
+      {isMouseButtonAction(action) && (
         <p class="hint"><button type="button" class="inline-link" onClick={() => setShowScrollTest(true)}>Click here</button> to test your configured mouse events.</p>
       )}
 

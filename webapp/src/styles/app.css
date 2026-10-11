@@ -1418,6 +1418,9 @@ output {
   position: absolute;
   right: 8px;
   bottom: 8px;
+}
+.keycap.has-problem::after,
+.swatch-problem {
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -1634,9 +1637,6 @@ output {
 }
 .swatch-selected {
   border: 2px solid var(--accent);
-}
-.swatch-problem {
-  border: 2px solid var(--danger);
 }
 .swatch-chord {
   background: var(--sim-soft);

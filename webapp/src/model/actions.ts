@@ -140,21 +140,21 @@ export function summarize(action: Action): string {
     case 'consumerModified':
       return [...modifierNames(action.modifiers), consumerName(action.usage)].join(' + ');
     case 'mouseClick':
-      return `${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `Mouse ${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
-      return `Hold ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `Mouse Hold ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseDown':
-      return `Down ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `Mouse Down ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseUp':
-      return `Up ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `Mouse Up ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseToggle':
-      return `Toggle ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `Mouse Toggle ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'scroll':
       return `${action.delta < 0 ? `Scroll ${action.horizontal ? 'left' : 'up'} ${-action.delta}` : `Scroll ${action.horizontal ? 'right' : 'down'} ${action.delta}`}${action.hold ? ' (hold)' : ''}`;
     case 'mouseX':
-      return `Mouse ${action.delta < 0 ? 'left' : 'right'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
+      return `Mouse X ${action.delta}${action.hold ? ' (hold)' : ''}`;
     case 'mouseY':
-      return `Mouse ${action.delta < 0 ? 'up' : 'down'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
+      return `Mouse Y ${action.delta}${action.hold ? ' (hold)' : ''}`;
     case 'mouseXY':
       return `Mouse X ${action.x}, Y ${action.y}${action.hold ? ' (hold)' : ''}`;
     case 'consumer':

@@ -3,7 +3,7 @@ import { installDragAutoScroll } from './dragAutoScroll';
 import { siteUrl } from '../site';
 import { FORMAT_VERSION } from '../model/constants';
 import { TRANSPORT_VERSION } from '../protocol/packet';
-import { clearSelectedAction, connectSimulator, connection, copySelectedConfiguration, cutSelectedConfiguration, dialog, getAction, pasteSelectedConfiguration, profile, selectedSlot } from './store';
+import { clearSelectedAction, connectSimulator, connection, copySelectedConfiguration, cutSelectedConfiguration, dialog, getAction, issues, pasteSelectedConfiguration, profile, selectedSlot } from './store';
 import { TopBar } from './components/TopBar';
 import { Welcome } from './components/Welcome';
 import { ProfilePanel } from './components/ProfilePanel';
@@ -125,7 +125,7 @@ export function App() {
               <p class="hint device-drag-hint">Drag actions onto an existing action to swap; drag to an edge or between items to insert and reorder. Hold actions cannot be moved to encoder rotation.</p>
               <ul class="legend device-legend">
                 <li><span class="swatch swatch-selected" /> Selected input</li>
-                <li><span class="swatch swatch-problem" /> Needs attention before saving</li>
+                {issues.value.some(issue => issue.slot) && <li><span class="swatch-problem" aria-hidden="true">!</span> Needs attention before saving</li>}
                 <li><span class="swatch swatch-chord" /> Key that also participates in a chord</li>
               </ul>
             </section>
