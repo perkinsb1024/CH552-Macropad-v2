@@ -124,7 +124,15 @@ python3 -m http.server 8080 --directory webUploader/dist
 
 Open `http://localhost:8080/`. The configurator backlink is intended for the combined Pages deployment. To build the complete site, run `npm run build` in `webapp/`; it adds the uploader to `webapp/dist/webUploader/`.
 
-The build requires exactly one generated HEX per variant in `releases/` (including the release tool’s `dirty-` filename marker for uncommitted firmware), validates record checksums and the 14 KiB application boundary, copies those files into `firmware/`, and writes a SHA-256 manifest. The page checks each download against that manifest before enabling install. The Pages workflow watches `releases/`, `webUploader/`, and `.gitmodules` as well as the configurator.
+Before publishing changes, run `npm run verify:deploy` from `webapp/`. This shared
+local and GitHub Actions gate runs configurator tests, rebuilds and tests the
+standalone uploader, then builds the complete site and verifies frozen archives.
+Run it after the final release files and README edits; the installer bundles
+the root README's release notes. Follow the
+[release process](../documentation/Firmware%20Release%20Process.md) for firmware
+checks and the required pull-request status check.
+
+The build requires exactly one generated HEX per variant in `releases/` (including the release tool’s `dirty-` filename marker for uncommitted firmware), validates record checksums and the 14 KiB application boundary, copies those files into `firmware/`, and writes a SHA-256 manifest. The page checks each download against that manifest before enabling install. The Pages workflow watches `releases/`, `webUploader/`, the root README, firmware/test dependencies, and `.gitmodules` as well as the configurator. Pull-request validation has no path filter.
 
 ## Beta Validation Still Required
 

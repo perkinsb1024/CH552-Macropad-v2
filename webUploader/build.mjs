@@ -6,6 +6,7 @@ import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseHex } from './src/hex.mjs';
 import { firmwareFormat } from './src/firmware-format.mjs';
+import { parseReleaseNotes } from './release-notes.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const upstream = join(root, 'upstream');
@@ -93,10 +94,9 @@ ${core}
   if (!currentFormatVersion) throw new Error('Cannot identify current configurator format.');
   // Bundle the README's version history so the installer stays in sync with it.
   const readme = await readFile(resolve(root, '../README.md'), 'utf8');
-  const releaseNotes = {};
-  for (const match of readme.matchAll(/^\| \[v(\d+)\]\([^|]+\) \| (.+) \|$/gm)) {
-    releaseNotes[match[1]] = match[2].replace(/<br>\s*-\s*/g, '; ').replace(/^-\s*/, '')
-      .replace(/\*\*/g, '').replace(/\*([^*]+)\*/g, '$1').replace(/ · /g, ' / ');
+  const releaseNotes = parseReleaseNotes(readme);
+  for (const version of new Set([...firmware, ...previousFirmware].map(entry => entry.formatVersion))) {
+    if (!releaseNotes[version]) throw new Error(`Missing README release notes for published format v${version}.`);
   }
   await writeFile(join(output, 'firmware.json'), JSON.stringify({ upstreamRevision: revision, currentFormatVersion, firmware, previousFirmware, releaseNotes }, null, 2) + '\n');
   console.log(`Built beta uploader: ${output}\nUpstream: ${revision}\nFirmware: ${firmware.map(f => f.name).join(', ')}`);

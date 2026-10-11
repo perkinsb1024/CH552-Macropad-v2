@@ -21,6 +21,7 @@ npm run dev        # http://localhost:5173
 npm test           # codec, protocol and JSON round-trip tests (vitest)
 npm run typecheck
 npm run build      # typecheck + production build into dist/
+npm run verify:deploy # full local and CI deployment gate
 npm run preview    # serve dist/ locally
 ```
 
@@ -109,11 +110,22 @@ either the draft or the device profile.
 ## Deploying to GitHub Pages
 
 `vite.config.ts` uses a relative `base`, so the build works from any path.
-`.github/workflows/deploy-pages.yml` builds, tests, and publishes `webapp/dist`
-when webapp changes are pushed to `main`, or when run manually. In the repository's
+`.github/workflows/deploy-pages.yml` runs `npm run verify:deploy` on every pull
+request to `main` and every merge-queue candidate. It builds, tests, and publishes
+`webapp/dist` when deployment inputs are pushed to `main`, or when run manually
+on `main`. Inputs include the root README's release notes, web app/uploader,
+release files and firmware/test dependencies. Pull-request checks have no path
+filter and do not publish Pages artifacts or deploy. In the repository's
 **Settings → Pages**, the publishing source must be **GitHub Actions**. Existing
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
+
+Run `npm run verify:deploy` after the final edits before publishing. The command
+runs configurator tests, rebuilds and tests the standalone uploader, then builds
+the complete site and verifies archives. Require the **Verify deployment**
+status check through repository protection as described in the
+[release process](../documentation/Firmware%20Release%20Process.md#validate-before-merging).
+Adding the workflow does not enable that repository setting.
 
 The active format 14 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`

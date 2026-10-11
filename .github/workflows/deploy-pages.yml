@@ -3,22 +3,37 @@
 name: Deploy configurator
 
 on:
+  # Required PR checks must run even when only documentation changes.
+  pull_request:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
-    paths: ['webapp/**', 'webUploader/**', 'releases/**', '.gitmodules', '.github/workflows/deploy-pages.yml']
+    paths:
+      - 'webapp/**'
+      - 'webUploader/**'
+      - 'releases/**'
+      - 'README.md'
+      - 'src/**'
+      - 'tests/**'
+      - 'pio-platform/**'
+      - '*.ino'
+      - 'platformio.ini'
+      - '.gitmodules'
+      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
+    name: Verify deployment
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,30 +44,31 @@ jobs:
           # Historical firmware tests compare HEX files against their release commits.
           fetch-depth: 0
           submodules: true
-      - uses: actions/configure-pages@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci
-      - run: npm test
-      - name: Build beta uploader and test bootloader protocol
-        run: |
-          node ../webUploader/build.mjs
-          node --test ../webUploader/tests/*.test.mjs
-      - name: Build latest configurator and verify frozen archives
-        run: npm run build
+      - name: Run the shared deployment gate
+        run: npm run verify:deploy
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         with:
           path: webapp/dist
 
   deploy:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/configure-pages@v5
       - id: deployment
         uses: actions/deploy-pages@v4

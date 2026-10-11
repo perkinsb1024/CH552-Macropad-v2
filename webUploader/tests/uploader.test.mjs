@@ -7,8 +7,10 @@ import { firmwareChoices, previousReleases, selectedFirmware } from '../src/firm
 import { Ch552Bootloader } from '../dist/bootloader.mjs';
 import { parseHex, CODE_LIMIT } from '../src/hex.mjs';
 import { firmwareFormat, configuratorPath } from '../src/firmware-format.mjs';
+import { parseReleaseNotes } from '../release-notes.mjs';
 
 const manifest = JSON.parse(await readFile(new URL('../dist/firmware.json', import.meta.url), 'utf8'));
+const history = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
 const constants = await readFile(new URL('../../webapp/src/model/constants.ts', import.meta.url), 'utf8');
 const currentFormatVersion = Number(/FORMAT_VERSION\s*=\s*(\d+)/.exec(constants)?.[1]);
 
@@ -494,9 +496,8 @@ test('the beta UI includes platform sources and the published source/license', a
 
 
 test('all historical releases match their exact committed HEX, metadata and checksums', async () => {
-  const source = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
-  assert.equal(source.firmware.length, 38);
-  assert.equal(manifest.previousFirmware.length, source.firmware.length);
+  assert.ok(history.firmware.length > 0);
+  assert.deepEqual(manifest.previousFirmware.map(({ keys, bytes, ...entry }) => entry), history.firmware);
   for (const entry of manifest.previousFirmware) {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
     const recorded = execFileSync('git', ['show', `${entry.releaseCommit}:releases/${entry.name}`]);
@@ -519,7 +520,8 @@ test('historical selection retains the default release and cannot cross board va
   for (const keys of [3, 6]) {
     assert.equal(selectedFirmware(manifest, keys), manifest.firmware.find(entry => entry.keys === keys));
     const choices = firmwareChoices(manifest, keys);
-    assert.equal(choices.length, 19);
+    const expectedNames = history.firmware.filter(entry => entry.name.startsWith(`ch552-macropad-${keys}-key-`)).map(entry => entry.name).sort();
+    assert.deepEqual(choices.map(entry => entry.name).sort(), expectedNames);
     assert.ok(choices.every(entry => entry.keys === keys));
     for (const entry of choices) {
       assert.equal(selectedFirmware(manifest, keys, entry.name), entry);
@@ -532,16 +534,21 @@ test('historical selection retains the default release and cannot cross board va
 test('previous release choices show each version once and select its newest build', () => {
   for (const keys of [3, 6]) {
     const choices = previousReleases(manifest, keys);
-    assert.deepEqual(choices.map(entry => entry.formatVersion), [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    const versions = [...new Set(history.firmware.filter(entry => entry.name.startsWith(`ch552-macropad-${keys}-key-`)).map(entry => entry.formatVersion))].sort((a, b) => b - a);
+    assert.deepEqual(choices.map(entry => entry.formatVersion), versions);
     for (const entry of choices) {
       const builds = firmwareChoices(manifest, keys).filter(build => build.formatVersion === entry.formatVersion);
       assert.ok(builds.every(build => build.publishedAt <= entry.publishedAt));
       assert.ok(manifest.releaseNotes[entry.formatVersion]?.length);
     }
   }
-  assert.match(manifest.releaseNotes[11], /32ms/);
-  assert.match(manifest.releaseNotes[12], /Mouse down/);
-  assert.match(manifest.releaseNotes[13], /simultaneous X\/Y/i);
-  assert.match(manifest.releaseNotes[14], /hold with modifiers/);
-  assert.ok(manifest.firmware.every(entry => entry.formatVersion === 14));
+  assert.ok(manifest.firmware.every(entry => entry.formatVersion === currentFormatVersion));
+});
+
+test('bundled release notes match the README and cover every published format', async () => {
+  const readme = await readFile(new URL('../../README.md', import.meta.url), 'utf8');
+  assert.deepEqual(manifest.releaseNotes, parseReleaseNotes(readme));
+  for (const version of new Set([...manifest.firmware, ...manifest.previousFirmware].map(entry => entry.formatVersion))) {
+    assert.ok(manifest.releaseNotes[version]?.trim(), `Missing notes for published format v${version}`);
+  }
 });

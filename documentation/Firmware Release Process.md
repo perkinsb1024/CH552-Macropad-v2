@@ -53,15 +53,17 @@ the previous hash, old release filenames, obsolete “no release” claims and
 unsupported-format statements. Keep intentional historical references; point
 historical HEX links at their preserved firmware-history files when necessary.
 
-## Run All Checks
+## Validate the Final Release Contents
+
+Finish the release files, archive updates and documentation before running the
+final checks. In particular, the uploader bundles release notes from the root
+README, so documentation edits can change the deployed site.
 
 From the repository root:
 
 ```sh
 python3 tests/run_host_tests.py
 python3 tests/run_host_tests.py --no-preview
-node webUploader/build.mjs
-node --test webUploader/tests/*.test.mjs
 ```
 
 Build both native variants into temporary directories with the real application
@@ -71,17 +73,43 @@ Confirm their linked memory layouts and compare the HEX contents with the releas
 From `webapp/`:
 
 ```sh
-npm test
-npm run build
+npm run verify:deploy
 ```
 
-The complete build checks types and frozen archive checksums and bundles the
-latest uploader. Confirm its manifest contains the intended latest pair and
+This is the same deployment gate used by GitHub Actions: configurator tests,
+a fresh standalone uploader build and all uploader tests, then the complete site
+build with type checks and frozen archive verification. Running `npm test` and
+`npm run build` separately does not run the uploader tests.
+
+Confirm the generated manifest contains the intended latest pair and
 all preserved previous releases. Check **Version History** selects
 **Latest Release** for the current version and the matching **Previous Release**
 for older versions, with both hardware variants available and correct editor
-links. Update release-specific test expectations when the history grows.
+links. Release-history tests check the recorded inventory, README synchronization
+and coverage of every published format; editorial feature wording is not a
+test contract.
 
 Before publishing, verify every current release link names an existing file
 for the correct hardware variant and review the complete diff. Leave generated
 firmware copies and manifests to the uploader build.
+
+If relevant files change after validation, rerun the affected checks and run the
+complete deployment gate again before publishing. Report results separately for
+firmware regressions/native builds, configurator tests, uploader tests and the
+complete site/archive build. Identify the tested source revision and any
+uncommitted changes; report skipped or failed checks explicitly.
+
+## Validate Before Merging
+
+Prepare release changes in a pull request targeting `main`. The deployment
+workflow runs the **Verify deployment** check on every pull request to `main`,
+including documentation-only changes, and on merge-queue candidates. These runs
+validate the proposed contents without publishing Pages artifacts or deploying.
+Only a successful push to `main`, or a manual run on `main`, can deploy the site.
+
+After the workflow is published and its check has run, configure a branch rule or
+ruleset for `main` to require a pull request, the **Verify deployment** status
+check from GitHub Actions, and an up-to-date branch before merging. Apply the
+rule to administrators as well, without a routine bypass. See GitHub's
+[required status checks documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
+This is a repository setting; editing the workflow alone does not enforce it.
