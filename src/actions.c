@@ -198,7 +198,8 @@ static FW_BIT flushOutputs(void) {
   if (consumerReleasePending) return 0;
   if (consumerFirst) {
     consumerModifiers = 0;
-    if (actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED) {
+    if ((actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED ||
+        actionType(consumerFirst) == CONFIG_ACTION_CONSUMER_MODIFIED_HOLD)) {
       consumerModifiers = consumerHigh;
       consumerHigh = 0;
     }
@@ -283,6 +284,7 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       break;
     case CONFIG_ACTION_KEY_HOLD:
       break;
+    case CONFIG_ACTION_CONSUMER_MODIFIED_HOLD:
     case CONFIG_ACTION_CONSUMER_MODIFIED:
     case CONFIG_ACTION_CONSUMER:
     case CONFIG_ACTION_CONSUMER_HOLD:
@@ -291,15 +293,12 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       consumerSecond = second;
       // Modified output releases before a replacement changes its modifiers.
       // A tap also releases an interrupted physical consumer hold.
-      // Only types 4/7/8 reach here; bit 3 distinguishes hold from both taps.
-      if (consumerModifiers || (consumerOwner && !(first & CONFIG_ACTION_CONSUMER_HOLD)))
+      // Types 4/7/8/A reach here; bit 3 distinguishes both holds from taps.
+      if (consumerModifiers || (consumerOwner && actionType(first) != CONFIG_ACTION_CONSUMER_HOLD))
         consumerReleasePending = 1;
-      else if (first & CONFIG_ACTION_CONSUMER_HOLD) consumerReleasePending = 0;
+      else if (actionType(first) == CONFIG_ACTION_CONSUMER_HOLD) consumerReleasePending = 0;
       consumerOwner = 0;
       if (first & CONFIG_ACTION_CONSUMER_HOLD) consumerOwner = input + 1;
-      break;
-    case CONFIG_ACTION_MOMENTARY_LAYER:
-      layerSelectionPending = 1;
       break;
     case CONFIG_ACTION_MOUSE_TOGGLE:
       if (first == CONFIG_ACTION_MOUSE_HOLD) break;
@@ -317,6 +316,10 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       }
       // Fall through: both layer actions share the one-shot flag and assignment.
     case CONFIG_ACTION_SET_LAYER:
+      if (first == CONFIG_ACTION_MOMENTARY_LAYER) {
+        layerSelectionPending = 1;
+        break;
+      }
       if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
       layerSelectionPending = 1;
       if (first & 0x10) {
@@ -353,7 +356,7 @@ static void updateLayer(void) {
     newest = 0;
     for (i = 0; i < MAX_INPUTS; i++) {
       if (buttonPressed[i] &&
-          actionType(buttonFirst[i]) == CONFIG_ACTION_MOMENTARY_LAYER &&
+          buttonFirst[i] == CONFIG_ACTION_MOMENTARY_LAYER &&
           buttonOrder[i] >= newest) {
         newest = buttonOrder[i];
         next = buttonSecond[i];
@@ -534,7 +537,8 @@ static void releaseAction(uint8_t input) {
     // Keep a brief hold alive until its press report has been accepted.
     buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
                            buttonFirst[input] == CONFIG_ACTION_MOUSE_HOLD ||
-                           type == CONFIG_ACTION_CONSUMER_HOLD ? 2 : 0;
+                           (type == CONFIG_ACTION_CONSUMER_HOLD ||
+                            type == CONFIG_ACTION_CONSUMER_MODIFIED_HOLD) ? 2 : 0;
   }
 }
 

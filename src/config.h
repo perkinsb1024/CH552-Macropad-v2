@@ -5,8 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 13: 8-bit modified consumer taps; mouse hold joins mouse state actions.
-#define CONFIG_VERSION 13
+// Format 14 experiment: modified consumer holds and consolidated layer modes.
+#define CONFIG_VERSION 14
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
 #endif
@@ -80,11 +80,12 @@
 #endif
 #define CONFIG_ACTION_CONSUMER         0x7
 #define CONFIG_ACTION_CONSUMER_HOLD    0x8
+#define CONFIG_ACTION_CONSUMER_MODIFIED_HOLD 0xA
 // Full first byte: type None with auxiliary value 1.
 #define CONFIG_ACTION_STRING           0x10
 #define CONFIG_ACTION_PAUSE            0x20 // Parameter: 16 ms units, 0-255.
 #define CONFIG_ACTION_SET_LAYER        0x9
-#define CONFIG_ACTION_MOMENTARY_LAYER  0xA
+#define CONFIG_ACTION_MOMENTARY_LAYER  0x29 // Full first byte: Set layer mode 2.
 #define CONFIG_ACTION_RELATIVE_LAYER   0xB
 #define CONFIG_ACTION_MOUSE_AXIS       0xC
 #define CONFIG_ACTION_MOUSE_XY          0xD

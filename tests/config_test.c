@@ -346,7 +346,7 @@ static void testActions(void) {
                    type == CONFIG_ACTION_MOUSE_AXIS ||
                    type == CONFIG_ACTION_MOUSE_XY) {
             param = 1;
-        } else if (type == CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_CONSUMER_HOLD) {
+        } else if (type == CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_CONSUMER_HOLD || type == CONFIG_ACTION_CONSUMER_MODIFIED_HOLD) {
             param = 0xE9;
             activeConfig[9] = 0x08; // Volume up
         } else if (type == CONFIG_ACTION_STRING) {
@@ -394,7 +394,7 @@ static void testActions(void) {
             assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux <= 1));
         }
     }
-    activeConfig[9] = 0x10 | CONFIG_ACTION_MOMENTARY_LAYER;
+    activeConfig[9] = 0x40 | CONFIG_ACTION_SET_LAYER;
     activeConfig[23] = CONFIG_ACTION_NONE;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
@@ -485,8 +485,8 @@ static void testPreviousLayerSentinel(void) {
                 activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4);
                 for (uint16_t target = 0; target < 256; target++) {
                     activeConfig[10] = target; seal();
-                    assert(configValid(activeConfig, variant) == (version == CONFIG_VERSION && aux <= 1 &&
-                        (target < configLayerCount() || (version == CONFIG_VERSION && target == CONFIG_LAYER_PREVIOUS))));
+                    assert(configValid(activeConfig, variant) == (version == CONFIG_VERSION && aux <= 2 &&
+                        (target < configLayerCount() || (aux <= 1 && target == CONFIG_LAYER_PREVIOUS))));
                 }
             }
             activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;

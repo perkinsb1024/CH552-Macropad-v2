@@ -123,6 +123,9 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
                    keyboardUsageValid(param);
+        case CONFIG_ACTION_CONSUMER_MODIFIED_HOLD:
+            if (rotation) return 0;
+            // Fall through: both modified consumer types use eight-bit usages.
         case CONFIG_ACTION_CONSUMER_MODIFIED:
             return param != 0; // Eight-bit usage; all four modifier bits are valid.
         case CONFIG_ACTION_MOUSE_CLICK:
@@ -158,10 +161,9 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             if (aux != 1 || param >= validationUsed) return 0;
             return param == 0 || validationImage[validationPool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
+            if (aux == 2) return param < validationLayers && !rotation;
             return aux <= 1 && (param < validationLayers ||
                    param == CONFIG_LAYER_PREVIOUS);
-        case CONFIG_ACTION_MOMENTARY_LAYER:
-            return aux == 0 && param < validationLayers && !rotation;
         default:
             return 0;
     }
