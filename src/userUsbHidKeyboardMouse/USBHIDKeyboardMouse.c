@@ -273,8 +273,9 @@ static FW_BIT queueKeyboard(const __xdata uint8_t *keys) {
   __xdata uint8_t *report = reportQueue[reportHead];
   *report++ = 1;
   for (i = 0; i < 8; i++) {
-    *report++ = keys[i];
-    keyboardState[i] = keys[i];
+    uint8_t key = keys[i];
+    *report++ = key;
+    keyboardState[i] = key;
   }
   return queueReport(9);
 }

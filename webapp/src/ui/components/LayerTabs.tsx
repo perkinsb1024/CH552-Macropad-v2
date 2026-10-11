@@ -1,7 +1,51 @@
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { addLayer, ask, canInsertLayer, closeDialog, draggedLayer, insertLayer, layerDrop, layerName, profile, removeLayer, selectedLayer, selectedSlot, swapLayers } from '../store';
 import { dropPosition } from '../drag';
 import { maxLayers } from '../../model/constants';
-import { IconPlus, IconTrash } from './Icons';
+import { IconChevron, IconPlus, IconTrash } from './Icons';
+
+function AddLayerMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    itemRef.current?.focus();
+    const close = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open]);
+  return (
+    <div class="menu layer-add-menu" ref={ref} onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+    }} onKeyDown={(event) => {
+      if (event.key === 'Escape' && open) {
+        event.preventDefault();
+        setOpen(false);
+        triggerRef.current?.focus();
+      } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        setOpen(true);
+        itemRef.current?.focus();
+      }
+    }}>
+      <div class="layer-add-buttons">
+        <button type="button" class="tab tab-add" onClick={() => { setOpen(false); addLayer(); }} title="Create a new blank layer"><IconPlus /> Add layer</button>
+        <button type="button" class="tab tab-add layer-add-trigger" ref={triggerRef} aria-label="More layer options" title="More layer options" aria-haspopup="menu" aria-expanded={open} aria-controls={open ? 'layer-add-options' : undefined} onClick={() => setOpen(!open)}><IconChevron /></button>
+      </div>
+      {open && <div class="menu-list" id="layer-add-options" role="menu" aria-label="Layer options">
+        <button type="button" role="menuitem" ref={itemRef} onClick={() => {
+          setOpen(false);
+          triggerRef.current?.focus();
+          addLayer('duplicate');
+        }}>Duplicate current layer</button>
+      </div>}
+    </div>
+  );
+}
 
 export function LayerTabs() {
   const p = profile.value!;
@@ -84,7 +128,6 @@ export function LayerTabs() {
               clearDrag();
             }}
           >
-            <span class="tab-index">{i + 1}</span>
             <span class="tab-name">{layerName(i)}</span>
             {p.startupLayer === i && <span class="tab-badge" title="Startup layer">start</span>}
             {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
@@ -92,7 +135,7 @@ export function LayerTabs() {
         );
       })}
       {p.layers.length < maxLayers(p.variant) && (
-        <button class="tab tab-add" onClick={addLayer} title="Add layer"><IconPlus /> Add layer</button>
+        <AddLayerMenu />
       )}
     </div>
     <button class="btn btn-icon btn-danger layer-delete" aria-label={`Remove ${layerName(current)}`} title={p.layers.length === 1 ? 'At least one layer is required' : `Remove ${layerName(current)}`} disabled={p.layers.length === 1} onClick={removeSelected}><IconTrash /></button>

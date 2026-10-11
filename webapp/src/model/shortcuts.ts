@@ -66,6 +66,21 @@ function snippets(category: string, entries: readonly Entry[]): Shortcut[] {
   }));
 }
 
+type ModifiedMediaEntry = readonly [name: string, binding: string, usage: number, modifiers: number, note: string, ...tags: string[]];
+
+/** macOS system shortcuts use Consumer Page usages, not keyboard F-keys. */
+function macMedia(entries: readonly ModifiedMediaEntry[]): Shortcut[] {
+  return entries.map(([name, binding, usage, modifiers, note, ...tags]) => ({
+    id: `${slug(name)}-mac`, name, binding, note,
+    tags: ['mac', 'macOS', 'Media', 'System', 'Modifiers', ...(modifiers & MOD_ALT ? ['Alt'] : []), ...tags],
+    action: { type: 'consumerModified', usage, modifiers },
+  }));
+}
+
+const DISPLAY_SUPPORT = 'Requires macOS and display support for brightness controls.';
+const EXTERNAL_DISPLAY_SUPPORT = 'Adjusts a supported external display; macOS cannot control brightness on every monitor.';
+const VOLUME_FEEDBACK = 'Temporarily reverses Play feedback when volume is changed in Sound settings: silent when enabled, audible when disabled.';
+
 // References and firmware limits: webapp/SHORTCUTS.md.
 export const SHORTCUTS: readonly Shortcut[] = [
   ...paired(['Editing', 'Clipboard'], [
@@ -347,6 +362,21 @@ export const SHORTCUTS: readonly Shortcut[] = [
     note: 'Host, application, or display support is required for consumer media keys.',
     action: { type: 'consumer', usage: control.usage },
   })),
+  ...macMedia([
+    ['Fine brightness up', 'Option+Shift+Brightness Up', 0x6f, MOD_ALT | MOD_SHIFT, DISPLAY_SUPPORT, 'Display', 'Fine', 'Small steps', 'Hardware dependent'],
+    ['Fine brightness down', 'Option+Shift+Brightness Down', 0x70, MOD_ALT | MOD_SHIFT, DISPLAY_SUPPORT, 'Display', 'Fine', 'Small steps', 'Hardware dependent'],
+    ['Fine volume up', 'Option+Shift+Volume Up', 0xe9, MOD_ALT | MOD_SHIFT, 'Adjusts macOS volume in smaller steps; the audio output must support volume control.', 'Volume', 'Audio', 'Fine', 'Small steps'],
+    ['Fine volume down', 'Option+Shift+Volume Down', 0xea, MOD_ALT | MOD_SHIFT, 'Adjusts macOS volume in smaller steps; the audio output must support volume control.', 'Volume', 'Audio', 'Fine', 'Small steps'],
+    ['Volume up (reverse audio feedback)', 'Shift+Volume Up', 0xe9, MOD_SHIFT, VOLUME_FEEDBACK, 'Volume', 'Audio', 'Silent', 'Without audio feedback'],
+    ['Volume down (reverse audio feedback)', 'Shift+Volume Down', 0xea, MOD_SHIFT, VOLUME_FEEDBACK, 'Volume', 'Audio', 'Silent', 'Without audio feedback'],
+    ['Open Display settings', 'Option+Brightness Up', 0x6f, MOD_ALT, 'Opens macOS Displays settings.', 'Display', 'Brightness', 'Settings'],
+    ['Open Sound settings', 'Option+Volume Up', 0xe9, MOD_ALT, 'Opens macOS Sound settings.', 'Volume', 'Audio', 'Settings'],
+    ['External display brightness up', 'Ctrl+Brightness Up', 0x6f, MOD_CTRL, EXTERNAL_DISPLAY_SUPPORT, 'Display', 'External monitor', 'Hardware dependent'],
+    ['External display brightness down', 'Ctrl+Brightness Down', 0x70, MOD_CTRL, EXTERNAL_DISPLAY_SUPPORT, 'Display', 'External monitor', 'Hardware dependent'],
+    ['Fine external display brightness up', 'Ctrl+Option+Shift+Brightness Up', 0x6f, MOD_CTRL | MOD_ALT | MOD_SHIFT, EXTERNAL_DISPLAY_SUPPORT, 'Display', 'External monitor', 'Fine', 'Small steps', 'Hardware dependent'],
+    ['Fine external display brightness down', 'Ctrl+Option+Shift+Brightness Down', 0x70, MOD_CTRL | MOD_ALT | MOD_SHIFT, EXTERNAL_DISPLAY_SUPPORT, 'Display', 'External monitor', 'Fine', 'Small steps', 'Hardware dependent'],
+    ['Toggle display mirroring', 'Cmd+Brightness Down', 0x70, MOD_GUI, 'Toggles macOS video mirroring when more than one display is connected.', 'Display', 'External monitor', 'Mirroring'],
+  ]),
 ];
 
 export function filterShortcuts(os: ShortcutFilter, query: string): readonly Shortcut[] {

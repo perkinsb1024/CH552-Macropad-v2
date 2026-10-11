@@ -215,6 +215,33 @@ static void testMouseButtonMasks(void) {
     }
 }
 
+static void testEveryChordPair(void) {
+    // Enumerate the specified lexicographic table independently of the formula.
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        uint8_t keys = variant ? 3 : 6;
+        uint8_t pairs = keys * (keys - 1) / 2;
+        for (uint8_t selected = 0; selected < pairs; selected++) {
+            testLoadStarterProfile(variant);
+            uint8_t offset = configTimedOffset();
+            activeConfig[5] |= 2;
+            activeConfig[offset] = selected;
+            activeConfig[offset + 1] = CONFIG_ACTION_KEY_TAP;
+            activeConfig[offset + 2] = 4 + selected;
+            seal(); assert(configValid(activeConfig, variant));
+            uint8_t index = 0;
+            for (uint8_t a = 0; a < keys; a++) {
+                for (uint8_t b = a + 1; b < keys; b++, index++) {
+                    uint8_t first = 0, second = 0;
+                    assert(!!configChord(0, a, b, &first, &second) == (index == selected));
+                    if (index == selected) assert(first == CONFIG_ACTION_KEY_TAP && second == 4 + selected);
+                    assert(!!configChord(0, b, a, &first, &second) == (index == selected));
+                    if (index == selected) assert(first == CONFIG_ACTION_KEY_TAP && second == 4 + selected);
+                }
+            }
+        }
+    }
+}
+
 static void testPersistentMouseModes(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t aux = 0; aux < 16; aux++) {
@@ -234,16 +261,20 @@ static void testPersistentMouseModes(void) {
                 if (slot == 5) offset = configTimedOffset(); // Unreferenced macro step.
                 activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_TOGGLE;
                 activeConfig[offset + 1] = 0xFF;
-                seal(); assert(!!configValid(activeConfig, variant) == (aux <= 2));
+                seal(); assert(!!configValid(activeConfig, variant) ==
+                    (aux <= 2 || (aux == 3 && (slot == 0 || slot == 2))));
                 activeConfig[offset + 1] = 0;
                 seal(); assert(!configValid(activeConfig, variant));
-                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_HOLD;
-                activeConfig[offset + 1] = 0xFF;
-                seal(); assert(!!configValid(activeConfig, variant) == (!aux && (slot == 0 || slot == 2)));
+                activeConfig[offset] = (aux << 4) | CONFIG_ACTION_CONSUMER_MODIFIED;
+                for (unsigned mask = 0; mask < 256; mask++) {
+                    activeConfig[offset + 1] = mask;
+                    seal(); assert(!!configValid(activeConfig, variant) ==
+                        (mask >= 1));
+                }
             }
         }
         testLoadStarterProfile(variant);
-        activeConfig[2] = 11; seal(); assert(!configValid(activeConfig, variant));
+        activeConfig[2] = 12; seal(); assert(!configValid(activeConfig, variant));
     }
 }
 
@@ -283,19 +314,24 @@ static void testActions(void) {
     uint8_t type;
     uint8_t param;
     uint8_t aux;
-    for (type = CONFIG_ACTION_MOUSE_X; type <= CONFIG_ACTION_MOUSE_Y; type++) {
+    // Exhaust every flag/parameter combination on keys and wheel rotation.
+    for (type = CONFIG_ACTION_MOUSE_AXIS; type <= CONFIG_ACTION_MOUSE_XY; type++) {
+        unsigned value;
         for (aux = 0; aux < 16; aux++) {
-            testLoadStarterProfile(CONFIG_SIX_KEYS);
-            activeConfig[9] = (aux << 4) | type;
-            activeConfig[10] = 1;
-            seal();
-            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux <= 1));
-            activeConfig[9] = CONFIG_ACTION_NONE;
-            activeConfig[10] = 0;
-            activeConfig[23] = (aux << 4) | type;
-            activeConfig[24] = 1;
-            seal();
-            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux == 0));
+            for (value = 0; value < 256; value++) {
+                uint8_t valid = type == CONFIG_ACTION_MOUSE_AXIS ?
+                    aux < 4 && value != 0x80 : aux < 8;
+                testLoadStarterProfile(CONFIG_SIX_KEYS);
+                activeConfig[9] = (aux << 4) | type;
+                activeConfig[10] = value;
+                seal();
+                assert(configValid(activeConfig, CONFIG_SIX_KEYS) == valid);
+                activeConfig[9] = activeConfig[10] = 0;
+                activeConfig[23] = (aux << 4) | type;
+                activeConfig[24] = value;
+                seal();
+                assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (valid && !(aux & 1)));
+            }
         }
     }
     for (type = 0; type < 16; type++) {
@@ -307,8 +343,8 @@ static void testActions(void) {
                    type <= CONFIG_ACTION_MOUSE_TOGGLE) {
             param = 1;
         } else if (type == CONFIG_ACTION_SCROLL ||
-                   type == CONFIG_ACTION_MOUSE_X ||
-                   type == CONFIG_ACTION_MOUSE_Y) {
+                   type == CONFIG_ACTION_MOUSE_AXIS ||
+                   type == CONFIG_ACTION_MOUSE_XY) {
             param = 1;
         } else if (type == CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_CONSUMER_HOLD) {
             param = 0xE9;
@@ -634,6 +670,7 @@ int main(void) {
     testCapacityAndStrings(CONFIG_THREE_KEYS);
     testStringBoundaries();
     testChords();
+    testEveryChordPair();
     testPersistentMouseModes();
     testMouseButtonMasks();
     testMultiClick();

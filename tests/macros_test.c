@@ -5,24 +5,29 @@
 #include "config_fixture.h"
 
 static uint8_t reports[1024][9];
-static unsigned count, ledCalls;
-static uint8_t blocked, pending, generation, ledCommand, ledValue;
+static unsigned count, ledCalls, reportLimit;
+static uint8_t blocked, pending, autoPending, generation, ledCommand, ledValue;
 uint8_t USB_queueKeyboard(const uint8_t *keys) {
-    if (blocked) return 0;
+    if (blocked || count >= reportLimit) return 0;
     assert(count < 1024); reports[count][0] = 1;
-    memcpy(reports[count++] + 1, keys, 8); return 1;
+    memcpy(reports[count++] + 1, keys, 8);
+    if (autoPending) pending = 1;
+    return 1;
 }
 uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
-    if (blocked) return 0;
+    if (blocked || count >= reportLimit) return 0;
     assert(count < 1024); uint8_t *r = reports[count++];
     r[0] = 2; r[1] = buttons; r[2] = x; r[3] = y;
     r[4] = (scroll & 15) == 15 ? -1 : scroll & 15; r[5] = (scroll >> 4) == 15 ? -1 : scroll >> 4;
+    if (autoPending) pending = 1;
     return 1;
 }
 uint8_t USB_queueConsumer(uint16_t usage) {
-    if (blocked) return 0;
+    if (blocked || count >= reportLimit) return 0;
     assert(count < 1024); reports[count][0] = 5;
-    reports[count][1] = usage; reports[count++][2] = usage >> 8; return 1;
+    reports[count][1] = usage; reports[count++][2] = usage >> 8;
+    if (autoPending) pending = 1;
+    return 1;
 }
 uint8_t USB_reportsPending(void) { return pending; }
 void USB_discardReports(void) { pending = 0; }
@@ -38,7 +43,7 @@ static uint8_t start;
 static void reset(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     start = configTimedOffset();
-    blocked = pending = 0; count = ledCalls = 0;
+    blocked = pending = autoPending = 0; count = ledCalls = 0; reportLimit = 1024;
     actionsInit(); actionsTimedReset(0);
 }
 static void bind(uint8_t input, uint8_t macro, uint8_t repeat) {
@@ -80,7 +85,7 @@ static void testValidation(void) {
         activeConfig[start] = (first & 0xF0) | CONFIG_ACTION_MACRO;
         activeConfig[start + 1] = second; seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     }
-    const uint8_t holds[] = {CONFIG_ACTION_KEY_HOLD, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_CONSUMER_HOLD, CONFIG_ACTION_MOMENTARY_LAYER, CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_Y};
+    const uint8_t holds[] = {CONFIG_ACTION_KEY_HOLD, CONFIG_ACTION_MOUSE_HOLD, CONFIG_ACTION_CONSUMER_HOLD, CONFIG_ACTION_MOMENTARY_LAYER, CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL, CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS, CONFIG_MOUSE_MOVE_HOLD | (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y), CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE | CONFIG_MOUSE_Y_NEGATIVE};
     for (unsigned i = 0; i < sizeof holds; i++) {
         activeConfig[start] = holds[i]; activeConfig[start + 1] = 1;
         seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
@@ -224,7 +229,7 @@ static void testQueueAndChords(void) {
 }
 static void testHeldPointer(void) {
     reset(); const uint8_t pair[] = {1, 4, 1, 5}; define(start, pair, 2); bind(0, start, 1);
-    activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_X;
+    activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
     activeConfig[12] = 1;
     actionsPress(1, 0); actionsPoll(0); press(0, 1); pump(1, 20);
     unsigned moves = 0;
@@ -392,27 +397,29 @@ static void testMouseDragAndScroll(void) {
     const uint8_t drag[] = {
         CONFIG_ACTION_MOUSE_DOWN, 0x80,
         CONFIG_ACTION_MOUSE_DOWN, 0x80,
-        CONFIG_ACTION_MOUSE_X, 12,
+        CONFIG_ACTION_MOUSE_AXIS, 12,
+        CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE, 0xF1,
         CONFIG_ACTION_SCROLL, 2,
         CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HORIZONTAL, 0xFD,
         CONFIG_ACTION_PAUSE, 1,
         CONFIG_ACTION_MOUSE_UP, 0x80,
         CONFIG_ACTION_MOUSE_UP, 0x80,
     };
-    define(start, drag, 8); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    define(start, drag, 9); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 2); assert(count == 0);
     // Down is applied once while a full transport refuses the changed report.
     blocked = 1; pump(2, 10); assert(count == 0);
     blocked = 0; actionsPoll(10); assert(count == 1 && latestMouse() == 0x80);
     pending = 1; pump(11, 30); assert(count == 1); // No movement before down drains.
     pending = 0; pump(30, 200);
-    assert(count == 8); // Down, X, two vertical, three horizontal, up.
+    assert(count == 9); // Down, X, combined, two vertical, three horizontal, up.
     assert(reports[1][1] == 0x80 && reports[1][2] == 12);
-    for (unsigned i = 2; i < 4; i++) assert(reports[i][1] == 0x80 && reports[i][4] == 1 && !reports[i][5]);
-    for (unsigned i = 4; i < 7; i++) assert(reports[i][1] == 0x80 && !reports[i][4] && reports[i][5] == 255);
-    assert(!reports[7][1]);
+    assert(reports[2][1] == 0x80 && (int8_t)reports[2][2] == -4 && reports[2][3] == 60);
+    for (unsigned i = 3; i < 5; i++) assert(reports[i][1] == 0x80 && reports[i][4] == 1 && !reports[i][5]);
+    for (unsigned i = 5; i < 8; i++) assert(reports[i][1] == 0x80 && !reports[i][4] && reports[i][5] == 255);
+    assert(!reports[8][1]);
     // Cancellation removes persistent drag state and the queued release/movement.
-    reset(); define(start, drag, 8); bind(0, start, 1);
+    reset(); define(start, drag, 9); bind(0, start, 1);
     press(0, 0); pump(0, 3); assert(latestMouse() == 0x80);
     actionsClear(); count = 0; pump(3, 100); assert(!count);
     // Macro completion retains a persistent press for a separate input to clear.
@@ -421,6 +428,48 @@ static void testMouseDragAndScroll(void) {
     activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = 0xF8;
     press(0, 0); pump(0, 30); assert(latestMouse() == 0xF8 && count == 1);
     press(1, 30); pump(30, 40); assert(latestMouse() == 0);
+}
+
+static void testCombinedPointerSources(void) {
+    // A chord hold stops when either chord member is released.
+    for (uint8_t released = 0; released < 2; released++) {
+        reset(); activeConfig[5] |= 2;
+        activeConfig[start] = 0;
+        activeConfig[start + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_Y_NEGATIVE;
+        activeConfig[start + 2] = 0xF1;
+        actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
+        assert(count == 2 && reports[1][2] == 4 && (int8_t)reports[1][3] == -60);
+        actionsRelease(released); pump(10, 30); assert(count == 2);
+    }
+    // Resolved pointer holds retain their axes and signs across layer changes.
+    reset(); activeConfig[3] = 1;
+    activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_X_NEGATIVE;
+    activeConfig[10] = 0xF1;
+    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+    actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
+    assert(actionsLayer() == 1 && count == 2);
+    assert((int8_t)reports[1][2] == -4 && reports[1][3] == 60);
+    actionsRelease(0); pump(10, 30); assert(count == 2);
+
+    // Both timer slots use the same dispatcher and preserve blocked tap reports.
+    reset(); uint8_t timer = start; activeConfig[3] = 1 << 6;
+    activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_Y_NEGATIVE;
+    activeConfig[timer + 2] = 0xF1;
+    activeConfig[timer + 3] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y;
+    activeConfig[timer + 4] = 0x81;
+    seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+    actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0);
+    blocked = 1; pump(0, 10); assert(count == 0);
+    blocked = 0; pump(10, 20);
+    assert(count == 1 && reports[0][2] == 4 && (int8_t)reports[0][3] == -60);
+    assert(!actionsTimedInput()); pump(20, 30);
+    assert(count == 2 && !reports[1][2] && (int8_t)reports[1][3] == -127);
+
+    reset(); const uint8_t step[] = {CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE | CONFIG_MOUSE_Y_NEGATIVE, 0xFF};
+    define(start, step, 1); bind(0, start, 2); seal();
+    assert(configValid(activeConfig, PHYSICAL_VARIANT)); press(0, 0); pump(0, 20);
+    assert(count == 2);
+    for (unsigned i = 0; i < count; i++) assert((int8_t)reports[i][2] == -60 && (int8_t)reports[i][3] == -60);
 }
 
 static void testMouseSources(void) {
@@ -442,8 +491,154 @@ static void testMouseSources(void) {
     assert(!actionsTimedInput()); pump(10, 20); assert(latestMouse() == 0);
 }
 
+static uint8_t latestModifiers(void) {
+    for (unsigned i = count; i > 0; i--)
+        if (reports[i - 1][0] == 1) return reports[i - 1][1];
+    return 0;
+}
+
+static void assertConsumer(unsigned index, uint16_t usage) {
+    assert(index < count && reports[index][0] == 5);
+    assert((reports[index][1] | ((uint16_t)reports[index][2] << 8)) == usage);
+}
+static void assertModifiers(unsigned index, uint8_t mask) {
+    assert(index < count && reports[index][0] == 1 && reports[index][1] == mask);
+}
+static void testModifiedConsumer(void) {
+    // Every mask, including zero, with low/high 8-bit usage boundaries.
+    for (uint8_t mask = 0; mask <= 15; mask++) for (uint16_t usage = 1; usage <= 255; usage += 254) {
+        reset(); activeConfig[9] = (mask << 4) | CONFIG_ACTION_CONSUMER_MODIFIED;
+        activeConfig[10] = usage;
+        press(0, 0); pump(0, 20);
+        assert(count == (mask ? 4 : 2));
+        unsigned index = 0;
+        if (mask) assertModifiers(index++, mask);
+        assertConsumer(index++, usage); assertConsumer(index++, 0);
+        if (mask) assertModifiers(index++, 0);
+        assert(!latestModifiers());
+    }
+    // All twelve-bit high nibbles remain usages, never temporary modifiers.
+    for (uint8_t aux = 0; aux < 16; aux++) for (uint8_t type = 7; type <= 8; type++) {
+        reset(); activeConfig[9] = (aux << 4) | type; activeConfig[10] = 0x24;
+        actionsPress(0, 0); actionsPoll(0);
+        assert(count == 1); assertConsumer(0, ((uint16_t)aux << 8) | 0x24);
+        actionsRelease(0); pump(1, 20);
+        assert(count == 2); assertConsumer(1, 0); assert(!latestModifiers());
+    }
+    // Removing temporary ownership preserves physical keys and modifiers.
+    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    activeConfig[11] = 0x22; activeConfig[12] = 4;
+    actionsPress(1, 0); pump(0, 2);
+    press(0, 2); pump(2, 10);
+    assert(count == 5); assertModifiers(1, 6); assertConsumer(2, 0x6f);
+    assertConsumer(3, 0); assertModifiers(4, 2); assert(reports[4][3] == 4);
+    actionsRelease(1); pump(10, 20); assert(!latestModifiers());
+    // Direct modified consumers overlap temporary keyboard taps too.
+    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x70;
+    activeConfig[11] = 0x91; activeConfig[12] = 5;
+    press(1, 0); actionsPoll(0); press(0, 1); actionsPoll(1);
+    assertModifiers(1, 15); assertConsumer(2, 0x70);
+    actionsPoll(2); assertConsumer(3, 0); assertModifiers(4, 9);
+    assert(reports[4][3] == 5); pump(3, 30); assert(!latestModifiers());
+}
+static void testModifiedConsumerBackpressure(void) {
+    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    blocked = 1; press(0, 0); pump(0, 10); assert(!count);
+    // Fill the queue after each report, forcing retries at every boundary.
+    blocked = 0; reportLimit = 1; actionsPoll(10);
+    assert(count == 1); assertModifiers(0, 6);
+    pump(11, 20); assert(count == 1);
+    reportLimit = 2; actionsPoll(20); assert(count == 2); assertConsumer(1, 0x6f);
+    pump(21, 30); assert(count == 2 && latestModifiers() == 6);
+    reportLimit = 3; actionsPoll(30); assert(count == 3); assertConsumer(2, 0);
+    pump(31, 40); assert(count == 3);
+    reportLimit = 4; actionsPoll(40); assert(count == 4); assertModifiers(3, 0);
+    // Generation invalidation reasserts the mask while release is rejected.
+    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    press(0, 0); actionsPoll(0); generation++; blocked = 1;
+    actionsPoll(1); assert(count == 2 && latestModifiers() == 6);
+    blocked = 0; pump(2, 10); assert(!latestModifiers());
+}
+static void testModifiedConsumerReplacement(void) {
+    // Latest-wins replacement releases the old consumer before changing masks.
+    for (uint8_t replacement = 0; replacement < 3; replacement++) {
+        reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+        activeConfig[11] = replacement == 0 ? CONFIG_ACTION_CONSUMER :
+                           replacement == 1 ? CONFIG_ACTION_CONSUMER_HOLD : 0x94;
+        activeConfig[12] = replacement == 2 ? 0x70 : 0xE9;
+        press(0, 0); actionsPoll(0); assert(count == 2);
+        blocked = 1; actionsPress(1, 1); actionsPoll(1);
+        assert(count == 2 && latestModifiers() == 6);
+        blocked = 0; actionsPoll(2);
+        assertConsumer(2, 0); assertModifiers(3, replacement == 2 ? 9 : 0);
+        assertConsumer(4, replacement == 2 ? 0x70 : 0xE9);
+        actionsRelease(1); pump(3, 20); assert(!latestModifiers());
+        assertConsumer(count - (replacement == 2 ? 2 : 1), 0);
+    }
+    // A modified tap interrupts a held 12-bit usage, without restoring it.
+    reset(); activeConfig[9] = 0x28; activeConfig[10] = 0x24;
+    activeConfig[11] = 0x64; activeConfig[12] = 0x6f;
+    actionsPress(0, 0); actionsPoll(0); assertConsumer(0, 0x224);
+    press(1, 1); actionsPoll(1);
+    assertConsumer(1, 0); assertModifiers(2, 6); assertConsumer(3, 0x6f);
+    pump(2, 10); assertConsumer(4, 0); assertModifiers(5, 0);
+    actionsRelease(0); pump(10, 20); assert(count == 6);
+    // An unsent modified action can be replaced without emitting its usage.
+    reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+    activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;
+    blocked = 1; press(0, 0); actionsPoll(0); press(1, 1);
+    blocked = 0; pump(2, 20); assert(!latestModifiers());
+    for (unsigned i = 0; i < count; i++)
+        assert(reports[i][0] != 5 || reports[i][1] != 0x6f);
+}
+static void testModifiedConsumerMacrosAndSources(void) {
+    reset(); const uint8_t brightness[] = {0x64, 0x6f, CONFIG_ACTION_KEY_TAP, 4};
+    define(start, brightness, 2); bind(0, start, CONFIG_MACRO_REPEAT ? 2 : 1);
+    autoPending = 1; press(0, 0); actionsPoll(0); // Invocation.
+    actionsPoll(1); actionsPoll(2);
+    assert(count == 2); assertModifiers(0, 6); assertConsumer(1, 0x6f);
+    blocked = 1; pump(3, 10); assert(count == 2);
+    blocked = 0; actionsPoll(10); assert(count == 4);
+    assertConsumer(2, 0); assertModifiers(3, 0);
+    pump(11, 20); assert(count == 4); // Dependent key waits for queued releases.
+    autoPending = pending = 0; pump(20, 200);
+    assert(keyPresses(4) == (CONFIG_MACRO_REPEAT ? 2 : 1));
+    assert(!latestModifiers());
+    for (unsigned i = 0; i < count; i++) if (reports[i][0] == 1 && reports[i][3]) assert(!reports[i][1]);
+
+    reset(); uint8_t cw = 9 + 2 * (configKeyCount() + 1);
+    activeConfig[cw] = 0x64; activeConfig[cw + 1] = 0x70;
+    actionsRotate(1); pump(0, 20); assert(count == 4 && !latestModifiers());
+    reset(); activeConfig[5] |= 2;
+    uint8_t chord = configTimedOffset() - 3;
+    activeConfig[chord] = 0; activeConfig[chord + 1] = 0x64; activeConfig[chord + 2] = 0x6f;
+    actionsPress(0, 0); actionsPress(1, 5); pump(5, 20);
+    assert(count == 4 && !latestModifiers());
+    reset(); uint8_t timer = configTimedOffset(); activeConfig[3] |= 1 << 6;
+    activeConfig[timer] = 0; activeConfig[timer + 1] = 0x64; activeConfig[timer + 2] = 0x6f;
+    activeConfig[timer + 3] = 0x64; activeConfig[timer + 4] = 0x70;
+    actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0); pump(0, 10);
+    assert(count == 4 && !latestModifiers());
+    actionsTimedInput(); pump(10, 20); assert(count == 8 && !latestModifiers());
+}
+static void testModifiedConsumerCleanup(void) {
+    for (uint8_t layer = 0; layer < 2; layer++) {
+        reset(); activeConfig[9] = 0x64; activeConfig[10] = 0x6f;
+        activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+        press(0, 0); actionsPoll(0); assert(count == 2);
+        blocked = 1;
+        if (layer) press(1, 1); else actionsClear();
+        pump(1, 10); assert(count == 2 && latestModifiers() == 6);
+        blocked = 0; pump(10, 20);
+        assertConsumer(2, 0); assertModifiers(3, 0);
+        assert(!latestModifiers());
+    }
+}
 int main(void) {
-    testPersistentMouse(); testMouseDragAndScroll(); testMouseSources();
+    testModifiedConsumer(); testModifiedConsumerBackpressure();
+    testModifiedConsumerReplacement(); testModifiedConsumerMacrosAndSources();
+    testModifiedConsumerCleanup();
+    testPersistentMouse(); testMouseDragAndScroll(); testCombinedPointerSources(); testMouseSources();
     testGlobalToggleSources();
     testGlobalToggle();
     testTextCharacterPause();

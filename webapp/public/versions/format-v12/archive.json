@@ -1,0 +1,24 @@
+{
+  "formatVersion": 12,
+  "sourceCommit": "3d236907d9de16597919148c17cbc06c618b4d24",
+  "changes": [
+    "Frozen outgoing v12 editor and live view with their existing v12 draft namespace; HTML archive banners and shared uploader redirect.",
+    "Built from the last v12 firmware source before v13, using Node 20.16.0 and installed dependencies matching its unchanged lockfile.",
+    "Validation-only correction to the stale ConsumerControl test assertion; no application source changes."
+  ],
+  "validation": "All 502 tests passed, including development archive serving. TypeScript, Vite production build and archive checksum verification passed. Uploader build is unrelated and was not archived.",
+  "sha256": {
+    "assets/configurator-L-Os2QPK.js.map": "58da3b509827fb8c27d25167945abd3cf8698b593656c83cf5183468f951d60e",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-DIM-akId.css": "f2d3319928ec3ec3188b352728e5f784793c44878afe9ba72d046ea834d7a00c",
+    "assets/main-DkjwDNdd.js": "2e80547433bd7212557278a4f48ee1b2a64e956e2598628e6b1389b79bf2be52",
+    "assets/main-DkjwDNdd.js.map": "7ed48cf08e027173531bf71c57ba7eec63068e0c388667e318244df8aef33286",
+    "assets/viewer-L-Os2QPK.js.map": "ebcabcca853b4f03041807cc6754f2cbd4b7980746e6174c20c51a527059f995",
+    "favicon.svg": "e9c63553ebcda5fdbf595cea93b8aee6003f48f6f494948075672fe21bb87cb0",
+    "index.html": "16fff142877dfe53efa59836986a0e2c6c80c8a903d527209c8c378a98d06633",
+    "liveView/index.html": "a98d67fef47c6a4653b1940ba31d027ab945b7e1266e2f3d6acc8e8583031bfc",
+    "webUploader/index.html": "5c1d06ba1d9bdf0990e4a94998071e38f579fe0e4c4784728e94b460b69094f4",
+    "wheel-debug.html": "e67bc00d70e8654df88232e11c91edd35cbeec3cc286bbca2e78c58bc905fb8a"
+  }
+}

@@ -17,8 +17,8 @@
 This standalone reference specifies format 11 firmware and its web configurator:
 dynamically stored macros, 1–16 executions per invocation, and **Pause** actions.
 Timed actions use six bytes each. Pre-built v11 release HEX files are available
-for [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
-[six-key](../releases/ch552-macropad-6-key-f87ca744.hex) macropads, built from source
+for [three-key](../webUploader/firmware-history/ch552-macropad-3-key-f87ca744.hex) and
+[six-key](../webUploader/firmware-history/ch552-macropad-6-key-f87ca744.hex) macropads, built from source
 revision `f87ca744`. Firmware hardware testing has been completed on both
 three-key and six-key macropads.
 

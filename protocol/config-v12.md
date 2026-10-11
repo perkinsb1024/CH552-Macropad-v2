@@ -18,11 +18,13 @@ This standalone reference specifies format 12 firmware and its web configurator:
 dynamically stored macros, 1–16 executions per invocation, and **Pause** actions.
 Timed actions use six bytes each. Format 12 adds eight mouse buttons and explicit
 persistent **Mouse down** / **Mouse up** actions. The USB mouse report remains five
-bytes by packing the two scroll axes into separate signed nibbles. The pre-built v12
-release HEX files and the uploader's default firmware use source revision
-`acabfaa1`: [three-key](../releases/ch552-macropad-3-key-acabfaa1.hex) and
-[six-key](../releases/ch552-macropad-6-key-acabfaa1.hex). Host tests, native builds
-and hardware validation pass on both board geometries.
+bytes by packing the two scroll axes into separate signed nibbles. The published v12
+release used source revision `acabfaa1`: [three-key](../webUploader/firmware-history/ch552-macropad-3-key-acabfaa1.hex) and [six-key](../webUploader/firmware-history/ch552-macropad-6-key-acabfaa1.hex).
+These files remain available through the installer's **Previous Release** tab;
+use the frozen v12 configurator. Host tests, native builds and hardware
+validation passed on both board geometries for that release. The current
+bundled release uses v13.
+
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields

@@ -135,15 +135,14 @@ The key list includes letters, numbers, punctuation, function keys, navigation k
 | **Mouse up** | Clears selected persistent bits from any input or macro; repeated up leaves them released |
 | **Mouse toggle** | Flips the selected mouse buttons between down and released. All toggle actions share the same state, so another input or macro can toggle them off. Changing layers also clears toggled mouse buttons |
 | **Scroll** | Sends a scroll step. Choose **Vertical** with **Up**/**Down**, or **Horizontal** with **Left**/**Right**, and a **Wheel step** from 1–127 (horizontal requires v9 firmware) |
-| **Move pointer X** | Moves left or right by the selected amount, from 1–127 |
-| **Move pointer Y** | Moves up or down by the selected amount, from 1–127 |
+| **Move mouse** | Choose **Axis**: **X** moves left or right, **Y** moves up or down, and **Both** moves both axes together |
 
 In v12, **Mouse toggle**, **Mouse down** and **Mouse up** share one persistent state
 across keys, wheel inputs, chords, timers and macros. Each selected bit operates
 independently. Down sets bits, up clears them, and toggle flips them. Repeated
 down/up is idempotent. For example, one key can start a drag with **Mouse down**
 and another can end it with **Mouse up**. A macro can use **Mouse down** →
-**Move pointer X**/**Move pointer Y** → **Mouse up**, with **Pause** steps as needed.
+**Move mouse** → **Mouse up**, with **Pause** steps as needed.
 A physical **Mouse hold** or temporary click keeps its buttons down independently.
 Macro completion and physical release leave persistent state intact; layer
 changes and resets clear it. Direct bindings act immediately, while macro steps
@@ -154,9 +153,8 @@ Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
 and application. Buttons 4/5 often mean Back/Forward; those meanings are not
 guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
 may not observe buttons 6–8 even when another application can use them.
-Buttons 4–8 and down/up are supported by the bundled v12 release and current
-configurator. Older v11 firmware supports three buttons and global **Mouse toggle**;
-use its frozen configurator.
+Buttons 4–8 and down/up require v12 firmware. The bundled v13 release supports all eight buttons and these persistent
+actions; older firmware uses its matching frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
 slot when you switch to **Single** or **Double** and back. The duration hint is rounded
@@ -171,6 +169,19 @@ backwards, swap **Up**/**Down** or **Left**/**Right**. Under **Scroll direction*
 **Click here** opens **Scroll & click test** with a scrollable area on both axes
 and click counters for each mouse button. Save edits to the macropad before
 testing; the modal warns if you have unsaved changes.
+
+Under **Move mouse**, choose **Behavior** (**Tap** or **Hold**) for a button
+or chord, then **Axis**. For **X** or **Y**, choose
+**Direction** and an **Amount** from 1–127. **Both** provides separate
+horizontal and vertical directions and amounts from 0–60 in steps of 4, sending
+both axes in one report. Set an axis to zero to leave it stationary. When first
+switching to **Both**, the current amount is rounded to a multiple of 4 and capped
+at 60; the other axis starts at 4. Switching back restores that axis's previous
+settings when available. Pointer movement uses relative mouse counts; screen
+distance depends on the computer's pointer speed and acceleration.
+
+If **Both** amounts are zero, the sidebar shows **Mouse actions without movement**.
+Click a listed action to edit it. This warning does not block saving or upload.
 
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held
@@ -194,7 +205,15 @@ Choose **Media / system**, then a named **Control**:
 
 Your computer, application, or display must support the selected control. For example, a brightness action may have no effect on an external monitor (though if you're on MacOS, I recommend checking out [Lunar](https://lunar.fyi/), which allows these keys to control many external monitors). The **Custom usage...** entry is an advanced option; use the named choices for ordinary configuration.
 
-**Media / system** sends a tap. Choose **Media / system hold** to keep the control
+**Media / system** sends a tap. With v13 firmware, taps can include **Ctrl**,
+**Shift**, **Alt** and **GUI** modifiers when the usage fits in eight bits
+(`0x00–0xFF`). Larger custom usages and **Media / system hold** do not support
+these temporary modifiers. The firmware presses the modifiers before the media
+report and clears them after its release, preserving independently held keys.
+For example, macOS fine brightness adjustment uses Option + Shift with a
+brightness tap. Host support determines the result.
+
+Choose **Media / system hold** to keep the control
 held until release; the selected **Control** is preserved when switching between
 these actions. The host decides whether a sustained control repeats. Holds are
 available on keys, chords and the wheel button, but not wheel turns or timers.
@@ -235,7 +254,8 @@ You can have up to seven layers on a three-key macropad, or five on a six-key ma
 ![Layer 2 selected for editing while Layer 1 remains the startup layer](../images/configuration-overview/06-layers.png)
 
 - Click a layer tab to edit it
-- **Add layer** copies the currently selected layer, including its key colors, wheel settings, options, and local chords to a new layer. Change the copy to make it your new set of control (hint: you can quickly remove unwanted actions by selecting a trigger and pressing **delete**). **Global** chords and timers assigned to **All layers** are already shared. Layer-specific timers keep their original assignment
+- **Add layer** creates a new blank layer with unassigned keys and wheel controls, LEDs off, and no local chords. The new layer is selected immediately
+- To copy the selected layer, open the arrow beside **Add layer** and choose **Duplicate current layer**. This copies its key colors, wheel settings, options, and local chords to a new layer and selects it. **Global** chords and timers assigned to **All layers** are already shared. Layer-specific timers keep their original assignment
 - Choose the **Startup layer** in **Profile**. This is the layer used when the device starts and after a configuration save
 - The trash button beside the layer tabs removes the selected layer, its bindings, and its local chords after confirmation. **Global** chords are preserved. At least one layer must remain. If you remove the startup layer, **Layer 1** becomes the startup layer
 - After removing a layer, review all layer-switch actions. A target may become unavailable or now refer to another layer at that number
@@ -492,9 +512,8 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are supported by the [pre-built v12 release firmware](../README.md#how-to-compile-the-firmware)
-and the current configurator. Older firmware uses its matching archived editor;
-macros require v11 or later.
+Macros are supported by the [pre-built v13 release firmware](../README.md#how-to-compile-the-firmware)
+and the current configurator. Older firmware uses its matching archived editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add macro**
 2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence
@@ -551,7 +570,7 @@ some actions wait for the macro to finish, while others act immediately:
 
 | Behavior | Actions triggered while a macro is running |
 | --- | --- |
-| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move pointer X** and **Move pointer Y** set to **Tap**, and another **Execute macro** |
+| Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move mouse** set to **Tap**, and another **Execute macro** |
 | Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Mouse down**, **Mouse up**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
 
 Changing the active layer cancels the rest of the macro and clears waiting
@@ -656,7 +675,7 @@ Firmware update mode is for replacing device software. Use **Save to device** to
 ### Two Layers: Editing and Music
 
 1. Configure your editing layer
-2. Click **Add layer** to copy it, then replace the new layer's keys with **Play / pause**, **Next track**, and **Mute**
+2. Click **Add layer** to create a blank layer, then assign its keys to **Play / pause**, **Next track**, and **Mute**
 3. On the music layer, use **Volume down** and **Volume up** for the wheel turns
 4. Give each layer an **Always on** indicator in a different color
 5. Add a **Keys 1 + 2** chord with **Relative layer → +1**, then click its **globe** to make it apply to all layers
@@ -692,7 +711,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v12 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v13 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

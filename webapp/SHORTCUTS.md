@@ -1,22 +1,23 @@
-# Shortcut catalog
+# Shortcut Catalog
 
 The catalog lives in `src/model/shortcuts.ts`. Each preset has a stable ID, a display name, OS/application/category tags, its action, and an optional binding and context note. App-specific display names include the app so identical-looking commands can be distinguished. Search matches all words across names, bindings, and tags, case-insensitively; try `word superscript`, `vim buffer`, `tmux pane`, or `media brightness`.
 
 Only the action is copied into a profile. Library tags and notes do not consume device flash. The action list scrolls at a maximum of 300 px (or 40% of the viewport height on smaller screens), leaving the OS buttons and search outside the scrolling region.
 
-## Context and supported actions
+## Context and Supported Actions
 
 - Keyboard presets send one physical US-layout key with modifiers. Host/app versions, customized bindings, keyboard layouts, and focused controls can change their behavior. Word presets use the current Microsoft 365 bindings; older releases have different subscript bindings.
 - macOS space navigation requires those shortcuts to be enabled in Keyboard > **Keyboard Shortcuts** > **Mission Control**.
 - macOS screenshot presets cover selection/full screen, save/clipboard, and the capture/recording toolbar. After invoking a selection capture, press **Space** on the host keyboard to switch to window capture. The toolbar also provides window capture. The firmware cannot combine the capture shortcut and a subsequent **Space** into a single preset.
 - Siri window/selection presets require macOS 27+ with Siri AI enabled. Classic Siri's double-Command/Fn triggers cannot be represented as a single firmware action. Spotlight can also start Siri conversations on supported systems.
-- **Sleep**, power, brightness, and other consumer media actions are host/hardware-dependent. The **Sleep** media key is not the same as Apple's power-button sleep shortcut. Apple Fn/Globe, **Power**, and modified **Eject** shortcuts are not supported by this firmware's keyboard action format.
+- **Sleep**, power, brightness, and other consumer media actions are host/hardware-dependent. The **Sleep** media key is not the same as Apple's power-button sleep shortcut. Apple Fn/Globe and power-button shortcuts cannot be represented by a normal keyboard tap. Modified consumer controls use **Media / system with modifiers** with an eight-bit Consumer Page usage; they are separate from keyboard actions.
+- macOS modified media presets include fine display brightness and volume, temporary audio-feedback reversal, **Displays** and **Sound** settings, supported external-display brightness (including fine adjustments), and display mirroring. **Option** maps to **Alt** and **Command** maps to **GUI**. External brightness requires support from the display; it is not generic DDC/CI control for every monitor. Audio output devices must support system volume control. The **Volume up (reverse audio feedback)** and **Volume down (reverse audio feedback)** presets suppress the sound when **Play feedback when volume is changed** is enabled, and enable it when that setting is disabled. Tooltips show bindings and these limits; search for `fine brightness`, `silent volume`, `external display`, or `sound settings` in the Mac view.
 - Markdown presets insert literal markers/templates; they do not wrap selected text or place the cursor inside the inserted snippet. GFM marks GitHub Flavored Markdown extensions.
 - Vim text presets start in **Normal** mode. Ex commands include a final **Enter**. Use the separate **Escape** preset to leave **Insert** mode first; strings cannot contain **Escape**. The library does not emulate arbitrary sequences of modified key combinations.
 - tmux presets include the default **Prefix (Ctrl+B)** and command keys. Tooltips explain that command keys follow the prefix, and the library shows a reminder when filtered to tmux or while dragging a tmux shortcut. Command presets send only that key; send the prefix separately first, or combine the prefix and command as macro steps. The prefix normally applies to one command, so remaining on a tmux macropad layer does not keep tmux in prefix mode. Custom tmux bindings may differ. Presets use physical US-layout keys, with explicit **Shift** for punctuation; copy-mode navigation depends on tmux's configured key table and is not included.
 - Typed snippets share the firmware's existing string pool and storage limits. Adding many snippets to keys may fill the device's 128-byte configuration; the existing storage meter and validation still apply.
 
-## Official references
+## Official References
 
 Bindings reviewed on September 29, 2026:
 
@@ -32,3 +33,7 @@ Bindings reviewed on September 29, 2026:
 Standard keyboard usages and media usages reuse the configurator's existing HID catalogs in `src/keys/keyboard.ts` and `src/keys/consumer.ts`.
 
 The tmux presets were checked against the [tmux manual default key bindings](https://man.openbsd.org/tmux#DEFAULT_KEY_BINDINGS) on October 6, 2026.
+
+The macOS modified media presets were checked on October 10, 2026 against
+[Apple keyboard shortcuts](https://support.apple.com/en-us/102650) and
+[Apple's alert sound settings guide](https://support.apple.com/guide/mac-help/change-the-alert-sounds-mchlp2207/mac).

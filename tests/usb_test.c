@@ -208,6 +208,27 @@ static void testGetReportAndIdle(void) {
     assert(UEP1_T_LEN == 3 && Ep1Buffer[64] == 5);
 }
 
+static void testProductDescriptor(void) {
+    const char *expected = PHYSICAL_VARIANT == CONFIG_THREE_KEYS
+        ? "3-Key Macropad" : "6-Key Macropad";
+    uint8_t descriptor[30];
+    unsigned total = 0;
+    reset();
+    setupRequest(0x80, USB_GET_DESCRIPTOR, 0x0302, 0x0409, 255);
+    while (UEP0_T_LEN) {
+        assert(total + UEP0_T_LEN <= sizeof descriptor);
+        memcpy(descriptor + total, Ep0Buffer, UEP0_T_LEN);
+        total += UEP0_T_LEN;
+        USB_EP0_IN();
+    }
+    assert(total == sizeof descriptor && descriptor[0] == total);
+    assert(descriptor[1] == DTYPE_String);
+    for (unsigned i = 0; i < strlen(expected); i++) {
+        assert(descriptor[2 + i * 2] == expected[i]);
+        assert(descriptor[3 + i * 2] == 0);
+    }
+}
+
 static void testStandardRequests(void) {
     uint8_t keys[8] = {0, 0, 4};
     reset();
@@ -299,6 +320,7 @@ static void testSetupLengthSaturation(void) {
 }
 
 int main(void) {
+    testProductDescriptor();
     testSetupLengthSaturation();
     testHorizontalDescriptor();
     testEightButtonsAndPackedScroll();

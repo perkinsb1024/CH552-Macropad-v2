@@ -42,12 +42,8 @@ static uint8_t pairCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS 
 #endif
 
 static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
-    uint8_t index = 0;
-    uint8_t i;
-    for (i = 0; i < a; i++) {
-        index += keys - i - 1;
-    }
-    return index + b - a - 1;
+    // Sum preceding rows of the triangular pair table; a < b < keys <= 6.
+    return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
 }
 
 uint16_t configCrc(const __xdata uint8_t *image) {
@@ -127,12 +123,12 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
                    keyboardUsageValid(param);
+        case CONFIG_ACTION_CONSUMER_MODIFIED:
+            return param != 0; // Eight-bit usage; all four modifier bits are valid.
         case CONFIG_ACTION_MOUSE_CLICK:
             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
-        case CONFIG_ACTION_MOUSE_HOLD:
-            return !rotation && aux == 0 && param != 0;
         case CONFIG_ACTION_MOUSE_TOGGLE:
-            return aux <= 2 && param != 0;
+            return aux <= (rotation ? 2 : 3) && param != 0;
         case CONFIG_ACTION_SCROLL:
 #if CONFIG_SCROLL_ACCELERATION
             return aux < 7 && (aux & 3) != 3 &&
@@ -142,12 +138,13 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             // Binding-kind callers pass rotation as 0 or 1.
             return !(aux & (uint8_t)((rotation << 2) | 3)) && param != 0x80;
 #else
-            if (aux) return 0;
-            // Fall through: legacy scroll and pointer share the delta bound.
+            return !aux && param != 0x80;
 #endif
-        case CONFIG_ACTION_MOUSE_X:
-        case CONFIG_ACTION_MOUSE_Y:
-            return aux < (uint8_t)(2 - rotation) && param != 0x80;
+        case CONFIG_ACTION_MOUSE_AXIS:
+            if (param == 0x80 || (aux & 4)) return 0;
+            // Fall through: both pointer actions share hold and reserved-bit checks.
+        case CONFIG_ACTION_MOUSE_XY:
+            return !(aux & (uint8_t)(8 | rotation));
         case CONFIG_ACTION_CONSUMER:
         case CONFIG_ACTION_CONSUMER_HOLD:
             // The full 12-bit consumer usage is retained, including its high nibble.

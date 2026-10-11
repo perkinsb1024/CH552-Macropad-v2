@@ -10,6 +10,7 @@ import { actionProblem, slotLabel, validateProfile } from '../model/validate';
 import { layerReachabilityWarnings } from '../model/reachability';
 import { selfReferentialLayerWarnings } from '../model/layerWarnings';
 import { timedToggleWarnings } from '../model/timedWarnings';
+import { stationaryPointerWarnings } from '../model/pointerWarnings';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
 import { decodeImage, peekHeader, type DecodeResult } from '../codec/decode';
@@ -127,6 +128,7 @@ export const reachabilityWarnings = computed(() => (profile.value ? layerReachab
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
 export const unusedMacros = computed(() => profile.value ? untriggeredMacros(profile.value) : []);
 export const timerWarnings = computed(() => (profile.value ? timedToggleWarnings(profile.value) : []));
+export const pointerWarnings = computed(() => (profile.value ? stationaryPointerWarnings(profile.value) : []));
 export const capacity = computed(() => (profile.value ? computeCapacity(profile.value) : null));
 export const dirty = computed(() => {
   if (!profile.value) return false;
@@ -159,7 +161,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -606,12 +608,12 @@ export function setChordGlobal(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB' | 'g
   selectedSlot.value = chordSlot({ ...chord, layer: global ? chord.layer : layer, global });
 }
 
-export function addLayer(): void {
+export function addLayer(mode: 'blank' | 'duplicate' = 'blank'): void {
   const p = profile.value;
   if (!p || p.layers.length >= maxLayers(p.variant)) return;
   updateProfile((draft) => {
     const sourceIndex = selectedLayer.value;
-    const source = draft.layers[sourceIndex];
+    const source = mode === 'duplicate' ? draft.layers[sourceIndex] : undefined;
     draft.layers.push(source ? {
       ...source,
       keys: source.keys.map((action) => ({ ...action })),

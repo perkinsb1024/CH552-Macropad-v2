@@ -446,6 +446,10 @@ output {
 .scroll-direction {
   margin-top: 8px;
 }
+.direction-first > .scroll-direction {
+  margin-top: 0;
+  margin-bottom: 11px;
+}
 .layer-indicator-options {
   gap: 12px;
 }
@@ -796,22 +800,22 @@ output {
   border-radius: 2px;
 }
 .brand-mark span:nth-child(1) {
-  background: #FF2020;
+  background: #FF4444;
 }
 .brand-mark span:nth-child(2) {
-  background: #40C820;
+  background: #FFCC44;
 }
 .brand-mark span:nth-child(3) {
-  background: #209696;
+  background: #44CC44;
 }
 .brand-mark span:nth-child(4) {
-  background: #FF4B00;
+  background: #EE44CC;
 }
 .brand-mark span:nth-child(5) {
-  background: #0040FF;
+  background: #6644FF;
 }
 .brand-mark span:nth-child(6) {
-  background: #FF0064;
+  background: #44CCFF;
 }
 .conn {
   display: flex;
@@ -1179,21 +1183,6 @@ output {
   border-bottom-color: var(--accent);
   font-weight: 600;
 }
-.tab-index {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background: var(--bg-sunken);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--fg-muted);
-}
-.tab-active .tab-index {
-  background: var(--accent);
-  color: var(--accent-fg);
-}
 .tab-badge {
   font-size: 10.5px;
   padding: 1px 6px;
@@ -1205,7 +1194,39 @@ output {
   letter-spacing: 0.04em;
 }
 .tab-add {
-  color: var(--fg-faint);
+  color: var(--fg);
+}
+.layer-add-menu {
+  display: flex;
+  align-self: stretch;
+}
+.layer-add-buttons {
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--bg-elev);
+}
+.layer-add-buttons > .tab {
+  margin-bottom: 0;
+  border-bottom: 0;
+  white-space: nowrap;
+}
+.layer-add-buttons > .tab:first-child {
+  border-radius: var(--radius-sm) 0 0 0;
+}
+.layer-add-buttons > .layer-add-trigger {
+  padding-inline: 8px;
+  border-radius: 0 var(--radius-sm) 0 0;
+  border-left: 1px solid var(--line-strong);
+}
+.layer-add-menu .menu-list {
+  min-width: 100%;
+  width: max-content;
+  max-width: calc(100vw - 48px);
+}
+.layer-add-menu .menu-list button:focus-visible {
+  background: var(--bg-sunken);
 }
 .tab.is-dragging, .keycap.is-dragging, .enc-part.is-dragging, .chord-main.is-dragging, .timer-action.is-dragging {
   opacity: 0.45;
@@ -1951,22 +1972,22 @@ output {
   height: 4px;
 }
 .mini-key-0::before {
-  background: #FF2020;
+  background: #FF4444;
 }
 .mini-key-1::before {
-  background: #40C820;
+  background: #FFCC44;
 }
 .mini-key-2::before {
-  background: #209696;
+  background: #44CC44;
 }
 .mini-key-3::before {
-  background: #FF4B00;
+  background: #EE44CC;
 }
 .mini-key-4::before {
-  background: #0040FF;
+  background: #6644FF;
 }
 .mini-key-5::before {
-  background: #FF0064;
+  background: #44CCFF;
 }
 .mini-knob {
   position: absolute;

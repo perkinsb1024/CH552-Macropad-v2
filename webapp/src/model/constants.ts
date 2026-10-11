@@ -1,7 +1,7 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 12;
+export const FORMAT_VERSION = 13;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
@@ -60,7 +60,8 @@ export const enum ActionCode {
   KeyTap = 0x1,
   KeyHold = 0x2,
   MouseClick = 0x3,
-  MouseHold = 0x4,
+  ConsumerModified = 0x4,
+  MouseHold = 0x35,
   MouseToggle = 0x5,
   MouseDown = 0x15,
   MouseUp = 0x25,
@@ -71,8 +72,8 @@ export const enum ActionCode {
   SetLayer = 0x9,
   MomentaryLayer = 0xa,
   RelativeLayer = 0xb,
-  MouseX = 0xc,
-  MouseY = 0xd,
+  MouseAxis = 0xc,
+  MouseXY = 0xd,
   LedControl = 0xe,
 }
 

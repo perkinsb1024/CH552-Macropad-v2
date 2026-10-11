@@ -1,4 +1,5 @@
 #include "USBconstant.h"
+#include "../config.h"
 
 // Device descriptor
 __code USB_Descriptor_Device_t DeviceDescriptor = {
@@ -207,8 +208,13 @@ __code uint16_t SerialDescriptor[] = {
 };
 __code uint16_t ProductDescriptor[] = {
     // Product String Descriptor
-    (((18 + 1) * 2) | (DTYPE_String << 8)),
-    'U', 'n', 'i', 'v', 'e', 'r', 's', 'a', 'l', ' ',
+    (((14 + 1) * 2) | (DTYPE_String << 8)),
+#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
+    '3',
+#else
+    '6',
+#endif
+    '-', 'K', 'e', 'y', ' ',
     'M', 'a', 'c', 'r', 'o', 'p', 'a', 'd',
 };
 __code uint16_t ManufacturerDescriptor[] = {

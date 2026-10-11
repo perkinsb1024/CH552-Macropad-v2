@@ -5,8 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 12: eight mouse buttons and persistent toggle/down/up modes.
-#define CONFIG_VERSION 12
+// Format 13: 8-bit modified consumer taps; mouse hold joins mouse state actions.
+#define CONFIG_VERSION 13
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
 #endif
@@ -45,10 +45,11 @@
 #define CONFIG_ACTION_KEY_HOLD         0x2
 #define CONFIG_ACTION_MOUSE_CLICK      0x3
 // Mouse click auxiliary encodes click count minus one.
-#define CONFIG_ACTION_MOUSE_HOLD       0x4
+#define CONFIG_ACTION_CONSUMER_MODIFIED 0x4
 #define CONFIG_ACTION_MOUSE_TOGGLE     0x5
 #define CONFIG_ACTION_MOUSE_DOWN       0x15
 #define CONFIG_ACTION_MOUSE_UP         0x25
+#define CONFIG_ACTION_MOUSE_HOLD       0x35 // Full first byte, not a type.
 #define CONFIG_ACTION_SCROLL           0x6
 #define CONFIG_SCROLL_HOLD             0x40
 #define CONFIG_SCROLL_HORIZONTAL       0x80
@@ -85,8 +86,8 @@
 #define CONFIG_ACTION_SET_LAYER        0x9
 #define CONFIG_ACTION_MOMENTARY_LAYER  0xA
 #define CONFIG_ACTION_RELATIVE_LAYER   0xB
-#define CONFIG_ACTION_MOUSE_X          0xC
-#define CONFIG_ACTION_MOUSE_Y          0xD
+#define CONFIG_ACTION_MOUSE_AXIS       0xC
+#define CONFIG_ACTION_MOUSE_XY          0xD
 #define CONFIG_ACTION_LED_CONTROL      0xE
 #define CONFIG_ACTION_MACRO            0xF
 
@@ -116,6 +117,9 @@
 #define CONFIG_LED_CONFIGURED 15
 
 #define CONFIG_MOUSE_MOVE_HOLD         0x10
+#define CONFIG_MOUSE_AXIS_Y            0x20
+#define CONFIG_MOUSE_X_NEGATIVE        0x20
+#define CONFIG_MOUSE_Y_NEGATIVE        0x40
 
 // Per-layer option byte: full brightness bit 0, deprecated/ignored bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01

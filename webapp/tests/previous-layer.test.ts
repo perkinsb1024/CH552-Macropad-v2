@@ -82,14 +82,14 @@ it('accepts only configured layer indices or 255 and rejects previous in v6 and 
 it('preserves previous targets through layer swaps, insertions, duplication, deletion, and undo', () => {
   profile.value = populated(0); selectedLayer.value = 0;
   swapLayers(0, 1); expectPreviousTargets(profile.value!);
-  addLayer(); expectPreviousTargets(profile.value!);
+  addLayer('duplicate'); expectPreviousTargets(profile.value!);
   insertLayer(0, 2, 'after'); expectPreviousTargets(profile.value!);
   const beforeRemoval = structuredClone(profile.value!);
   removeLayer(1); expectPreviousTargets(profile.value!);
   undo(); expect(profile.value).toEqual(beforeRemoval);
   redo(); expectPreviousTargets(profile.value!);
   const before = populated(0);
-  profile.value = structuredClone(before); selectedLayer.value = 0; addLayer();
+  profile.value = structuredClone(before); selectedLayer.value = 0; addLayer('duplicate');
   const added = profileChanges(before, profile.value!).find(c => c.after === 'Added')!;
   added.undo!(profile.value!); expectPreviousTargets(profile.value!);
   expect(profile.value!.layers).toHaveLength(2);

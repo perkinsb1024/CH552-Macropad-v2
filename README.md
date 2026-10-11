@@ -64,7 +64,8 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
-| [v12](protocol/config-v12.md) | - Mouse buttons 1–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags<br> - **Enter bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
+| [v13](protocol/config-v13.md) | - Fine single-axis and simultaneous X/Y pointer movement<br> - Optional modifiers for eight-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
+| [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags<br> - **Enter bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
@@ -82,9 +83,9 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v12 firmware files are available for [three-key](releases/ch552-macropad-3-key-acabfaa1.hex) and [six-key](releases/ch552-macropad-6-key-acabfaa1.hex) macropads, built from source revision `acabfaa1`. This version adds mouse buttons 1–8 and persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags, plus **Enter bootloader** from the browser firmware installer. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v13 firmware files are available for [three-key](releases/ch552-macropad-3-key-eb2de185.hex) and [six-key](releases/ch552-macropad-6-key-eb2de185.hex) macropads, built from source revision `eb2de185`. This version adds fine single-axis and simultaneous X/Y pointer movement, optional modifiers for eight-bit **Media / system** taps, and USB names that identify the hardware variant. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [current v12 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these release files. Both three-key and six-key builds have passed hardware validation. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
+Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v13 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v13. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -147,11 +148,19 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash remaining | 28 | 24 |
-| External RAM allocated (XSEG + absolute) | 492 | 501 |
-| Stack available (linker reserve) | 81 | 78 |
+| Flash used | 14,322 | 14,324 |
+| Flash remaining | 14 | 12 |
+| USB DMA RAM | 148 | 148 |
+| Paged external RAM (PSEG) | 105 | 105 |
+| Ordinary external RAM (XSEG) | 356 | 365 |
+| Absolute active configuration image | 128 | 128 |
+| Total external RAM allocated | 737 | 746 |
+| External RAM unallocated (including gaps) | 287 | 278 |
+| Stack available (linker reserve) | 84 | 81 |
 
 ### Build Release HEX Files for Both Variants
+
+For the documentation, history, archives and validation steps, follow the [firmware release process](documentation/Firmware%20Release%20Process.md).
 
 The [releases](releases/) folder contains compiled firmware for three-key and six-key macropads. To refresh both files, run this from the project root:
 
@@ -201,14 +210,40 @@ _An example of using a temporary button to enter the bootloader before uploading
 > [!CAUTION]
 > Warning: Avoid bridging adjacent pins, especially ground (pin 14). Shorting a supply to ground can damage the board or USB port
 
-### Later Uploads: Use the Encoder Button
+### Later Uploads: Enter the Bootloader
 
-After installing this firmware, start `pio run -t upload` and enter the bootloader when the uploader begins waiting:
+By default, **Upload** (`pio run -t upload`) waits for browser or manual
+bootloader entry and does not use the native HID helper. With v12 or later
+firmware, click **Enter Bootloader** in the [browser firmware installer](webUploader/)
+before starting **Upload**, or hold the encoder button while reconnecting USB
+when the uploader starts waiting.
+
+The optional native HID helper may require macOS **Input Monitoring** permission
+for VS Code or the terminal. The helper uses shared access on macOS because
+exclusive access to the keyboard interface can be rejected even with that
+permission enabled. Open failures include the native macOS error details.
+Browser or encoder entry avoids using this helper.
+
+To use the helper, install its dependency once from the project folder using
+PlatformIO's Python interpreter:
+
+```sh
+~/.platformio/penv/bin/python -m pip install --target .pio/hidapi -r pio-platform/requirements-hid.txt
+```
+
+The **Enter Bootloader (Optional HID)** task (`pio run -t bootloader`) requests
+entry without building or uploading firmware. To also enable native HID entry
+before **Upload**, set `custom_hid_bootloader = yes` in `platformio.ini`;
+the default is `no`. Close any configurator or installer connection first,
+and connect only the macropad you want to update. Reinstall the helper if you
+delete `.pio/`.
+
+Bootloader entry methods:
 
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
-- During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
+- During use with v12 or later firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
 
-V12 firmware checks that the encoder stays pressed across a 10ms startup
+Current v13 source checks that the encoder stays pressed across a 10ms startup
 window, sampling every 1ms. Hold it steadily before connecting USB.
 
 Older v11 firmware supports an optional three-second encoder hold on enabled
@@ -229,7 +264,7 @@ _The Configurator Web App_
 No local web app installation is needed. Open the [Macropad Configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) in desktop Chrome, Edge, or another browser with WebHID support.
 
 1. Plug the macropad into the computer running the browser. It must be running this firmware, rather than sitting in bootloader mode.
-2. Click **Connect macropad** and select **Universal Macropad** in the browser's device chooser
+2. Click **Connect macropad** and select **3-Key Macropad** or **6-Key Macropad** in the browser's device chooser (older firmware appears as **Universal Macropad**)
 3. Set up the keys, encoder, layers, chords, macros, timed actions and LED effects. If no valid profile is saved, the editor loads a starter profile for you to customize.
 4. Click **Save to device** and wait for the saved confirmation. Changes in the editor take effect on the hardware only after saving.
 5. Close the browser and use the macropad normally. Its saved profile survives unplugging it.
@@ -261,7 +296,7 @@ Extra-button behavior depends on the host and application, especially buttons 6�
 persistent state used by **Mouse toggle**. Repeated down/up is idempotent; macro
 completion leaves the state intact, while layer changes and resets clear it.
 Physical **Mouse hold** and temporary clicks remain independent. Use **Mouse down**
-→ **Move pointer X**/**Move pointer Y** → **Mouse up** for a macro drag.
+→ **Move pointer X**, **Move pointer Y**, or **Move pointer X/Y** → **Mouse up** for a macro drag.
 
 **Mouse click** offers **Single / Double / Custom**. **Custom** shows a slider for
 3–16 clicks. The selected mouse buttons are pressed and released for each click,
@@ -287,7 +322,7 @@ shows the existing blinking red error LED instead.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 12](protocol/config-v12.md) for the complete format reference.
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 13](protocol/config-v13.md) for the complete format reference.
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -336,5 +371,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v12.md)
+- [Configuration format](protocol/config-v13.md)
 - [USB configuration protocol](protocol/hid-v1.md)

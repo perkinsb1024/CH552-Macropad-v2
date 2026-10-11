@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Macropad Firmware Installer</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./app.mjs"></script>
 </head>
@@ -30,7 +31,7 @@
       <details id="platform-windows" open><summary>Windows</summary>
         <p class="validation-note">Windows has not been verified, but it should work after following these steps</p>
         <p>WebUSB requires the <strong>WinUSB</strong> driver for the bootloader. If connecting fails, download <a href="https://zadig.akeo.ie/" target="_blank" rel="noopener noreferrer">Zadig from its official site</a>.</p>
-        <ol><li>Put the macropad in bootloader mode using Step 2. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick</li><li>In Zadig, choose <strong>Options → List All Devices</strong>.</li><li>Select only the bootloader with USB ID <strong>4348:55E0</strong> (it may be called “Unknown device” or “USB Module”). Do not select your normal keyboard or “Universal Macropad”.</li><li>Select <strong>WinUSB</strong>, then <strong>Install/Replace Driver</strong>. Administrator access is required.</li><li>Return here and connect. This driver change may affect other native WCH programming tools.</li><li><strong>Optional: </strong> when you are done uploading the firmware, you can remove WinUSB following the <a href="https://github.com/pbatard/libwdi/wiki/faq#user-content-Help_Zadig_replaced_the_driver_for_the_wrong_device_How_do_I_restore_it" target="_blank" rel="noopener noreferrer">official Zadig guide</a>.</li></ol>
+        <ol><li>Put the macropad in bootloader mode using Step 2. <strong>Note: </strong>the chip automatically exits bootloader mode after 8-10 seconds without communication, so you will need to be somewhat quick</li><li>In Zadig, choose <strong>Options → List All Devices</strong>.</li><li>Select only the bootloader with USB ID <strong>4348:55E0</strong> (it may be called “Unknown device” or “USB Module”). Do not select your normal keyboard, “3-Key Macropad”, “6-Key Macropad”, or the older “Universal Macropad”.</li><li>Select <strong>WinUSB</strong>, then <strong>Install/Replace Driver</strong>. Administrator access is required.</li><li>Return here and connect. This driver change may affect other native WCH programming tools.</li><li><strong>Optional: </strong> when you are done uploading the firmware, you can remove WinUSB following the <a href="https://github.com/pbatard/libwdi/wiki/faq#user-content-Help_Zadig_replaced_the_driver_for_the_wrong_device_How_do_I_restore_it" target="_blank" rel="noopener noreferrer">official Zadig guide</a>.</li></ol>
         <p class="source"><a href="https://developer.chrome.com/docs/capabilities/build-for-webusb#windows" target="_blank" rel="noopener noreferrer">Chrome: Windows WebUSB requirements</a></p>
       </details>
       <details id="platform-macos"><summary>macOS</summary>

@@ -68,6 +68,34 @@ describe('shortcut library', () => {
     expect(preset('vim-save').action).toEqual({ type: 'string', text: ':w\n' });
   });
 
+  it('offers documented macOS modified media presets with the correct masks and usage bytes', () => {
+    const media = SHORTCUTS.filter(shortcut => shortcut.action.type === 'consumerModified');
+    const expected = [
+      ['fine-brightness-up-mac', 6, 0x6f], ['fine-brightness-down-mac', 6, 0x70],
+      ['fine-volume-up-mac', 6, 0xe9], ['fine-volume-down-mac', 6, 0xea],
+      ['volume-up-reverse-audio-feedback-mac', 2, 0xe9], ['volume-down-reverse-audio-feedback-mac', 2, 0xea],
+      ['open-display-settings-mac', 4, 0x6f], ['open-sound-settings-mac', 4, 0xe9],
+      ['external-display-brightness-up-mac', 1, 0x6f], ['external-display-brightness-down-mac', 1, 0x70],
+      ['fine-external-display-brightness-up-mac', 7, 0x6f], ['fine-external-display-brightness-down-mac', 7, 0x70],
+      ['toggle-display-mirroring-mac', 8, 0x70],
+    ] as const;
+    expect(media).toHaveLength(expected.length);
+    for (const [id, modifiers, usage] of expected) {
+      const shortcut = media.find(s => s.id === id)!;
+      expect(shortcut.action).toEqual({ type: 'consumerModified', usage, modifiers });
+      expect(encodeAction(shortcut.action, new Map())).toEqual([modifiers << 4 | 4, usage]);
+      expect(filterShortcuts('mac', shortcut.name)).toContain(shortcut);
+      expect(filterShortcuts('windows', '')).not.toContain(shortcut);
+    }
+    expect(filterShortcuts('mac', 'alt fine brightness')).toHaveLength(4);
+    expect(filterShortcuts('mac', 'silent volume')).toHaveLength(2);
+    // Mirroring also matches: it uses Brightness Down and an external display.
+    expect(filterShortcuts('mac', 'external brightness')).toHaveLength(5);
+    expect(filterShortcuts('mac', 'mirroring')).toHaveLength(1);
+    expect(media.find(s => s.id === 'volume-up-reverse-audio-feedback-mac')?.note).toContain('silent when enabled, audible when disabled');
+    expect(media.find(s => s.id === 'external-display-brightness-up-mac')?.note).toContain('supported external display');
+  });
+
   it('offers shared tmux command keys separately from the prefix with correct punctuation and modifiers', () => {
     const tmux = filterShortcuts('mac', 'tmux');
     expect(filterShortcuts('windows', 'tmux')).toEqual(tmux);
@@ -140,6 +168,21 @@ describe('shortcut assignment', () => {
     applyShortcut(volume, { kind: 'key', layer: 99, index: 0 });
     applyShortcut(volume, { kind: 'chord', layer: 0, keyA: 4, keyB: 5 });
     expect(profile.value).toEqual(before);
+  });
+
+  it('assigns modified media to encoder rotation and preserves its mask through binary save/reload', () => {
+    const fineUp = SHORTCUTS.find(s => s.id === 'fine-brightness-up-mac')!;
+    const fineDown = SHORTCUTS.find(s => s.id === 'fine-brightness-down-mac')!;
+    applyShortcut(fineUp, { kind: 'clockwise', layer: 0 });
+    const event = dragEvent();
+    const slot = { kind: 'counterclockwise', layer: 0 } as const;
+    startShortcutDrag(event as unknown as DragEvent, fineDown);
+    expect(shortcutDrop(event as unknown as DragEvent, slot)).toBe(true);
+    const saved = decodeImage(encodeProfile(profile.value!));
+    expect(saved.ok).toBe(true);
+    if (!saved.ok) throw new Error(saved.detail);
+    expect(saved.profile.layers[0]!.clockwise).toEqual({ type: 'consumerModified', usage: 0x6f, modifiers: 6 });
+    expect(saved.profile.layers[0]!.counterclockwise).toEqual({ type: 'consumerModified', usage: 0x70, modifiers: 6 });
   });
 
   it('saves and reloads assigned Markdown and Vim snippets with their literal text intact', () => {

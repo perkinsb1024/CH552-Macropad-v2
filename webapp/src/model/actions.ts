@@ -32,10 +32,12 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'mouseDown', code: ActionCode.MouseDown, label: 'Mouse down', group: 'Mouse', needsRelease: false, hint: 'Keep selected mouse buttons down until Mouse up, toggle, a layer change or reset. Repeated down leaves them down.' },
   { type: 'mouseUp', code: ActionCode.MouseUp, label: 'Mouse up', group: 'Mouse', needsRelease: false, hint: 'Release selected persistent mouse buttons from any input or macro. Physical holds and clicks stay independent.' },
   { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical or horizontal wheel step, or repeat while held.' },
-  { type: 'mouseX', code: ActionCode.MouseX, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
-  { type: 'mouseY', code: ActionCode.MouseY, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
+  { type: 'mouseX', code: ActionCode.MouseAxis, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
+  { type: 'mouseY', code: ActionCode.MouseAxis, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
+  { type: 'mouseXY', code: ActionCode.MouseXY, label: 'Move pointer X/Y', group: 'Mouse', needsRelease: false, hint: 'Move both axes together, in steps of 4 mouse counts, up to 60 per axis.' },
   { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
   { type: 'consumerHold', code: ActionCode.ConsumerHold, label: 'Media / system hold', group: 'Media', needsRelease: true, hint: 'Hold a media or system control until release. Repetition depends on the host.' },
+  { type: 'consumerModified', code: ActionCode.ConsumerModified, label: 'Media / system with modifiers', group: 'Media', needsRelease: false, hint: 'Tap an 8-bit consumer control with Ctrl, Shift, Alt or GUI. Modifiers release automatically after the control.' },
   { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
   { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
   { type: 'oneShotSetLayer', code: ActionCode.SetLayer, label: 'Switch to layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use a layer for the next action, then return to the previous layer.' },
@@ -54,7 +56,7 @@ export function descriptor(type: ActionType): ActionDescriptor {
 /** Includes actions whose release requirement depends on their settings. */
 export function actionNeedsRelease(action: Action): boolean {
   return descriptor(action.type).needsRelease ||
-    ((action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY') && !!action.hold);
+    ((action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY') && !!action.hold);
 }
 
 export function descriptorForCode(code: number): ActionDescriptor | undefined {
@@ -79,6 +81,8 @@ export function blankAction(type: ActionType): Action {
     case 'keyTap':
     case 'keyHold':
       return { type, usage: 0x04, modifiers: 0 };
+    case 'consumerModified':
+      return { type, usage: 0x6f, modifiers: MOD_ALT | MOD_SHIFT };
     case 'mouseClick':
     case 'mouseHold':
     case 'mouseDown':
@@ -89,6 +93,8 @@ export function blankAction(type: ActionType): Action {
     case 'mouseX':
     case 'mouseY':
       return { type, delta: type === 'scroll' ? 1 : 10 };
+    case 'mouseXY':
+      return { type, x: 4, y: 4 };
     case 'consumer':
     case 'consumerHold':
       return { type, usage: 0xe9 };
@@ -131,6 +137,8 @@ export function summarize(action: Action): string {
       const combo = parts.length ? parts.join(' + ') : 'No key';
       return action.type === 'keyHold' ? `Hold ${combo}` : combo;
     }
+    case 'consumerModified':
+      return [...modifierNames(action.modifiers), consumerName(action.usage)].join(' + ');
     case 'mouseClick':
       return `${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
@@ -147,6 +155,8 @@ export function summarize(action: Action): string {
       return `Mouse ${action.delta < 0 ? 'left' : 'right'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
     case 'mouseY':
       return `Mouse ${action.delta < 0 ? 'up' : 'down'} ${Math.abs(action.delta)}${action.hold ? ' (hold)' : ''}`;
+    case 'mouseXY':
+      return `Mouse X ${action.x}, Y ${action.y}${action.hold ? ' (hold)' : ''}`;
     case 'consumer':
       return consumerName(action.usage);
     case 'consumerHold':

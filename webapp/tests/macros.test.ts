@@ -69,7 +69,7 @@ it.each([
 ] as Action[])('rejects a prohibited editor step %o', action => {
   const p = oneLayer(0); p.macros = [{ actions: [action] }]; expect(() => encodeProfile(p)).toThrow();
 });
-it.each([2, 4, 8, 10, 0x46, 0x1c, 0x1d, 15])('rejects held or nested wire steps even without a reference: %s', first => {
+it.each([2, 0x35, 8, 10, 0x46, 0x1c, 0x1d, 15])('rejects held or nested wire steps even without a reference: %s', first => {
   const image = encodeProfile(oneLayer(0)); image.set([first, 1], 31); sealImage(image);
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);
 });

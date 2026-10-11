@@ -24,7 +24,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
   const actionDescriptor = ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   if (!actionDescriptor) return 'This action type is no longer supported. Choose another action.';
   if ((ctx.rotation || ctx.timed) && actionNeedsRelease(action)) {
-    const label = action.type === 'scroll' ? 'Scroll hold' : action.type === 'mouseX' || action.type === 'mouseY' ? 'Pointer hold' : actionDescriptor.label;
+    const label = action.type === 'scroll' ? 'Scroll hold' : action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY' ? 'Pointer hold' : actionDescriptor.label;
     return `${label} needs a release and cannot be bound to ${ctx.timed ? 'a timed action' : 'rotation'}.`;
   }
   if (ctx.macro && (action.type === 'macro' || action.type === 'none')) return 'Macro steps cannot execute another macro or be Nothing. Use Pause for a delay.';
@@ -47,6 +47,9 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (!Number.isInteger(action.modifiers) || action.modifiers < 0 || action.modifiers > 15) return 'Modifier mask is out of range.';
       if (action.usage === 0 && action.modifiers === 0) return 'Choose a key or at least one modifier.';
       return null;
+    case 'consumerModified':
+      if (!Number.isInteger(action.usage) || action.usage < 1 || action.usage > 0xff) return 'Consumer usage must be 0x01–0xFF.';
+      return Number.isInteger(action.modifiers) && action.modifiers >= 0 && action.modifiers <= 15 ? null : 'Modifier mask is out of range.';
     case 'mouseClick':
     case 'mouseHold':
     case 'mouseDown':
@@ -64,6 +67,8 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (!Number.isInteger(action.delta) || action.delta < -127 || action.delta > 127) return 'Delta must be a whole number from -127 to 127.';
       if (action.delta === 0) return 'A zero step does nothing; choose a non-zero value.';
       return null;
+    case 'mouseXY':
+      return [action.x, action.y].every(value => Number.isInteger(value) && value >= -60 && value <= 60 && value % 4 === 0) ? null : 'Each axis must be −60–60 mouse counts in steps of 4.';
     case 'consumer':
     case 'consumerHold':
       if (!Number.isInteger(action.usage) || action.usage < 1 || action.usage > 0xfff) return 'Consumer usage must be 0x001–0xFFF.';
