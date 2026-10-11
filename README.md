@@ -24,6 +24,7 @@ Compared to the previous version, this project adds:
    - Including support for LED layer indicators (blink, 1.5 seconds, or always-on)
 - **Chords** (multi-key inputs)
 - **Timed actions**, with optional inactivity reset and "wake input" blocking
+- **Macros** for running multiple actions from a single trigger
 - Both configuration and run-time **LED control** options
 - Mouse-move and click actions
 - **Rainbow** RGB effects (come on, what good is a keyboard without them?)
@@ -64,16 +65,16 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
-| [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier support for 8-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
+| [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier key support for 8-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
 | [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags<br> - **Enter bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
 | [v8](protocol/config-v8.md) | - Maximum **Timed action** error is improved from ~131s to 512ms<br> - **Media / system hold** keeps a consumer control held until release (useful for brightness and volume)<br> - **Scroll** gains **Hold**, with 100ms between repeated step groups<br> - **Mouse click** supports 1–16 clicks through **Single / Double / Custom**, replacing the separate **Mouse double-click** action. |
-| [v7](protocol/config-v7.md) | - Up to four **Timed actions**, repeating or restarted by input, with optional **On next input** actions and **Consume this input**<br> - **Set all LEDs** adds temporary bright/dim colors or rainbow, always on or blinking 1–8 times<br> - **Previous layer** becomes a target for persistent and one-shot layer switching. |
-| [v6](protocol/config-v6.md) | - **LED control** actions adjust brightness, rainbow spacing and speed during use, with relative steps, common brightness presets, **Toggle preset on/off**, and configured restores<br> - **Variable — Scattered colors** adds independently drifting rainbow colors. |
-| [v5](protocol/config-v5.md) | - Configurable global **Rainbow phase spacing** and **Rainbow speed**, with four choices for each. |
-| [v4](protocol/config-v4.md) | - More layers: up to five on six-key macropads or seven on three-key macropads. **Relative layer** offsets expand to −6 through +6. |
+| [v7](protocol/config-v7.md) | - Up to four **Timed actions**, repeating or restarted by input (aka: inactivity timers), with optional **On next input** actions and **Consume this input**<br> - **Set all LEDs** adds temporary bright/dim colors or rainbow, always on or blinking 1–8 times<br> - **Previous layer** becomes a target for persistent and one-shot layer switching. |
+| [v6](protocol/config-v6.md) | - **LED control** actions adjust brightness, **Rainbow phase** and **Rainbow speed** during use, with relative steps, common brightness presets, **Toggle preset on/off**, and configured restores<br> - **Variable — Scattered colors** adds independently drifting rainbow colors. |
+| [v5](protocol/config-v5.md) | - Configurable global **Rainbow phase** (spacing) and **Rainbow speed**, with four choices for each. |
+| [v4](protocol/config-v4.md) | - More layers: up to five on six-key macropads or seven on three-key macropads.<br> - **Relative layer** offsets expand to −6 through +6. |
 | [v3](protocol/config-v3.md) | - **On for 1.5 seconds** replaces **Blink once** for **Layer indicator**<br> - **Off** key colors can be transparent, letting the idle layer lighting show through<br> - **Rainbow** becomes available for timed and blinking layer indications. |
 | [v2](protocol/config-v2.md) | - **Full Brightness** / **Dim** layer indicators<br> - Global chords<br> - Signed **Relative layer** steps and one-shot layer switching<br> - Held pointer movement<br> - On-device color previews<br> - *This was the first format with a published firmware release and archived configurator* |
 | v1 (initial prototype) | - Browser configuration over WebHID, with profiles saved on the device<br> - Up to four layers<br> - Independent key, wheel-button and wheel-direction bindings<br> - Two-key chords<br> - Keyboard, mouse, media and **Type text** actions<br> - Per-key colors and layer indications, including **Rainbow** lighting. |
