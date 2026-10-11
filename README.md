@@ -64,7 +64,7 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
-| [v13](protocol/config-v13.md) | - Fine single-axis and simultaneous X/Y pointer movement<br> - Optional modifiers for eight-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
+| [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier support for 8-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
 | [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags<br> - **Enter bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |

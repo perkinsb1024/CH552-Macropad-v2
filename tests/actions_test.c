@@ -779,8 +779,8 @@ static void testCombinedPointer(void) {
     // Every magnitude pair and sign combination must produce one exact report.
     for (unsigned signs = 0; signs < 4; signs++) {
         for (unsigned value = 0; value < 256; value++) {
-            int8_t x = (value & 15) * 4;
-            int8_t y = (value >> 4) * 4;
+            int8_t x = ((value & 15) + 1) * 4;
+            int8_t y = ((value >> 4) + 1) * 4;
             if (signs & 1) x = -x;
             if (signs & 2) y = -y;
             reset();
@@ -824,7 +824,7 @@ static void testCombinedPointer(void) {
     activeConfig[24] = 0xF1;
     actionsRotate(1);
     actionsPoll(0);
-    assert(count == 1 && (int8_t)reports[0][2] == -4 && reports[0][3] == 60);
+    assert(count == 1 && (int8_t)reports[0][2] == -8 && reports[0][3] == 64);
 }
 
 static void testPointerHold(void) {

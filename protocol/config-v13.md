@@ -17,7 +17,7 @@
 This standalone reference specifies the version 13 firmware binary image and
 transport. It supports eight-bit consumer taps with optional modifiers and places
 **Mouse hold** in auxiliary mode 3 of the shared mouse action type. Pointer
-actions support fine single-axis movement and combined pointer movement. Dynamic
+actions support both single-axis movement and combined pointer movement. Dynamic
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
 

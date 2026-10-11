@@ -414,7 +414,7 @@ static void testMouseDragAndScroll(void) {
     pending = 0; pump(30, 200);
     assert(count == 9); // Down, X, combined, two vertical, three horizontal, up.
     assert(reports[1][1] == 0x80 && reports[1][2] == 12);
-    assert(reports[2][1] == 0x80 && (int8_t)reports[2][2] == -4 && reports[2][3] == 60);
+    assert(reports[2][1] == 0x80 && (int8_t)reports[2][2] == -8 && reports[2][3] == 64);
     for (unsigned i = 3; i < 5; i++) assert(reports[i][1] == 0x80 && reports[i][4] == 1 && !reports[i][5]);
     for (unsigned i = 5; i < 8; i++) assert(reports[i][1] == 0x80 && !reports[i][4] && reports[i][5] == 255);
     assert(!reports[8][1]);
@@ -438,7 +438,7 @@ static void testCombinedPointerSources(void) {
         activeConfig[start + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_Y_NEGATIVE;
         activeConfig[start + 2] = 0xF1;
         actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
-        assert(count == 2 && reports[1][2] == 4 && (int8_t)reports[1][3] == -60);
+        assert(count == 2 && reports[1][2] == 8 && (int8_t)reports[1][3] == -64);
         actionsRelease(released); pump(10, 30); assert(count == 2);
     }
     // Resolved pointer holds retain their axes and signs across layer changes.
@@ -448,7 +448,7 @@ static void testCombinedPointerSources(void) {
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
     actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
     assert(actionsLayer() == 1 && count == 2);
-    assert((int8_t)reports[1][2] == -4 && reports[1][3] == 60);
+    assert((int8_t)reports[1][2] == -8 && reports[1][3] == 64);
     actionsRelease(0); pump(10, 30); assert(count == 2);
 
     // Both timer slots use the same dispatcher and preserve blocked tap reports.
@@ -461,7 +461,7 @@ static void testCombinedPointerSources(void) {
     actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0);
     blocked = 1; pump(0, 10); assert(count == 0);
     blocked = 0; pump(10, 20);
-    assert(count == 1 && reports[0][2] == 4 && (int8_t)reports[0][3] == -60);
+    assert(count == 1 && reports[0][2] == 8 && (int8_t)reports[0][3] == -64);
     assert(!actionsTimedInput()); pump(20, 30);
     assert(count == 2 && !reports[1][2] && (int8_t)reports[1][3] == -127);
 
@@ -469,7 +469,7 @@ static void testCombinedPointerSources(void) {
     define(start, step, 1); bind(0, start, 2); seal();
     assert(configValid(activeConfig, PHYSICAL_VARIANT)); press(0, 0); pump(0, 20);
     assert(count == 2);
-    for (unsigned i = 0; i < count; i++) assert((int8_t)reports[i][2] == -60 && (int8_t)reports[i][3] == -60);
+    for (unsigned i = 0; i < count; i++) assert((int8_t)reports[i][2] == -64 && (int8_t)reports[i][3] == -64);
 }
 
 static void testMouseSources(void) {

@@ -159,8 +159,8 @@ static FW_BIT movePointer(uint8_t first, uint8_t second) {
   int8_t x = second;
   int8_t y;
   if (first & 1) { // Combined movement (type D).
-    x = (second & 15) << 2;
-    y = (second >> 4) << 2;
+    x = ((second & 15) + 1) << 2;
+    y = ((second >> 4) + 1) << 2;
     if (first & CONFIG_MOUSE_X_NEGATIVE) x = -x;
     if (first & CONFIG_MOUSE_Y_NEGATIVE) y = -y;
   } else {
