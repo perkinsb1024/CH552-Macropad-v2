@@ -1,7 +1,8 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import { ACTION_DESCRIPTORS, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
+import { ACTION_DESCRIPTORS, actionNeedsRelease, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
+import { ACTION_FAMILIES, actionFamilyType, isMediaAction, isLayerAction } from '../actionFamilies';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_BUTTONS, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
@@ -9,7 +10,7 @@ import { normalizeText, visibleText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
 import { isMacroLayerSwitch, macroSwitchesLayer } from '../../model/macros';
 import { actionProblem, slotLabel } from '../../model/validate';
-import { getAction, layerName, profile, rememberedAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
+import { getAction, layerName, profile, rememberedAction, rememberedFamilyAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
 import { ColorPreview } from './ColorPreview';
 import { ModifierPicker } from './KeyPicker';
 import { KeyPicker } from './KeyPicker';
@@ -181,7 +182,8 @@ export function Inspector() {
   const macro = slot?.kind === 'macro';
   const rotation = slot?.kind === 'macro' || slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
   const layerCount = p?.layers.length ?? 0;
-  const problem = action ? actionProblem(action, { layerCount, rotation: !!rotation, timed, macro, macros: p?.macros, macroCount: p?.macros?.length ?? 0 }) : null;
+  const actionContext = { layerCount, rotation: !!rotation, timed, macro, macros: p?.macros, macroCount: p?.macros?.length ?? 0 };
+  const problem = action ? actionProblem(action, actionContext) : null;
   const actionDescriptor = action && ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   const savedStrings = useMemo(() => {
     if (!p) return [];
@@ -215,25 +217,48 @@ export function Inspector() {
     (action.command === 'rainbowPhaseRelative' || action.command === 'rainbowSpeedRelative')
     ? [-2, -1, 1, 2] : [-1, 1];
   const setType = (type: ActionType) => {
+    if (actionFamilyType(type) !== type || (rotation && ACTION_DESCRIPTORS.find(d => d.type === type)?.needsRelease)) return;
     if (type === 'mouseX' && isPointerAction(action)) return;
     if (type === 'mouseClick' && isMouseButtonAction(action)) return;
-    if (type === action.type) return;
+    if (type === actionFamilyType(action.type)) return;
     setAction(slot, action);
-    const remembered = rememberedAction(slot, type);
+    const saved = rememberedFamilyAction(slot, type);
+    const remembered = saved && !actionProblem(saved, actionContext) ? saved : undefined;
+    if ((type === 'consumer' || type === 'consumerModified') && isMediaAction(action)) {
+      const targetType = ACTION_FAMILIES[type][actionNeedsRelease(action) && !rotation ? 1 : 0];
+      const previous = rememberedAction(slot, targetType);
+      const next = previous && !actionProblem(previous, actionContext) ? previous : blankAction(targetType);
+      if (isMediaAction(next)) {
+        const usage = type === 'consumerModified' && action.usage > 0xff ? next.usage : action.usage;
+        update('modifiers' in next ? { ...next, usage, modifiers: 'modifiers' in action ? action.modifiers : next.modifiers } : { ...next, usage });
+      }
+      return;
+    }
+    if ((type === 'setLayer' || type === 'relativeLayer') && isLayerAction(action)) {
+      const sourceTypes = ACTION_FAMILIES[actionFamilyType(action.type) as 'setLayer' | 'relativeLayer'];
+      const mode = (sourceTypes as readonly ActionType[]).indexOf(action.type);
+      const targetType = ACTION_FAMILIES[type][mode === 2 && rotation ? 0 : mode]!;
+      const previous = rememberedAction(slot, targetType);
+      update(previous && !actionProblem(previous, actionContext) ? previous : blankAction(targetType));
+      return;
+    }
     if (remembered) { update(remembered); return; }
     const next = blankAction(type);
-    // Carry compatible values within the keyboard or media family.
-    if ((next.type === 'consumer' || next.type === 'consumerHold' || next.type === 'consumerModified' || next.type === 'consumerModifiedHold') &&
-        (action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified' || action.type === 'consumerModifiedHold')) {
-      const usage = (next.type === 'consumerModified' || next.type === 'consumerModifiedHold') && action.usage > 0xff ? next.usage : action.usage;
-      update((next.type === 'consumerModified' || next.type === 'consumerModifiedHold') ? { ...next, usage, modifiers: (action.type === 'consumerModified' || action.type === 'consumerModifiedHold') ? action.modifiers : next.modifiers } : { ...next, usage });
-    } else if ((next.type === 'keyTap' || next.type === 'keyHold') && (action.type === 'keyTap' || action.type === 'keyHold')) update({ ...next, usage: action.usage, modifiers: action.modifiers });
+    // Carry compatible values between related actions.
+    if ((next.type === 'keyTap' || next.type === 'keyHold') && (action.type === 'keyTap' || action.type === 'keyHold')) update({ ...next, usage: action.usage, modifiers: action.modifiers });
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
     else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta,
       ...('hold' in action && action.hold && !rotation ? { hold: true } : {}) });
     else if ('offset' in next && 'offset' in action) update({ ...next, offset: action.offset });
     else update(next);
+  };
+
+  const setFamilyBehavior = (type: ActionType) => {
+    if ((!isMediaAction(action) && !isLayerAction(action)) || actionFamilyType(type) !== actionFamilyType(action.type) || type === action.type) return;
+    const next = { ...action, type } as Action;
+    if (actionProblem(next, actionContext)) return;
+    update(next);
   };
 
   const setMouseBehavior = (type: MouseButtonAction['type']) => {
@@ -260,7 +285,7 @@ export function Inspector() {
       update({ type, delta, ...hold });
     }
   };
-  const selectableActions = ACTION_DESCRIPTORS.filter(d => d.type !== 'mouseY' && d.type !== 'mouseXY' &&
+  const selectableActions = ACTION_DESCRIPTORS.filter(d => actionFamilyType(d.type) === d.type && d.type !== 'mouseY' && d.type !== 'mouseXY' &&
     !MOUSE_BEHAVIORS.some(behavior => behavior.type === d.type && behavior.type !== 'mouseClick')).filter(d => macro
     ? d.type !== 'macro' && d.type !== 'none' && !d.needsRelease
     : d.type !== 'pause');
@@ -282,7 +307,7 @@ export function Inspector() {
 
       <label class="field">
         <span class="field-label">Action</span>
-        <select value={isPointerAction(action) ? 'mouseX' : isMouseButtonAction(action) ? 'mouseClick' : action.type} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
+        <select value={isPointerAction(action) ? 'mouseX' : isMouseButtonAction(action) ? 'mouseClick' : actionFamilyType(action.type)} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
           {!actionDescriptor && <option value={action.type} disabled>Unsupported saved action</option>}
           {GROUPS.filter(group => selectableActions.some(d => d.group === group)).map((group) => (
             <optgroup key={group} label={group}>
@@ -294,8 +319,27 @@ export function Inspector() {
             </optgroup>
           ))}
         </select>
-        <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : isMouseButtonAction(action) ? 'Click, hold, toggle, press, or release mouse buttons.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>
+        {actionFamilyType(action.type) !== 'relativeLayer' && <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : isMouseButtonAction(action) ? 'Click, hold, toggle, press, or release mouse buttons.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>}
       </label>
+
+      {(isMediaAction(action) || isLayerAction(action)) && <div class="field">
+        <span class="field-label">Behavior</span>
+        <div class="segmented" role="group" aria-label={isMediaAction(action) ? 'Media behavior' : 'Layer behavior'} aria-describedby="family-behavior-hint">
+          {ACTION_FAMILIES[actionFamilyType(action.type) as keyof typeof ACTION_FAMILIES].map((type, index) => {
+            const label = isMediaAction(action) ? ['Tap', 'Hold'][index] : ['Switch', 'One-shot', 'Hold'][index];
+            const hold = ACTION_DESCRIPTORS.find(d => d.type === type)!.needsRelease;
+            return <button key={type} type="button" class={action.type === type ? 'is-selected' : ''} aria-pressed={action.type === type}
+              disabled={hold && (rotation || isPreviousLayer(action))} onClick={() => setFamilyBehavior(type)}>{label}</button>;
+          })}
+        </div>
+        <span class="hint" id="family-behavior-hint">
+          {isMediaAction(action)
+            ? actionNeedsRelease(action) ? 'Hold the selected control until physical release.' : 'Press and release the selected control once.'
+            : actionDescriptor?.hint}
+          {rotation && <> Hold is not available on this input because it has no physical release.</>}
+          {isPreviousLayer(action) && !rotation && <> Hold is not available for Previous layer. Choose a specific target layer to use Hold.</>}
+        </span>
+      </div>}
 
       {macro && isMacroLayerSwitch(action) && <p class="hint">A layer switch must be the final macro step. Macros containing a layer switch must run once, even if the target layer is already active.</p>}
       {action.type === 'macro' && <>

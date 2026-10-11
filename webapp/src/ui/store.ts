@@ -1,6 +1,7 @@
 import { reorderMacros, untriggeredMacros } from '../model/macros';
 import { computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
+import { actionFamilyType } from './actionFamilies';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease, isPreviousLayer, summarize } from '../model/actions';
 import { FORMAT_VERSION, maxLayers, keyCount, type Variant } from '../model/constants';
@@ -552,7 +553,10 @@ export function moveTimer(source: number, target: number, position: DropPosition
 }
 
 const ACTION_MEMORY_KEY = 'universal-macropad:action-settings:v1';
-type ActionMemory = Record<string, Partial<Record<Action['type'], Action>> & { customClickCount?: number }>;
+type ActionMemory = Record<string, Partial<Record<Action['type'], Action>> & {
+  customClickCount?: number;
+  familyTypes?: Partial<Record<Action['type'], Action['type']>>;
+}>;
 function slotMemoryKey(slot: Slot): string { return JSON.stringify(slot); }
 function readActionMemory(): ActionMemory {
   try { return JSON.parse(localStorage.getItem(ACTION_MEMORY_KEY) ?? '{}') as ActionMemory; }
@@ -563,6 +567,7 @@ function rememberAction(slot: Slot, action: Action): void {
     const memory = readActionMemory();
     memory[slotMemoryKey(slot)] = {
       ...memory[slotMemoryKey(slot)], [action.type]: action,
+      familyTypes: { ...memory[slotMemoryKey(slot)]?.familyTypes, [actionFamilyType(action.type)]: action.type },
       ...(action.type === 'mouseClick' && (action.clicks ?? 1) >= 3 ? { customClickCount: action.clicks } : {}),
     };
     localStorage.setItem(ACTION_MEMORY_KEY, JSON.stringify(memory));
@@ -570,6 +575,11 @@ function rememberAction(slot: Slot, action: Action): void {
 }
 export function rememberedAction(slot: Slot, type: Action['type']): Action | undefined {
   return readActionMemory()[slotMemoryKey(slot)]?.[type] as Action | undefined;
+}
+export function rememberedFamilyAction(slot: Slot, type: Action['type']): Action | undefined {
+  const memory = readActionMemory()[slotMemoryKey(slot)];
+  const rememberedType = memory?.familyTypes?.[type] ?? type;
+  return actionFamilyType(rememberedType) === type ? memory?.[rememberedType] : undefined;
 }
 export function rememberedCustomClickCount(slot: Slot): number {
   const count = readActionMemory()[slotMemoryKey(slot)]?.customClickCount;

@@ -46,7 +46,7 @@ it('adds and edits expiry/resume actions through the common inspector, including
   expect(selectedSlot.value).toMatchObject({ kind: 'timed', index: 0, resume: false });
   expect(nodes(Inspector()).find(n => n.type === 'h2')?.props.children).toBe('Timed action 1');
   const selector = nodes(Inspector()).find(n => n.type === 'select')!;
-  expect(nodes(selector.props.children).filter(n => ['keyHold','mouseHold','momentaryLayer'].includes(String(n.props.value))).every(n => n.props.disabled)).toBe(true);
+  expect(nodes(selector.props.children).filter(n => ['keyHold'].includes(String(n.props.value))).every(n => n.props.disabled)).toBe(true);
   setAction(selectedSlot.value!, { type: 'ledControl', command: 'commonPresetSet', value: 3 });
   click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Edit timer 1 resume action')!);
   setAction(selectedSlot.value!, { type: 'ledControl', command: 'brightnessBothSet', value: 'asConfigured' });

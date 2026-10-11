@@ -110,7 +110,7 @@ An action is what the macropad does. A trigger is what makes it happen.
 
 There are no separate user-configurable double-tap or long-press triggers for ordinary actions. **Key hold** means “keep this action held while I hold the button,” rather than “wait before starting.” In v12, firmware update mode is entered through the installer or by holding the encoder while connecting USB.
 
-Actions that need a button release—**Key hold**, **Mouse hold**, **Layer while held**, and pointer movement set to **Hold**—cannot be used for wheel rotation or timer actions as those triggers have no button to release.
+Actions that need a button release—**Key hold**, **Mouse hold**, and media, layer, scroll or pointer actions set to **Hold**—cannot be used for wheel rotation, either timer action, or macro steps as those contexts have no physical release.
 
 ## Available Actions
 
@@ -202,21 +202,22 @@ Choose **Media / system**, then a named **Control**:
 
 Your computer, application, or display must support the selected control. For example, a brightness action may have no effect on an external monitor (though if you're on MacOS, I recommend checking out [Lunar](https://lunar.fyi/), which allows these keys to control many external monitors). The **Custom usage...** entry is an advanced option; use the named choices for ordinary configuration.
 
-**Media / system** sends a tap. With v13 firmware, taps can include **Ctrl**,
-**Shift**, **Alt** and **GUI** modifiers when the usage fits in eight bits
+Choose **Media / system** or **Media / system with modifiers**, then use
+**Behavior** to select **Tap** or **Hold**. With v13 firmware, taps can include
+**Ctrl**, **Shift**, **Alt** and **GUI** modifiers when the usage fits in eight bits
 (`0x01–0xFF`). Larger custom usages use unmodified actions.
-With v14 firmware, choose **Media / system hold with modifiers** to hold an
-eight-bit control and its modifiers until physical release; this action is
-available on keys, chords and the wheel button. Published v13 firmware supports
+With v14 firmware, **Media / system with modifiers** also supports **Hold** to
+keep an eight-bit control and its modifiers active until physical release; this
+behavior is available on keys, chords and the wheel button. Published v13 firmware supports
 modified taps through its matching archived editor. The firmware presses the modifiers before the media
 report and clears them after its release, preserving independently held keys.
 For example, macOS fine brightness adjustment uses Option + Shift with a
 brightness tap. Host support determines the result.
 
-Choose **Media / system hold** to keep the control
-held until release; the selected **Control** is preserved when switching between
-these actions. The host decides whether a sustained control repeats. Holds are
-available on keys, chords and the wheel button, but not wheel turns or timers.
+Choose **Hold** under **Behavior** to keep the control
+held until release; the selected **Control** and modifiers are preserved when
+switching between **Tap** and **Hold**. The host decides whether a sustained control repeats. Holds are
+available on keys, chords and the wheel button, but not wheel turns, either timer action, or macro steps.
 The newest media action wins, including a tap interrupting a hold. Releasing it
 does not restore a previous still-held control. Keyboard and media holds retain
 their original binding across layer changes until physical release. Releasing
@@ -262,16 +263,28 @@ You can have up to seven layers on a three-key macropad, or five on a six-key ma
 
 ### Choose How to Switch Layers
 
-| Action | Behavior |
-| --- | --- |
-| **Switch to layer** | Changes to your chosen layer and stays there until another layer action changes it (like the caps lock key in the earlier example) |
-| **Switch to layer (one-shot)** | Visits your chosen layer for the next action, then returns. You do not need to keep the switching button held |
-| **Layer while held** | Uses the chosen layer while the switching button or chord is held, then returns when released (like the shift key in the earlier example) |
-| **Relative layer** | Moves forward or backward by your chosen number of layers. +1 means next; −1 means previous in numerical order. It wraps around at either end |
-| **Relative layer (one-shot)** | Visits a layer at the chosen offset for the next action, then returns |
-| **Relative layer while held** | Resolves the offset from the selected base layer at press time and keeps that target until physical release; requires v14 firmware |
+Choose **Switch to layer** for a specific target or **Relative layer** for an
+offset, then select **Switch**, **One-shot** or **Hold** under **Behavior**.
+Changing behavior preserves the target layer or offset.
 
-For **Switch to layer** and its one-shot version, the target list also includes **Previous layer**. This means the previously selected layer on the device, rather than simply the next lower layer number. Repeating a **Previous layer** action swaps between those two layers. Temporary one-shot and held visits do not affect the previous layer history.
+| Action | Behavior | Result |
+| --- | --- | --- |
+| **Switch to layer** | **Switch** | Changes to your chosen layer and stays there until another layer action changes it (like the caps lock key in the earlier example) |
+| **Switch to layer** | **One-shot** | Visits your chosen layer for the next action, then returns. You do not need to keep the switching button held |
+| **Switch to layer** | **Hold** | Uses the chosen layer while the switching button or chord is held, then returns when released (like the shift key in the earlier example) |
+| **Relative layer** | **Switch** | Moves forward or backward by your chosen number of layers. +1 means next; −1 means previous in numerical order. It wraps around at either end |
+| **Relative layer** | **One-shot** | Visits a layer at the chosen offset for the next action, then returns |
+| **Relative layer** | **Hold** | Resolves the offset from the selected base layer at press time and keeps that target until physical release; requires v14 firmware |
+
+**Hold** is available on keys, chords and the wheel button. It is disabled for
+wheel turns, both timer actions and macro steps because they have no physical release.
+
+For **Switch to layer** with **Switch** or **One-shot** behavior, the target list
+also includes **Previous layer**. This means the previously selected layer on the
+device, rather than simply the next lower layer number. Repeating a
+**Previous layer** action swaps between those two layers. Temporary one-shot and
+held visits do not affect the previous layer history. **Hold** is disabled while
+**Previous layer** is selected; choose a specific target layer to enable it.
 
 An offset of 0 stays on the current layer and will replay its layer indicator. This is useful with **Blink by layer number** when you want a “which layer am I on?” button. With no indicator, or an always-on indicator, it has no effect.
 
@@ -572,7 +585,7 @@ some actions wait for the macro to finish, while others act immediately:
 | Behavior | Actions triggered while a macro is running |
 | --- | --- |
 | Waits for the macro to finish | **Key tap**, **Type text**, **Mouse click**, **Scroll** set to **Tap**, **Move mouse** set to **Tap**, and another **Execute macro** |
-| Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Mouse down**, **Mouse up**, **Media / system**, **Media / system hold**, **LED control**, **Switch to layer**, **Relative layer**, and **Layer while held** |
+| Does not wait for the macro to finish | **Key hold**, **Mouse hold**, **Mouse toggle**, **Mouse down**, **Mouse up**, **Media / system** and **Media / system with modifiers** with either behavior, **LED control**, **Switch to layer**, and **Relative layer** with any behavior |
 
 Changing the active layer cancels the rest of the macro and clears waiting
 actions. *This also applies to a layer-switching step inside a macro:* the layer
@@ -764,7 +777,7 @@ The same cancellation can happen when the unconsumed input's normal binding chan
 | Layer-changing follow-ups with **Consume this input** off | The normal input's binding is looked up on the resulting active layer. It can run a different action than expected, or change the layer again |
 | Two **Previous layer** follow-ups | Each sees the history left by the earlier selection. They can switch away and then back again, rather than both restoring the layer you used before the reminders. Previous-layer history holds one entry |
 | Multiple **Relative layer** follow-ups | Their changes accumulate sequentially and wrap around. Two +1 selections normally advance two layers |
-| A persistent layer selection while **Layer while held** is active | The held layer keeps priority. Releasing the held input reveals the new persistent selection. Relative timed selections use the currently active layer as their starting point |
+| A persistent layer selection while a layer action set to **Hold** is active | The held layer keeps priority. Releasing the held input reveals the new persistent selection. Relative timed selections use the currently active layer as their starting point |
 | Different timers using **Mouse toggle** for the same mouse button | All timers share the global toggle state with other inputs and macros. Two toggle actions for the same button cancel each other; a change to the effective layer clears the toggle state |
 | Conflicting **LED control** follow-ups | Later actions overwrite overlapping settings. Relative adjustments and toggles operate on the state left by earlier actions. An unconsumed input's own LED action runs afterwards and can change the result again |
 | Output follow-ups while playback is backed up | The playback queue has eight entries. New output can be dropped when it is full; the timer's pending follow-up is still cleared, so it is not automatically retried |

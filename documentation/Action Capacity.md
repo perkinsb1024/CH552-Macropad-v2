@@ -1,5 +1,5 @@
 # Intro
-Information on this page is based on [configuration format v14](../protocol/config-v14.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Media / system hold with modifiers** and **Relative layer while held** use two-byte action records, so the physical-input capacity tables remain unchanged.
+Information on this page is based on [configuration format v14](../protocol/config-v14.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Media / system with modifiers** and **Relative layer** set to **Hold** use two-byte action records, so the physical-input capacity tables remain unchanged.
 
 Each count is the total number of assignable physical-input action slots across all configured layers, with no timed actions or macros configured. Encoder wheel actions count clockwise and counterclockwise separately. **Chords** are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
 

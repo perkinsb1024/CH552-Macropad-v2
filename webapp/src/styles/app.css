@@ -347,6 +347,13 @@ output {
   color: var(--fg);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
 }
+.segmented button:disabled {
+  background: transparent;
+  color: var(--fg-muted);
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: not-allowed;
+}
 .shortcuts-content {
   display: flex;
   flex-direction: column;

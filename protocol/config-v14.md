@@ -82,8 +82,8 @@ objects retain their meanings when imported. The new action objects are:
 | `consumerModifiedHold` | `usage`, `modifiers` | Integer usage 1–255; integer modifier mask 0–15 |
 | `momentaryRelativeLayer` | `offset` | Integer signed offset -6 through +6 |
 
-These are exposed as **Media / system hold with modifiers** and **Relative layer
-while held**. Both require a physical release and are available on keys, encoder
+These are exposed as **Media / system with modifiers** and **Relative layer**,
+both with **Behavior** set to **Hold**. Both require a physical release and are available on keys, encoder
 presses and chords. Encoder rotation, both timer fields and macro steps reject
 these actions. Earlier JSON/draft versions cannot contain these v14-only types.
 
@@ -273,7 +273,7 @@ The action types are:
 | 8 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
 | 9 | **Consumer hold** | High four bits of the usage | Low eight bits of the usage; physical release ends the hold |
 | A | **Media / system with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF` |
-| B | **Media / system hold with modifiers** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF`; physical release ends the hold |
+| B | **Media / system with modifiers** set to **Hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Nonzero eight-bit Consumer Page usage `0x01`–`0xFF`; physical release ends the hold |
 | C | **Set layer** / **Momentary layer** / **Relative layer** | Bits 0–1: `00` persistent, `01` one-shot, `10` hold, `11` reserved; bit 2 selects relative; bit 3 reserved | Absolute layer index (persistent/one-shot also allow `0xFF` for previous persistent layer), or signed relative offset -6 to +6 |
 | D | **LED control** | Value or signed step (see below) | Full command byte (see below) |
 | E | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
@@ -382,7 +382,7 @@ pointer speed and acceleration, and is not guaranteed to equal pixels.
 
 Rotation bindings cannot use **Keyboard hold**, **Mouse hold**, **Consumer Hold**,
 **Scroll Hold**, **Momentary layer**, **Relative layer** in hold mode,
-**Media / system hold with modifiers**, or pointer movement in hold mode. Timed expiry and
+**Media / system with modifiers** set to **Hold**, or pointer movement in hold mode. Timed expiry and
 next-input actions have the same restrictions.
 For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
@@ -553,7 +553,7 @@ steps, without adding configuration bytes beyond ordinary two-byte records.
 ## Consumer Taps and Holds With Modifiers
 
 **Media / system with modifiers** uses type `0xA` for a tap.
-**Media / system hold with modifiers** uses type `0xB` for a physical hold.
+**Media / system with modifiers** set to **Hold** uses type `0xB` for a physical hold.
 Both use the auxiliary nibble as a modifier mask and the parameter byte as a
 Consumer Page usage. All sixteen modifier masks are valid, including zero; a
 zero usage rejects. Modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**,
@@ -611,7 +611,7 @@ modified consumer usages depends on the host and requires hardware verification.
 | **Mouse click** | `0x03 \| ((clicks - 1) << 4)` | Mouse button mask 1–255 |
 | **Mouse hold** | `0x34` | Mouse button mask 1–255 |
 | **Media / system with modifiers** | `0x0A \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
-| **Media / system hold with modifiers** | `0x0B \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
+| **Media / system with modifiers** set to **Hold** | `0x0B \| (modifiers << 4)` | Consumer Page usage `0x01`–`0xFF` |
 | **Mouse down** | `0x14` | Mouse button mask 1–255 |
 | **Mouse up** | `0x24` | Mouse button mask 1–255 |
 | **Nothing** | `0x00` | `0x00` |
@@ -851,7 +851,7 @@ Allowed steps are **Keyboard tap**, **Type Text**, **Mouse click**, **Mouse togg
 layer**, pointer movement in **Tap** mode, **LED control**, and **Pause**.
 **Nothing** is represented by the single-byte terminator rather than a step.
 All normal parameter rules still apply. Reject **Execute macro**, **Keyboard hold**,
-**Mouse hold**, **Consumer hold**, **Media / system hold with modifiers**,
+**Mouse hold**, **Consumer hold**, **Media / system with modifiers** set to **Hold**,
 **Scroll Hold**, **Momentary layer**, **Relative layer** in hold mode, and held
 pointer movement anywhere in the tail, including unreferenced actions. Strings used
 by steps share the existing string pool and its start/bounds checks.

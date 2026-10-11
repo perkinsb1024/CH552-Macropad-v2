@@ -283,7 +283,7 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 14 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On next input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Media / system hold** holds a consumer control until release. Host/application
+**Media / system** set to **Hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
 holds are not restored. Keyboard and consumer holds continue across layer changes
 until their physical input releases. **Scroll** offers **Tap/Hold** on keys, chords and

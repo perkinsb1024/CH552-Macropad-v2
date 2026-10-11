@@ -19,16 +19,16 @@ function start(action: Action) {
 function selects() { return nodes(Inspector()).filter(n => n.type === 'select'); }
 function change(node: Node, value: string) { (node.props.onChange as (event: unknown) => void)({ target: { value } }); }
 
-it('places Media Hold after Media Tap and preserves custom usage when changing either way', () => {
+it('groups media actions and preserves custom usage when changing behavior', () => {
   start({ type: 'consumer', usage: 0xabc });
   const media = nodes(selects()[0]!.props.children).find(n => n.type === 'optgroup' && n.props.label === 'Media')!;
-  expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerHold', 'consumerModifiedHold', 'consumerModified']);
-  change(selects()[0]!, 'consumerHold');
+  expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerModified']);
+  (nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Media behavior')!).filter(n => n.type === 'button')[1]!.props.onClick as () => void)();
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'consumerHold', usage: 0xabc });
   const control = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'ConsumerControl')!;
   const rendered = (control.type as (props: Record<string, unknown>) => unknown)(control.props);
   expect(nodes(rendered).find(n => n.type === 'select')!.props.value).toBe('custom');
-  change(selects()[0]!, 'consumer');
+  (nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Media behavior')!).filter(n => n.type === 'button')[0]!.props.onClick as () => void)();
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'consumer', usage: 0xabc });
 });
 
@@ -44,12 +44,13 @@ it('toggles held scrolling without changing its direction or magnitude', () => {
   expect(actionNeedsRelease(getAction(profile.value!, selectedSlot.value!)!)).toBe(false);
 });
 
-it.each([{ kind: 'clockwise', layer: 0 }, { kind: 'timed', layer: 0, index: 0, resume: false }] as Slot[])('disables Consumer Hold and hides scroll Hold on release-less slot %o', slot => {
+it.each([{ kind: 'clockwise', layer: 0 }, { kind: 'timed', layer: 0, index: 0, resume: false }] as Slot[])('disables media Hold and hides scroll Hold on release-less slot %o', slot => {
   start({ type: 'consumerHold', usage: 1 });
   profile.value!.timedActions = [{ ticks: 1, resetOnInput: true, consumeInput: false, action: { type: 'scroll', delta: 1 }, resumeAction: { type: 'none' } }];
   selectedSlot.value = slot;
-  const option = nodes(selects()[0]!.props.children).find(n => n.type === 'option' && n.props.value === 'consumerHold')!;
-  expect(option.props.disabled).toBe(true);
+  setAction(slot, { type: 'consumer', usage: 1 });
+  const hold = nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Media behavior')!).find(n => n.type === 'button' && n.props.children === 'Hold')!;
+  expect(hold.props.disabled).toBe(true);
   setAction(slot, { type: 'scroll', delta: 1 });
   expect(nodes(Inspector()).some(n => n.props['aria-label'] === 'Scroll behavior')).toBe(false);
   expect(canSwapSlots({ kind: 'key', layer: 0, index: 0 }, slot)).toBe(false);
@@ -93,12 +94,13 @@ it('edits Single, Double and Custom clicks with a 3–16 slider and preserves mo
 
 it('preserves and edits the relative offset when selecting a layer hold', () => {
   start({ type: 'relativeLayer', offset: -1 });
-  change(selects()[0]!, 'momentaryRelativeLayer');
+  (nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Layer behavior')!).filter(n => n.type === 'button')[2]!.props.onClick as () => void)();
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'momentaryRelativeLayer', offset: -1 });
   const slider = nodes(Inspector()).find(n => n.type === 'input' && n.props['aria-label'] === 'Relative offset')!;
   (slider.props.onInput as (event: unknown) => void)({ target: { value: '2' } });
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'momentaryRelativeLayer', offset: 2 });
   selectedSlot.value = { kind: 'clockwise', layer: 0 };
-  const options = nodes(selects()[0]!.props.children);
-  for (const type of ['momentaryRelativeLayer', 'consumerModifiedHold']) expect(options.find(n => n.type === 'option' && n.props.value === type)?.props.disabled).toBe(true);
+  setAction(selectedSlot.value, { type: 'relativeLayer', offset: 2 });
+  const hold = nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Layer behavior')!).find(n => n.type === 'button' && n.props.children === 'Hold')!;
+  expect(hold.props.disabled).toBe(true);
 });
