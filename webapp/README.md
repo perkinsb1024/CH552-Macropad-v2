@@ -122,10 +122,9 @@ custom domain, or deployment environment for archives.
 
 Run `npm run verify:deploy` after the final edits before publishing. The command
 runs configurator tests, rebuilds and tests the standalone uploader, then builds
-the complete site and verifies archives. Require the **Verify deployment**
-status check through repository protection as described in the
-[release process](../documentation/Firmware%20Release%20Process.md#validate-before-merging).
-Adding the workflow does not enable that repository setting.
+the complete site and verifies archives. Direct pushes to `main` are supported;
+pull requests and repository protection are optional, as described in the
+[release process](../documentation/Firmware%20Release%20Process.md#publish-after-validation).
 
 The active format 14 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`

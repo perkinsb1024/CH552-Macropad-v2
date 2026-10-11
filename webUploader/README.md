@@ -130,7 +130,8 @@ standalone uploader, then builds the complete site and verifies frozen archives.
 Run it after the final release files and README edits; the installer bundles
 the root README's release notes. Follow the
 [release process](../documentation/Firmware%20Release%20Process.md) for firmware
-checks and the required pull-request status check.
+checks and optional pull-request protection. Direct pushes are supported after
+the local deployment gate passes.
 
 The build requires exactly one generated HEX per variant in `releases/` (including the release tool’s `dirty-` filename marker for uncommitted firmware), validates record checksums and the 14 KiB application boundary, copies those files into `firmware/`, and writes a SHA-256 manifest. The page checks each download against that manifest before enabling install. The Pages workflow watches `releases/`, `webUploader/`, the root README, firmware/test dependencies, and `.gitmodules` as well as the configurator. Pull-request validation has no path filter.
 

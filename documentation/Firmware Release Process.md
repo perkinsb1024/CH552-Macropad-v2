@@ -99,17 +99,18 @@ firmware regressions/native builds, configurator tests, uploader tests and the
 complete site/archive build. Identify the tested source revision and any
 uncommitted changes; report skipped or failed checks explicitly.
 
-## Validate Before Merging
+## Publish After Validation
 
-Prepare release changes in a pull request targeting `main`. The deployment
-workflow runs the **Verify deployment** check on every pull request to `main`,
+Run `npm run verify:deploy` on the final contents before pushing to `main`.
+Direct pushes are supported; pull requests and branch protection are optional.
+The deployment workflow runs the **Verify deployment** check on every pull request to `main`,
 including documentation-only changes, and on merge-queue candidates. These runs
 validate the proposed contents without publishing Pages artifacts or deploying.
 Only a successful push to `main`, or a manual run on `main`, can deploy the site.
 
-After the workflow is published and its check has run, configure a branch rule or
-ruleset for `main` to require a pull request, the **Verify deployment** status
-check from GitHub Actions, and an up-to-date branch before merging. Apply the
-rule to administrators as well, without a routine bypass. See GitHub's
+For optional enforcement before merging, a branch rule or ruleset can require
+a pull request, the **Verify deployment** status check from GitHub Actions,
+and an up-to-date branch. These restrictions change the direct-push and
+force-push workflow, so enable them only when that workflow is desired. See GitHub's
 [required status checks documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging).
-This is a repository setting; editing the workflow alone does not enforce it.
+These are repository settings; editing the workflow alone does not enforce them.

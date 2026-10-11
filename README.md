@@ -365,7 +365,7 @@ that same gate on every pull request to `main`. It publishes the configurator,
 uploader and frozen archives after deployment inputs are pushed to `main`,
 including the root README's release notes. Follow the
 [release process](documentation/Firmware%20Release%20Process.md) for firmware
-checks and repository protection requirements. The active editor lives at the
+checks and optional repository protection. The active editor lives at the
 site's root; [archived editors](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/)
 live under `versions/`. No separate Pages site or tag deployment is needed.
 
