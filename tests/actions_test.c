@@ -548,7 +548,9 @@ static void testRelativeLayer(void) {
 
 static void testOneShot(void) {
     uint8_t type;
-    for (type = CONFIG_ACTION_SET_LAYER; type <= CONFIG_ACTION_RELATIVE_LAYER; type += 3) {
+    const uint8_t layerTypes[] = {CONFIG_ACTION_SET_LAYER, CONFIG_ACTION_RELATIVE_LAYER};
+    for (uint8_t index = 0; index < 2; index++) {
+        type = layerTypes[index];
         reset();
         activeConfig[3] = 1;
         activeConfig[9] = 0x10 | type;

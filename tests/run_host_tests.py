@@ -14,6 +14,7 @@ with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
     suites = [("config", ["src/config.c"]), ("actions", ["src/config.c", "src/actions.c"]), ("protocol", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"])]
     suites += [("usb", [], variant) for variant in (0, 1)]
     suites += [("modified_hold", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+    suites += [("layer_encoding", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("macros", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("timed_actions", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("input", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]

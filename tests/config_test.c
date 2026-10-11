@@ -356,7 +356,7 @@ static void testActions(void) {
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();
-        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO));
+        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO && type != 0xB));
     }
         testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;
@@ -385,16 +385,7 @@ static void testActions(void) {
     activeConfig[10] = 0;
     seal();
     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
-    for (type = CONFIG_ACTION_SET_LAYER; type <= CONFIG_ACTION_RELATIVE_LAYER; type += 2) {
-        for (aux = 0; aux < 16; aux++) {
-            activeConfig[9] = (aux << 4) | type;
-            activeConfig[23] = (aux << 4) | type; // Rotation accepts both modes too.
-            activeConfig[24] = 0;
-            seal();
-            assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (aux <= 1));
-        }
-    }
-    activeConfig[9] = 0x40 | CONFIG_ACTION_SET_LAYER;
+    activeConfig[9] = 0x30 | CONFIG_ACTION_SET_LAYER;
     activeConfig[23] = CONFIG_ACTION_NONE;
     seal();
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));

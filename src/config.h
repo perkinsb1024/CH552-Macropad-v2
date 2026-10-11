@@ -86,7 +86,9 @@
 #define CONFIG_ACTION_PAUSE            0x20 // Parameter: 16 ms units, 0-255.
 #define CONFIG_ACTION_SET_LAYER        0x9
 #define CONFIG_ACTION_MOMENTARY_LAYER  0x29 // Full first byte: Set layer mode 2.
-#define CONFIG_ACTION_RELATIVE_LAYER   0xB
+#define CONFIG_ACTION_RELATIVE_LAYER   0x49 // Full first byte: relative, persistent.
+#define CONFIG_LAYER_RELATIVE          0x40
+#define CONFIG_LAYER_HOLD              0x20
 #define CONFIG_ACTION_MOUSE_AXIS       0xC
 #define CONFIG_ACTION_MOUSE_XY          0xD
 #define CONFIG_ACTION_LED_CONTROL      0xE

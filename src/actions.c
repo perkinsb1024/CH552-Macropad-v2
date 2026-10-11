@@ -306,17 +306,19 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       if (first & 0x30) persistentMouse &= ~second;
       if (!(first & 0x20)) persistentMouse ^= second;
       break;
-    case CONFIG_ACTION_RELATIVE_LAYER:
-      {
+    case CONFIG_ACTION_SET_LAYER:
+      if (first & CONFIG_LAYER_RELATIVE) {
         uint8_t layers = configLayerCount();
         // Bias by a multiple of the layer count to wrap signed offsets (-6..6).
         // Resolve relative to the selected layer, before consuming a one-shot.
         second = selectedLayer + second + (layers << 3);
         while (second >= layers) second -= layers;
       }
-      // Fall through: both layer actions share the one-shot flag and assignment.
-    case CONFIG_ACTION_SET_LAYER:
-      if (first == CONFIG_ACTION_MOMENTARY_LAYER) {
+      if (first & CONFIG_LAYER_HOLD) {
+        // Snapshot a relative hold's target once; layer recomputation must not
+        // reinterpret its offset after other layer changes.
+        buttonFirst[input] = CONFIG_ACTION_MOMENTARY_LAYER;
+        buttonSecond[input] = second;
         layerSelectionPending = 1;
         break;
       }
