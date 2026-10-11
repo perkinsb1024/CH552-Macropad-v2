@@ -518,7 +518,9 @@ static void testModifiedConsumer(void) {
         assert(!latestModifiers());
     }
     // All twelve-bit high nibbles remain usages, never temporary modifiers.
-    for (uint8_t aux = 0; aux < 16; aux++) for (uint8_t type = 7; type <= 8; type++) {
+    const uint8_t consumerTypes[] = {CONFIG_ACTION_CONSUMER, CONFIG_ACTION_CONSUMER_HOLD};
+    for (uint8_t aux = 0; aux < 16; aux++) for (uint8_t index = 0; index < 2; index++) {
+        uint8_t type = consumerTypes[index];
         reset(); activeConfig[9] = (aux << 4) | type; activeConfig[10] = 0x24;
         actionsPress(0, 0); actionsPoll(0);
         assert(count == 1); assertConsumer(0, ((uint16_t)aux << 8) | 0x24);
@@ -576,7 +578,7 @@ static void testModifiedConsumerReplacement(void) {
         assertConsumer(count - (replacement == 2 ? 2 : 1), 0);
     }
     // A modified tap interrupts a held 12-bit usage, without restoring it.
-    reset(); activeConfig[9] = 0x28; activeConfig[10] = 0x24;
+    reset(); activeConfig[9] = 0x20 | CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0x24;
     activeConfig[11] = 0x64; activeConfig[12] = 0x6f;
     actionsPress(0, 0); actionsPoll(0); assertConsumer(0, 0x224);
     press(1, 1); actionsPoll(1);

@@ -121,11 +121,14 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_KEY_HOLD:
             return (!rotation || type != CONFIG_ACTION_KEY_HOLD) &&
                    keyboardUsageValid(param);
-        case CONFIG_ACTION_CONSUMER_MODIFIED_HOLD:
-            if (rotation) return 0;
-            // Fall through: both modified consumer types use eight-bit usages.
         case CONFIG_ACTION_CONSUMER_MODIFIED:
-            return param != 0; // Eight-bit usage; all four modifier bits are valid.
+        case CONFIG_ACTION_CONSUMER_MODIFIED_HOLD:
+        case CONFIG_ACTION_CONSUMER:
+        case CONFIG_ACTION_CONSUMER_HOLD:
+            // Bit 3 selects hold; only unmodified types 7/A may use the
+            // auxiliary nibble to make an otherwise-zero usage nonzero.
+            if (rotation && (type & 8)) return 0;
+            return param != 0 || ((type & 3) && aux != 0);
         case CONFIG_ACTION_MOUSE_CLICK:
             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
         case CONFIG_ACTION_MOUSE_TOGGLE:
@@ -146,11 +149,6 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             // Fall through: both pointer actions share hold and reserved-bit checks.
         case CONFIG_ACTION_MOUSE_XY:
             return !(aux & (uint8_t)(8 | rotation));
-        case CONFIG_ACTION_CONSUMER:
-        case CONFIG_ACTION_CONSUMER_HOLD:
-            // The full 12-bit consumer usage is retained, including its high nibble.
-            return (!rotation || type == CONFIG_ACTION_CONSUMER) &&
-                   (aux != 0 || param != 0);
         case CONFIG_ACTION_NONE:
             if (!aux) return param == 0;
 #if CONFIG_MACRO_PAUSE
@@ -159,8 +157,8 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             if (aux != 1 || param >= validationUsed) return 0;
             return param == 0 || validationImage[validationPool + param - 1] == 0;
         case CONFIG_ACTION_SET_LAYER:
-            if (aux >= 8 || (aux & 3) == 3 || (rotation && (aux & 2))) return 0;
-            if (aux & 4) return param <= 6 || param >= 0xFA;
+            if ((aux & (uint8_t)(8 | (rotation << 1))) || (aux & 3) == 3) return 0;
+            if (aux & 4) return (uint8_t)(param + 6) <= 12;
             return param < validationLayers || (!(aux & 2) && param == CONFIG_LAYER_PREVIOUS);
         default:
             return 0;

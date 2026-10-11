@@ -19,12 +19,12 @@ static void testHoldEncoding(void) {
     reset(); holdBinding(configKeyCount() + 1, 6, 0x6f); seal();
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     reset(); activeConfig[3] = 1 << 6;
-    activeConfig[start + 1] = 0x6a; activeConfig[start + 2] = 0x6f; seal();
+    activeConfig[start + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD); activeConfig[start + 2] = 0x6f; seal();
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     activeConfig[start + 1] = activeConfig[start + 2] = 0;
-    activeConfig[start + 3] = 0x6a; activeConfig[start + 4] = 0x6f; seal();
+    activeConfig[start + 3] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD); activeConfig[start + 4] = 0x6f; seal();
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
-    reset(); const uint8_t held[] = {0x6a, 0x6f};
+    reset(); const uint8_t held[] = {(0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD), 0x6f};
     define(start, held, 1); bind(0, start, 1); seal();
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
 }
@@ -63,7 +63,7 @@ static void testHoldLifecycle(void) {
     actionsRelease(0); pump(10, 20); assert(count == 4 && !latestModifiers());
     // Either chord member releases the composite output.
     reset(); activeConfig[5] |= 2;
-    activeConfig[start] = 0; activeConfig[start + 1] = 0x6a; activeConfig[start + 2] = 0x6f;
+    activeConfig[start] = 0; activeConfig[start + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD); activeConfig[start + 2] = 0x6f;
     actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
     assert(count == 2); actionsRelease(1); pump(10, 20);
     assert(count == 4 && !latestModifiers());
@@ -90,7 +90,9 @@ static void testHoldReplacement(void) {
     assertConsumer(0, 0x6f); assertConsumer(1, 0);
     assertModifiers(2, 6); assertConsumer(3, 0x6f);
     // Holds, taps, modified/unmodified replacements, without restoring old holds.
-    const uint8_t replacements[] = {0x07, 0x08, 0x94, 0x9a};
+    const uint8_t replacements[] = {CONFIG_ACTION_CONSUMER, CONFIG_ACTION_CONSUMER_HOLD,
+                                    0x90 | CONFIG_ACTION_CONSUMER_MODIFIED,
+                                    0x90 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD};
     for (unsigned k = 0; k < sizeof replacements; k++) {
         reset(); holdBinding(0, 6, 0x6f);
         activeConfig[11] = replacements[k]; activeConfig[12] = 0x70;

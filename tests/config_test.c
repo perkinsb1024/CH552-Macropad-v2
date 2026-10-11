@@ -490,7 +490,9 @@ static void testPreviousLayerSentinel(void) {
 static void testConsumerHoldEncoding(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
-        for (uint8_t type = CONFIG_ACTION_CONSUMER; type <= CONFIG_ACTION_CONSUMER_HOLD; type++) {
+        const uint8_t consumerTypes[] = {CONFIG_ACTION_CONSUMER, CONFIG_ACTION_CONSUMER_HOLD};
+        for (uint8_t index = 0; index < 2; index++) {
+            uint8_t type = consumerTypes[index];
             testLoadStarterProfile(variant);
             for (uint16_t usage = 0; usage < 4096; usage++) {
                 activeConfig[9] = type | ((usage >> 8) << 4);

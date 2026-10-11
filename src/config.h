@@ -5,7 +5,7 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 14 experiment: modified consumer holds and consolidated layer modes.
+// Format 14 experiment: modified consumer holds and absolute/relative layer modes.
 #define CONFIG_VERSION 14
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
@@ -39,7 +39,7 @@
 #error "PHYSICAL_VARIANT must be 0 (six keys) or 1 (three keys)."
 #endif
 
-// Action numbers are part of the saved format.
+// Action numbers are part of the saved format. V14 assignments are provisional.
 #define CONFIG_ACTION_NONE             0x0
 #define CONFIG_ACTION_KEY_TAP          0x1
 #define CONFIG_ACTION_KEY_HOLD         0x2
@@ -79,8 +79,8 @@
 #error Scroll acceleration X/Y presets must be in the range 1-8
 #endif
 #define CONFIG_ACTION_CONSUMER         0x7
-#define CONFIG_ACTION_CONSUMER_HOLD    0x8
-#define CONFIG_ACTION_CONSUMER_MODIFIED_HOLD 0xA
+#define CONFIG_ACTION_CONSUMER_HOLD    0xA
+#define CONFIG_ACTION_CONSUMER_MODIFIED_HOLD 0x8
 // Full first byte: type None with auxiliary value 1.
 #define CONFIG_ACTION_STRING           0x10
 #define CONFIG_ACTION_PAUSE            0x20 // Parameter: 16 ms units, 0-255.
