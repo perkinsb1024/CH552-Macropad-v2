@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 **Universal Macropad**. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v12.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v13.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -115,7 +115,7 @@ when webapp changes are pushed to `main`, or when run manually. In the repositor
 Pages deployments using this workflow need no additional website configuration,
 custom domain, or deployment environment for archives.
 
-The active format 12 editor is served at the project site's root. Frozen
+The active format 13 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -129,12 +129,13 @@ is rebuilt from dependencies in CI.
 - `versions/format-v5/` serves the frozen v5 editor from the revision recorded in its manifest.
 - `versions/format-v6/` serves the frozen v6 editor from commit `38d4786`.
 - `versions/format-v8/` serves the frozen published-v8 editor and live view, with provenance in its manifest.
+- `versions/format-v12/` serves the frozen v12 editor and live view from finalized outgoing source `3d23690`.
 - `versions/format-v11/` serves the frozen v11 editor and live view from the finalized v11 release.
 - `versions/format-v10/` serves the frozen v10 editor and live view built before v11 changes.
 - `versions/format-v9/` serves the frozen v9 editor and live view built before the v10 changes.
 - `versions/format-v7/` serves the frozen v7 editor and live view from commit `196e81e`.
 
-The footer links to the archive list. Detecting format 2–10 firmware presents a
+The footer links to the archive list. Detecting format 2–12 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -142,13 +143,13 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11/v12 drafts without overwriting or clearing the archived namespace.
 
-Version 2–11 binary profiles, version 1–11 JSON files, and older drafts can still be
-migrated into the active format 12 editor after a firmware upgrade. Bindings and
+Version 2–12 binary profiles, version 1–12 JSON files, and older drafts can still be
+migrated into the active format 13 editor after a firmware upgrade. Bindings and
 colors are preserved; **Blink once** becomes the timed indication and transparency
 defaults to off. **Rainbow phase spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to store v12. Older stored profiles remain readable but inactive until saved as v12.
+through the active editor to store v13. Older stored profiles remain readable but inactive until saved as v13.
 
 **LED control** bindings expose existing LED commands plus **Set all LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
@@ -202,10 +203,11 @@ preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
 visits. Repeating a persistent **Previous layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
-The protocol simulator accepts only valid v12 profiles and round-trips the new
+The protocol simulator accepts only valid v13 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
-Firmware hardware testing has been completed on both three-key and six-key macropads. Bundled `../profiles/*.json`
-files use v7 JSON and are migrated to v12, then checked against the firmware parser in the regression suite.
+Previous released firmware has been hardware tested on both geometries; see
+**Release Firmware Status** for current v13 coverage. Bundled `../profiles/*.json`
+files use v7 JSON and are migrated to v13, then checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
 
@@ -225,7 +227,7 @@ and media controls. Acceleration is not part of this merged build.
 v8 writes **Type Text** with first byte `0x10`; old type-9 text is decoded according
 to its source version before re-encoding. **None** remains `00 00`. Binary, JSON,
 draft and raw-device migration cover every binding location, including timers.
-Legacy firmware connects through its frozen editor, while old flash on v12 can
+Legacy firmware connects through its frozen editor, while old flash on v13 can
 be read and migrated without being automatically overwritten.
 
 ## Mouse Clicks (v8+)
@@ -256,15 +258,14 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v11 firmware from revision
-`f87ca744`: [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
-[six-key](../releases/ch552-macropad-6-key-f87ca744.hex). Use the frozen v11 editor
-with these releases. Current source/editor use v12; no v12 release has been
-generated. V11 hardware testing passed on both geometries; v12 has automated
-coverage and native builds but no hardware compatibility results yet.
+The release HEX files and bundled uploader use v13 firmware from revision
+`eb2de185`: [three-key](../releases/ch552-macropad-3-key-eb2de185.hex) and
+[six-key](../releases/ch552-macropad-6-key-eb2de185.hex). The active editor matches
+these releases. Automated tests and native builds pass on both geometries;
+the user has completed v13 hardware validation.
 Older-firmware connections link to the matching archive and updater. Back up
-profiles, update firmware, then load/import and explicitly save in its matching
-editor. V11 migration to v12 preserves actions, macros, timer units and storage.
+profiles, update firmware, then load/import and explicitly save in the active
+editor. Older imports preserve action semantics, macros, timer units and storage.
 Oversized older imports remain editable/exportable until reduced.
 
 ## Horizontal Scrolling (v9)
@@ -331,7 +332,7 @@ All **Mouse toggle** actions share one global button state across physical input
 chords, timers and macros. Any toggle can undo another toggle for the same button;
 held actions retain their physical ownership. Layer-route analysis follows steps
 until cancellation.
-See [the complete v12 reference](../protocol/config-v12.md) and
+See [the complete v13 reference](../protocol/config-v13.md) and
 [implementation and optimization notes](../protocol/macros-implementation.md).
 
 ## Mouse Buttons and Persistent Actions (V12)
@@ -344,7 +345,7 @@ remain independent, and macro completion leaves persistent state intact.
 Layer changes and resets clear it. Down/up are valid macro steps, rotation
 bindings and timer actions without additional record bytes.
 
-The editor exports JSON v12 and stores drafts under `format-v12:`. Binary v11,
+The frozen v12 editor exports JSON v12 and stores drafts under `format-v12:`. Binary v11,
 JSON v11 and v11 drafts migrate without altering macros, repeats, pauses, timer
 units or storage. Older inputs reject v12-only modes and larger button masks.
 The binary codec and firmware parser are compared in regression tests.
@@ -353,3 +354,23 @@ The test panel observes browser events, using explicit DOM event-to-button
 mapping. Side buttons may be intercepted, and buttons 6–8 may not appear even
 when another application supports them. The eight-button HID descriptor packs
 the two scroll axes into separate signed nibbles without changing report size.
+
+## Consumer Modifiers and Pointer Movement (V13)
+
+The active editor exports JSON v13 and stores drafts under `format-v13:`.
+Older binary, JSON and draft profiles migrate into v13 without changing their
+named action behavior. Old **Mouse hold** records move to auxiliary mode 3 of
+the shared mouse action; legacy pointer steps become signed single-axis deltas.
+
+**Media / system** taps expose **Ctrl**, **Shift**, **Alt** and **GUI** modifiers
+for eight-bit usages. Twelve-bit unmodified taps and holds remain available;
+modified holds and modified usages above `0xFF` are rejected. Firmware drains
+the keyboard modifier report before the consumer press, then drains the
+consumer release before removing temporary modifiers.
+
+**Move mouse** offers **X**, **Y** and **Both** axes. Single-axis amounts are
+1–127; **Both** stores independent magnitudes 0–60 in steps of 4 and independent
+signs in one two-byte action. Buttons and chords support **Tap** and **Hold**;
+rotation, timers and macro steps use taps. Zero movement on both axes produces
+an editable warning. Codec/firmware agreement and editor migration are covered
+by regression tests. USB product names are **3-Key Macropad** and **6-Key Macropad**.

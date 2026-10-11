@@ -153,8 +153,8 @@ Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
 and application. Buttons 4/5 often mean Back/Forward; those meanings are not
 guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
 may not observe buttons 6–8 even when another application can use them.
-Buttons 4–8 and down/up require v12 firmware. The bundled v11 release supports
-three buttons and global **Mouse toggle**; use its frozen configurator.
+Buttons 4–8 and down/up require v12 firmware. The bundled v13 release supports all eight buttons and these persistent
+actions; older firmware uses its matching frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
 slot when you switch to **Single** or **Double** and back. The duration hint is rounded
@@ -205,7 +205,15 @@ Choose **Media / system**, then a named **Control**:
 
 Your computer, application, or display must support the selected control. For example, a brightness action may have no effect on an external monitor (though if you're on MacOS, I recommend checking out [Lunar](https://lunar.fyi/), which allows these keys to control many external monitors). The **Custom usage...** entry is an advanced option; use the named choices for ordinary configuration.
 
-**Media / system** sends a tap. Choose **Media / system hold** to keep the control
+**Media / system** sends a tap. With v13 firmware, taps can include **Ctrl**,
+**Shift**, **Alt** and **GUI** modifiers when the usage fits in eight bits
+(`0x00–0xFF`). Larger custom usages and **Media / system hold** do not support
+these temporary modifiers. The firmware presses the modifiers before the media
+report and clears them after its release, preserving independently held keys.
+For example, macOS fine brightness adjustment uses Option + Shift with a
+brightness tap. Host support determines the result.
+
+Choose **Media / system hold** to keep the control
 held until release; the selected **Control** is preserved when switching between
 these actions. The host decides whether a sustained control repeats. Holds are
 available on keys, chords and the wheel button, but not wheel turns or timers.
@@ -504,9 +512,8 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are supported by the [pre-built v11 release firmware](../README.md#how-to-compile-the-firmware)
-and the current configurator. Older firmware uses its matching archived editor
-and does not support macros.
+Macros are supported by the [pre-built v13 release firmware](../README.md#how-to-compile-the-firmware)
+and the current configurator. Older firmware uses its matching archived editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add macro**
 2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence
@@ -704,7 +711,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v12 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v13 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

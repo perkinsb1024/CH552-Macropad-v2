@@ -1,5 +1,5 @@
 # Intro
-Information on this page is based on [configuration format v11](../protocol/config-v11.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Consumer Hold** and held scrolling still use two-byte action records, so capacity is unchanged from v7.
+Information on this page is based on [configuration format v13](../protocol/config-v13.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Consumer Hold** and held scrolling still use two-byte action records, so capacity is unchanged from v7.
 
 Each count is the total number of assignable physical-input action slots across all configured layers, with no timed actions or macros configured. Encoder wheel actions count clockwise and counterclockwise separately. **Chords** are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
 

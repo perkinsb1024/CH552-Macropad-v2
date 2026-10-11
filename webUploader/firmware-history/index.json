@@ -98,6 +98,14 @@
       "publishedAt": "2026-10-02T11:17:33-07:00"
     },
     {
+      "name": "ch552-macropad-3-key-acabfaa1.hex",
+      "releaseCommit": "3aa434835d54409b3c04c547ad46433eb7f4e1f5",
+      "sourceRevision": "acabfaa1",
+      "sha256": "b1200c83382ff0d14e6667bfe0f198994564ef34537b3cdb0c15aebdd026a678",
+      "formatVersion": 12,
+      "publishedAt": "2026-10-10T01:04:22-07:00"
+    },
+    {
       "name": "ch552-macropad-3-key-b02a6bf8.hex",
       "releaseCommit": "75b3a4f96395885fca0865d51cb2f38c03b7667d",
       "sourceRevision": "b02a6bf8",
@@ -120,6 +128,14 @@
       "sha256": "70ba025c552cac01e65f6920c2e196b98c6b682e6b36798cce8e379ca5957730",
       "formatVersion": 7,
       "publishedAt": "2026-10-04T16:34:23-07:00"
+    },
+    {
+      "name": "ch552-macropad-3-key-f87ca744.hex",
+      "releaseCommit": "418894a1f940173afb3b46f9f9f7b96817fded89",
+      "sourceRevision": "f87ca744",
+      "sha256": "05fd1b9a0ffb1bb61104450ad461d9af4e12e6be3466fa6ab95119f6d024e22b",
+      "formatVersion": 11,
+      "publishedAt": "2026-10-07T23:59:38-07:00"
     },
     {
       "name": "ch552-macropad-6-key-04c8f60d.hex",
@@ -218,6 +234,14 @@
       "publishedAt": "2026-10-02T11:17:33-07:00"
     },
     {
+      "name": "ch552-macropad-6-key-acabfaa1.hex",
+      "releaseCommit": "3aa434835d54409b3c04c547ad46433eb7f4e1f5",
+      "sourceRevision": "acabfaa1",
+      "sha256": "9ed173566614a9685de03a947c05231a39f5a6baf3f72d35e01175ae78a57203",
+      "formatVersion": 12,
+      "publishedAt": "2026-10-10T01:04:22-07:00"
+    },
+    {
       "name": "ch552-macropad-6-key-b02a6bf8.hex",
       "releaseCommit": "75b3a4f96395885fca0865d51cb2f38c03b7667d",
       "sourceRevision": "b02a6bf8",
@@ -240,6 +264,14 @@
       "sha256": "fd11bc853c034675d9c483df308d31342a792c160e977dd18e4a98bb5c3717c1",
       "formatVersion": 7,
       "publishedAt": "2026-10-04T16:34:23-07:00"
+    },
+    {
+      "name": "ch552-macropad-6-key-f87ca744.hex",
+      "releaseCommit": "418894a1f940173afb3b46f9f9f7b96817fded89",
+      "sourceRevision": "f87ca744",
+      "sha256": "fc207e700af0a2ed2e4b26ce03c9504346672ab19c850e4f1e47944f417902e7",
+      "formatVersion": 11,
+      "publishedAt": "2026-10-07T23:59:38-07:00"
     }
   ]
 }

@@ -21,6 +21,8 @@ actions support fine single-axis movement and combined pointer movement. Dynamic
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
 
+The pre-built v13 release files use source revision `eb2de185`: [three-key](../releases/ch552-macropad-3-key-eb2de185.hex) and [six-key](../releases/ch552-macropad-6-key-eb2de185.hex). Native builds and automated regressions pass on both geometries; the user has completed v13 hardware validation.
+
 The active web configurator edits v13 images and uses version 13 JSON profiles
 and a separate v13 draft namespace. It imports older profiles and binary images
 into the current model. The frozen v12 editor remains available under
@@ -396,7 +398,7 @@ also restores phase and speed.
 ## Palette and Starter Profile
 
 Palette version 3 uses the following colors. The representative hex values are
-the v12 web editor's display colors, chosen to resemble the firmware LEDs on
+the v13 web editor's display colors, chosen to resemble the firmware LEDs on
 screen; they are intentionally not exact conversions of the firmware RGB
 values. Only palette indices are stored in the configuration image.
 
@@ -1011,11 +1013,12 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,318 | 18 | 105 | 365 | 128 | 79 |
-| Three keys | 14,316 | 20 | 105 | 356 | 128 | 82 |
+| Six keys | 14,324 | 12 | 105 | 365 | 128 | 81 |
+| Three keys | 14,322 | 14 | 105 | 356 | 128 | 84 |
 
-Host suites pass on both geometries; hardware compatibility testing remains
-pending. The active configurator does not support this format.
+Host suites pass with color preview enabled and disabled. Fresh native builds
+match both release HEX files byte for byte. The active configurator supports
+this format, and the user has completed v13 hardware validation.
 
 Build both hardware variants with the real 14,336-byte application limit:
 
@@ -1028,6 +1031,10 @@ python3 pio-platform/build_firmware.py build . /private/tmp/macropad-v13-three 2
 
 These commands produce temporary build outputs and do not generate releases.
 The absolute active image occupies xRAM `0x300–0x37F` and is counted separately
-from ordinary XSEG. USB DMA reserves 148 bytes. The build checks paged, external,
+from ordinary XSEG. USB DMA reserves 148 bytes. Total allocated external RAM, including USB DMA,
+PSEG, XSEG and the absolute image, is 746 bytes on six keys and 737 bytes on
+three keys, leaving 278/287 unallocated bytes including gaps. PSEG occupies
+`0x094–0x0FC`, with three bytes remaining in page zero. Ordinary XSEG occupies
+`0x111–0x27D` on six keys and `0x0FD–0x260` on three keys. The build checks paged, external,
 absolute-image and interrupt-parameter layout. Stack figures from the linker
 represent reserved capacity, not runtime high-water measurements.

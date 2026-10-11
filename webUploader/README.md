@@ -2,14 +2,13 @@
 
 *This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
-The bundled default firmware uses configuration format v11, built from revision
-`f87ca744`: [three-key](../releases/ch552-macropad-3-key-f87ca744.hex) and
-[six-key](../releases/ch552-macropad-6-key-f87ca744.hex). Use the frozen
-[v11 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v11/)
-with these files. Current source/editor support v12; no v12 release has been
-generated. The installer reads each bundled HEX's format and links to its
+The bundled default firmware uses configuration format v13, built from revision
+`eb2de185`: [three-key](../releases/ch552-macropad-3-key-eb2de185.hex) and
+[six-key](../releases/ch552-macropad-6-key-eb2de185.hex). Use the
+[current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+with these files. The installer reads each bundled HEX's format and links to its
 matching editor. Back up profiles before updating; older profiles remain in
-DataFlash with actions inactive until explicitly migrated and saved.
+DataFlash with actions inactive until explicitly migrated and saved in v13.
 
 The static page is built into `webapp/dist/webUploader/` for the existing GitHub Pages site. Its URL after deployment is:
 
@@ -47,7 +46,7 @@ The init command retains upstream's boot configuration value `0x03`, matching th
 
 1. Open the beta page in desktop Chrome or Edge over HTTPS or localhost.
 2. Follow the platform setup instructions below or on the page.
-3. Click **Enter Bootloader** and select the running macropad if its firmware supports the HID command (v12). Alternatively, hold the encoder while connecting USB with this project's firmware. Stock firmware may require boot pads or a physical boot button; see the [repository instructions](../README.md#how-to-upload-the-firmware).
+3. Click **Enter Bootloader** and select the running macropad if its firmware supports the HID command (v12 or later). Alternatively, hold the encoder while connecting USB with this project's firmware. Stock firmware may require boot pads or a physical boot button; see the [repository instructions](../README.md#how-to-upload-the-firmware).
 4. Click **Connect Bootloader** and select USB ID `4348:55E0`.
 5. Choose **Latest Release**, **Previous Release**, or **Custom Firmware**. For a published release, select the three-key or six-key variant; for a recognized custom build, check the detected variant. Confirm your selection, then click **Install Firmware**.
 6. Keep USB connected through programming and verification. After restart, use the configurator to load/save your profile.
@@ -144,7 +143,7 @@ variant retains the selected version when a matching build is available.
 Downloads and installation use the selected entry's SHA-256, size, variant and
 matching configurator link.
 
-`firmware-history/` contains 30 exact historical HEX files for formats 2–10, with
+`firmware-history/` contains 34 exact historical HEX files for formats 2–12, with
 release commits, publication timestamps and SHA-256 checksums in `index.json`. These are recovered files,
 not regenerated builds. Early firmware constructs **GET_INFO** without a constant
 identity record; its format metadata comes from `src/config.h` at the recorded

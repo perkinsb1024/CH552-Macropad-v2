@@ -64,7 +64,8 @@ Below are the the primary firmware features added with each version
 
 | Firmware version | Primary features added |
 | --- | --- |
-| [v12](protocol/config-v12.md) | - Mouse buttons 1–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags |
+| [v13](protocol/config-v13.md) | - Fine single-axis and simultaneous X/Y pointer movement<br> - Optional modifiers for eight-bit **Media / system** taps<br> - USB device names identify three-key and six-key macropads |
+| [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse down** / **Mouse up** actions for separate inputs and macro drags |
 | [v11](protocol/config-v11.md) | - Multi-step **Macros**, with support for **Pause** and repeat<br> - Added a 32ms pause between characters in **Type text** actions |
 | [v10](protocol/config-v10.md) | - **Timed actions** can run globally or on a particular layer<br> - Interval resolution improved to 4.096 seconds<br> - Maximum **Timed action** clock error reduced from 512ms to just 16ms<br> - **Note:** **Timed actions** now consume 6 bytes each instead of 5 |
 | [v9](protocol/config-v9.md) | - **Scroll** gains **Vertical / Horizontal** axis selection for taps and holds |
@@ -82,9 +83,9 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v11 firmware files are available for [three-key](releases/ch552-macropad-3-key-f87ca744.hex) and [six-key](releases/ch552-macropad-6-key-f87ca744.hex) macropads, built from source revision `f87ca744`. This version adds multi-step **Macros** with **Pause** and repeat support, a 32ms pause between characters in **Type text**, and shared global **Mouse toggle** state. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v13 firmware files are available for [three-key](releases/ch552-macropad-3-key-eb2de185.hex) and [six-key](releases/ch552-macropad-6-key-eb2de185.hex) macropads, built from source revision `eb2de185`. This version adds fine single-axis and simultaneous X/Y pointer movement, optional modifiers for eight-bit **Media / system** taps, and USB names that identify the hardware variant. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [frozen v11 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v11/) with those release files. Current source and the root configurator use v12; no v12 release has been generated. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware.
+Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v13 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v13. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -147,12 +148,19 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash used | 14,316 | 14,318 |
-| Flash remaining | 20 | 18 |
-| External RAM allocated (XSEG + absolute) | 484 | 493 |
-| Stack available (linker reserve) | 82 | 79 |
+| Flash used | 14,322 | 14,324 |
+| Flash remaining | 14 | 12 |
+| USB DMA RAM | 148 | 148 |
+| Paged external RAM (PSEG) | 105 | 105 |
+| Ordinary external RAM (XSEG) | 356 | 365 |
+| Absolute active configuration image | 128 | 128 |
+| Total external RAM allocated | 737 | 746 |
+| External RAM unallocated (including gaps) | 287 | 278 |
+| Stack available (linker reserve) | 84 | 81 |
 
 ### Build Release HEX Files for Both Variants
+
+For the documentation, history, archives and validation steps, follow the [firmware release process](documentation/Firmware%20Release%20Process.md).
 
 The [releases](releases/) folder contains compiled firmware for three-key and six-key macropads. To refresh both files, run this from the project root:
 
@@ -233,12 +241,12 @@ delete `.pio/`.
 Bootloader entry methods:
 
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
-- During use with v12 firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
+- During use with v12 or later firmware: Click **Enter bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
 
-Current v12 source checks that the encoder stays pressed across a 10ms startup
+Current v13 source checks that the encoder stays pressed across a 10ms startup
 window, sampling every 1ms. Hold it steadily before connecting USB.
 
-The bundled v11 release supports an optional three-second encoder hold on enabled
+Older v11 firmware supports an optional three-second encoder hold on enabled
 layers. For an invalid profile on v11, use the power-up method.
 
 If the device cannot run the firmware, use the hardware method above to recover it.
@@ -314,7 +322,7 @@ shows the existing blinking red error LED instead.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 12](protocol/config-v12.md) for the complete format reference.
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 13](protocol/config-v13.md) for the complete format reference.
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -363,5 +371,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v12.md)
+- [Configuration format](protocol/config-v13.md)
 - [USB configuration protocol](protocol/hid-v1.md)
