@@ -1,5 +1,11 @@
 # Modified Consumer Hold Investigation
 
+The later [V14 Hold Implementation Findings](v14-hold-implementation.md) record
+the implemented, fitted result. Type allocations below describe earlier
+prototypes; use the provisional [V14 reference](config-v14.md) for the fitted
+firmware encoding.
+
+
 Investigated 2026-10-11 against main commit
 `934fa05b9ea3977bb49d5658bda00d44d23caca2`. Firmware, the active configurator,
 archives and checked-in releases are unchanged. The firmware prototype and its
