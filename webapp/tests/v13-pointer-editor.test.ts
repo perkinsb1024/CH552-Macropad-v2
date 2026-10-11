@@ -32,7 +32,7 @@ it.each(['key', 'clockwise', 'timed', 'macro'] as const)('edits both axes with a
   const component = tree.find(n => typeof n.type === 'function' && n.type.name === 'DirectionalStep' && n.props.label === 'Horizontal amount')!;
   const controls = nodes((component.type as (p: unknown) => unknown)(component.props));
   const slider = controls.find(n => n.type === 'input')!;
-  expect([slider.props.min, slider.props.max, slider.props.step, slider.props.value]).toEqual([0, 60, 4, 4]);
+  expect([slider.props.min, slider.props.max, slider.props.step, slider.props.value]).toEqual([4, 64, 4, 4]);
   (slider.props.onInput as (e: unknown) => void)({ target: { value: '8' } });
   expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: -8, y: 60 });
   tree = nodes(Inspector());
@@ -93,14 +93,14 @@ it('keeps movement settings when changing axes and restores each axis when revis
   choose('Y');
   expect(getAction(profile.value, slot)).toEqual({ type: 'mouseY', delta: -127, hold: true });
   choose('Both');
-  expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 4, y: -60, hold: true });
+  expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 4, y: -64, hold: true });
   choose('X');
   expect(getAction(profile.value, slot)).toEqual({ type: 'mouseX', delta: -127, hold: true });
   choose('Both');
-  expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 4, y: -60, hold: true });
+  expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 4, y: -64, hold: true });
   const selector = nodes(Inspector()).find(n => n.type === 'select')!;
   (selector.props.onChange as (e: unknown) => void)({ target: { value: 'mouseX' } });
-  expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 4, y: -60, hold: true });
+  expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 4, y: -64, hold: true });
 });
 
 it.each(['mouseX', 'mouseY'] as const)('uses a valid nonzero step when changing from a stationary %s axis', type => {
@@ -112,4 +112,18 @@ it.each(['mouseX', 'mouseY'] as const)('uses a valid nonzero step when changing 
   const button = nodes(axis).find(n => n.type === 'button' && n.props.children === (type === 'mouseX' ? 'X' : 'Y'))!;
   (button.props.onClick as () => void)();
   expect(getAction(profile.value, slot)).toEqual({ type, delta: 4 });
+});
+
+it.each(['Horizontal amount', 'Vertical amount'])('clamps %s to the combined magnitude limits', label => {
+  profile.value = defaultProfile(0);
+  const slot: Slot = { kind: 'key', layer: 0, index: 0 };
+  selectedSlot.value = slot;
+  setAction(slot, { type: 'mouseXY', x: -8, y: -8 });
+  for (const [input, expected] of [['0', -4], ['100', -64]] as const) {
+    const component = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'DirectionalStep' && n.props.label === label)!;
+    const slider = nodes((component.type as (p: unknown) => unknown)(component.props)).find(n => n.type === 'input')!;
+    (slider.props.onInput as (e: unknown) => void)({ target: { value: input } });
+    const action = getAction(profile.value, slot);
+    expect(action).toEqual({ type: 'mouseXY', x: label === 'Horizontal amount' ? expected : -8, y: label === 'Vertical amount' ? expected : -8 });
+  }
 });

@@ -51,7 +51,7 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>,
     case 'mouseY':
       return [code | (action.hold ? 0x10 : 0) | (action.type === 'mouseY' ? 0x20 : 0), action.delta & 0xff];
     case 'mouseXY':
-      return [code | (action.hold ? 0x10 : 0) | (action.x < 0 ? 0x20 : 0) | (action.y < 0 ? 0x40 : 0), (Math.abs(action.x) / 4) | ((Math.abs(action.y) / 4) << 4)];
+      return [code | (action.hold ? 0x10 : 0) | (action.x < 0 ? 0x20 : 0) | (action.y < 0 ? 0x40 : 0), (Math.abs(action.x) / 4 - 1) | ((Math.abs(action.y) / 4 - 1) << 4)];
     case 'consumer':
     case 'consumerHold':
       return [code | (((action.usage >> 8) & 15) << 4), action.usage & 0xff];

@@ -1,17 +1,16 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { defaultProfile } from '../src/model/defaults';
-import { stationaryPointerWarnings } from '../src/model/pointerWarnings';
 import { validateProfile } from '../src/model/validate';
 import { encodeProfile } from '../src/codec/encode';
 import type { Action, Slot } from '../src/model/types';
 import { IssuesPanel } from '../src/ui/components/IssuesPanel';
 import { navigateToSlot } from '../src/ui/navigation';
-import { pointerWarnings, profile, selectedSlot, setAction } from '../src/ui/store';
+import { issues, profile, selectedSlot, setAction } from '../src/ui/store';
 
 vi.mock('../src/ui/navigation', () => ({ navigateToSlot: vi.fn(), navigateToLayer: vi.fn(), navigateToMacro: vi.fn() }));
 afterEach(() => { profile.value = null; selectedSlot.value = null; vi.clearAllMocks(); });
 
-it.each([0, 1] as const)('warns once for every stationary binding on variant %s without changing encoded bytes', variant => {
+it.each([0, 1] as const)('rejects zero combined movement at every binding on variant %s', variant => {
   const p = defaultProfile(variant);
   const zero: Action = { type: 'mouseXY', x: 0, y: 0 };
   p.layers[0]!.keys[0] = { ...zero, hold: true };
@@ -24,8 +23,7 @@ it.each([0, 1] as const)('warns once for every stationary binding on variant %s 
   ];
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: zero, resumeAction: zero }];
   p.macros = [{ actions: [{ type: 'pause', ticks: 1 }, zero] }];
-  const before = encodeProfile(p);
-  const warnings = stationaryPointerWarnings(p);
+  const warnings = validateProfile(p);
   expect(warnings.map(w => w.slot)).toEqual([
     { kind: 'key', layer: 0, index: 0 },
     { kind: 'encoderButton', layer: 0 },
@@ -37,19 +35,20 @@ it.each([0, 1] as const)('warns once for every stationary binding on variant %s 
     { kind: 'timed', layer: 0, index: 0, resume: true },
     { kind: 'macro', layer: 0, index: 0, step: 1 },
   ] satisfies Slot[]);
-  expect(warnings.every(w => w.where && w.message.includes('Both amounts are 0'))).toBe(true);
-  expect(validateProfile(p)).toEqual([]);
-  expect(encodeProfile(p)).toEqual(before);
+  expect(warnings.every(w => w.where && w.message.includes('4–64'))).toBe(true);
+  expect(() => encodeProfile(p)).toThrow('4–64');
 });
 
-it('ignores actions that move either axis and other action types', () => {
+it('rejects either zero axis while accepting combined and single-axis movement', () => {
   const p = defaultProfile(0);
   p.layers[0]!.keys = [
     { type: 'mouseXY', x: 0, y: 4 }, { type: 'mouseXY', x: -4, y: 0 },
     { type: 'mouseXY', x: -4, y: 4 }, { type: 'mouseX', delta: 1 },
     { type: 'mouseY', delta: -1 }, { type: 'none' },
   ];
-  expect(stationaryPointerWarnings(p)).toEqual([]);
+  expect(validateProfile(p).map(issue => issue.slot)).toEqual([
+    { kind: 'key', layer: 0, index: 0 }, { kind: 'key', layer: 0, index: 1 },
+  ]);
 });
 
 type Node = { type: unknown; props: Record<string, unknown> };
@@ -65,19 +64,19 @@ function text(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
 
-it('shows a counted sidebar warning, navigates to its action, and clears when corrected', () => {
+it('shows a blocking sidebar issue, navigates to its action, and clears when corrected', () => {
   profile.value = defaultProfile(0);
   const slot: Slot = { kind: 'key', layer: 0, index: 0 };
   setAction(slot, { type: 'mouseXY', x: 0, y: 0 });
-  expect(pointerWarnings.value).toHaveLength(1);
-  const card = nodes(IssuesPanel()).find(n => n.type === 'details' && text(n).includes('Mouse actions without movement'))!;
-  expect(card.props.open).toBeUndefined();
-  expect(card.props.class).toContain('reachability-warning-card');
+  expect(issues.value).toHaveLength(1);
+  const card = nodes(IssuesPanel()).find(n => n.type === 'details' && text(n).includes('Fix before saving'))!;
+  expect(card.props.open).toBe(true);
+  expect(card.props.class).toContain('issues-error');
   expect(nodes(card).find(n => n.type === 'span' && n.props.class === 'warn')!.props.children).toBe(1);
   const link = nodes(card).find(n => n.type === 'button')!;
   (link.props.onClick as () => void)();
   expect(navigateToSlot).toHaveBeenCalledWith(slot);
-  setAction(slot, { type: 'mouseXY', x: 4, y: 0 });
-  expect(pointerWarnings.value).toEqual([]);
-  expect(text(IssuesPanel())).not.toContain('Mouse actions without movement');
+  setAction(slot, { type: 'mouseXY', x: 4, y: 4 });
+  expect(issues.value).toEqual([]);
+  expect(text(IssuesPanel())).not.toContain('Fix before saving');
 });

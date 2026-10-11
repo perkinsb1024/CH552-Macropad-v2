@@ -122,6 +122,14 @@
       "publishedAt": "2026-10-05T13:15:57-07:00"
     },
     {
+      "name": "ch552-macropad-3-key-eb2de185.hex",
+      "releaseCommit": "dd9409afae3c3d85dd66504a1bd33681710b8a5b",
+      "sourceRevision": "eb2de185",
+      "sha256": "1cbb6104c0c808a02f60583df6d33deac7f2c0b2a8482ccb4acc5f7d1657c037",
+      "formatVersion": 13,
+      "publishedAt": "2026-10-10T22:46:38-07:00"
+    },
+    {
       "name": "ch552-macropad-3-key-ed572b98.hex",
       "releaseCommit": "cd70c395813bce922447581c6cd5f9ef8d6328bc",
       "sourceRevision": "ed572b98",
@@ -256,6 +264,14 @@
       "sha256": "51599db9da69a595d77e118acee1006238d86bac924a81a7c7e845e72359dad8",
       "formatVersion": 8,
       "publishedAt": "2026-10-05T13:15:57-07:00"
+    },
+    {
+      "name": "ch552-macropad-6-key-eb2de185.hex",
+      "releaseCommit": "dd9409afae3c3d85dd66504a1bd33681710b8a5b",
+      "sourceRevision": "eb2de185",
+      "sha256": "d7ca60f7d9cbd8ffc038515384b796b1f1a7c9fff747eb3e6881deba26719879",
+      "formatVersion": 13,
+      "publishedAt": "2026-10-10T22:46:38-07:00"
     },
     {
       "name": "ch552-macropad-6-key-ed572b98.hex",

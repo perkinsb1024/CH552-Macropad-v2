@@ -68,7 +68,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (action.delta === 0) return 'A zero step does nothing; choose a non-zero value.';
       return null;
     case 'mouseXY':
-      return [action.x, action.y].every(value => Number.isInteger(value) && value >= -60 && value <= 60 && value % 4 === 0) ? null : 'Each axis must be −60–60 mouse counts in steps of 4.';
+      return [action.x, action.y].every(value => Number.isInteger(value) && Math.abs(value) >= 4 && Math.abs(value) <= 64 && value % 4 === 0) ? null : 'Each axis must have a magnitude of 4–64 mouse counts in steps of 4.';
     case 'consumer':
     case 'consumerHold':
       if (!Number.isInteger(action.usage) || action.usage < 1 || action.usage > 0xfff) return 'Consumer usage must be 0x001–0xFFF.';

@@ -34,7 +34,7 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical or horizontal wheel step, or repeat while held.' },
   { type: 'mouseX', code: ActionCode.MouseAxis, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
   { type: 'mouseY', code: ActionCode.MouseAxis, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
-  { type: 'mouseXY', code: ActionCode.MouseXY, label: 'Move pointer X/Y', group: 'Mouse', needsRelease: false, hint: 'Move both axes together, in steps of 4 mouse counts, up to 60 per axis.' },
+  { type: 'mouseXY', code: ActionCode.MouseXY, label: 'Move pointer X/Y', group: 'Mouse', needsRelease: false, hint: 'Move both axes together, from 4–64 mouse counts per axis in steps of 4.' },
   { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
   { type: 'consumerHold', code: ActionCode.ConsumerHold, label: 'Media / system hold', group: 'Media', needsRelease: true, hint: 'Hold a media or system control until release. Repetition depends on the host.' },
   { type: 'consumerModified', code: ActionCode.ConsumerModified, label: 'Media / system with modifiers', group: 'Media', needsRelease: false, hint: 'Tap an 8-bit consumer control with Ctrl, Shift, Alt or GUI. Modifiers release automatically after the control.' },

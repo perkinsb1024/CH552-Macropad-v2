@@ -83,7 +83,7 @@ Below are the the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v13 firmware files are available for [three-key](releases/ch552-macropad-3-key-eb2de185.hex) and [six-key](releases/ch552-macropad-6-key-eb2de185.hex) macropads, built from source revision `eb2de185`. This version adds fine single-axis and simultaneous X/Y pointer movement, optional modifiers for eight-bit **Media / system** taps, and USB names that identify the hardware variant. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v13 firmware files are available for [three-key](releases/ch552-macropad-3-key-0a3b6da6.hex) and [six-key](releases/ch552-macropad-6-key-0a3b6da6.hex) macropads, built from source revision `0a3b6da6`. This version adds fine single-axis and simultaneous X/Y pointer movement, optional modifiers for eight-bit **Media / system** taps, and USB names that identify the hardware variant. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
 Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v13 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v13. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
 
@@ -148,8 +148,8 @@ Memory in the current firmware, in bytes, with a 14,336-byte application flash l
 
 | Resource | 3-key | 6-key |
 | --- | ---: | ---: |
-| Flash used | 14,322 | 14,324 |
-| Flash remaining | 14 | 12 |
+| Flash used | 14,326 | 14,328 |
+| Flash remaining | 10 | 8 |
 | USB DMA RAM | 148 | 148 |
 | Paged external RAM (PSEG) | 105 | 105 |
 | Ordinary external RAM (XSEG) | 356 | 365 |

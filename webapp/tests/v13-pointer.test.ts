@@ -23,8 +23,9 @@ it.each([0, 1] as const)('decodes every pointer flag and parameter on variant %s
     expect(decoded.ok).toBe(valid);
     if (!decoded.ok) continue;
     const action = decoded.profile.layers[0]!.keys[0]!;
+    if (type === 13) expect(encodeAction(action, new Map())).toEqual([type | aux << 4, param]);
     if (type === 12) expect(action).toEqual({ type: aux & 2 ? 'mouseY' : 'mouseX', delta: param > 127 ? param - 256 : param, ...(aux & 1 ? { hold: true } : {}) });
-    else expect(action).toEqual({ type: 'mouseXY', x: ((param & 15) * 4 * (aux & 2 ? -1 : 1)) || 0, y: ((param >> 4) * 4 * (aux & 4 ? -1 : 1)) || 0, ...(aux & 1 ? { hold: true } : {}) });
+    else expect(action).toEqual({ type: 'mouseXY', x: ((param & 15) + 1) * 4 * (aux & 2 ? -1 : 1), y: ((param >> 4) + 1) * 4 * (aux & 4 ? -1 : 1), ...(aux & 1 ? { hold: true } : {}) });
   }
 });
 
@@ -46,13 +47,13 @@ it.each([0, 1] as const)('matches firmware flags at all binding sites on variant
 
 it('encodes exact bytes, preserves JSON, and rejects unrepresentable combined steps', () => {
   expect(encodeAction({ type: 'mouseY', delta: -127, hold: true }, new Map())).toEqual([0x3c, 0x81]);
-  expect(encodeAction({ type: 'mouseXY', x: -4, y: 60 }, new Map())).toEqual([0x2d, 0xf1]);
-  expect(encodeAction({ type: 'mouseXY', x: 60, y: -4, hold: true }, new Map())).toEqual([0x5d, 0x1f]);
-  const p = defaultProfile(0); p.layers[0]!.keys[0] = { type: 'mouseXY', x: -60, y: 0, hold: true };
+  expect(encodeAction({ type: 'mouseXY', x: -8, y: 64 }, new Map())).toEqual([0x2d, 0xf1]);
+  expect(encodeAction({ type: 'mouseXY', x: 64, y: -8, hold: true }, new Map())).toEqual([0x5d, 0x1f]);
+  const p = defaultProfile(0); p.layers[0]!.keys[0] = { type: 'mouseXY', x: -64, y: 4, hold: true };
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
   expect(decodeImage(encodeProfile(p))).toEqual({ ok: true, profile: p });
-  expect(summarize(p.layers[0]!.keys[0]!)).toBe('Mouse X -60, Y 0 (hold)');
-  for (const x of [-64, 64, 1, 2, 3, 5, 4.5, NaN]) {
+  expect(summarize(p.layers[0]!.keys[0]!)).toBe('Mouse X -64, Y 4 (hold)');
+  for (const x of [-68, 68, 0, 1, 2, 3, 5, 4.5, NaN, Infinity]) {
     p.layers[0]!.keys[0] = { type: 'mouseXY', x, y: 4 };
     expect(() => encodeProfile(p)).toThrow('steps of 4');
   }

@@ -21,7 +21,7 @@ actions support both single-axis movement and combined pointer movement. Dynamic
 macros, repeats, pauses, eight mouse buttons, six-byte timed actions, and the
 existing keyboard, consumer, pointer, scroll, layer and LED features remain.
 
-The pre-built v13 release files use source revision `eb2de185`: [three-key](../releases/ch552-macropad-3-key-eb2de185.hex) and [six-key](../releases/ch552-macropad-6-key-eb2de185.hex). Native builds and automated regressions pass on both geometries; the user has completed v13 hardware validation.
+The pre-built v13 release files use source revision `0a3b6da6`: [three-key](../releases/ch552-macropad-3-key-0a3b6da6.hex) and [six-key](../releases/ch552-macropad-6-key-0a3b6da6.hex). Native builds and automated regressions pass on both variants. Hardware validation testing passed as well.
 
 The active web configurator edits v13 images and uses version 13 JSON profiles
 and a separate v13 draft namespace. It imports older profiles and binary images
@@ -227,7 +227,7 @@ The action types are:
 | A | **Momentary layer** | `0` | Layer index |
 | B | **Relative layer** | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -6 to +6; added to the selected base-layer index with wraparound. `0` has no effect. |
 | C | **Single-axis mouse movement** | Bit 0 selects hold; bit 1 selects Y instead of X; bits 2–3 reserved | Signed 8-bit delta from -127 to +127 |
-| D | **Combined mouse movement** | Bit 0 selects hold; bit 1 negates X; bit 2 negates Y; bit 3 reserved | Low nibble: X magnitude; high nibble: Y magnitude; each multiplied by 4 |
+| D | **Combined mouse movement** | Bit 0 selects hold; bit 1 negates X; bit 2 negates Y; bit 3 reserved | Low nibble: X magnitude; high nibble: Y magnitude; each incremented by 1, then multiplied by 4 |
 | E | **LED control** | Value or signed step (see below) | Full command byte (see below) |
 | F | **Execute macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
 
@@ -284,12 +284,11 @@ The configurator exposes this action as **Move pointer X** and **Move pointer Y*
 
 For **Combined mouse movement** (type `0xD`), the parameter's low nibble is the
 X magnitude and its high nibble is the Y magnitude. Decode each as an unsigned
-integer 0–15 and multiply by 4. Auxiliary bit 1 (record bit 5) negates X;
+integer 0–15, add 1, then multiply by 4. Auxiliary bit 1 (record bit 5) negates X;
 auxiliary bit 2 (record bit 6) negates Y. Auxiliary bit 3 (record bit 7) must be
-zero. Each axis therefore supports -60 to +60 in increments of 4. All 256
-parameter bytes are valid, including `0x80` (X=0, Y magnitude=32). A sign bit
-on a zero magnitude is valid and still produces zero. Both axes are sent in one
-mouse report; a zero axis stays stationary. The configurator calls this action
+zero. Each axis therefore supports magnitudes 4–64 in increments of 4,
+with either sign. All 256 parameter bytes are valid, including `0x80`
+(X=4, Y=36). Both axes are sent in one mouse report. The configurator calls this action
 **Move pointer X/Y**. Positive X moves right; positive Y moves down.
 
 Both pointer actions use auxiliary bit 0 (record bit 4) for **Hold** mode.
@@ -534,8 +533,8 @@ host and requires hardware verification.
 | **Consumer Hold** | `0x08 \| ((usage >> 8) << 4)` | `usage & 0xFF` |
 | **Move pointer X**, **Tap** | `0x0C` | Signed delta, -127–127; reject `0x80` |
 | **Move pointer Y**, **Hold** | `0x3C` | Signed delta, -127–127; reject `0x80` |
-| **Move pointer X/Y**, X=-4, Y=+60, **Tap** | `0x2D` | `0xF1` |
-| **Move pointer X/Y**, X=+60, Y=-4, **Hold** | `0x5D` | `0x1F` |
+| **Move pointer X/Y**, X=-8, Y=+64, **Tap** | `0x2D` | `0xF1` |
+| **Move pointer X/Y**, X=+64, Y=-8, **Hold** | `0x5D` | `0x1F` |
 | **Scroll Tap** | `0x06` | Signed wheel step, -127–127 |
 | **Scroll Hold** | `0x46` | Signed vertical wheel step, -127–127 |
 | **Scroll Tap**, **Horizontal** | `0x86` | Signed horizontal step, -127–127 |
@@ -1013,12 +1012,12 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,324 | 12 | 105 | 365 | 128 | 81 |
-| Three keys | 14,322 | 14 | 105 | 356 | 128 | 84 |
+| Six keys | 14,328 | 8 | 105 | 365 | 128 | 81 |
+| Three keys | 14,326 | 10 | 105 | 356 | 128 | 84 |
 
 Host suites pass with color preview enabled and disabled. Fresh native builds
-match both release HEX files byte for byte. The active configurator supports
-this format, and the user has completed v13 hardware validation.
+match both release HEX files byte for byte. v13 hardware
+validation testing completed successfully. The active configurator matches this encoding.
 
 Build both hardware variants with the real 14,336-byte application limit:
 

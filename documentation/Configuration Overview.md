@@ -173,15 +173,12 @@ testing; the modal warns if you have unsaved changes.
 Under **Move mouse**, choose **Behavior** (**Tap** or **Hold**) for a button
 or chord, then **Axis**. For **X** or **Y**, choose
 **Direction** and an **Amount** from 1–127. **Both** provides separate
-horizontal and vertical directions and amounts from 0–60 in steps of 4, sending
-both axes in one report. Set an axis to zero to leave it stationary. When first
+horizontal and vertical directions and amounts from 4–64 in steps of 4, sending
+both axes in one report. Use **X** or **Y** to move only one axis. When first
 switching to **Both**, the current amount is rounded to a multiple of 4 and capped
-at 60; the other axis starts at 4. Switching back restores that axis's previous
+at 64; the other axis starts at 4. Switching back restores that axis's previous
 settings when available. Pointer movement uses relative mouse counts; screen
 distance depends on the computer's pointer speed and acceleration.
-
-If **Both** amounts are zero, the sidebar shows **Mouse actions without movement**.
-Click a listed action to edit it. This warning does not block saving or upload.
 
 For scrolling or pointer movement on a button or chord, choose **Tap** for one step
 or **Hold** for repeated movement until release. Start with a small amount. Held

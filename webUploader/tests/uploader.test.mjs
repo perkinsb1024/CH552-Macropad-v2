@@ -491,7 +491,7 @@ test('the beta UI includes platform sources and the published source/license', a
 
 test('all historical releases match their exact committed HEX, metadata and checksums', async () => {
   const source = JSON.parse(await readFile(new URL('../firmware-history/index.json', import.meta.url), 'utf8'));
-  assert.equal(source.firmware.length, 34);
+  assert.equal(source.firmware.length, 36);
   assert.equal(manifest.previousFirmware.length, source.firmware.length);
   for (const entry of manifest.previousFirmware) {
     const content = await readFile(new URL(`../dist/firmware/${entry.name}`, import.meta.url));
@@ -515,7 +515,7 @@ test('historical selection retains the default release and cannot cross board va
   for (const keys of [3, 6]) {
     assert.equal(selectedFirmware(manifest, keys), manifest.firmware.find(entry => entry.keys === keys));
     const choices = firmwareChoices(manifest, keys);
-    assert.equal(choices.length, 17);
+    assert.equal(choices.length, 18);
     assert.ok(choices.every(entry => entry.keys === keys));
     for (const entry of choices) {
       assert.equal(selectedFirmware(manifest, keys, entry.name), entry);
@@ -528,7 +528,7 @@ test('historical selection retains the default release and cannot cross board va
 test('previous release choices show each version once and select its newest build', () => {
   for (const keys of [3, 6]) {
     const choices = previousReleases(manifest, keys);
-    assert.deepEqual(choices.map(entry => entry.formatVersion), [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    assert.deepEqual(choices.map(entry => entry.formatVersion), [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
     for (const entry of choices) {
       const builds = firmwareChoices(manifest, keys).filter(build => build.formatVersion === entry.formatVersion);
       assert.ok(builds.every(build => build.publishedAt <= entry.publishedAt));
@@ -537,6 +537,6 @@ test('previous release choices show each version once and select its newest buil
   }
   assert.match(manifest.releaseNotes[11], /32ms/);
   assert.match(manifest.releaseNotes[12], /Mouse down/);
-  assert.match(manifest.releaseNotes[13], /simultaneous X\/Y/);
+  assert.match(manifest.releaseNotes[13], /simultaneous X\/Y/i);
   assert.ok(manifest.firmware.every(entry => entry.formatVersion === 13));
 });

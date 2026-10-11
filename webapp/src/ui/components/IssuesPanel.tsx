@@ -1,4 +1,4 @@
-import { issues, layerChangeWarnings, pointerWarnings, reachabilityWarnings, timerWarnings, unusedMacros } from '../store';
+import { issues, layerChangeWarnings, reachabilityWarnings, timerWarnings, unusedMacros } from '../store';
 import { navigateToLayer, navigateToMacro, navigateToSlot } from '../navigation';
 import { IconChevron, IconWarning } from './Icons';
 
@@ -8,8 +8,7 @@ export function IssuesPanel() {
   const layerWarnings = layerChangeWarnings.value;
   const unused = unusedMacros.value;
   const toggles = timerWarnings.value;
-  const stationary = pointerWarnings.value;
-  if (!list.length && !warnings.length && !layerWarnings.length && !toggles.length && !unused.length && !stationary.length) return null;
+  if (!list.length && !warnings.length && !layerWarnings.length && !toggles.length && !unused.length) return null;
   return (
     <>
       {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
@@ -30,14 +29,6 @@ export function IssuesPanel() {
             </li>
           ))}
         </ul>
-      </details>}
-      {stationary.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
-        <summary class="card-head"><h2><IconWarning /> Mouse actions without movement</h2><span class="warn">{stationary.length}</span><IconChevron /></summary>
-        <p class="hint">These warnings do not block saving or upload.</p>
-        <ul>{stationary.map((warning, i) => <li key={i}>
-          <button class="link" onClick={() => navigateToSlot(warning.slot!)}>{warning.where}</button>
-          <span>{warning.message}</span>
-        </li>)}</ul>
       </details>}
       {unused.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
         <summary class="card-head"><h2><IconWarning /> Macros without triggers</h2><span class="warn">{unused.length}</span><IconChevron /></summary>

@@ -116,7 +116,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
         return { type: aux & 2 ? 'mouseY' : 'mouseX', delta: toSigned(b1), ...hold };
       }
       if (aux > 7) return 'Invalid combined movement';
-      return { type: 'mouseXY', x: ((b1 & 15) * 4 * (aux & 2 ? -1 : 1)) || 0, y: ((b1 >> 4) * 4 * (aux & 4 ? -1 : 1)) || 0, ...hold };
+      return { type: 'mouseXY', x: ((b1 & 15) + 1) * 4 * (aux & 2 ? -1 : 1), y: ((b1 >> 4) + 1) * 4 * (aux & 4 ? -1 : 1), ...hold };
     }
     case ActionCode.Consumer:
     case ActionCode.ConsumerHold:

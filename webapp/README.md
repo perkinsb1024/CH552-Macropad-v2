@@ -259,8 +259,8 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 ## Release Firmware Status
 
 The release HEX files and bundled uploader use v13 firmware from revision
-`eb2de185`: [three-key](../releases/ch552-macropad-3-key-eb2de185.hex) and
-[six-key](../releases/ch552-macropad-6-key-eb2de185.hex). The active editor matches
+`0a3b6da6`: [three-key](../releases/ch552-macropad-3-key-0a3b6da6.hex) and
+[six-key](../releases/ch552-macropad-6-key-0a3b6da6.hex). The active editor matches
 these releases. Automated tests and native builds pass on both geometries;
 the user has completed v13 hardware validation.
 Older-firmware connections link to the matching archive and updater. Back up
@@ -369,8 +369,7 @@ the keyboard modifier report before the consumer press, then drains the
 consumer release before removing temporary modifiers.
 
 **Move mouse** offers **X**, **Y** and **Both** axes. Single-axis amounts are
-1–127; **Both** stores independent magnitudes 0–60 in steps of 4 and independent
+1–127; **Both** stores independent magnitudes 4–64 in steps of 4 and independent
 signs in one two-byte action. Buttons and chords support **Tap** and **Hold**;
-rotation, timers and macro steps use taps. Zero movement on both axes produces
-an editable warning. Codec/firmware agreement and editor migration are covered
+rotation, timers and macro steps use taps. Each combined axis must be nonzero. Codec/firmware agreement and editor migration are covered
 by regression tests. USB product names are **3-Key Macropad** and **6-Key Macropad**.

@@ -253,7 +253,7 @@ export function Inspector() {
       update({ ...remembered, hold: hold.hold });
     } else if (type === 'mouseXY') {
       const delta = action.type === 'mouseXY' ? action.x : action.delta;
-      const amount = Math.sign(delta) * Math.max(4, Math.min(60, Math.round(Math.abs(delta) / 4) * 4));
+      const amount = (delta < 0 ? -1 : 1) * Math.max(4, Math.min(64, Math.round(Math.abs(delta) / 4) * 4));
       update({ type, x: action.type === 'mouseY' ? 4 : amount, y: action.type === 'mouseY' ? amount : 4, ...hold });
     } else {
       const delta = action.type === 'mouseXY' ? (type === 'mouseX' ? action.x : action.y) || 4 : action.delta;
@@ -489,8 +489,8 @@ export function Inspector() {
       )}
 
       {action.type === 'mouseXY' && <>
-        <DirectionalStep directionFirst label="Horizontal amount" directionLabel="Horizontal direction" negativeLabel="Left" positiveLabel="Right" min={0} max={60} step={4} value={action.x} onChange={x => update({ ...action, x })} />
-        <DirectionalStep directionFirst label="Vertical amount" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" min={0} max={60} step={4} value={action.y} onChange={y => update({ ...action, y })} />
+        <DirectionalStep directionFirst label="Horizontal amount" directionLabel="Horizontal direction" negativeLabel="Left" positiveLabel="Right" min={4} max={64} step={4} value={action.x} onChange={x => update({ ...action, x })} />
+        <DirectionalStep directionFirst label="Vertical amount" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" min={4} max={64} step={4} value={action.y} onChange={y => update({ ...action, y })} />
       </>}
 
       {(action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified') && (
