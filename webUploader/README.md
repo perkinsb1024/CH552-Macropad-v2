@@ -5,7 +5,7 @@
 The bundled default firmware uses configuration format v13, built from revision
 `0a3b6da6`: [three-key](../releases/ch552-macropad-3-key-0a3b6da6.hex) and
 [six-key](../releases/ch552-macropad-6-key-0a3b6da6.hex). Use the
-[current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+[v13 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v13/)
 with these files. The installer reads each bundled HEX's format and links to its
 matching editor. Back up profiles before updating; older profiles remain in
 DataFlash with actions inactive until explicitly migrated and saved in v13.

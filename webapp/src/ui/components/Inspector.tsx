@@ -63,10 +63,10 @@ function ConsumerUsageInput({ usage, onChange, reduced = false }: { usage: numbe
 }
 
 function ConsumerControl({ action, onChange }: {
-  action: Extract<Action, { type: 'consumer' | 'consumerHold' | 'consumerModified' }>;
+  action: Extract<Action, { type: 'consumer' | 'consumerHold' | 'consumerModified' | 'consumerModifiedHold' }>;
   onChange(action: Action): void;
 }) {
-  const reduced = action.type === 'consumerModified';
+  const reduced = action.type === 'consumerModified' || action.type === 'consumerModifiedHold';
   const choices = CONSUMER_USAGES.filter(c => !reduced || c.usage <= 0xff);
   const [customSelected, setCustomSelected] = useState(false);
   const custom = customSelected || !choices.some((c) => c.usage === action.usage);
@@ -94,7 +94,7 @@ function ConsumerControl({ action, onChange }: {
             </div>
           )}
           <span class="hint">Brightness controls are honored by some hosts and monitors only.</span>
-          {action.type === 'consumerHold' && <span class="hint">The host decides whether a held control repeats. The newest media action wins; previous holds are not restored. Holds continue across layer changes until release.</span>}
+          {(action.type === 'consumerHold' || action.type === 'consumerModifiedHold') && <span class="hint">The host decides whether a held control repeats. The newest media action wins; previous holds are not restored. Holds continue across layer changes until release.</span>}
         </div>
   );
 }
@@ -223,10 +223,10 @@ export function Inspector() {
     if (remembered) { update(remembered); return; }
     const next = blankAction(type);
     // Carry compatible values within the keyboard or media family.
-    if ((next.type === 'consumer' || next.type === 'consumerHold' || next.type === 'consumerModified') &&
-        (action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified')) {
-      const usage = next.type === 'consumerModified' && action.usage > 0xff ? next.usage : action.usage;
-      update(next.type === 'consumerModified' ? { ...next, usage, modifiers: action.type === 'consumerModified' ? action.modifiers : next.modifiers } : { ...next, usage });
+    if ((next.type === 'consumer' || next.type === 'consumerHold' || next.type === 'consumerModified' || next.type === 'consumerModifiedHold') &&
+        (action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified' || action.type === 'consumerModifiedHold')) {
+      const usage = (next.type === 'consumerModified' || next.type === 'consumerModifiedHold') && action.usage > 0xff ? next.usage : action.usage;
+      update((next.type === 'consumerModified' || next.type === 'consumerModifiedHold') ? { ...next, usage, modifiers: (action.type === 'consumerModified' || action.type === 'consumerModifiedHold') ? action.modifiers : next.modifiers } : { ...next, usage });
     } else if ((next.type === 'keyTap' || next.type === 'keyHold') && (action.type === 'keyTap' || action.type === 'keyHold')) update({ ...next, usage: action.usage, modifiers: action.modifiers });
     else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
@@ -401,7 +401,7 @@ export function Inspector() {
           : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative starts from the brighter current brightness, applies the step once, and sets both to the result. As configured resolves to the current layer indicator brightness and bright key feedback. Common presets include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
       </>}
 
-      {action.type === 'consumerModified' && (
+      {(action.type === 'consumerModified' || action.type === 'consumerModifiedHold') && (
         <ModifierPicker modifiers={action.modifiers} onChange={(modifiers) => update({ ...action, modifiers })} />
       )}
 
@@ -493,7 +493,7 @@ export function Inspector() {
         <DirectionalStep directionFirst label="Vertical amount" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" min={4} max={64} step={4} value={action.y} onChange={y => update({ ...action, y })} />
       </>}
 
-      {(action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified') && (
+      {(action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified' || action.type === 'consumerModifiedHold') && (
         <ConsumerControl key={JSON.stringify(slot) + action.type} action={action} onChange={update} />
       )}
 
@@ -537,16 +537,16 @@ export function Inspector() {
         </label>
       )}
 
-      {(action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && (
+      {(action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer' || action.type === 'momentaryRelativeLayer') && (
         <label class="field">
           <span class="field-label">Relative offset <output>{action.offset > 0 ? `+${action.offset}` : action.offset}</output></span>
           <input type="range" min={1 - maxLayers(p.variant)} max={maxLayers(p.variant) - 1} step={1} value={action.offset} aria-label="Relative offset" onInput={(e) => update({ ...action, offset: Number((e.target as HTMLInputElement).value) })} />
-          <span class="hint">{slot.kind === 'timed' ? 'Relative to the active layer when the timer fires.' : `Layer ${slot.layer + 1} → Layer ${relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}`}</span>
+          <span class="hint">{action.type === 'momentaryRelativeLayer' ? 'Relative to the selected base layer at press time. The target stays fixed until release.' : slot.kind === 'timed' ? 'Relative to the active layer when the timer fires.' : `Layer ${slot.layer + 1} → Layer ${relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}`}</span>
         </label>
       )}
 
       {slot.kind !== 'timed' && (((action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer === slot.layer) ||
-        ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') && relativeTargetLayer(slot.layer, action.offset, layerCount) === slot.layer)) && (
+        ((action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer' || action.type === 'momentaryRelativeLayer') && relativeTargetLayer(slot.layer, action.offset, layerCount) === slot.layer)) && (
         <div class="notice notice-info">Changing to the same layer is useful to display the current layer's indicator</div>
       )}
 

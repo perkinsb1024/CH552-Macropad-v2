@@ -30,10 +30,12 @@ export function encodeAction(action: Action, stringOffsets: Map<string, number>,
     }
     case 'none':
       return [code, 0];
+    case 'momentaryRelativeLayer':
     case 'relativeLayer':
       return [code, action.offset & 0xff];
     case 'oneShotRelativeLayer':
       return [code | 0x10, action.offset & 0xff];
+    case 'consumerModifiedHold':
     case 'consumerModified':
     case 'keyTap':
     case 'keyHold':

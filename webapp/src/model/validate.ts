@@ -38,6 +38,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
     case 'ledControl': return ledProblem(action.command, action.value, action.brightness);
     case 'none':
       return null;
+    case 'momentaryRelativeLayer':
     case 'relativeLayer':
     case 'oneShotRelativeLayer':
       return Number.isInteger(action.offset) && action.offset >= -6 && action.offset <= 6 ? null : 'Relative layer offset must be a whole number from -6 to 6.';
@@ -47,6 +48,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
       if (!Number.isInteger(action.modifiers) || action.modifiers < 0 || action.modifiers > 15) return 'Modifier mask is out of range.';
       if (action.usage === 0 && action.modifiers === 0) return 'Choose a key or at least one modifier.';
       return null;
+    case 'consumerModifiedHold':
     case 'consumerModified':
       if (!Number.isInteger(action.usage) || action.usage < 1 || action.usage > 0xff) return 'Consumer usage must be 0x01–0xFF.';
       return Number.isInteger(action.modifiers) && action.modifiers >= 0 && action.modifiers <= 15 ? null : 'Modifier mask is out of range.';

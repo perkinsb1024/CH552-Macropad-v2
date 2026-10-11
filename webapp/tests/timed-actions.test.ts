@@ -28,7 +28,7 @@ describe('v10 timed-action images', () => {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[2]).toBe(13);
+      expect(image[2]).toBe(14);
       expect((image[3]! >> 6) | ((image[4]! >> 7) << 2)).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
@@ -41,7 +41,7 @@ describe('v10 timed-action images', () => {
     p.timedActions = [{ ...timer(64, true), action: { type: 'string', text: 'abc' }, resumeAction: { type: 'string', text: 'abc' } }];
     const image = encodeProfile(p);
     const offset = 9 + 44 + 3;
-    expect([...image.slice(offset, offset + 6)]).toEqual([63, 16, 0, 16, 0, 128]);
+    expect([...image.slice(offset, offset + 6)]).toEqual([63, 32, 0, 32, 0, 128]);
     expect([...image.slice(offset + 6, offset + 10)]).toEqual([97, 98, 99, 0]);
     expect(computeCapacity(p)).toMatchObject({ chords: 3, timedActions: 6, strings: 4, used: 66 });
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
@@ -74,7 +74,7 @@ describe('v10 timed-action images', () => {
       const valid = defaultProfile(0); valid.timedActions = [timer()];
       const image = encodeProfile(valid);
       const offset = 53 + (resume ? 3 : 1);
-      const bytes = action.type === 'keyHold' ? [2, 4] : action.type === 'mouseHold' ? [0x35, 1] : action.type === 'momentaryLayer' ? [10, 0] : [28, 1];
+      const bytes = action.type === 'keyHold' ? [2, 4] : action.type === 'mouseHold' ? [0x34, 1] : action.type === 'momentaryLayer' ? [0x2c, 0] : [0x16, 1];
       image.set(bytes, offset); sealImage(image);
       expect(decodeImage(image).ok).toBe(false);
       expect(firmwareAccepts(image, 0)).toBe(false);
@@ -120,7 +120,7 @@ it.each([0, 1] as const)('packs both flags without reducing interval or profile 
       resumeAction: { type: 'ledControl', command: 'effectRestore', value: 0 } }];
     const image = encodeProfile(p);
     const offset = 9 + p.layers.length * (variant ? 15 : 22);
-    expect([...image.slice(offset, offset + 6)]).toEqual([(ticks - 1) & 255, 254, 129, 14, 128, ((ticks - 1) >> 8) << 3 | (reset ? 128 : 0) | (consume ? 64 : 0)]);
+    expect([...image.slice(offset, offset + 6)]).toEqual([(ticks - 1) & 255, 253, 129, 13, 128, ((ticks - 1) >> 8) << 3 | (reset ? 128 : 0) | (consume ? 64 : 0)]);
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
     expect(firmwareAccepts(image, variant)).toBe(true);

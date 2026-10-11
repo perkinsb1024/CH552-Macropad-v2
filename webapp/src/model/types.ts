@@ -9,6 +9,7 @@ export type Action =
   | { type: 'keyTap'; usage: number; modifiers: number }
   | { type: 'keyHold'; usage: number; modifiers: number }
   | { type: 'consumerModified'; usage: number; modifiers: number }
+  | { type: 'consumerModifiedHold'; usage: number; modifiers: number }
   | { type: 'mouseClick'; buttons: number; clicks?: number }
   | { type: 'mouseHold'; buttons: number }
   | { type: 'mouseToggle'; buttons: number }
@@ -22,6 +23,7 @@ export type Action =
   | { type: 'oneShotSetLayer'; layer: number }
   | { type: 'momentaryLayer'; layer: number }
   | { type: 'relativeLayer'; offset: number }
+  | { type: 'momentaryRelativeLayer'; offset: number }
   | { type: 'oneShotRelativeLayer'; offset: number }
   | { type: 'mouseX'; delta: number; hold?: boolean }
   | { type: 'mouseY'; delta: number; hold?: boolean }

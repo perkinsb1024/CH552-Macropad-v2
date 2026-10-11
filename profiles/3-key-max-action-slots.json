@@ -1,6 +1,6 @@
 {
   "format": "universal-macropad-profile",
-  "version": 7,
+  "version": 14,
   "variant": "three-key",
   "startupLayer": 0,
   "transparentBlack": false,
@@ -34,7 +34,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 0,
       "indicatorFullBrightness": false
@@ -65,7 +64,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 4,
       "indicatorFullBrightness": false
@@ -96,7 +94,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 5,
       "indicatorFullBrightness": false
@@ -127,7 +124,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 8,
       "indicatorFullBrightness": false
@@ -158,7 +154,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 10,
       "indicatorFullBrightness": false
@@ -189,7 +184,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 12,
       "indicatorFullBrightness": false
@@ -220,7 +214,6 @@
         "Off",
         "Off"
       ],
-      "bootloaderFromRun": false,
       "indicatorBehavior": 1,
       "indicatorColor": 14,
       "indicatorFullBrightness": false

@@ -17,6 +17,7 @@ export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
       case 'momentaryLayer':
         target = action.layer;
         break;
+      case 'momentaryRelativeLayer':
       case 'relativeLayer':
       case 'oneShotRelativeLayer':
         target = relativeTargetLayer(source, action.offset, layerCount);

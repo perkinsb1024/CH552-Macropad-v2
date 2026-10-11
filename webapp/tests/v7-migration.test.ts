@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
-import { sortedChords } from '../src/model/capacity';
+import { computeCapacity, sortedChords } from '../src/model/capacity';
 import { defaultProfile } from '../src/model/defaults';
 import { importProfile, exportProfile } from '../src/io/json';
 import { encodeProfile } from '../src/codec/encode';
@@ -23,7 +23,7 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   const decoded = decodeImage(original); expect(decoded).toEqual({ ok: true, profile: p });
   if (!decoded.ok) throw new Error('decode failed');
   const migrated = encodeProfile(decoded.profile);
-  expect(migrated[2]).toBe(13);
+  expect(migrated[2]).toBe(14);
   const reverted = migrated.slice(); legacyTextCodes(reverted); reverted[2] = 6; sealImage(reverted);
   expect(reverted).toEqual(original);
   expect(validator.accepts(original, variant)).toBe(false);
@@ -37,13 +37,14 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   await client.saveImage(migrated); expect(await client.readFlash()).toEqual(migrated);
   await device.close();
 });
-it('validates and round-trips every bundled v7 profile against firmware', () => {
+it('validates and round-trips every bundled current-format starter profile against firmware', () => {
   const profiles = import.meta.glob('../../profiles/*-max-action-slots.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
   expect(Object.keys(profiles)).toHaveLength(2);
   for (const text of Object.values(profiles)) {
-    expect(JSON.parse(text).version).toBe(7);
+    expect(JSON.parse(text).version).toBe(14);
     const { profile: p, meta } = importProfile(text);
     expect(importProfile(exportProfile(p, meta))).toEqual({ profile: p, meta });
+    expect(computeCapacity(p).remaining).toBe(p.variant === 1 ? 2 : 0);
     const image = encodeProfile(p);
     expect(decodeImage(image)).toEqual({ ok: true, profile: { ...p, chords: sortedChords(p) } });
     expect(validator.accepts(image, p.variant)).toBe(true);

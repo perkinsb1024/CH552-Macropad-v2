@@ -83,7 +83,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
       return running;
     }
     let target: number;
-    if (action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer') {
+    if (action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer' || action.type === 'momentaryRelativeLayer') {
       if (!Number.isInteger(action.offset) || action.offset < -6 || action.offset > 6) return;
       target = relativeTargetLayer(selected, action.offset, count);
     } else if (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') {
@@ -92,7 +92,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
     } else {
       return next;
     }
-    if (action.type === 'momentaryLayer') {
+    if (action.type === 'momentaryLayer' || action.type === 'momentaryRelativeLayer') {
       next.held = target;
     } else {
       if (action.type === 'oneShotSetLayer' || action.type === 'oneShotRelativeLayer') {

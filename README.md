@@ -86,7 +86,7 @@ Below are the the primary firmware features added with each version
 >
 > Pre-built v13 firmware files are available for [three-key](releases/ch552-macropad-3-key-0a3b6da6.hex) and [six-key](releases/ch552-macropad-6-key-0a3b6da6.hex) macropads, built from source revision `0a3b6da6`. This version adds fine single-axis and simultaneous X/Y pointer movement, optional modifiers for eight-bit **Media / system** taps, and USB names that identify the hardware variant. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v13 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v13. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
+Use the [v13 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v13/) with these v13 release files. The [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) supports format v14 source firmware. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to device** to activate it in v13. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -323,7 +323,7 @@ shows the existing blinking red error LED instead.
 
 **Switch to layer** and its one-shot variant include **Previous layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous layer** option visits the remembered layer for one action, then returns. **Timed actions** can use either variant.
 
-The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 13](protocol/config-v13.md) for the complete format reference.
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to device** to apply it. See [configuration format 14](protocol/config-v14.md) for the complete format reference.
 
 Use **Export JSON** and **Import profile** in **Backup & restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to device** to apply it to the macropad.
 
@@ -372,5 +372,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v13.md)
+- [Configuration format](protocol/config-v14.md)
 - [USB configuration protocol](protocol/hid-v1.md)

@@ -1,7 +1,7 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 13;
+export const FORMAT_VERSION = 14;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
@@ -54,27 +54,29 @@ export function variantName(variant: Variant): string {
 
 /** Action type codes; the numbering is part of the saved format. */
 export const enum ActionCode {
-  Macro = 0xf,
-  Pause = 0x20,
   None = 0x0,
+  Pause = 0x10,
+  String = 0x20, // Full first byte: type None with auxiliary 2.
   KeyTap = 0x1,
   KeyHold = 0x2,
   MouseClick = 0x3,
-  ConsumerModified = 0x4,
-  MouseHold = 0x35,
-  MouseToggle = 0x5,
-  MouseDown = 0x15,
-  MouseUp = 0x25,
-  Scroll = 0x6,
-  Consumer = 0x7,
-  ConsumerHold = 0x8,
-  String = 0x10, // Full first byte: type None with auxiliary 1.
-  SetLayer = 0x9,
-  MomentaryLayer = 0xa,
-  RelativeLayer = 0xb,
-  MouseAxis = 0xc,
-  MouseXY = 0xd,
-  LedControl = 0xe,
+  MouseToggle = 0x4,
+  MouseDown = 0x14,
+  MouseUp = 0x24,
+  MouseHold = 0x34,
+  Scroll = 0x5,
+  MouseAxis = 0x6,
+  MouseXY = 0x7,
+  Consumer = 0x8,
+  ConsumerHold = 0x9,
+  ConsumerModified = 0xa,
+  ConsumerModifiedHold = 0xb,
+  SetLayer = 0xc,
+  MomentaryLayer = 0x2c,
+  RelativeLayer = 0x4c,
+  MomentaryRelativeLayer = 0x6c,
+  LedControl = 0xd,
+  Macro = 0xe,
 }
 
 export const MOD_CTRL = 1;

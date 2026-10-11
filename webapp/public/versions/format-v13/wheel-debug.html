@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Macropad scroll & click capture</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#172033;background:#f3f5fa;color-scheme:light}*{box-sizing:border-box}body{margin:0;padding:24px}main{max-width:1200px;margin:auto}h1{font-size:25px;margin:0 0 8px}p{line-height:1.5;color:#536078}.card{background:white;border:1px solid #d8dfeb;border-radius:14px;padding:20px;margin:16px 0}.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center}button,input{font:inherit}button{border:1px solid #cbd3e2;background:white;padding:9px 14px;border-radius:8px;cursor:pointer}button:hover{background:#edf2ff}button:disabled{opacity:.5;cursor:default}label{display:flex;align-items:center;gap:8px}#pad{height:180px;display:grid;place-content:center;text-align:center;background:#eef3ff;border:2px dashed #6a8ee7;border-radius:12px;cursor:crosshair;user-select:none;outline-offset:4px}#pad strong{font-size:20px}#pad p{margin:10px 0 0}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:20px}.stat span{display:block;font-size:13px;color:#536078}.stat strong{font-size:22px;font-variant-numeric:tabular-nums}.status{font-weight:600;color:#167647}.paused{color:#986118}.table-wrap{max-height:320px;overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}th,td{padding:9px 10px;border-bottom:1px solid #e5e9f0;text-align:right;white-space:nowrap}th{position:sticky;top:0;background:white;color:#536078}th:last-child,td:last-child{text-align:left}.fast{background:#fff2d8}#message{font-size:13px;min-height:20px}.note{font-size:13px}a{color:#285dce}@media(max-width:650px){body{padding:12px}.stats{grid-template-columns:repeat(2,1fr)}.card{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Macropad scroll & click capture</h1>
+<p>Move the pointer into the blue capture area. For scrolling, hold <strong>one</strong> macropad key for 3–5 seconds with wheel step <strong>1</strong>. For multi-click, select <strong>Left</strong> only, clear the log, then press the macropad key once. Scrolling and context menus are blocked inside the area.</p>
+<div class="card toolbar">
+<button id="pause" type="button">Pause</button><button id="clear" type="button">Clear</button><button id="csv" type="button" disabled>Download CSV</button><button id="copy" type="button" disabled>Copy CSV</button>
+<label><input id="separate" type="checkbox" checked> Start a new burst after 1 second of silence</label>
+<span id="status" class="status" role="status">Recording · no device connection needed</span>
+</div>
+<div class="card">
+<div id="pad" tabindex="0" aria-label="Wheel event capture area"><strong>Keep the pointer here, then use a macropad key</strong><p id="latest">Waiting for scroll or click events…</p></div>
+<div class="stats" aria-live="off">
+<div class="stat"><span>Wheel events</span><strong id="count">0</strong></div>
+<div class="stat"><span>Last interval</span><strong id="last">—</strong></div>
+<div class="stat"><span>Median interval</span><strong id="median">—</strong></div>
+<div class="stat"><span>Minimum interval</span><strong id="minimum">—</strong></div>
+<div class="stat"><span>Intervals below 90ms</span><strong id="fast">0</strong></div>
+</div>
+<h2 style="font-size:18px;margin:20px 0 10px">Mouse clicks</h2>
+<div class="stats">
+<div class="stat"><span>Button presses</span><strong id="presses">0</strong></div>
+<div class="stat"><span>Button releases</span><strong id="releases">0</strong></div>
+<div class="stat"><span>Complete click cycles</span><strong id="cycles">0</strong></div>
+<div class="stat"><span>Last press-to-press gap</span><strong id="click-gap">—</strong></div>
+<div class="stat"><span>Last press duration</span><strong id="press-length">—</strong></div>
+</div>
+<p class="note">A 3–16 click action should produce exactly that many complete press/release cycles with Left only. Press duration is at least <strong>8ms</strong>; the next press follows release by at least <strong>200ms</strong> (roughly 208ms or longer from press to press). The log also includes browser <code>click</code>, <code>auxclick</code> and <code>dblclick</code> notifications; these do not increase the cycle count. Manual mouse clicks in the area also count, so clear the log before testing.</p>
+<p class="note">Expected for a single held key at step 1: approximately <strong>100–108ms</strong> between events on either axis (about 10 per second), with possible extra USB or browser delay. Larger configured steps emit several individual wheel reports in a batch, so use step 1 for this check.</p>
+</div>
+<div class="card">
+<h2 style="font-size:18px;margin-top:0">Event log <small style="font-weight:400;color:#536078">· newest 200 displayed · last 2,000 retained for CSV</small></h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Event</th><th>Button</th><th>Buttons</th><th>Press ms</th><th>Burst</th><th>Elapsed ms</th><th>Event gap ms</th><th>Receipt gap ms</th><th>ΔX</th><th>ΔY</th><th>ΔZ</th><th>Units / source</th></tr></thead><tbody id="rows"></tbody></table></div>
+<p id="message" role="status"></p>
+<p class="note">This records browser wheel and mouse events, not raw USB reports. Event gaps compare events of the same type and mouse button within a burst, so an immediate press/release or a double-click notification does not skew the scroll interval. The OS/browser can change the wheel delta or combine events. “Event gap” uses <code>event.timeStamp</code>; “Receipt gap” uses <code>performance.now()</code> when the handler runs. If receipt times bunch up but event times do not, browser delivery is delayed. Pixel deltas are host-scaled movement, not firmware wheel counts. Other mice and trackpads can also generate events; their device identity is unavailable here. Buttons are Left, Middle and Right; the buttons mask is 1=Left, 2=Right, 4=Middle. CSV includes both clocks, all deltas, button masks, press duration, browser click detail, and modifier keys.</p>
+</div>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const limit = 2000;
+let events = [], recording = true, firstTimestamp = null, previousReceipt = null, burst = 0, sequence = 0, renderTimer = null;
+let wheelCount = 0, presses = 0, releases = 0, cycles = 0, lastClickGap = null, lastPressLength = null;
+const previousByType = new Map(), pressedAt = new Map();
+const units = ['pixels', 'lines', 'pages'];
+const buttons = ['Left', 'Middle', 'Right'];
+const ms = value => value === null ? '—' : `${value.toFixed(1)}ms`;
+function render() {
+  renderTimer = null;
+  const wheels = events.filter(e => e.kind === 'wheel');
+  const gaps = wheels.filter(e => e.eventGap !== null).map(e => e.eventGap).sort((a,b) => a-b);
+  const middle = Math.floor(gaps.length / 2);
+  const median = gaps.length ? (gaps.length % 2 ? gaps[middle] : (gaps[middle-1] + gaps[middle]) / 2) : null;
+  $('count').textContent = String(wheelCount);
+  $('last').textContent = ms(wheels.length ? wheels[wheels.length-1].eventGap : null);
+  $('median').textContent = ms(median);
+  $('minimum').textContent = ms(gaps.length ? gaps[0] : null);
+  $('fast').textContent = String(gaps.filter(gap => gap < 90).length);
+  $('presses').textContent = String(presses); $('releases').textContent = String(releases); $('cycles').textContent = String(cycles);
+  $('click-gap').textContent = ms(lastClickGap); $('press-length').textContent = ms(lastPressLength);
+  $('csv').disabled = $('copy').disabled = !events.length;
+  const fragment = document.createDocumentFragment();
+  for (const e of events.slice(-200).reverse()) {
+    const tr = document.createElement('tr');
+    if (e.kind === 'wheel' && e.eventGap !== null && e.eventGap < 90) tr.className = 'fast';
+    for (const value of [e.number,e.kind,e.button === null ? '—' : buttons[e.button] ?? e.button,e.buttons ?? '—',e.pressDuration === null ? '—' : e.pressDuration.toFixed(3),e.burst,e.elapsed.toFixed(3),e.eventGap === null ? '—' : e.eventGap.toFixed(3),e.receiptGap === null ? '—' : e.receiptGap.toFixed(3),e.deltaX ?? '—',e.deltaY ?? '—',e.deltaZ ?? '—',`${e.deltaMode === null ? '' : (units[e.deltaMode] ?? e.deltaMode) + ' / '}${e.trusted ? 'browser' : 'synthetic'}`]) {
+      const td = document.createElement('td'); td.textContent = String(value); tr.append(td);
+    }
+    fragment.append(tr);
+  }
+  $('rows').replaceChildren(fragment);
+}
+function record(event) {
+  event.preventDefault();
+  if (!recording) return;
+  const receiptTimestamp = performance.now(), eventTimestamp = event.timeStamp;
+  const newBurst = previousReceipt === null || ($('separate').checked && receiptTimestamp - previousReceipt >= 1000);
+  if (newBurst) { burst++; previousByType.clear(); pressedAt.clear(); }
+  previousReceipt = receiptTimestamp;
+  firstTimestamp ??= eventTimestamp;
+  const kind = event.type;
+  const isWheel = kind === 'wheel', button = isWheel ? null : event.button;
+  const key = `${kind}:${button ?? ''}`;
+  const previous = previousByType.get(key);
+  const eventGap = previous ? eventTimestamp - previous.eventTimestamp : null;
+  let pressDuration = null;
+  if (isWheel) wheelCount++;
+  if (kind === 'mousedown') { presses++; pressedAt.set(button, eventTimestamp); lastClickGap = eventGap; }
+  if (kind === 'mouseup') {
+    releases++;
+    if (pressedAt.has(button)) { cycles++; pressDuration = eventTimestamp - pressedAt.get(button); lastPressLength = pressDuration; pressedAt.delete(button); }
+  }
+  const entry = { number: ++sequence, kind, button, buttons: isWheel ? null : event.buttons, detail: event.detail,
+    pressDuration, burst, elapsed: eventTimestamp-firstTimestamp, eventTimestamp, receiptTimestamp, eventGap,
+    receiptGap: previous ? receiptTimestamp-previous.receiptTimestamp : null,
+    deltaX: isWheel ? event.deltaX : null, deltaY: isWheel ? event.deltaY : null, deltaZ: isWheel ? event.deltaZ : null, deltaMode: isWheel ? event.deltaMode : null,
+    trusted: event.isTrusted, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey };
+  events.push(entry); if (events.length > limit) events.shift(); previousByType.set(key, entry);
+  $('latest').textContent = isWheel ? `ΔX ${event.deltaX} · ΔY ${event.deltaY} ${units[event.deltaMode] ?? ''} · ${ms(eventGap)} since previous wheel event · burst ${burst}` : `${kind} ${buttons[button] ?? button} · ${ms(eventGap)} since previous ${kind} · ${cycles} complete cycles`;
+  // Keep DOM work out of the event handler and limit its cost during fast input.
+  if (renderTimer === null) renderTimer = setTimeout(render, 100);
+}
+for (const type of ['wheel','mousedown','mouseup','click','auxclick','dblclick']) $('pad').addEventListener(type, record, { passive: false });
+$('pad').addEventListener('contextmenu', event => event.preventDefault());
+window.addEventListener('blur', () => { previousByType.clear(); pressedAt.clear(); previousReceipt = null; });
+$('pause').addEventListener('click', () => {
+  recording = !recording; previousByType.clear(); pressedAt.clear(); previousReceipt = null;
+  $('pause').textContent = recording ? 'Pause' : 'Resume';
+  $('status').textContent = recording ? 'Recording · no device connection needed' : 'Paused';
+  $('status').className = recording ? 'status' : 'status paused';
+});
+$('clear').addEventListener('click', () => {
+  if (renderTimer !== null) clearTimeout(renderTimer); renderTimer = null;
+  events = []; previousByType.clear(); pressedAt.clear(); previousReceipt = null; firstTimestamp = null; burst = 0; sequence = 0;
+  wheelCount = presses = releases = cycles = 0; lastClickGap = lastPressLength = null;
+  $('latest').textContent = 'Waiting for scroll or click events…'; $('message').textContent = ''; render();
+});
+function csv() {
+  const fields = ['number','kind','button','buttons','detail','pressDuration','burst','elapsed','eventTimestamp','receiptTimestamp','eventGap','receiptGap','deltaX','deltaY','deltaZ','deltaMode','trusted','ctrl','shift','alt','meta'];
+  return fields.join(',')+'\n'+events.map(e => fields.map(field => e[field] ?? '').join(',')).join('\n')+'\n';
+}
+$('csv').addEventListener('click', () => {
+  const url = URL.createObjectURL(new Blob([csv()], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a'); link.href = url; link.download = 'macropad-input-events.csv'; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(csv()); $('message').textContent = 'CSV copied.'; }
+  catch { $('message').textContent = 'Clipboard unavailable; use Download CSV.'; }
+});
+</script>
+</body>
+</html>

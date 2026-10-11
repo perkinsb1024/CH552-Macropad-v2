@@ -25,7 +25,7 @@ it.each([0, 1] as const)('migrates v7 text in keys, wheel, chords and both timer
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: text }];
   p.timedActions = [{ ticks: 2048, resetOnInput: true, consumeInput: true, action: text, resumeAction: text }];
   const modern = encodeProfile(p);
-  expect(modern.slice(9, 11)).toEqual(new Uint8Array([0x10, 0]));
+  expect(modern.slice(9, 11)).toEqual(new Uint8Array([0x20, 0]));
   const old = modern.slice(); legacyTextCodes(old); old[2] = 7; sealImage(old);
   expect(old[9]).toBe(9);
   expect(validator.accepts(old, variant)).toBe(false);
@@ -44,7 +44,7 @@ it.each([0, 1] as const)('round-trips Consumer Hold endpoints and high usage bit
     const p = defaultProfile(variant);
     p.layers[0]!.keys[0] = { type: 'consumerHold', usage };
     const image = encodeProfile(p);
-    expect([...image.slice(9, 11)]).toEqual([((usage >> 8) << 4) | 8, usage & 255]);
+    expect([...image.slice(9, 11)]).toEqual([((usage >> 8) << 4) | 9, usage & 255]);
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
     expect(validator.accepts(image, variant)).toBe(true);
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
@@ -60,21 +60,21 @@ it.each([0, 1] as const)('round-trips held scrolling on keys, chords and wheel p
   p.layers[0]!.encoderButton = hold;
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: false, action: hold }];
   const image = encodeProfile(p);
-  expect([...image.slice(9, 11)]).toEqual([0x46, 0x81]);
+  expect([...image.slice(9, 11)]).toEqual([0x45, 0x81]);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
   expect(summarize(hold)).toBe('Scroll up 127 (hold)');
 });
 
-it.each([[0x0f, 1], [0x34, 0], [0xF4, 0], [0x30, 0], [0, 1], [0x10, 0], [8, 0], [0x16, 1], [0x26, 1], [0x96, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
+it.each([[0x0f, 1], [0x34, 0], [0xF4, 0], [0x30, 0], [0, 1], [0x20, 0], [9, 0], [0x15, 1], [0x25, 1], [0x95, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
   const image = encodeProfile(defaultProfile(0));
   image.set([first, second], 9); sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
   expect(validator.accepts(image, 0)).toBe(false);
 });
 
-it.each([0x08, 0x46])('rejects release-dependent encoding %s on rotation and both timer slots', first => {
+it.each([0x09, 0x45])('rejects release-dependent encoding %s on rotation and both timer slots', first => {
   const p = defaultProfile(0);
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: { type: 'none' }, resumeAction: { type: 'none' } }];
   for (const offset of [23, 25, 54, 56]) {
@@ -89,7 +89,7 @@ it('distinguishes Nothing from empty Type Text, and rejects unsupported accelera
   p.layers[0]!.keys[0] = { type: 'none' };
   p.layers[0]!.keys[1] = { type: 'string', text: '' };
   const image = encodeProfile(p);
-  expect([...image.slice(9, 13)]).toEqual([0, 0, 0x10, 0]);
+  expect([...image.slice(9, 13)]).toEqual([0, 0, 0x20, 0]);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, 0)).toBe(true);
   const json = JSON.parse(exportProfile(p));

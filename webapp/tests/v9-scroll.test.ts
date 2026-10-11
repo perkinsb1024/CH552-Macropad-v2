@@ -15,7 +15,7 @@ afterAll(() => validator.close());
 it.each([0, 1] as const)('validates every scroll auxiliary nibble and signed endpoint on variant %s', variant => {
   for (const rotation of [false, true]) for (let aux = 0; aux < 16; aux++) for (const delta of [-128, -127, -1, 1, 127]) {
     const image = encodeProfile(defaultProfile(variant));
-    image.set([(aux << 4) | 6, delta & 255], rotation ? (variant ? 17 : 23) : 9);
+    image.set([(aux << 4) | 5, delta & 255], rotation ? (variant ? 17 : 23) : 9);
     sealImage(image);
     const expected = !(aux & 3) && !(rotation && (aux & 4)) && delta !== -128;
     expect(decodeImage(image).ok, `aux=${aux}, rotation=${rotation}, delta=${delta}`).toBe(expected);
@@ -34,8 +34,8 @@ it.each([0, 1] as const)('round-trips horizontal buttons, chords, rotation and b
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: hold }];
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: tap, resumeAction: tap }];
   const image = encodeProfile(p);
-  expect(image[2]).toBe(13);
-  expect(image[9]).toBe(0xc6);
+  expect(image[2]).toBe(14);
+  expect(image[9]).toBe(0xc5);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);

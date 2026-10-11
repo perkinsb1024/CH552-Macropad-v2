@@ -1,0 +1,393 @@
+{
+  "sourceCommit": "15660bc44da0390b7941f441957abd18d8760d4f",
+  "fixtures": [
+    {
+      "profile": {
+        "variant": 0,
+        "transparentBlack": false,
+        "startupLayer": 0,
+        "chordWindow": 8,
+        "rainbowPhase": 2,
+        "rainbowSpeed": 1,
+        "layers": [
+          {
+            "keys": [
+              {
+                "type": "keyHold",
+                "usage": 4,
+                "modifiers": 15
+              },
+              {
+                "type": "mouseHold",
+                "buttons": 128
+              },
+              {
+                "type": "consumerHold",
+                "usage": 4095
+              },
+              {
+                "type": "momentaryLayer",
+                "layer": 1
+              },
+              {
+                "type": "scroll",
+                "delta": -127,
+                "hold": true,
+                "horizontal": true
+              },
+              {
+                "type": "mouseXY",
+                "x": -64,
+                "y": 4,
+                "hold": true
+              }
+            ],
+            "encoderButton": {
+              "type": "macro",
+              "macro": 0,
+              "repeats": 16
+            },
+            "clockwise": {
+              "type": "setLayer",
+              "layer": 255
+            },
+            "counterclockwise": {
+              "type": "oneShotSetLayer",
+              "layer": 1
+            },
+            "leds": [
+              15,
+              15,
+              15,
+              15,
+              15,
+              15
+            ],
+            "indicatorBehavior": 0,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false
+          },
+          {
+            "keys": [
+              {
+                "type": "keyTap",
+                "usage": 115,
+                "modifiers": 6
+              },
+              {
+                "type": "consumerModified",
+                "usage": 255,
+                "modifiers": 15
+              },
+              {
+                "type": "mouseClick",
+                "buttons": 255,
+                "clicks": 16
+              },
+              {
+                "type": "mouseDown",
+                "buttons": 128
+              },
+              {
+                "type": "mouseUp",
+                "buttons": 255
+              },
+              {
+                "type": "relativeLayer",
+                "offset": -6
+              }
+            ],
+            "encoderButton": {
+              "type": "oneShotRelativeLayer",
+              "offset": 6
+            },
+            "clockwise": {
+              "type": "mouseX",
+              "delta": -127
+            },
+            "counterclockwise": {
+              "type": "mouseY",
+              "delta": 127
+            },
+            "leds": [
+              15,
+              15,
+              15,
+              15,
+              15,
+              15
+            ],
+            "indicatorBehavior": 0,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false
+          }
+        ],
+        "chords": [
+          {
+            "layer": 0,
+            "keyA": 0,
+            "keyB": 1,
+            "global": true,
+            "action": {
+              "type": "string",
+              "text": "Go\n"
+            }
+          }
+        ],
+        "timedActions": [
+          {
+            "ticks": 2048,
+            "resetOnInput": true,
+            "consumeInput": true,
+            "action": {
+              "type": "consumer",
+              "usage": 2748
+            },
+            "resumeAction": {
+              "type": "macro",
+              "macro": 0,
+              "repeats": 2
+            }
+          }
+        ],
+        "macros": [
+          {
+            "actions": [
+              {
+                "type": "pause",
+                "ticks": 255
+              },
+              {
+                "type": "string",
+                "text": "Go\n"
+              },
+              {
+                "type": "mouseToggle",
+                "buttons": 255
+              },
+              {
+                "type": "ledControl",
+                "command": "effectBlink2",
+                "value": 15,
+                "brightness": "dim"
+              }
+            ]
+          }
+        ]
+      },
+      "hex": "4d500d410402ede868f2043580f8ff0a01c6813d0fff4209ff1901ffffff006173f4fff3ff158025ff0bfa1b060c812c7fffffff00801000ffa7bc1f42f8476f0a0020ff100005fffe93000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "profile": {
+        "variant": 1,
+        "transparentBlack": false,
+        "startupLayer": 0,
+        "chordWindow": 8,
+        "rainbowPhase": 2,
+        "rainbowSpeed": 1,
+        "layers": [
+          {
+            "keys": [
+              {
+                "type": "keyHold",
+                "usage": 4,
+                "modifiers": 15
+              },
+              {
+                "type": "mouseHold",
+                "buttons": 128
+              },
+              {
+                "type": "consumerHold",
+                "usage": 4095
+              }
+            ],
+            "encoderButton": {
+              "type": "macro",
+              "macro": 0,
+              "repeats": 16
+            },
+            "clockwise": {
+              "type": "setLayer",
+              "layer": 255
+            },
+            "counterclockwise": {
+              "type": "oneShotSetLayer",
+              "layer": 1
+            },
+            "leds": [
+              15,
+              15,
+              15
+            ],
+            "indicatorBehavior": 0,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false
+          },
+          {
+            "keys": [
+              {
+                "type": "momentaryLayer",
+                "layer": 1
+              },
+              {
+                "type": "scroll",
+                "delta": -127,
+                "hold": true,
+                "horizontal": true
+              },
+              {
+                "type": "mouseXY",
+                "x": -64,
+                "y": 4,
+                "hold": true
+              }
+            ],
+            "encoderButton": {
+              "type": "oneShotRelativeLayer",
+              "offset": 6
+            },
+            "clockwise": {
+              "type": "mouseX",
+              "delta": -127
+            },
+            "counterclockwise": {
+              "type": "mouseY",
+              "delta": 127
+            },
+            "leds": [
+              15,
+              15,
+              15
+            ],
+            "indicatorBehavior": 0,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false
+          },
+          {
+            "keys": [
+              {
+                "type": "keyTap",
+                "usage": 115,
+                "modifiers": 6
+              },
+              {
+                "type": "consumerModified",
+                "usage": 255,
+                "modifiers": 15
+              },
+              {
+                "type": "mouseClick",
+                "buttons": 255,
+                "clicks": 16
+              }
+            ],
+            "encoderButton": {
+              "type": "none"
+            },
+            "clockwise": {
+              "type": "none"
+            },
+            "counterclockwise": {
+              "type": "none"
+            },
+            "leds": [
+              15,
+              15,
+              15
+            ],
+            "indicatorBehavior": 0,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false
+          },
+          {
+            "keys": [
+              {
+                "type": "mouseDown",
+                "buttons": 128
+              },
+              {
+                "type": "mouseUp",
+                "buttons": 255
+              },
+              {
+                "type": "relativeLayer",
+                "offset": -6
+              }
+            ],
+            "encoderButton": {
+              "type": "none"
+            },
+            "clockwise": {
+              "type": "none"
+            },
+            "counterclockwise": {
+              "type": "none"
+            },
+            "leds": [
+              15,
+              15,
+              15
+            ],
+            "indicatorBehavior": 0,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false
+          }
+        ],
+        "chords": [
+          {
+            "layer": 0,
+            "keyA": 0,
+            "keyB": 1,
+            "global": true,
+            "action": {
+              "type": "string",
+              "text": "Go\n"
+            }
+          }
+        ],
+        "timedActions": [
+          {
+            "ticks": 2048,
+            "resetOnInput": true,
+            "consumeInput": true,
+            "action": {
+              "type": "consumer",
+              "usage": 2748
+            },
+            "resumeAction": {
+              "type": "macro",
+              "macro": 0,
+              "repeats": 2
+            }
+          }
+        ],
+        "macros": [
+          {
+            "actions": [
+              {
+                "type": "pause",
+                "ticks": 255
+              },
+              {
+                "type": "string",
+                "text": "Go\n"
+              },
+              {
+                "type": "mouseToggle",
+                "buttons": 255
+              },
+              {
+                "type": "ledControl",
+                "command": "effectBlink2",
+                "value": 15,
+                "brightness": "dim"
+              }
+            ]
+          }
+        ]
+      },
+      "hex": "4d500d430403833868f2043580f8ffff5209ff1901ff0f000a01c6813d0f1b060c812c7fff0f006173f4fff3ff000000000000ff0f00158025ff0bfa000000000000ff0f00801000ffa7bc1f52f8476f0a0020ff100005fffe930000000000000000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

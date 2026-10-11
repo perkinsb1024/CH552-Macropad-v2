@@ -44,10 +44,10 @@ function controlTree() {
   return nodes((control.type as (p: unknown) => unknown)(control.props));
 }
 
-it('limits named controls and custom input to eight bits while retaining twelve-bit media actions', () => {
+it.each(['consumerModified', 'consumerModifiedHold'] as const)('limits %s controls and custom input to eight bits while retaining twelve-bit media actions', type => {
   profile.value = defaultProfile(0);
   selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
-  setAction(selectedSlot.value, { type: 'consumerModified', usage: 0xff, modifiers: 6 });
+  setAction(selectedSlot.value, { type, usage: 0xff, modifiers: 6 });
   const tree = controlTree();
   const usages = tree.filter(n => n.type === 'option' && typeof n.props.value === 'number').map(n => Number(n.props.value));
   expect(usages).toContain(0x6f); expect(usages.every(v => v > 0 && v <= 255)).toBe(true);
@@ -66,4 +66,17 @@ it.each([0x70, 0x192])('preserves representable media usages when selecting modi
   const select = nodes(Inspector()).find(n => n.type === 'select')!;
   (select.props.onChange as (e: unknown) => void)({ target: { value: 'consumerModified' } });
   expect(getAction(profile.value, selectedSlot.value)).toEqual({ type: 'consumerModified', usage: usage <= 255 ? usage : 0x6f, modifiers: 6 });
+});
+
+
+it('preserves usage and modifiers when switching a modified tap to a hold', () => {
+  profile.value = defaultProfile(0);
+  selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
+  setAction(selectedSlot.value, { type: 'consumerModified', usage: 0x70, modifiers: 15 });
+  const select = nodes(Inspector()).find(n => n.type === 'select')!;
+  (select.props.onChange as (e: unknown) => void)({ target: { value: 'consumerModifiedHold' } });
+  expect(getAction(profile.value, selectedSlot.value)).toEqual({ type: 'consumerModifiedHold', usage: 0x70, modifiers: 15 });
+  const picker = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'ModifierPicker')!;
+  (picker.props.onChange as (mask: number) => void)(6);
+  expect(getAction(profile.value, selectedSlot.value)).toEqual({ type: 'consumerModifiedHold', usage: 0x70, modifiers: 6 });
 });

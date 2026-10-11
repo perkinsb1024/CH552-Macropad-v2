@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 13;
+export const JSON_VERSION = 14;
 const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
@@ -105,12 +105,14 @@ function action(v: unknown, what: string): Action {
         ...(v.brightness === 'dim' ? { brightness: 'dim' as const } : {}) };
     case 'none':
       return { type };
+    case 'momentaryRelativeLayer':
     case 'relativeLayer':
     case 'oneShotRelativeLayer':
       return { type, offset: int(v.offset, `${what} offset`) };
     case 'keyTap':
     case 'keyHold':
       return { type, usage: int(v.usage ?? 0, `${what} usage`), modifiers: int(v.modifiers ?? 0, `${what} modifiers`) };
+    case 'consumerModifiedHold':
     case 'consumerModified':
       return { type, usage: int(v.usage, `${what} usage`), modifiers: int(v.modifiers ?? 0, `${what} modifiers`) };
     case 'mouseClick': {
@@ -164,7 +166,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -229,6 +231,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(isPreviousLayer)) throw new ImportError('Previous layer requires profile version 7.');
   const allActions = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action),
     ...(profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(profile.macros ?? []).flatMap(m => m.actions)];
+  if (Number(raw.version) < 14 && allActions.some(a => a.type === 'consumerModifiedHold' || a.type === 'momentaryRelativeLayer')) throw new ImportError('Modified consumer holds and relative layer holds require profile version 14.');
   if (Number(raw.version) < 13 && allActions.some(a => a.type === 'consumerModified')) throw new ImportError('Modified consumer actions require profile version 13.');
   if (Number(raw.version) < 12 && allActions.some(a => a.type === 'mouseDown' || a.type === 'mouseUp' || ('buttons' in a && a.buttons > 7))) throw new ImportError('Mouse down/up and buttons 4–8 require profile version 12.');
   if (Number(raw.version) < 11 && allActions.some(a => a.type === 'macro' || a.type === 'pause')) throw new ImportError('Macros and pauses require profile version 11.');

@@ -31,7 +31,7 @@ it.each([0, 1] as const)('round-trips all invocation sites and repeated Spotligh
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: invoke }];
   p.timedActions = [{ ticks: 2048, layer: 1, resetOnInput: true, consumeInput: true, action: invoke, resumeAction: invoke }];
   const image = encodeProfile(p);
-  expect(image[9]).toBe(0xff);
+  expect(image[9]).toBe(0xfe);
   expect(image[image[10]!]!).toBe(0x81);
   expect(computeCapacity(p)).toMatchObject({ macros: 12, strings: 7, timedActions: 6 });
   expect(validator.accepts(image, variant)).toBe(true);
@@ -69,7 +69,7 @@ it.each([
 ] as Action[])('rejects a prohibited editor step %o', action => {
   const p = oneLayer(0); p.macros = [{ actions: [action] }]; expect(() => encodeProfile(p)).toThrow();
 });
-it.each([2, 0x35, 8, 10, 0x46, 0x1c, 0x1d, 15])('rejects held or nested wire steps even without a reference: %s', first => {
+it.each([2, 0x34, 9, 0x2c, 0x45, 0x16, 0x17, 14, 0xb, 0x6c])('rejects held or nested wire steps even without a reference: %s', first => {
   const image = encodeProfile(oneLayer(0)); image.set([first, 1], 31); sealImage(image);
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);
 });
@@ -94,7 +94,7 @@ it.each([0, 1] as const)('packs single-byte terminators and checks every referen
   p.layers[0]!.keys[1] = { type: 'macro', macro: 1, repeats: 3 };
   p.layers[0]!.encoderButton = { type: 'macro', macro: 2, repeats: 16 };
   const image = encodeProfile(p), start = image[10]!;
-  expect([...image.slice(start, start + 11)]).toEqual([1, 4, 0, 0x20, 0, 7, 0xf0, 1, 4, 0, 0]);
+  expect([...image.slice(start, start + 11)]).toEqual([1, 4, 0, 0x10, 0, 8, 0xf0, 1, 4, 0, 0]);
   expect(image[12]).toBe(start + 3);
   expect(computeCapacity(p).macros).toBe(11);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
@@ -108,7 +108,7 @@ it.each([0, 1] as const)('packs single-byte terminators and checks every referen
 });
 it.each([0, 1] as const)('uses byte 127 for an empty macro or a sole final terminator on variant %s', variant => {
   const image = encodeProfile(oneLayer(variant));
-  image.set([0xff, 127], 9); sealImage(image);
+  image.set([0xfe, 127], 9); sealImage(image);
   expect(validator.accepts(image, variant)).toBe(true);
   const empty = decodeImage(image);
   expect(empty).toMatchObject({ ok: true, profile: { macros: [{ actions: [] }] } });

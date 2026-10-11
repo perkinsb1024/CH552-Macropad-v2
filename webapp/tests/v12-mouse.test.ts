@@ -1,3 +1,4 @@
+import { legacyV12Codes } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
@@ -24,8 +25,8 @@ it.each([0, 1] as const)('round-trips all 255 masks and new modes on variant %s'
       if (buttons === 128 || buttons === 255 || buttons === 24) expect(validator.accepts(image, variant)).toBe(true);
     }
   }
-  expect(encodeAction({ type: 'mouseDown', buttons: 128 }, new Map())).toEqual([0x15, 128]);
-  expect(encodeAction({ type: 'mouseUp', buttons: 255 }, new Map())).toEqual([0x25, 255]);
+  expect(encodeAction({ type: 'mouseDown', buttons: 128 }, new Map())).toEqual([0x14, 128]);
+  expect(encodeAction({ type: 'mouseUp', buttons: 255 }, new Map())).toEqual([0x24, 255]);
   expect(summarize({ type: 'mouseDown', buttons: 0x88 })).toBe('Mouse Down Button 4+Button 8');
   expect(actionTooltip({ type: 'mouseUp', buttons: 128 })).toBe('Mouse up: Button 8');
 });
@@ -40,7 +41,7 @@ it.each([0, 1] as const)('matches firmware reserved-mode validation at every tri
       const image = encodeProfile(p);
       const timer = (variant ? 24 : 31) + 3;
       const offset = slot === 'key' ? 9 : slot === 'rotation' ? (variant ? 17 : 23) : slot === 'chord' ? timer - 2 : slot === 'expiry' ? timer + 1 : slot === 'resume' ? timer + 3 : timer + 6;
-      image.set([aux << 4 | 5, 128], offset); sealImage(image);
+      image.set([aux << 4 | 4, 128], offset); sealImage(image);
       expect(decodeImage(image).ok).toBe(aux <= 2 || (aux === 3 && (slot === 'key' || slot === 'chord')));
       expect(validator.accepts(image, variant)).toBe(aux <= 2 || (aux === 3 && (slot === 'key' || slot === 'chord')));
       image[offset + 1] = 0; sealImage(image);
@@ -67,30 +68,31 @@ it.each([0, 1] as const)('preserves drag macro references, pauses and repeats th
   expect(validator.accepts(relocated, variant)).toBe(true);
 });
 
-it('migrates v11 macro, text and timer data without altering action bytes or storage', () => {
+it('migrates v11 macro, text and timer data while preserving behavior and storage', () => {
   const p = defaultProfile(0); p.layers = [p.layers[0]!];
   p.macros = [{ actions: [{ type: 'mouseToggle', buttons: 7 }, { type: 'pause', ticks: 255 }, { type: 'string', text: 'Go\n' }] }];
   p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats: 16 };
   p.timedActions = [{ ticks: 2048, resetOnInput: true, consumeInput: false, action: { type: 'macro', macro: 0, repeats: 1 }, resumeAction: { type: 'mouseToggle', buttons: 3 } }];
-  const old = encodeProfile(p); old[2] = 11; sealImage(old);
+  const old = encodeProfile(p); legacyV12Codes(old); old[2] = 11; sealImage(old);
   const read = decodeImage(old); expect(read).toEqual({ ok: true, profile: p });
   if (!read.ok) throw new Error(read.detail);
   const current = encodeProfile(read.profile);
-  expect(current.slice(8)).toEqual(old.slice(8));
+  expect(current).toEqual(encodeProfile(p));
+  expect(computeCapacity(read.profile).used).toBe(computeCapacity(p).used);
   const json = JSON.parse(exportProfile(p)); json.version = 11;
   expect(importProfile(JSON.stringify(json)).profile).toEqual(p);
   const key = 'universal-macropad:format-v11:draft:six-key';
   const original = JSON.stringify({ formatVersion: 11, profile: p, meta: { profileName: 'Drag' }, savedAt: 'old' });
   const storage = new Map([[key, original]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
-  expect(loadDraft(0)).toMatchObject({ formatVersion: 13, profile: p, savedAt: 'old' });
+  expect(loadDraft(0)).toMatchObject({ formatVersion: 14, profile: p, savedAt: 'old' });
   expect(storage.get(key)).toBe(original); expect(storage.has(draftKey(0))).toBe(false);
   clearDraft(0); expect(loadDraft(0)).toBeNull(); expect(storage.get(key)).toBe(original);
 });
 
 it.each(['mouseDown', 'mouseUp', 'mouseClick', 'mouseToggle', 'mouseHold'] as const)('rejects v12-only %s encodings in older binary/JSON/draft profiles', type => {
   const p = defaultProfile(0); p.layers[0]!.keys[0] = { type, buttons: 128 };
-  const image = encodeProfile(p); image[2] = 11; sealImage(image);
+  const image = encodeProfile(p); legacyV12Codes(image); image[2] = 11; sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
   const json = JSON.parse(exportProfile(p)); json.version = 11;
   expect(() => importProfile(JSON.stringify(json))).toThrow('version 12');

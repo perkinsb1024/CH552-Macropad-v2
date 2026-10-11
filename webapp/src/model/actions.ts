@@ -37,12 +37,14 @@ export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
   { type: 'mouseXY', code: ActionCode.MouseXY, label: 'Move pointer X/Y', group: 'Mouse', needsRelease: false, hint: 'Move both axes together, from 4–64 mouse counts per axis in steps of 4.' },
   { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
   { type: 'consumerHold', code: ActionCode.ConsumerHold, label: 'Media / system hold', group: 'Media', needsRelease: true, hint: 'Hold a media or system control until release. Repetition depends on the host.' },
+  { type: 'consumerModifiedHold', code: ActionCode.ConsumerModifiedHold, label: 'Media / system hold with modifiers', group: 'Media', needsRelease: true, hint: 'Hold an 8-bit consumer control and its modifiers until physical release.' },
   { type: 'consumerModified', code: ActionCode.ConsumerModified, label: 'Media / system with modifiers', group: 'Media', needsRelease: false, hint: 'Tap an 8-bit consumer control with Ctrl, Shift, Alt or GUI. Modifiers release automatically after the control.' },
   { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
   { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
   { type: 'oneShotSetLayer', code: ActionCode.SetLayer, label: 'Switch to layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use a layer for the next action, then return to the previous layer.' },
   { type: 'relativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer', group: 'Layers', needsRelease: false, hint: 'Move forward or backward through layers, wrapping around. Zero displays the current layer’s indicator.' },
   { type: 'oneShotRelativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use the next relative layer for one action, then return to the previous layer.' },
+  { type: 'momentaryRelativeLayer', code: ActionCode.MomentaryRelativeLayer, label: 'Relative layer while held', group: 'Layers', needsRelease: true, hint: 'Resolve a relative layer at press time and use it until physical release.' },
   { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer while held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
 ];
 
@@ -75,12 +77,14 @@ export function blankAction(type: ActionType): Action {
     case 'ledControl': return { type, command: 'commonPresetRelative', value: 1 };
     case 'none':
       return { type };
+    case 'momentaryRelativeLayer':
     case 'relativeLayer':
     case 'oneShotRelativeLayer':
       return { type, offset: 1 };
     case 'keyTap':
     case 'keyHold':
       return { type, usage: 0x04, modifiers: 0 };
+    case 'consumerModifiedHold':
     case 'consumerModified':
       return { type, usage: 0x6f, modifiers: MOD_ALT | MOD_SHIFT };
     case 'mouseClick':
@@ -137,8 +141,9 @@ export function summarize(action: Action): string {
       const combo = parts.length ? parts.join(' + ') : 'No key';
       return action.type === 'keyHold' ? `Hold ${combo}` : combo;
     }
+    case 'consumerModifiedHold':
     case 'consumerModified':
-      return [...modifierNames(action.modifiers), consumerName(action.usage)].join(' + ');
+      return `${action.type === 'consumerModifiedHold' ? 'Hold ' : ''}${[...modifierNames(action.modifiers), consumerName(action.usage)].join(' + ')}`;
     case 'mouseClick':
       return `Mouse ${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
@@ -171,8 +176,9 @@ export function summarize(action: Action): string {
       return isPreviousLayer(action) ? 'Previous layer (one-shot)' : `Layer ${action.layer + 1} (one-shot)`;
     case 'momentaryLayer':
       return `Layer ${action.layer + 1} (hold)`;
+    case 'momentaryRelativeLayer':
     case 'relativeLayer':
-      return `Relative Layer: ${action.offset > 0 ? '+' : ''}${action.offset}`;
+      return `Relative Layer${action.type === 'momentaryRelativeLayer' ? ' (hold)' : ''}: ${action.offset > 0 ? '+' : ''}${action.offset}`;
     case 'oneShotRelativeLayer':
       return `Relative Layer (one-shot): ${action.offset > 0 ? '+' : ''}${action.offset}`;
   }
@@ -195,6 +201,7 @@ export function actionTooltip(action: Action): string {
     case 'mouseUp':
     case 'mouseToggle': return `${label}: ${mouseButtonNames(action.buttons).join(' + ') || '?'}`;
     case 'consumerHold': return `${label}: ${consumerName(action.usage)}`;
+    case 'momentaryRelativeLayer':
     case 'relativeLayer':
     case 'oneShotRelativeLayer': return `${label}: ${action.offset > 0 ? '+' : ''}${action.offset}`;
     default: return `${label}: ${summarize(action)}`;

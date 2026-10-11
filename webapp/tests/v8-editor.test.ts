@@ -22,7 +22,7 @@ function change(node: Node, value: string) { (node.props.onChange as (event: unk
 it('places Media Hold after Media Tap and preserves custom usage when changing either way', () => {
   start({ type: 'consumer', usage: 0xabc });
   const media = nodes(selects()[0]!.props.children).find(n => n.type === 'optgroup' && n.props.label === 'Media')!;
-  expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerHold', 'consumerModified']);
+  expect(nodes(media).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(['consumer', 'consumerHold', 'consumerModifiedHold', 'consumerModified']);
   change(selects()[0]!, 'consumerHold');
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'consumerHold', usage: 0xabc });
   const control = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'ConsumerControl')!;
@@ -88,4 +88,17 @@ it('edits Single, Double and Custom clicks with a 3–16 slider and preserves mo
   (modes()[2]!.props.onClick as () => void)();
   expect(slider()?.props.value).toBe(16);
   vi.unstubAllGlobals();
+});
+
+
+it('preserves and edits the relative offset when selecting a layer hold', () => {
+  start({ type: 'relativeLayer', offset: -1 });
+  change(selects()[0]!, 'momentaryRelativeLayer');
+  expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'momentaryRelativeLayer', offset: -1 });
+  const slider = nodes(Inspector()).find(n => n.type === 'input' && n.props['aria-label'] === 'Relative offset')!;
+  (slider.props.onInput as (event: unknown) => void)({ target: { value: '2' } });
+  expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'momentaryRelativeLayer', offset: 2 });
+  selectedSlot.value = { kind: 'clockwise', layer: 0 };
+  const options = nodes(selects()[0]!.props.children);
+  for (const type of ['momentaryRelativeLayer', 'consumerModifiedHold']) expect(options.find(n => n.type === 'option' && n.props.value === type)?.props.disabled).toBe(true);
 });

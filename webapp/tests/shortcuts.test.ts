@@ -83,7 +83,7 @@ describe('shortcut library', () => {
     for (const [id, modifiers, usage] of expected) {
       const shortcut = media.find(s => s.id === id)!;
       expect(shortcut.action).toEqual({ type: 'consumerModified', usage, modifiers });
-      expect(encodeAction(shortcut.action, new Map())).toEqual([modifiers << 4 | 4, usage]);
+      expect(encodeAction(shortcut.action, new Map())).toEqual([modifiers << 4 | 10, usage]);
       expect(filterShortcuts('mac', shortcut.name)).toContain(shortcut);
       expect(filterShortcuts('windows', '')).not.toContain(shortcut);
     }

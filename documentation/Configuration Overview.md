@@ -204,8 +204,11 @@ Your computer, application, or display must support the selected control. For ex
 
 **Media / system** sends a tap. With v13 firmware, taps can include **Ctrl**,
 **Shift**, **Alt** and **GUI** modifiers when the usage fits in eight bits
-(`0x00–0xFF`). Larger custom usages and **Media / system hold** do not support
-these temporary modifiers. The firmware presses the modifiers before the media
+(`0x01–0xFF`). Larger custom usages use unmodified actions.
+With v14 firmware, choose **Media / system hold with modifiers** to hold an
+eight-bit control and its modifiers until physical release; this action is
+available on keys, chords and the wheel button. Published v13 firmware supports
+modified taps through its matching archived editor. The firmware presses the modifiers before the media
 report and clears them after its release, preserving independently held keys.
 For example, macOS fine brightness adjustment uses Option + Shift with a
 brightness tap. Host support determines the result.
@@ -266,6 +269,7 @@ You can have up to seven layers on a three-key macropad, or five on a six-key ma
 | **Layer while held** | Uses the chosen layer while the switching button or chord is held, then returns when released (like the shift key in the earlier example) |
 | **Relative layer** | Moves forward or backward by your chosen number of layers. +1 means next; −1 means previous in numerical order. It wraps around at either end |
 | **Relative layer (one-shot)** | Visits a layer at the chosen offset for the next action, then returns |
+| **Relative layer while held** | Resolves the offset from the selected base layer at press time and keeps that target until physical release; requires v14 firmware |
 
 For **Switch to layer** and its one-shot version, the target list also includes **Previous layer**. This means the previously selected layer on the device, rather than simply the next lower layer number. Repeating a **Previous layer** action swaps between those two layers. Temporary one-shot and held visits do not affect the previous layer history.
 
@@ -510,7 +514,8 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 ## Macros
 
 Macros are supported by the [pre-built v13 release firmware](../README.md#how-to-compile-the-firmware)
-and the current configurator. Older firmware uses its matching archived editor; versions before v11 do not support macros.
+and its [matching v13 configurator](../webapp/public/versions/format-v13/index.html).
+The active v14 configurator also supports macros. Older firmware uses its matching archived editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add macro**
 2. Select a step to edit it in the **Action editor**; choose **Add step** to extend the sequence
@@ -708,7 +713,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v13 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v14 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume this input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

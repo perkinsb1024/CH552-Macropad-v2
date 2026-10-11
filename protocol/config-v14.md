@@ -22,10 +22,11 @@ in persistent, one-shot and hold modes. All action records remain two bytes.
 Dynamic macros, repeats, pauses, eight mouse buttons, pointer movement, scroll,
 timed actions and LED features retain their complete encodings below.
 
-The active configurator and its JSON profiles remain at version 13. Version 14
-configurator controls, JSON/draft definitions and import conversion are deferred;
-the active editor cannot produce this format. No v14 firmware release or hardware
-validation is claimed here.
+The active configurator encodes version 14 images and exports JSON version 14.
+It supports the action map below, including modified consumer holds and relative
+layer holds. It imports binary versions 2–13, JSON versions 1–13 and older local
+drafts by decoding their source format before v14 encoding. No v14 firmware
+release or hardware validation is claimed here.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -65,9 +66,35 @@ v13 encodings. Binary section sizes retain their meanings. The converter must
 set the new version and recompute CRC. Decode the source format before rewriting
 at every action site, including both timer fields and the complete macro tail;
 in-place substitution without source decoding can confuse the reassigned types.
-Conversion and new JSON/draft schemas have not been implemented. Type `F` is
+The configurator implements this conversion at all action sites. Type `F` is
 reserved in v14. Earlier provisional v14 allocations are also incompatible with
 this map; the version byte alone does not distinguish unpublished allocations.
+
+## Configurator Profiles and Migration
+
+The active editor exports `universal-macropad-profile` JSON with `version: 14`.
+Actions use named types rather than numeric wire codes, so existing v13 action
+objects retain their meanings when imported. The new action objects are:
+
+| Action Type | Fields | Validation |
+| --- | --- | --- |
+| `consumerModifiedHold` | `usage`, `modifiers` | Integer usage 1–255; integer modifier mask 0–15 |
+| `momentaryRelativeLayer` | `offset` | Integer signed offset -6 through +6 |
+
+These are exposed as **Media / system hold with modifiers** and **Relative layer
+while held**. Both require a physical release and are available on keys, encoder
+presses and chords. Encoder rotation, both timer fields and macro steps reject
+these actions. Earlier JSON/draft versions cannot contain these v14-only types.
+
+Local drafts use `universal-macropad:format-v14:draft:six-key` or
+`universal-macropad:format-v14:draft:three-key`. The editor recovers older drafts
+without overwriting their namespaces or metadata. Imported profiles and older
+DataFlash remain unchanged until the user clicks **Save to device**. Oversized
+older imports remain editable and exportable, with saving blocked until repaired.
+
+Published v13 firmware uses the frozen editor at `versions/format-v13/`.
+Connecting it to the active editor offers that archive. The shared firmware
+installer continues to provide published v13 firmware.
 
 ## Header and Rainbow Settings
 
@@ -1085,7 +1112,7 @@ The current native builds use the following allocations, in bytes:
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass layout/startup checks. Hardware validation is outstanding. The active
-v13 configurator does not support this encoding. Action numbering is provisional;
+v14 configurator supports this encoding. Action numbering is provisional;
 changing it requires updated validation, dispatch, documentation and new size
 measurements. No released HEX files were generated for v14.
 

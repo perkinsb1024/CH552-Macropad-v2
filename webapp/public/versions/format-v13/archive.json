@@ -1,0 +1,23 @@
+{
+  "formatVersion": 13,
+  "sourceCommit": "15660bc44da0390b7941f441957abd18d8760d4f",
+  "changes": [
+    "Frozen finalized v13 editor and live view, preserving the v13 draft namespace. HTML archive banners and shared uploader redirect; application assets unchanged.",
+    "Built using installed dependencies matching the source lockfile."
+  ],
+  "validation": "All 610 source tests passed; TypeScript and Vite production build passed.",
+  "sha256": {
+    "assets/configurator-BhH6BFhK.js.map": "40a8eaa47451ea2966ee89948bbeed19895dc73111e7f24f695ffa2a3c67d744",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-AE2bOILE.css": "1fc15031456a320a4fc747edc0412f65ea36fd017a7dbe69e4aa403777d19976",
+    "assets/main-CJrHCeH2.js": "1253f8c61b6da38401853dd2afd507e445c61a55089fbf628ed87b7ecb8829da",
+    "assets/main-CJrHCeH2.js.map": "0b044092ca40b699a4e81685f9a15eaa3e69ec4137631e295c1713b1305dce1b",
+    "assets/viewer-BhH6BFhK.js.map": "cc22d8179608f70ef1e3a3079fde7d8e0cd06ebebe91bb5e2c56cca055ab5602",
+    "favicon.svg": "eb47e87c540ce093bdf9b1ba415afa1ca495b7229ed1b2fff8fb94b51996f961",
+    "index.html": "4f896079b6ea8fef3ea9dd8a4a36c422f303698cc801adefe58defcb506486b7",
+    "liveView/index.html": "8c0b421c95f3e933785d034971f4e9f43c02b771f454ee28ecd434108eeb976e",
+    "webUploader/index.html": "d0453aed380b6ae3f30d5e042fd8c1e4c54d98e0f6a5cba9447c33372fe03d7b",
+    "wheel-debug.html": "e67bc00d70e8654df88232e11c91edd35cbeec3cc286bbca2e78c58bc905fb8a"
+  }
+}

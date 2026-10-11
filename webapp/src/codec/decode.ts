@@ -1,12 +1,13 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
-  PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
+  PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
+import { ActionCode } from './legacyActionCodes';
 import { isSupportedUsage } from '../keys/keyboard';
 
 export type DecodeResult =
@@ -42,6 +43,33 @@ function decodeText(pool: PoolView, offset: number): Action | string {
 }
 
 function decodeAction(b0: number, b1: number, layers: number, rotation: boolean, pool: PoolView, version: number): Action | string {
+  // Decode using the source format at every action site before re-encoding.
+  if (version >= 14) {
+    const type = b0 & 15;
+    const aux = b0 >> 4;
+    if (type === 0xb) {
+      if (rotation) return 'Modified consumer hold bound to rotation';
+      return b1 ? { type: 'consumerModifiedHold', usage: b1, modifiers: aux } : 'Consumer usage is zero';
+    }
+    if (type === 0xc) {
+      const mode = aux & 3;
+      if (aux > 6 || mode === 3) return 'Invalid layer mode';
+      if (rotation && mode === 2) return 'Layer hold bound to rotation';
+      if (aux & 4) {
+        const offset = toSigned(b1);
+        if (offset < -6 || offset > 6) return 'Invalid relative-layer offset';
+        return { type: mode === 2 ? 'momentaryRelativeLayer' : mode === 1 ? 'oneShotRelativeLayer' : 'relativeLayer', offset };
+      }
+      if (b1 >= layers && !(mode !== 2 && b1 === PREVIOUS_LAYER)) return `Layer ${b1 + 1} does not exist`;
+      return { type: mode === 2 ? 'momentaryLayer' : mode === 1 ? 'oneShotSetLayer' : 'setLayer', layer: b1 };
+    }
+    if (type === 0xf) return 'Reserved action type F';
+    if (type === 0) b0 = aux === 1 ? 0x20 : aux === 2 ? 0x10 : b0;
+    else {
+      const legacyTypes = [0, 1, 2, 3, 5, 6, 12, 13, 7, 8, 4, 0, 0, 14, 15];
+      b0 = (b0 & 0xf0) | legacyTypes[type]!;
+    }
+  }
   let type = b0 & 15;
   if (version < 11 && type === 4) {
     if (version >= 8) return 'Reserved action type 4';
@@ -149,7 +177,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
