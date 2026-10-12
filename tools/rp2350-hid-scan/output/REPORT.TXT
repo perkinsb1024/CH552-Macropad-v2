@@ -1,0 +1,22 @@
+{
+"scanner_version":"0.1.0",
+"outcome":"sweep_complete",
+"factory_vid_pid":"1189:8890",
+"factory_interface":1,
+"factory_baseline_seen":true,
+"bootloader_identity_confirmed":false,
+"transition_after_probe":false,
+"last_command":255,
+"last_report_id":3,
+"last_transfer_result":0,
+"attempts":235,
+"accepted_transfers":234,
+"rejected_transfers":1,
+"dropped_trace_events":0,
+"observe_ms":1000,
+"scope":"First payload byte 00..FF; remaining bytes zero; descriptor-supported IDs 3,0,2",
+"skipped":"01..12,A1,AA,B0 (hex)",
+"transport":"interrupt OUT",
+"storage":"Two CRC-protected RP2350 flash snapshots; commit at terminal outcome",
+"attribution":"Transition follows a probe and a host-forced USB re-enumeration; single trial, no power-cycle isolation"
+}

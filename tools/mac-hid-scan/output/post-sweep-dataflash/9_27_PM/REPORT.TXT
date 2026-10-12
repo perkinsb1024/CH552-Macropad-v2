@@ -1,0 +1,21 @@
+{
+  "reader_version":"0.1.0",
+  "read_only":true,
+  "bootloader_entry_confirmed":true,
+  "capture_complete":true,
+  "configuration_valid":true,
+  "bootloader_version":"2.5.0",
+  "chip_uid":"30f5b5bd",
+  "global_configuration_raw":"0xfffd52ff",
+  "code_protect_bit":0,
+  "external_code_read_allowed":false,
+  "bootloader_enabled":true,
+  "dataflash_expected_bytes":128,
+  "dataflash_read_bytes":128,
+  "dataflash_crc32":"b536b8c6",
+  "dataflash_last_status":0,
+  "error":null,
+  "code_flash_captured":false,
+  "code_flash_note":"No documented USB code-flash read command; Code_Protect describes the external serial interface.",
+  "storage":"volatile RP2350 RAM; copy files before reset or power removal"
+}

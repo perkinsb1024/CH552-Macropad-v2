@@ -1,0 +1,52 @@
+{
+  "recorded_date": "2026-10-11",
+  "evidence_origin": "User-supplied stock six-key hardware capture; assistant inspected files without accessing connected hardware",
+  "reader_version": "0.1.0",
+  "capture_directory": "output/",
+  "files": {
+    "A1.BIN": {
+      "bytes": 6,
+      "sha256": "182a13e7eebf283fc37a29b42f453407a1906d86affd325831f0f6fb115c111d"
+    },
+    "A7.BIN": {
+      "bytes": 30,
+      "sha256": "d57afcbb30215267dc4b0b60e2caa1fa6af490c05642d42649eedf0b419c9221"
+    },
+    "AB0.BIN": {
+      "bytes": 64,
+      "sha256": "13de760be20d9fe8f2ee651db39eb55135f171b6b7f23c9017cad8f7b8c2063f"
+    },
+    "AB1.BIN": {
+      "bytes": 64,
+      "sha256": "13de760be20d9fe8f2ee651db39eb55135f171b6b7f23c9017cad8f7b8c2063f"
+    },
+    "AB2.BIN": {
+      "bytes": 18,
+      "sha256": "44f292e2685215c0e74f8f1f0d191001dd81a60f5f035f765d8ad5bed8377e8d"
+    },
+    "DATA.BIN": {
+      "bytes": 128,
+      "sha256": "e9175db65a9789096ca9cb5524d3abc2107df03e3c9ba3af1aca628f9c5d3bd2"
+    },
+    "REPORT.TXT": {
+      "bytes": 705,
+      "sha256": "531873c3b8bcc9dd4fb24ece867c442026539311065b1fa22f993d14063f8556"
+    },
+    "TRACE.TXT": {
+      "bytes": 3292,
+      "sha256": "cab5fa81ee7cade535b52d96e3426e29cab7f10b6459e536f33c0db275c4c723"
+    },
+    "USBCFG.BIN": {
+      "bytes": 32,
+      "sha256": "aa08af1d019d558be326996f0dafbf4fa008261f002244b04b7f71ad782e0699"
+    },
+    "USBDEV.BIN": {
+      "bytes": 18,
+      "sha256": "7fa3ab16630f6283ae24f8a7f98fa604a901e08777a108bfffb569efc7f252ae"
+    }
+  },
+  "dataflash_crc32": "652d544c",
+  "host_start_to_finish_ms": 650,
+  "first_read_to_finish_ms": 90,
+  "independent_consistency_checks_passed": true
+}

@@ -1,0 +1,8 @@
+{
+  "outcome": "write_uncertain",
+  "attempts": 1,
+  "completed_writes": 0,
+  "planned": 1,
+  "bootloader_protocol_confirmed": false,
+  "limitations": "WCH VID/PID is a lead only; no A1 bulk confirmation. No application acknowledgement, forced reset, or power-cycle isolation."
+}

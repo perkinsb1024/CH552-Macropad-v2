@@ -1,0 +1,2 @@
+Flash snapshot. A restored snapshot has passed header and disk CRC checks.
+If SAVEERR.TXT is present, this run was NOT saved; copy its RAM files now.

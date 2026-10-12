@@ -1,0 +1,12 @@
+{
+  "coverage_verified": 235,
+  "successful_writes": 235,
+  "observations_factory": 235,
+  "source_and_dependency_hashes": {
+    "scan.py": "1a95def1acbffa60bbd8c61bbf6cd750279094b51ccaacf286fe1d9faee386e6",
+    "test_scan.py": "16ff778d69598b042301da65e653b55aefbfa88b57343a143440f97bb51f51bd",
+    "run": "341a8e1bb376cc6b47c4dd5afa329202ee2951a65d2f9d002839dd9f5f564b44",
+    "requirements.txt": "bc95fe974107fe861b82389509d5a1b998d5c59b9ca6ed0f47e81a45338a3805"
+  },
+  "raw_log_sha256": "843579bc2db5ab6ba6a5e8f4c0ffdb0b0a8f0386f1f66880ed2aede534def6fc"
+}

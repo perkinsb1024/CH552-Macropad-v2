@@ -1,0 +1,22 @@
+{
+  "capture_complete_validated": true,
+  "same_uid": "30f5b5bd",
+  "dataflash_bytes": 128,
+  "changed_offsets": [],
+  "all_bytes_ff": true,
+  "crc32": "652d544c",
+  "data_sha256": "e9175db65a9789096ca9cb5524d3abc2107df03e3c9ba3af1aca628f9c5d3bd2",
+  "global_configuration_before": "0xfdfd52ff",
+  "global_configuration_after": "0xfffd52ff",
+  "global_configuration_xor": "0x02000000",
+  "changed_global_bit": 25,
+  "global_bit_meaning": "Not defined in the referenced CH55x register definitions; unresolved.",
+  "protection_bootloader_flags_unchanged": true,
+  "bulk_commands_verified": [
+    "A1",
+    "A7",
+    "AB(offset0,count58)",
+    "AB(offset58,count58)",
+    "AB(offset116,count12)"
+  ]
+}

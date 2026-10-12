@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+scanner_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+scanner_python=${MAC_HID_SCAN_PYTHON:-"$HOME/.platformio/penv/bin/python"}
+exec "$scanner_python" "$scanner_dir/scan.py" "$@"

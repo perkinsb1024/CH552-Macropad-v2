@@ -1,0 +1,13 @@
+{
+  "outcome": "interrupted",
+  "planned": 60,
+  "attempts": 0,
+  "completed_writes": 0,
+  "completed_within_budget": 0,
+  "tested_prefixes": [],
+  "budget_ms": 1000,
+  "startup": true,
+  "settle_ms": 500,
+  "bootloader_protocol_confirmed": false,
+  "limitations": "Single post-burst USB registry check only; intermediate/delayed transitions may be missed. No application acknowledgement or A1 confirmation. Startup timing starts at USB visibility, not power-on. Multiple packets prevent individual attribution. Partial writes may have occurred on timeout."
+}

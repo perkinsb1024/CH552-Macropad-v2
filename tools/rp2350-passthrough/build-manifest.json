@@ -1,0 +1,63 @@
+{
+  "reader_version": "0.1.0",
+  "repository_base": "9838835c0a3ef5d39c8e5cf7d7ec401879c5d2c6",
+  "working_tree_uncommitted": true,
+  "board": "waveshare_rp2350_usb_a",
+  "toolchain": "Arm GNU 14.3.Rel1 (GCC 14.3.1)",
+  "pico_sdk": "079c6f39023649b154152db30f1d781e884879bc",
+  "tinyusb": "86ad6e56c1700e85f1c5678607a762cfe3aa2f47",
+  "pico_pio_usb": "5a37a66dc5d3fbe0ef3cdbeda923a757440f984f",
+  "uf2_sha256": "a3aa4d48a33abbd40dcc298b38d7ea57f5401a444534251955361fdd3dfe0289",
+  "elf_sha256": "e1705f2170f3be1fae8d8c22e0a3418f356c7ac3d6bffa0c82e285c4aed1fcc2",
+  "source_sha256": {
+    "firmware/CMakeLists.txt": "8e3e03c072c94770ebd3fc514785a49c12ef0e9d4395c2c751da6296e7e31918",
+    "firmware/LICENSE.raspberrypi": "483f865953435b66c443dee7558debe3cc3cf8fcbb6a112fd9fc6a795d53f1f6",
+    "firmware/board_status.c": "6cc9c139ce22c7303802f8c95c7b15f7be7aad03873dee6a45154670fd95273b",
+    "firmware/board_status.h": "58b73515714fcdfcdf95719ac8c5ccaa59621f6dfe1a413fa6807d392b5455e3",
+    "firmware/main.c": "f3211f2708f3f3492bf786bf5540b6ef794a652fec3b182201707dfaa846c074",
+    "firmware/probe_protocol.c": "23bda8b0aac6b1557b82e46b81df9e084d0d016536387a09eef8e93db71fb28f",
+    "firmware/probe_protocol.h": "368554d268ad5ee2d38a15e23c7843a9fb41ec5656fd4271ff5d7a7b97fc67aa",
+    "firmware/reader.c": "66317a03073fb5820f638adfe4ede5b9f7fd086db4af6e0e9541ddcc1a7d738b",
+    "firmware/reader.h": "664f4fc1c015ff4dcf5eedd5852f15d3b14d30b19647fe861239e99d41dcd20b",
+    "firmware/result_disk.c": "949d3bdfdf8498941c0901a5c0a7e7d7ef7aab1293ae06892136e1fb083bc467",
+    "firmware/result_disk.h": "ff9da23e378db9f5dea5be2d9d1815d9a6c8e707bd349210f28105f7b156e3e8",
+    "firmware/result_drive.c": "189f390f04a853facee8f2655e06001eb293cc3c3c092774d7b37055515202ca",
+    "firmware/tusb_config.h": "8b5741a92270b85bcd770d4b081edcd54d68df368e02bc648ef952126b6c6786",
+    "firmware/usb_descriptors.c": "85b61d00b9af7817a3b19600bb6c8d00be890f6cbf8e9e2189c8602a674d2f0c",
+    "tests/fakes/hardware/clocks.h": "d9d0de2004cf769a9b81044df08df7125c38fcf75efdf643dbdfe84a244c60eb",
+    "tests/fakes/host/usbh_pvt.h": "90ac3ad6a316c44ee8205f9f2021a0b71e53432ddecbb6513ede980255667bd8",
+    "tests/fakes/pico/stdlib.h": "ec14c63be5feefdd2da258a69dc5cbf7a90da9e9a647709f3c29d47368c16d42",
+    "tests/fakes/pio_usb.h": "b4dbdc12fb44a5b4fd1c3777a816a45a72b972c5b76bd598afc76237367dfcab",
+    "tests/fakes/tusb.h": "f764741da8321a61071b10d18b4aadbed7fe8c5db5756954007dfad392637816",
+    "tests/fixtures.h": "7741c417d5d4f3dee977e4215b1b620ad063da818bf28350b94206ccb4d9a76c",
+    "tests/run.py": "77eaaa6d47ffaac8e2707a751b7ed708c475cc7e5e732e227e5ed4e230f95e9f",
+    "tests/test_disk.c": "5ef79e2795f3200218dd07a13cf4bb96a08bbb23c6ae822e03bc4d619bdfe133",
+    "tests/test_protocol.c": "51cbfb7c59917e2bd17e7b011240136ecdb9bbfb3d3549d0745154caf72b911d",
+    "tests/test_reader.c": "4884e26280881c7650a60b673250388739de283396fe49d0cf80bdc03e6d9ccd",
+    "tests/test_transport.c": "625bd2024070df669cf517de1e690c6cc544d54ff0a63bdccf49f4146f52d923"
+  },
+  "validation": {
+    "native_asan_ubsan": true,
+    "independent_fat_export": true,
+    "erase_program_symbol_audit": true,
+    "uf2_structure_and_metadata": true,
+    "hardware": true
+  },
+  "elf_text_bytes": 70856,
+  "elf_bss_bytes": 106708,
+  "core0_stack_reserved_bytes": 4096,
+  "hardware_capture": {
+    "recorded_date": "2026-10-11",
+    "reader_version": "0.1.0",
+    "evidence_manifest": "capture-manifest.json",
+    "findings": "stock-six-key-capture.md",
+    "scope": "One user-supplied stock six-key bootloader/configuration/DataFlash capture and file retrieval; not comprehensive hardware validation",
+    "not_validated": [
+      "Detailed LED observations",
+      "Repeated entry reliability and retry/failure paths",
+      "Factory application behavior after capture",
+      "Normal application-mode HID protocol",
+      "Application code-flash extraction"
+    ]
+  }
+}

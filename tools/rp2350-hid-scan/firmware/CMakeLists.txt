@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.20)
+set(PICO_BOARD waveshare_rp2350_usb_a CACHE STRING "Target board")
+if(NOT PICO_BOARD STREQUAL "waveshare_rp2350_usb_a")
+  message(FATAL_ERROR "The scanner requires Waveshare RP2350-USB-A")
+endif()
+include("${PICO_SDK_PATH}/external/pico_sdk_import.cmake")
+project(ch552_hid_scan VERSION 0.1.0 LANGUAGES C CXX ASM)
+set(CMAKE_C_STANDARD 11)
+pico_sdk_init()
+add_executable(ch552_hid_scan main.c scan.c store.c probe_protocol.c board_status.c
+  result_disk.c result_drive.c usb_descriptors.c)
+math(EXPR SCANNER_FLASH_BYTES "2 * 1024 * 1024 - 2 * (65536 + 4096)")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/scanner-linker")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/scanner-linker/pico_flash_region.ld"
+  "FLASH(rx) : ORIGIN = 0x10000000, LENGTH = ${SCANNER_FLASH_BYTES}\n")
+pico_add_linker_script_override_path(ch552_hid_scan "${CMAKE_CURRENT_BINARY_DIR}/scanner-linker" FILES pico_flash_region.ld)
+target_include_directories(ch552_hid_scan PRIVATE "${CMAKE_CURRENT_LIST_DIR}")
+target_compile_definitions(ch552_hid_scan PRIVATE SCAN_VERSION="${PROJECT_VERSION}"
+  SCANNER_APP_FLASH_BYTES=${SCANNER_FLASH_BYTES} PIO_USB_DP_PIN_DEFAULT=12 PICO_STACK_SIZE=0x1000)
+target_compile_options(ch552_hid_scan PRIVATE -Wall -Wextra -Werror -fstack-usage)
+target_link_libraries(ch552_hid_scan PRIVATE pico_stdlib pico_unique_id hardware_pio
+  hardware_flash hardware_sync tinyusb_device tinyusb_host tinyusb_pico_pio_usb)
+pico_generate_pio_header(ch552_hid_scan "${PICO_SDK_PATH}/src/rp2_common/pico_status_led/ws2812.pio")
+pico_enable_stdio_uart(ch552_hid_scan 0)
+pico_enable_stdio_usb(ch552_hid_scan 0)
+pico_set_program_name(ch552_hid_scan "CH552 Factory HID Scanner")
+pico_set_program_version(ch552_hid_scan "${PROJECT_VERSION}")
+pico_add_extra_outputs(ch552_hid_scan)

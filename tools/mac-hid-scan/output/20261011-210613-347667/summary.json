@@ -1,0 +1,8 @@
+{
+  "outcome": "startup_complete_no_transition",
+  "attempts": 1,
+  "completed_writes": 1,
+  "bootloader_protocol_confirmed": false,
+  "payload_prefix": "aa42",
+  "limitations": "No access before USB enumeration. Timing measured from first libusb visibility. Manual same-port replug; no electrical power-on timestamp. No A1 confirmation."
+}

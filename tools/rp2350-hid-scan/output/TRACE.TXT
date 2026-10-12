@@ -1,0 +1,17 @@
+{"event":"armed","ms":16639,"state":"insertion","session":0,"insertion_window_ms":8000,"data_lines":"held low until window ends"}
+{"event":"host_started","ms":24638,"state":"enumerating","session":0}
+{"event":"mounted","ms":25171,"state":"enumerating","session":0,"vid":4489,"pid":34960}
+{"event":"transfer","ms":25176,"state":"device_descriptor","session":0,"endpoint":0,"result":0,"length":18}
+{"event":"factory_device_descriptor","ms":25176,"state":"device_descriptor","session":0,"length":18,"hex":"120110010000000889119088000000000001"}
+{"event":"transfer","ms":25180,"state":"configuration_header","session":0,"endpoint":0,"result":0,"length":9}
+{"event":"transfer","ms":25196,"state":"configuration_descriptor","session":0,"endpoint":0,"result":0,"length":109}
+{"event":"factory_configuration","ms":25197,"state":"configuration_descriptor","session":0,"length":109,"hex":"09026d00040100a0320904000001030101000921110100012240000705810340000a0904010001030000000921000100012224000705020340000a0904020001030000000921000100012256000705830304000a0904030001030102000921100100012234000705820304000a"}
+{"event":"transfer","ms":25203,"state":"report_descriptor","session":0,"endpoint":0,"result":0,"length":36}
+{"event":"factory_hid_descriptor","ms":25203,"state":"report_descriptor","session":0,"length":36,"hex":"0600ff0901a1018503090215002600ff750895408106090215002600ff750895409106c0"}
+{"event":"baseline","ms":25203,"state":"report_descriptor","session":0,"report_count":1,"out_endpoint":2}
+{"event":"baseline_reenumeration","ms":25204,"state":"remove_wait","session":1}
+{"event":"baseline_reset_passed","ms":25788,"state":"report_descriptor","session":1}
+{"event":"first_output_report","ms":25808,"state":"send_wait","session":1,"length":65,"hex":"0300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}
+{"event":"transfer","ms":66179,"state":"probe_out","session":26,"endpoint":2,"result":1,"length":0}
+{"event":"probe_rejected","ms":66179,"state":"probe_out","session":26,"command":43,"result":1}
+{"event":"finished","ms":405110,"state":"done","session":236,"outcome":"sweep_complete","attempts":235,"dropped_events":0}
