@@ -28,7 +28,7 @@ function current() { return getAction(profile.value!, selectedSlot.value!)!; }
 function selector() { return nodes(Inspector()).find(n => n.type === 'select')!; }
 function choose(type: string) { (selector().props.onChange as (event: unknown) => void)({ target: { value: type } }); }
 function behaviors() {
-  return nodes(nodes(Inspector()).find(n => ['Media behavior', 'Layer behavior'].includes(String(n.props['aria-label'])))).filter(n => n.type === 'button');
+  return nodes(nodes(Inspector()).find(n => ['Key behavior', 'Media behavior', 'Layer behavior'].includes(String(n.props['aria-label'])))).filter(n => n.type === 'button');
 }
 function behavior(label: string) { return behaviors().find(n => n.props.children === label)!; }
 function click(node: Node) { (node.props.onClick as () => void)(); }
@@ -47,8 +47,9 @@ it.each(Object.entries(ACTION_FAMILIES))('shows every saved %s variant under its
     expect(behaviors().map(n => n.props['aria-pressed'])).toEqual(types.map((_, i) => i === index));
     expect(current()).toEqual(before);
     const options = nodes(selector());
-    const group = options.find(n => n.type === 'optgroup' && n.props.label === (family.startsWith('consumer') ? 'Media' : 'Layers'))!;
-    expect(nodes(group).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(family.startsWith('consumer') ? ['consumer', 'consumerModified'] : ['setLayer', 'relativeLayer']);
+    const group = options.find(n => n.type === 'optgroup' && n.props.label === (family === 'keyTap' ? 'Keyboard' : family.startsWith('consumer') ? 'Media' : 'Layers'))!;
+    expect(nodes(group).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(family === 'keyTap' ? ['keyTap'] : family.startsWith('consumer') ? ['consumer', 'consumerModified'] : ['setLayer', 'relativeLayer']);
+    if (family === 'keyTap') expect(nodes(group).find(n => n.type === 'option')!.props.children).toContain('Key press');
     choose(family);
     expect(current()).toEqual(before);
   }
@@ -63,7 +64,7 @@ const noReleaseSlots: Slot[] = [
   { kind: 'timed', layer: 0, index: 0, resume: false }, { kind: 'timed', layer: 0, index: 0, resume: true },
   { kind: 'macro', layer: 0, index: 0, step: 0 },
 ];
-it.each([...releaseSlots, ...noReleaseSlots])('enforces all four families’ hold restrictions on %o, including direct handler calls', slot => {
+it.each([...releaseSlots, ...noReleaseSlots])('enforces all families’ hold restrictions on %o, including direct handler calls', slot => {
   for (const types of Object.values(ACTION_FAMILIES)) {
     start(blankAction(types[0]), slot);
     const before = current();
@@ -93,6 +94,18 @@ it('uses current media parameters across behavior changes even when older settin
   expect(encodeAction(current(), new Map())).toEqual([0xfa, 0x70]);
   undo(); expect(current().type).toBe('consumerModifiedHold');
   redo(); expect(current().type).toBe('consumerModified');
+});
+
+it.each([{ usage: 4, modifiers: 6 }, { usage: 0, modifiers: 15 }])('preserves the current key combination %o across Tap/Hold and undo/redo', combination => {
+  memory();
+  start({ type: 'keyHold', usage: 5, modifiers: 1 });
+  setAction(selectedSlot.value!, { type: 'keyTap', ...combination });
+  click(behavior('Hold'));
+  expect(current()).toEqual({ type: 'keyHold', ...combination });
+  click(behavior('Tap'));
+  expect(current()).toEqual({ type: 'keyTap', ...combination });
+  undo(); expect(current()).toEqual({ type: 'keyHold', ...combination });
+  redo(); expect(current()).toEqual({ type: 'keyTap', ...combination });
 });
 
 it('preserves Hold and representable usages between media entries and restores remembered modifiers', () => {
@@ -141,7 +154,7 @@ it.each(Object.entries(ACTION_FAMILIES))('restores the last %s behavior when ret
   memory();
   start(blankAction(types[types.length - 1]!));
   const before = current();
-  choose('keyTap');
+  choose('string');
   choose(family);
   expect(current()).toEqual(before);
 });
@@ -155,12 +168,12 @@ it.each(noReleaseSlots)('does not restore remembered holds on %o or silently alt
     expect(behavior('Hold').props['aria-pressed']).toBe(true);
     expect(nodes(Inspector()).some(n => n.props.role === 'alert')).toBe(true);
     expect(current()).toEqual(before);
-    choose('keyTap');
+    choose('string');
     choose(family);
     expect(current()).toEqual(blankAction(types[0]));
     // Exercise the fallback for older memory without family metadata too.
     const legacy = { [JSON.stringify(slot)]: { [family]: before } };
-    choose('keyTap');
+    choose('string');
     storage.set('universal-macropad:action-settings:v1', JSON.stringify(legacy));
     choose(family);
     expect(current()).toEqual(blankAction(types[0]));

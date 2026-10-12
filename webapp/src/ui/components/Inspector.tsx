@@ -2,7 +2,7 @@ import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelative
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { ACTION_DESCRIPTORS, actionNeedsRelease, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
-import { ACTION_FAMILIES, actionFamilyType, isMediaAction, isLayerAction } from '../actionFamilies';
+import { ACTION_FAMILIES, actionFamilyType, isKeyAction, isMediaAction, isLayerAction } from '../actionFamilies';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_BUTTONS, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
 import { PALETTE } from '../../model/palette';
@@ -245,8 +245,7 @@ export function Inspector() {
     if (remembered) { update(remembered); return; }
     const next = blankAction(type);
     // Carry compatible values between related actions.
-    if ((next.type === 'keyTap' || next.type === 'keyHold') && (action.type === 'keyTap' || action.type === 'keyHold')) update({ ...next, usage: action.usage, modifiers: action.modifiers });
-    else if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
+    if ('buttons' in next && 'buttons' in action) update({ ...next, buttons: action.buttons });
     else if ('layer' in next && 'layer' in action) update({ ...next, layer: action.layer });
     else if ('delta' in next && 'delta' in action) update({ ...next, delta: action.delta,
       ...('hold' in action && action.hold && !rotation ? { hold: true } : {}) });
@@ -255,7 +254,7 @@ export function Inspector() {
   };
 
   const setFamilyBehavior = (type: ActionType) => {
-    if ((!isMediaAction(action) && !isLayerAction(action)) || actionFamilyType(type) !== actionFamilyType(action.type) || type === action.type) return;
+    if ((!isKeyAction(action) && !isMediaAction(action) && !isLayerAction(action)) || actionFamilyType(type) !== actionFamilyType(action.type) || type === action.type) return;
     const next = { ...action, type } as Action;
     if (actionProblem(next, actionContext)) return;
     update(next);
@@ -313,20 +312,20 @@ export function Inspector() {
             <optgroup key={group} label={group}>
               {selectableActions.filter(d => d.group === group).map((d) => (
                 <option key={d.type} value={d.type} disabled={rotation && d.needsRelease}>
-                  {d.type === 'mouseX' ? 'Move mouse' : d.label}{rotation && d.needsRelease ? ' (buttons only)' : ''}
+                  {d.type === 'keyTap' ? 'Key press' : d.type === 'mouseX' ? 'Move mouse' : d.label}{rotation && d.needsRelease ? ' (buttons only)' : ''}
                 </option>
               ))}
             </optgroup>
           ))}
         </select>
-        {actionFamilyType(action.type) !== 'relativeLayer' && <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : isMouseButtonAction(action) ? 'Click, hold, toggle, press, or release mouse buttons.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>}
+        {!isKeyAction(action) && actionFamilyType(action.type) !== 'relativeLayer' && <span class="hint">{isPointerAction(action) ? 'Move the pointer horizontally, vertically, or on both axes.' : isMouseButtonAction(action) ? 'Click, hold, toggle, press, or release mouse buttons.' : actionDescriptor?.hint ?? 'This saved action is no longer supported. Choose another action.'}</span>}
       </label>
 
-      {(isMediaAction(action) || isLayerAction(action)) && <div class="field">
+      {(isKeyAction(action) || isMediaAction(action) || isLayerAction(action)) && <div class="field">
         <span class="field-label">Behavior</span>
-        <div class="segmented" role="group" aria-label={isMediaAction(action) ? 'Media behavior' : 'Layer behavior'} aria-describedby="family-behavior-hint">
+        <div class="segmented" role="group" aria-label={isKeyAction(action) ? 'Key behavior' : isMediaAction(action) ? 'Media behavior' : 'Layer behavior'} aria-describedby="family-behavior-hint">
           {ACTION_FAMILIES[actionFamilyType(action.type) as keyof typeof ACTION_FAMILIES].map((type, index) => {
-            const label = isMediaAction(action) ? ['Tap', 'Hold'][index] : ['Switch', 'One-shot', 'Hold'][index];
+            const label = isLayerAction(action) ? ['Switch', 'One-shot', 'Hold'][index] : ['Tap', 'Hold'][index];
             const hold = ACTION_DESCRIPTORS.find(d => d.type === type)!.needsRelease;
             return <button key={type} type="button" class={action.type === type ? 'is-selected' : ''} aria-pressed={action.type === type}
               disabled={hold && (rotation || isPreviousLayer(action))} onClick={() => setFamilyBehavior(type)}>{label}</button>;

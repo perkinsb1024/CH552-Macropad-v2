@@ -2,11 +2,17 @@ import type { Action, ActionType } from '../model/types';
 
 /** Presentation groups only; stored action types and encodings stay distinct. */
 export const ACTION_FAMILIES = {
+  keyTap: ['keyTap', 'keyHold'],
   consumer: ['consumer', 'consumerHold'],
   consumerModified: ['consumerModified', 'consumerModifiedHold'],
   setLayer: ['setLayer', 'oneShotSetLayer', 'momentaryLayer'],
   relativeLayer: ['relativeLayer', 'oneShotRelativeLayer', 'momentaryRelativeLayer'],
 } as const;
+
+export type KeyAction = Extract<Action, { type: typeof ACTION_FAMILIES.keyTap[number] }>;
+export function isKeyAction(action: Action): action is KeyAction {
+  return actionFamilyType(action.type) === 'keyTap';
+}
 
 export function actionFamilyType(type: ActionType): ActionType {
   for (const [family, types] of Object.entries(ACTION_FAMILIES)) {

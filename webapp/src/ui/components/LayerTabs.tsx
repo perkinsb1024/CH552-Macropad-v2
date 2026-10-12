@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { addLayer, ask, canInsertLayer, closeDialog, draggedLayer, insertLayer, layerDrop, layerName, profile, removeLayer, selectedLayer, selectedSlot, swapLayers } from '../store';
+import { addLayer, ask, canInsertLayer, closeDialog, draggedLayer, insertLayer, layerDrop, layerName, profile, removeLayer, selectedLayer, selectedSlot, swapLayers, updateProfile } from '../store';
 import { dropPosition } from '../drag';
 import { maxLayers } from '../../model/constants';
 import { IconChevron, IconPlus, IconTrash } from './Icons';
@@ -50,7 +50,8 @@ function AddLayerMenu() {
 export function LayerTabs() {
   const p = profile.value!;
   const current = selectedLayer.value;
-  const clearDrag = () => { draggedLayer.value = null; layerDrop.value = null; };
+  const draggingStartup = useRef(false);
+  const clearDrag = () => { draggingStartup.current = false; draggedLayer.value = null; layerDrop.value = null; };
   const gapTarget = (event: DragEvent): { index: number; position: 'before' | 'after' } | null => {
     const tabs = Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.tab:not(.tab-add)'));
     let closest: { index: number; position: 'before' | 'after'; distance: number } | null = null;
@@ -109,6 +110,13 @@ export function LayerTabs() {
             onDragStart={(event) => { draggedLayer.value = i; event.dataTransfer?.setData('application/x-macropad-layer', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }}
             onDragEnd={clearDrag}
             onDragOver={(event) => {
+              if (draggingStartup.current) {
+                event.preventDefault();
+                event.stopPropagation();
+                layerDrop.value = { index: i, position: 'swap' };
+                if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+                return;
+              }
               const source = draggedLayer.value;
               const position = dropPosition(event, 'horizontal');
               const valid = source !== null && (position === 'swap' ? source !== i : canInsertLayer(source, i, position));
@@ -117,8 +125,17 @@ export function LayerTabs() {
               layerDrop.value = { index: i, position };
               if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
             }}
+            onDragLeave={(event) => {
+              if (draggingStartup.current && !(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) layerDrop.value = null;
+            }}
             onDrop={(event) => {
               event.preventDefault();
+              if (draggingStartup.current) {
+                event.stopPropagation();
+                if (profile.value!.startupLayer !== i) updateProfile(draft => { draft.startupLayer = i; });
+                clearDrag();
+                return;
+              }
               const source = draggedLayer.value;
               const position = layerDrop.value?.index === i ? layerDrop.value.position : dropPosition(event, 'horizontal');
               if (source !== null) {
@@ -129,7 +146,16 @@ export function LayerTabs() {
             }}
           >
             <span class="tab-name">{layerName(i)}</span>
-            {p.startupLayer === i && <span class="tab-badge" title="Startup layer">start</span>}
+            {p.startupLayer === i && <span class="tab-badge" title="Drag to another layer tab to change the startup layer" draggable
+              onDragStart={(event) => {
+                event.stopPropagation();
+                clearDrag();
+                draggingStartup.current = true;
+                event.dataTransfer?.setData('application/x-macropad-startup-layer', 'move');
+                if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragEnd={(event) => { event.stopPropagation(); clearDrag(); }}
+            >start</span>}
             {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
           </button>
         );
