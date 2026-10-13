@@ -5,11 +5,11 @@ export function InputMonitoringHelp() {
   const platform = typeof navigator === 'undefined' ? '' : navigator.platform;
   return (
     <div class="permission-help">
-      <h3>In your browser · all platforms</h3>
+      <h3>In Your Browser (All Platforms)</h3>
       <p>Use desktop Chrome or Edge, click <strong>Connect macropad</strong>, select the macropad in the device chooser, and click <strong>Connect</strong>.</p>
       <p>In Chrome, open <strong>Settings → Privacy and security → Site settings → Additional permissions → HID devices</strong>. Allow sites to ask to connect to HID devices and remove this site from the blocked list if needed. Reload this page and try connecting again. Edge has similar site permissions.</p>
       <details open={/Mac/.test(platform)}>
-      <summary>macOS · Input Monitoring</summary>
+      <summary>macOS - Input Monitoring</summary>
       <p>Your browser needs <strong>Input Monitoring</strong> permission. If access was denied before, macOS may not ask again.</p>
       <ol>
         <li>
@@ -22,13 +22,13 @@ export function InputMonitoringHelp() {
         </li>
         <li><p>Fully quit your browser with <strong>⌘Q</strong>, reopen it, and try <strong>Connect macropad</strong> again.</p></li>
       </ol>
-      <h3>No permission prompt?</h3>
+      <h3>No Permission Prompt?</h3>
       <p>If you previously denied access, you can enable it manually using the steps above. To make macOS ask Chrome again, fully quit Chrome, run this in Terminal, then reopen Chrome and try connecting:</p>
       <pre><code>tccutil reset ListenEvent com.google.Chrome</code></pre>
       <p>This command resets only Google Chrome’s Input Monitoring permission. Other browsers have different app identifiers.</p>
       </details>
       <details open={/Win/.test(platform)}>
-        <summary>Windows · browser permission &amp; HID driver</summary>
+        <summary>Windows - Browser Permission &amp; HID Driver</summary>
         <p>Windows normally has no macOS-style <strong>Input Monitoring</strong> toggle for this connection. The macropad uses Windows’ built-in HID driver; a separate configuration driver is normally unnecessary.</p>
         <ol>
           <li><p>Check the browser’s <strong>HID devices</strong> permission as described above.</p></li>
@@ -38,7 +38,7 @@ export function InputMonitoringHelp() {
         <p>On a managed PC, browser or device-access policies may require help from your administrator.</p>
       </details>
       <details open={/Linux/.test(platform)}>
-        <summary>Linux · HID device permissions</summary>
+        <summary>Linux - HID Device Permissions</summary>
         <p>Linux can show the macropad in the chooser but deny access to its <code>hidraw</code> device. There is usually no permission popup; a udev rule grants access.</p>
         <ol>
           <li>
@@ -51,7 +51,7 @@ export function InputMonitoringHelp() {
         </ol>
         <p>If access is still denied, a sandboxed browser package may also restrict HID access. Check your package’s device permissions or try an official browser package installed directly for your distribution.</p>
       </details>
-      <h3>Still unable to connect?</h3>
+      <h3>Still Unable to Connect?</h3>
       <p>Check the USB connection and close other apps using the macropad, then reconnect. In Chrome, open <code>chrome://device-log</code> in a new tab and look for HID errors after a failed attempt.</p>
     </div>
   );

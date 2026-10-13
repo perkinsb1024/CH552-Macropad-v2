@@ -193,7 +193,7 @@ export function closeDialog(): void {
 
 export function showInputMonitoringHelp(): void {
   ask({
-    title: 'Macropad connection & permissions',
+    title: 'Macropad Connection & Permissions',
     body: 'Connecting needs both browser permission and access to the HID device. Choose your operating system below for help with “Failed to open the device.”',
     inputMonitoringHelp: true,
     actions: [{ label: 'Close', tone: 'neutral', onSelect: closeDialog }],

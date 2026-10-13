@@ -68,7 +68,11 @@ export function Dialog() {
     );
   }
   return (
-    <div class="scrim" role="presentation">
+    <div class="scrim" role="presentation" onClick={(e) => {
+      if (spec.inputMonitoringHelp && e.target === e.currentTarget) {
+        spec.actions.find((a) => a.tone === 'neutral')?.onSelect();
+      }
+    }}>
       <div ref={dialogElement} class={`dialog${spec.textInput ? ' dialog-paste' : ''}${spec.inputMonitoringHelp ? ' dialog-permission-help' : ''}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <h2 id="dialog-title">{spec.title}</h2>
         <p>{spec.body}</p>

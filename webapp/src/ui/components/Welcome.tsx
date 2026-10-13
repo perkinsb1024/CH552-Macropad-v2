@@ -52,7 +52,7 @@ export function Welcome() {
             <li>Plug the macropad in with a USB-A to USB-C cable. The default, factory firmware usually types "C" for each key press</li>
             <li>
               Your macropad must be running this <a href="https://github.com/perkinsb1024/CH552-Macropad-v2#how-to-upload-the-firmware" target="_blank">custom firmware</a>. Any other firmware, including factory firmware is not editable with this tool.
-              The beta <a href="webUploader/">firmware upload</a> tool installs released v10 firmware compatible with this editor. Back up your profile before updating, then load and save it here to migrate older profiles.
+              The beta <a href="webUploader/">firmware upload</a> tool installs the latest released firmware compatible with this editor. Back up your profile before updating, then load and save it here to migrate older profiles.
             </li>
           </ul>
         </details>
