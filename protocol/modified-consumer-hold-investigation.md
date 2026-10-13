@@ -13,10 +13,10 @@ additional tests exist only in a temporary source tree.
 
 ## Finding
 
-A self-contained **Media / system hold with modifiers** can occupy exactly two
+A self-contained **Media / System Hold with Modifiers** can occupy exactly two
 bytes, retaining all four modifier bits and nonzero eight-bit Consumer Page
-usages. The most focused encoding change is to combine **Set layer** and
-**Layer while held** into one action type, freeing type `0xA` for the new hold.
+usages. The most focused encoding change is to combine **Set Layer** and
+**Layer While Held** into one action type, freeing type `0xA` for the new hold.
 The separate configurator controls can retain their existing labels and behavior.
 
 The tested prototype adds 28 flash bytes on both hardware variants, with no
@@ -37,13 +37,13 @@ The proposed new format uses the following records:
 
 | Action | First Byte | Second Byte |
 | --- | --- | --- |
-| **Set layer**, persistent | `09` | Existing layer index or `FF` for the previous layer |
-| **Set layer**, one-shot | `19` | Existing layer index or `FF` for the previous layer |
-| **Layer while held** | `29` | Existing layer index; `FF` rejects |
-| **Media / system with modifiers**, tap | `04 \| (modifiers << 4)` | Usage `01`–`FF` |
-| **Media / system hold with modifiers** | `0A \| (modifiers << 4)` | Usage `01`–`FF` |
-| Existing unmodified **Consumer tap** | `07 \| ((usage >> 8) << 4)` | Usage low byte |
-| Existing unmodified **Consumer hold** | `08 \| ((usage >> 8) << 4)` | Usage low byte |
+| **Set Layer**, persistent | `09` | Existing layer index or `FF` for the previous layer |
+| **Set Layer**, one-shot | `19` | Existing layer index or `FF` for the previous layer |
+| **Layer While Held** | `29` | Existing layer index; `FF` rejects |
+| **Media / System with Modifiers**, tap | `04 \| (modifiers << 4)` | Usage `01`–`FF` |
+| **Media / System Hold with Modifiers** | `0A \| (modifiers << 4)` | Usage `01`–`FF` |
+| Existing unmodified **Consumer Tap** | `07 \| ((usage >> 8) << 4)` | Usage low byte |
+| Existing unmodified **Consumer Hold** | `08 \| ((usage >> 8) << 4)` | Usage low byte |
 
 Modifier masks retain their existing interpretation: **Ctrl** = 1, **Shift** = 2,
 **Alt** = 4 and **GUI** = 8. All sixteen masks are accepted, including zero.
@@ -100,18 +100,18 @@ while active because the host receives one combined keyboard modifier state.
 
 ## Combining Actions Instead
 
-Two separate physical inputs already work: assign a modifier-only **Key hold**
-to one input and **Media / system hold** to another. The keyboard merger keeps
+Two separate physical inputs already work: assign a modifier-only **Key Hold**
+to one input and **Media / System Hold** to another. The keyboard merger keeps
 the modifiers active while the consumer usage is held. This uses four action
 bytes across two bindings and requires no format change.
 
 Two existing actions cannot currently be combined on one input. A binding has
-one record, and **Execute macro** rejects both **Key hold** and **Consumer hold**.
+one record, and **Execute Macro** rejects both **Key Hold** and **Consumer Hold**.
 Normal macros have no physical release lifecycle. Simply allowing those steps
 would leave their release, ownership and cancellation behavior undefined.
 
 A special compound hold could be implemented using a two-byte reference to a
-stored pair: modifier-only **Key hold**, then twelve-bit **Consumer hold**.
+stored pair: modifier-only **Key Hold**, then twelve-bit **Consumer Hold**.
 Using the existing zero-terminated macro-tail layout would require two reference
 bytes plus four step bytes plus a terminator: seven configuration bytes per
 unique compound binding, with possible sharing. A fixed pair pool could omit
@@ -128,7 +128,7 @@ implementation than either general macro holds or a compound-action pool.
 
 Combining absolute and relative layer actions using an auxiliary mode bit was
 subsequently measured; see the follow-up below. Another unmeasured option is to
-combine **Key tap** and **Key hold** using parameter bit 7 as hold, since current supported keyboard
+combine **Key Tap** and **Key Hold** using parameter bit 7 as hold, since current supported keyboard
 usages are below `80`. The latter changes keyboard decoding and every hold path.
 Restricting usages or modifier combinations, or adding a usage-index lookup table,
 could also create room for a hold flag but introduces feature limits or table cost.
@@ -205,7 +205,7 @@ configuration storage is acceptable.
 
 ## Three-Way Layer Consolidation Follow-Up
 
-The proposed combination of **Set layer**, **Momentary layer** and **Relative
+The proposed combination of **Set Layer**, **Momentary Layer** and **Relative
 layer** into one low-nibble type is feasible without losing existing semantics
 or increasing record size. With type `9`, assign auxiliary bits 0–1 to the mode,
 bit 2 to relative addressing, and reserve bit 3 as zero:
@@ -240,7 +240,7 @@ That straightforward implementation adds eight bytes rather than saving flash.
 It links at the real 14,336-byte limit on both variants, leaving zero/two bytes
 free. These are measurements of this implementation, not a minimum possible cost.
 
-Relative hold is a new behavior; existing **Relative layer** supports only
+Relative hold is a new behavior; existing **Relative Layer** supports only
 persistent and one-shot operation. The additional prototype resolves the offset
 once at press time, then stores an absolute `29 target` in the existing per-input
 binding cache. Layer recomputation uses that snapshot until release. Recomputing

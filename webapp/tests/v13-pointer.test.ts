@@ -53,7 +53,7 @@ it('encodes exact bytes, preserves JSON, and rejects unrepresentable combined st
   const p = defaultProfile(0); p.layers[0]!.keys[0] = { type: 'mouseXY', x: -64, y: 4, hold: true };
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
   expect(decodeImage(encodeProfile(p))).toEqual({ ok: true, profile: p });
-  expect(summarize(p.layers[0]!.keys[0]!)).toBe('Mouse X -64, Y 4 (hold)');
+  expect(summarize(p.layers[0]!.keys[0]!)).toBe('Mouse X -64, Y 4 (Hold)');
   for (const x of [-68, 68, 0, 1, 2, 3, 5, 4.5, NaN, Infinity]) {
     p.layers[0]!.keys[0] = { type: 'mouseXY', x, y: 4 };
     expect(() => encodeProfile(p)).toThrow('steps of 4');

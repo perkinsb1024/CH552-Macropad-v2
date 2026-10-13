@@ -11,7 +11,7 @@ bytes, including the report ID. WebHID passes the report ID separately.
 
 Each request and reply payload has this layout:
 
-| Payload byte | Meaning |
+| Payload Byte | Meaning |
 | ---: | --- |
 | 0–1 | ASCII `UM` signature |
 | 2 | Transport version, currently 1 |
@@ -37,9 +37,9 @@ X, Y, then signed four-bit vertical Wheel (low nibble) and horizontal AC Pan
 retain all button bits and zero relative fields. See the standalone
 [configuration format 12 reference](config-v12.md).
 
-Format 11 reports action mask `0xFFFF`. **Execute macro** uses type `0xF`,
-**LED control** uses type `0xE`, **Consumer tap** uses type `0x7`, and
-**Consumer hold** uses type `0x8`. **Type text** and **Pause** use full first
+Format 11 reports action mask `0xFFFF`. **Execute Macro** uses type `0xF`,
+**LED Control** uses type `0xE`, **Consumer Tap** uses type `0x7`, and
+**Consumer Hold** uses type `0x8`. **Type Text** and **Pause** use full first
 bytes `0x10` and `0x20`, sharing low-nibble type 0 with **Nothing**. The format
 version identifies the action map; the mask alone is insufficient. See the
 standalone [configuration format 11 reference](config-v11.md).
@@ -48,14 +48,14 @@ Formats 8–10 report action mask `0xFFEF`: mouse clicks use type 3 with auxilia
 count minus one, and type 4 is reserved. Its configuration version identifies
 the full action map; see [config-v10.md](config-v10.md).
 
-The format-7 action mask reports all sixteen action types, including **LED control**
+The format-7 action mask reports all sixteen action types, including **LED Control**
 at F. Use GET_INFO format version 7 to identify its action map and LED support;
 older versions also reported mask 0xFFFF, so the mask alone is insufficient.
 The GET_INFO layout and transport version remain unchanged. Chord recognition uses the
 saved profile window; zero disables it. A second press must arrive strictly
 before the window expires to activate a mapped chord.
 
-| Opcode | Request | Reply data |
+| Opcode | Request | Reply Data |
 | ---: | --- | --- |
 | 1 | GET_INFO, offset and length zero | `UMAC`, transport version, format version, physical variant, key count, LED count, maximum layers, image capacity, palette version, 16-bit action mask |
 | 2 | GET_STATUS, offset and length zero | Flash-valid flag, current layer, startup layer, upload state, saturated dropped button-action count, saturated dropped rotation-action count |

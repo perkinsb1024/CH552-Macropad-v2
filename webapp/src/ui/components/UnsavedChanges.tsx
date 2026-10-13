@@ -54,15 +54,15 @@ export function UnsavedChanges() {
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}
     >
       <button ref={trigger} type="button" class="pill pill-warn unsaved-changes-trigger" aria-expanded={open} aria-controls="unsaved-changes-popup" onClick={() => setOpen(true)}>
-        Unsaved changes
+        Unsaved Changes
       </button>
       {open && (
-        <div ref={popup} id="unsaved-changes-popup" class="changes-popup" role="region" aria-label="Unsaved changes" style={`--popup-shift:${shift}px`}>
+        <div ref={popup} id="unsaved-changes-popup" class="changes-popup" role="region" aria-label="Unsaved Changes" style={`--popup-shift:${shift}px`}>
           <div class="changes-popup-heading">
-            <strong>Unsaved changes</strong>
+            <strong>Unsaved Changes</strong>
             {comparison && <span>{changes.length} {changes.length === 1 ? 'change' : 'changes'}</span>}
           </div>
-          <div class="changes-popup-content" tabIndex={0} aria-label="Change list">
+          <div class="changes-popup-content" tabIndex={0} aria-label="Change List">
             {comparison && <p class="changes-popup-note">{startingPoint ? `Compared with the ${startingPoint.kind === 'imported' ? 'imported' : 'starter'} profile.` : 'Compared with the last device read or save.'}</p>}
             <ChangeList
               changes={changes}

@@ -205,9 +205,9 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         <div class="encoder">
           <div class="knob" aria-hidden="true"><div class="knob-mark" /></div>
           <div class="enc-parts" onDragOver={readOnly ? undefined : encoderGapDragOver} onDrop={readOnly ? undefined : encoderGapDrop}>
-            {renderEncoderPart({ slot: { kind: 'clockwise', layer: li }, label: 'Turn left', icon: <IconRotate /> })}
+            {renderEncoderPart({ slot: { kind: 'clockwise', layer: li }, label: 'Turn Left', icon: <IconRotate /> })}
             {renderEncoderPart({ slot: { kind: 'encoderButton', layer: li }, label: 'Press' })}
-            {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn right', icon: <IconRotate ccw /> })}
+            {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn Right', icon: <IconRotate ccw /> })}
           </div>
         </div>
       </div>

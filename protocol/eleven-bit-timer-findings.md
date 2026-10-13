@@ -1,4 +1,4 @@
-# Eleven-bit layer-scoped timer test builds
+# Eleven-Bit Layer-Scoped Timer Test Builds
 
 Both hardware variants fit the real 14,336-byte application limit with the
 per-timer fractional counters retained. No feature degradation or removal was
@@ -10,7 +10,7 @@ The measured scheduler has been promoted to production v10 in
 [configuration-v10 specification](config-v10.md) defines the finalized layout,
 layer behavior and migration rules. The configurator now supports this format.
 Production v10 builds retain the measurements below.
-| Hardware | Flash bytes | Spare bytes | Paged RAM bytes | External RAM bytes | Available stack bytes |
+| Hardware | Flash Bytes | Spare Bytes | Paged RAM Bytes | External RAM Bytes | Available Stack Bytes |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Six keys | 14,294 | 42 | 108 | 496 | 75 |
 | Three keys | 14,292 | 44 | 108 | 487 | 78 |
@@ -20,13 +20,13 @@ eleven-bit builds are only two bytes larger after the additional scheduler
 optimizations below. That comparison includes both the wider counters and those
 optimizations; widening the original scheduler alone costs substantially more.
 
-## Stack-capacity breakdown
+## Stack-Capacity Breakdown
 
 The available stack region decreased by 36 bytes on either board. The timer
 changes account for 11 bytes of that reduction; the flash-saving RAM
 optimizations account for the other 25 bytes.
 
-| Stage | Six-key stack bytes | Three-key stack bytes | Reduction from preceding stage |
+| Stage | Six-Key Stack Bytes | Three-Key Stack Bytes | Reduction from Preceding Stage |
 | --- | ---: | ---: | ---: |
 | Original v9 | 111 | 114 | — |
 | Optimized v9, original timers | 86 | 89 | 25 |
@@ -38,7 +38,7 @@ external RAM into internal RAM, which shares capacity with the stack. Other
 allocation changes partially offset that cost. These figures are linker-reported
 stack capacities, not measured runtime stack usage.
 
-## Record layout and timing
+## Record Layout and Timing
 
 The record remains six bytes, with ordinary two-byte expiry and next-input
 actions. Its metadata uses every available bit:
@@ -70,13 +70,13 @@ The byte fine clock wraps every 4.096 seconds. Poll gaps must remain below that
 duration to avoid losing an entire wrap. The test builds retain the existing
 compact-clock design; hardware timing under long blocking stalls was not tested.
 
-## Optimizations and rejected removal
+## Optimizations and Rejected Removal
 
 All successful measurements below retain the fractional counter and all timer
 features. They also retain the earlier USB, button-state and protocol-state
 optimizations.
 
-| Cumulative implementation | Six-key flash | Three-key flash | Saving from preceding row |
+| Cumulative Implementation | Six-Key Flash | Three-Key Flash | Saving from Preceding Row |
 | --- | ---: | ---: | ---: |
 | Straightforward sixteen-bit runtime interval counter | 14,390 | 14,388 | — |
 | Split low/high runtime bytes; high byte stored in the record's bit positions | 14,382 | 14,380 | 8 |
@@ -101,7 +101,7 @@ used 14,412 / 14,410 bytes: 22 more than the straightforward fractional version.
 It did not fit. Further removal work was unnecessary once the complete version
 fit. The final images preserve the fractional counters.
 
-## Validation and artifacts
+## Validation and Artifacts
 
 The final two images linked with the actual 14,336-byte ceiling and passed the
 existing build-time RAM layout checks. Their host probes cover interval values
@@ -155,7 +155,7 @@ Current production test builds advertise version 10. The comparison generator
 changes only temporary source copies; the direct build script uses the repository
 implementation. Normal v10 release HEX files now use revision `30101c94`.
 
-## v10 preparation validation
+## v10 Preparation Validation
 
 The production native builds use 14,294 bytes of flash on six-key pads and
 14,292 on three-key pads, with 75/78 bytes of stack capacity. The full firmware

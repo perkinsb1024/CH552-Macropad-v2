@@ -49,7 +49,7 @@ it('preserves dim effects in drafts and simulator saves and shows brightness in 
   storeDraft(p, {});
   expect(loadDraft(0)?.profile).toEqual(p);
   expect(profileChanges(before, p)[0]?.after).toContain('Dim');
-  expect(ledSummary('effectBlink8', 15, true, 'dim')).toBe('All LEDs: Rainbow · Dim · Blink 8 times');
+  expect(ledSummary('effectBlink8', 15, true, 'dim')).toBe('All LEDs: Rainbow · Dim · Blink 8 Times');
   const device = new SimulatedDevice({ variant: 0 });
   try {
     const client = new ConfigClient(device);

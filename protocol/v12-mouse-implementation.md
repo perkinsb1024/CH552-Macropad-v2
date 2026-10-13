@@ -7,8 +7,8 @@ firmware sizes and memory allocation.
 
 ## Firmware Checkpoint
 
-Format 12 supports all eight mouse-button bits and persistent **Mouse down** /
-**Mouse up** actions alongside **Mouse toggle**. Down/up use full first bytes
+Format 12 supports all eight mouse-button bits and persistent **Mouse Down** /
+**Mouse Up** actions alongside **Mouse Toggle**. Down/up use full first bytes
 `15` / `25`; their selected bits modify the same global persistent mask.
 The USB report remains five bytes, with eight button bits and two signed
 four-bit scroll fields. The explicitly named `USB_queueMousePacked` API removes
@@ -82,7 +82,7 @@ source/editor from the bundled v11 firmware.
 The uploader now bundles all 30 older published HEX files recovered from main's
 release history, alongside the current v11 pair. Each copy has its original
 release commit, source revision, format version and SHA-256 recorded. The collapsed
-**Previous firmware releases (advanced)** control filters by board variant,
+**Previous Firmware Releases (Advanced)** control filters by board variant,
 requires confirmation after selection changes, and links to the matching archived
 configurator after flashing. All 48 uploader tests pass, including exact Git blob
 comparisons and simulated flashing of every bundled build. The production site

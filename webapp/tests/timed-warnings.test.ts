@@ -21,7 +21,7 @@ afterEach(() => { profile.value = null; selectedLayer.value = 0; selectedSlot.va
 it('detects the reported layer-scoped relative-zero timer and respects indicator feedback', () => {
   const p = setup();
   expect(selfReferentialLayerWarnings(p)).toEqual([{
-    where: 'Timed action 1',
+    where: 'Timed Action 1',
     message: expect.stringContaining('Layer 1'),
     slot: { kind: 'timed', layer: 0, index: 0, resume: false },
   }]);

@@ -1,12 +1,12 @@
-# V8 firmware experiments
+# V8 Firmware Experiments
 
-## Combined implementation
+## Combined Implementation
 
 Branch: `experiment/v8-merged`. This build enables timed-action precision,
 **Consumer Hold**, held scrolling and 1–16 mouse clicks. Acceleration is disabled in this branch. Color
 preview and all existing lighting behavior are preserved.
 
-| Build | Six-key flash | Three-key flash | Free (6/3 key) |
+| Build | Six-Key Flash | Three-Key Flash | Free (6/3 Key) |
 | --- | ---: | ---: | ---: |
 | Initial combined implementation, acceleration on | 14,879 | 14,875 | -543 / -539 |
 | Optimized combined implementation, acceleration on | 14,667 | 14,665 | -331 / -329 |
@@ -51,14 +51,14 @@ temporary builds of both fixed hardware geometries, never release generation.
 Oversized diagnostic builds use a relaxed linker ceiling solely to measure cost;
 they are not flashable images. No hardware has been flashed by this experiment.
 
-| Build | Six-key flash | Three-key flash | Delta from baseline (both) | Six-key free |
+| Build | Six-Key Flash | Three-Key Flash | Delta from Baseline (Both) | Six-Key Free |
 | --- | ---: | ---: | ---: | ---: |
 | Baseline | 14,263 | 14,259 | 0 | 73 |
 | Timed action precision | 14,323 | 14,319 | +60 | 13 |
 
 RAM is recorded by SDCC memory area, not a single ambiguous percentage:
 
-| Build | PSEG | XSEG (6/3 key) | DSEG (6/3 key) | ISEG (6/3 key) | BSEG bits | Stack available (6/3 key) |
+| Build | PSEG | XSEG (6/3 Key) | DSEG (6/3 Key) | ISEG (6/3 Key) | BSEG Bits | Stack Available (6/3 Key) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Baseline | 108 | 526 / 517 | 128 / 128 | 9 / 6 | 30 | 120 / 123 |
 | Timed action precision | 108 | 526 / 517 | 127 / 127 | 13 / 10 | 29 | 115 / 118 |
@@ -69,7 +69,7 @@ external RAM. DSEG includes direct-address allocations/layout, ISEG indirect
 internal allocations, BSEG bit allocations, and stack availability is the
 linker's static reserve, not a measured worst-case runtime stack depth.
 
-## Timed action precision milestone
+## Timed Action Precision Milestone
 
 Branch: `experiment/v8-timed-action-accuracy`.
 

@@ -1,6 +1,6 @@
-# Consume wake input and temporary LED effects
+# Consume Wake Input and Temporary LED Effects
 
-## Updated decision: finalize in-progress v7 with longer ticks
+## Updated Decision: Finalize In-Progress v7 with Longer Ticks
 
 The user confirmed v7 was never published. The selected implementation now uses
 v7, with bits 0–5 storing `ticks - 1`, bit 6 consuming wake input, and bit 7
@@ -18,7 +18,7 @@ profiles and protocol documentation are now implemented; feature-behavior hardwa
 validation remains pending. Stack validation is complete, with 36 bytes peak
 observed usage under heavy workloads (see the stack measurements below). See [config-v7.md](config-v7.md).
 
-| Variant | Flash used | Flash free | Stack capacity |
+| Variant | Flash Used | Flash Free | Stack Capacity |
 | --- | ---: | ---: | ---: |
 | Six keys | 14,165 | 171 | 121 |
 | Three keys | 14,161 | 175 | 124 |
@@ -38,7 +38,7 @@ are in `/private/tmp/macropad-v7-long-ticks/range64/build-0` and `build-1`.
 The helper now builds only the selected format; comparison variants remain
 preserved in the historical experiment branches below.
 
-## Historical investigation (before the updated decision)
+## Historical Investigation (Before the Updated Decision)
 
 The remaining sections record the original comparison; references to selected
 v9, legacy v7 timing, and four comparison builds describe that earlier checkpoint.
@@ -49,7 +49,7 @@ variants. No existing feature was removed. This is an experimental firmware
 checkpoint: editor controls, JSON/binary encoding, migration, and final protocol
 documentation for the new experimental format remain follow-up work.
 
-## Preserved checkpoints
+## Preserved Checkpoints
 
 | Branch | Checkpoint | Contents |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ performed.
 
 ## Flash and RAM
 
-| Build | Six-key flash | Six-key free / over | Three-key flash | Three-key free / over |
+| Build | Six-Key Flash | Six-Key Free / Over | Three-Key Flash | Three-Key Free / Over |
 | --- | ---: | ---: | ---: | ---: |
 | Original four-timer baseline | 14,231 | 105 free | 14,227 | 109 free |
 | Consume only: 64 ticks | 14,333 | 3 free | 14,329 | 7 free |
@@ -81,7 +81,7 @@ The selected 128-tick result leaves 40 more flash bytes free than the original
 baseline, while adding both features. The 64-tick alternative saves another
 18 flash bytes and avoids reserving a profile byte.
 
-| Memory | Baseline six / three | Final 64-tick six / three | Final 128-tick six / three |
+| Memory | Baseline Six / Three | Final 64-Tick Six / Three | Final 128-Tick Six / Three |
 | --- | --- | --- | --- |
 | Paged xRAM | 108 / 108 bytes | 108 / 108 | 108 / 108 |
 | Ordinary xRAM | 532 / 523 bytes | 526 / 517 | 526 / 517 |
@@ -97,11 +97,11 @@ Stack capacity is the linker's reserved space for these historical builds.
 Subsequent [hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
 measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom.
 
-## Optimizations retained
+## Optimizations Retained
 
 Incremental six-key measurements with the 64-tick encoding:
 
-| Change | Flash after change | Saved |
+| Change | Flash After Change | Saved |
 | --- | ---: | ---: |
 | Initial combined implementation | 14,547 | — |
 | Native bits for USB busy/config-waiting/config-turn flags | 14,499 | 48 |
@@ -130,7 +130,7 @@ C `_Bool` for the USB flags, caused internal allocation failures and were not
 retained. Same-page short calls/jumps were assessed but not implemented: native
 bit changes recovered enough space without build/link relaxation machinery.
 
-## Consume wake behavior and encoding
+## Consume Wake Behavior and Encoding
 
 The timer runs its expiry action normally. After it has fired, the next
 debounced key press, encoder-button press, or completed encoder detent runs all
@@ -170,14 +170,14 @@ Maximum nominal duration is about 69.9 minutes for 64 ticks or 139.8 minutes
 for 128 ticks. Shared 65.536-second boundaries and potentially early first
 expiry remain unchanged.
 
-## Temporary LED effect behavior and encoding
+## Temporary LED Effect Behavior and Encoding
 
 The normal **LED Control** action remains two bytes. Its low action nibble is `0xF`,
 its upper nibble selects palette index 0–15, and its second byte is:
 
-| **LED command** | Behavior | Palette nibble |
+| **LED Command** | Behavior | Palette Nibble |
 | --- | --- | --- |
-| `0x80` | Clear temporary effect / **As configured** | Must be 0 |
+| `0x80` | Clear temporary effect / **As Configured** | Must be 0 |
 | `0x81` | **Bright** always-on effect | 0–14: swatches; 15: rainbow |
 | `0x82–0x89` | **Bright** blink 1–8 times | 0–14: swatches; 15: rainbow |
 
@@ -206,7 +206,7 @@ reuse the existing effect-state byte and color renderer.
   without restarting the layer's configured blink/timed indication.
 - Pressed-key feedback overrides always-on effects, but blink phases take
   precedence, matching existing layer-indicator behavior.
-- **As configured** removes the overlay and reveals the existing underlying runtime
+- **As Configured** removes the overlay and reveals the existing underlying runtime
   brightness policies; it does not overwrite saved configuration or reset other
   LED overrides. Existing brightness/phase/speed commands continue to modify
   those underlying policies.
@@ -217,7 +217,7 @@ Example with the selected v9 layout: timer expiry `[0xFF, 0x81]` enables bright
 rainbow; resume `[0x0F, 0x80]` restores normal indication. Set that timer's bit
 in byte 127 to consume the wake event.
 
-## Verification and reproduction
+## Verification and Reproduction
 
 Passed:
 

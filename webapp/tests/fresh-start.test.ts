@@ -29,14 +29,14 @@ afterEach(() => {
 it('starts a fresh comparison after reset while keeping the device save reminder', () => {
   const saved = cloneProfile(baseline.value!);
   resetToDefaults();
-  dialog.value!.actions.find(a => a.label === 'Reset editor')!.onSelect();
+  dialog.value!.actions.find(a => a.label === 'Reset Editor')!.onSelect();
   expect(freshStart.value?.kind).toBe('starter');
   expect(profileChanges(changesBaseline.value, profile.value!)).toEqual([]);
   expect(baseline.value).toEqual(saved);
   expect(dirty.value).toBe(true);
 
   updateProfile(draft => { draft.chordWindow = 0; });
-  expect(profileChanges(changesBaseline.value, profile.value!).map(c => c.where)).toEqual(['Chord window']);
+  expect(profileChanges(changesBaseline.value, profile.value!).map(c => c.where)).toEqual(['Chord Window']);
   undo();
   expect(profileChanges(changesBaseline.value, profile.value!)).toEqual([]);
   undo();

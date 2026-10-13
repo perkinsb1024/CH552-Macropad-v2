@@ -6,7 +6,7 @@ export function InputMonitoringHelp() {
   return (
     <div class="permission-help">
       <h3>In Your Browser (All Platforms)</h3>
-      <p>Use desktop Chrome or Edge, click <strong>Connect macropad</strong>, select the macropad in the device chooser, and click <strong>Connect</strong>.</p>
+      <p>Use desktop Chrome or Edge, click <strong>Connect Macropad</strong>, select the macropad in the device chooser, and click <strong>Connect</strong>.</p>
       <p>In Chrome, open <strong>Settings → Privacy and security → Site settings → Additional permissions → HID devices</strong>. Allow sites to ask to connect to HID devices and remove this site from the blocked list if needed. Reload this page and try connecting again. Edge has similar site permissions.</p>
       <details open={/Mac/.test(platform)}>
       <summary>macOS - Input Monitoring</summary>
@@ -20,7 +20,7 @@ export function InputMonitoringHelp() {
           <p>Open <strong>System Settings → Privacy &amp; Security → Input Monitoring</strong> and enable <strong>Google Chrome</strong> (or the browser you use). If it is missing, click <strong>+</strong> and add your browser from <strong>Applications</strong>.</p>
           <img src={enableImage} alt="Input Monitoring settings with the Google Chrome permission switch enabled" />
         </li>
-        <li><p>Fully quit your browser with <strong>⌘Q</strong>, reopen it, and try <strong>Connect macropad</strong> again.</p></li>
+        <li><p>Fully quit your browser with <strong>⌘Q</strong>, reopen it, and try <strong>Connect Macropad</strong> again.</p></li>
       </ol>
       <h3>No Permission Prompt?</h3>
       <p>If you previously denied access, you can enable it manually using the steps above. To make macOS ask Chrome again, fully quit Chrome, run this in Terminal, then reopen Chrome and try connecting:</p>
@@ -47,7 +47,7 @@ export function InputMonitoringHelp() {
             <p>This rule grants all local users read/write access to this macropad’s HID interfaces. For shared systems, ask your administrator for a group-restricted rule instead.</p>
           </li>
           <li><p>Reload the rules in Terminal:</p><pre><code>sudo udevadm control --reload-rules</code></pre></li>
-          <li><p>Unplug and reconnect the macropad, then try <strong>Connect macropad</strong> again.</p></li>
+          <li><p>Unplug and reconnect the macropad, then try <strong>Connect Macropad</strong> again.</p></li>
         </ol>
         <p>If access is still denied, a sandboxed browser package may also restrict HID access. Check your package’s device permissions or try an official browser package installed directly for your distribution.</p>
       </details>

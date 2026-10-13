@@ -1,0 +1,175 @@
+{
+  "format": "universal-macropad-profile",
+  "version": 14,
+  "variant": "six-key",
+  "startupLayer": 0,
+  "transparentBlack": false,
+  "chordWindowMs": 40,
+  "rainbowPhaseDegrees": 60,
+  "rainbowSpeed": "fast",
+  "layers": [
+    {
+      "keys": [
+        {
+          "type": "keyTap",
+          "usage": 29,
+          "modifiers": 10
+        },
+        {
+          "type": "keyTap",
+          "usage": 27,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 4,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 29,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 6,
+          "modifiers": 8
+        },
+        {
+          "type": "keyTap",
+          "usage": 25,
+          "modifiers": 8
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Coral",
+        "Amber",
+        "Leaf",
+        "Magenta",
+        "Violet",
+        "Cyan"
+      ],
+      "indicatorBehavior": 3,
+      "indicatorColor": 15,
+      "indicatorFullBrightness": true
+    },
+    {
+      "keys": [
+        {
+          "type": "string",
+          "text": "Hello\n"
+        },
+        {
+          "type": "mouseClick",
+          "buttons": 1,
+          "clicks": 2
+        },
+        {
+          "type": "consumer",
+          "usage": 111
+        },
+        {
+          "type": "keyTap",
+          "usage": 82,
+          "modifiers": 1
+        },
+        {
+          "type": "keyTap",
+          "usage": 44,
+          "modifiers": 8
+        },
+        {
+          "type": "consumer",
+          "usage": 112
+        }
+      ],
+      "encoderButton": {
+        "type": "relativeLayer",
+        "offset": 1
+      },
+      "clockwise": {
+        "type": "scroll",
+        "delta": -2
+      },
+      "counterclockwise": {
+        "type": "scroll",
+        "delta": 2
+      },
+      "leds": [
+        "Rose",
+        "Rose",
+        "Cyan",
+        "Violet",
+        "Violet",
+        "Cyan"
+      ],
+      "indicatorBehavior": 3,
+      "indicatorColor": 13,
+      "indicatorFullBrightness": false
+    }
+  ],
+  "chords": [
+    {
+      "layer": 0,
+      "keys": [
+        3,
+        4
+      ],
+      "global": false,
+      "action": {
+        "type": "macro",
+        "macro": 0,
+        "repeats": 1
+      }
+    }
+  ],
+  "macros": [
+    {
+      "actions": [
+        {
+          "type": "mouseXY",
+          "x": 12,
+          "y": 40
+        },
+        {
+          "type": "pause",
+          "ticks": 16
+        },
+        {
+          "type": "mouseClick",
+          "buttons": 1,
+          "clicks": 2
+        }
+      ]
+    }
+  ],
+  "timedActions": [
+    {
+      "ticks": 440,
+      "resetOnInput": true,
+      "consumeInput": true,
+      "action": {
+        "type": "ledControl",
+        "command": "commonPresetSet",
+        "value": 4
+      },
+      "resumeAction": {
+        "type": "ledControl",
+        "command": "commonPresetSet",
+        "value": 0
+      }
+    }
+  ]
+}

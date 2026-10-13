@@ -39,7 +39,7 @@ pending; debounce is not a confirmed explanation for the unexpected red event.
 - The observations refer to three LEDs, identified as keys 1, 2, and 3.
 - The profile has two layers: **Layer 1** uses a 1.5-second rainbow indicator;
   **Layer 2** uses **Blink N Times**, giving two solid bright salmon blinks.
-- The profile starts on **Layer 2**. Encoder press selects **Relative layer**
+- The profile starts on **Layer 2**. Encoder press selects **Relative Layer**
   with an offset of +1.
 - The user subsequently supplied the complete profile JSON. It identifies the three-key
   variant, uses a 40ms chord window, 60-degree rainbow spacing and fast rainbow
@@ -118,7 +118,7 @@ switched to **Layer 1**, let the rainbow finish, waited another second, and
 switched back. It validated the binary profile with `configValid()`.
 The captured frame trace showed:
 
-| Relative Time From Debounced Layer Selection | Frame Submitted to the Driver |
+| Relative Time from Debounced Layer Selection | Frame Submitted to the Driver |
 | --- | --- |
 | 0ms, before indicator initialization | All three black |
 | 0ms, after indicator initialization | All three RGB `(255, 22, 7)` |

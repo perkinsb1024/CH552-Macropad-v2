@@ -98,7 +98,7 @@ describe('v10 timed-action images', () => {
   it('includes timer edits in comparisons and restores them with undo', () => {
     const before = defaultProfile(0); const after = cloneProfile(before);
     after.timedActions = [timer()];
-    const change = profileChanges(before, after).find(c => c.where === 'Timed actions')!;
+    const change = profileChanges(before, after).find(c => c.where === 'Timed Actions')!;
     expect(change.after).toContain('1 ticks');
     change.undo!(after); expect(after).toEqual(before);
   });

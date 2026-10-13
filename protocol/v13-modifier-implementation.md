@@ -19,9 +19,9 @@ The experiment branch is `experiment/fine-grained-brightness-control`.
 | Initial implementation | `521c3a0` | V13 modifier actions, relocated mouse hold and host coverage; exceeds flash limit |
 | Firmware fit | `ef9b8db` | Shared dispatch, compact chord indexing and paged scratch/state placement; both builds fit |
 
-Type `0x4` now encodes **Modifier toggle**, **Modifier down** and **Modifier up**,
+Type `0x4` now encodes **Modifier Toggle**, **Modifier Down** and **Modifier Up**,
 with auxiliary values 0, 1 and 2 and a nonzero four-bit modifier parameter.
-**Mouse hold** moves to full first byte `35`, sharing type `0x5` with existing
+**Mouse Hold** moves to full first byte `35`, sharing type `0x5` with existing
 mouse toggle/down/up modes. Physical holds retain their release lifecycle and
 reject in macros, rotation and both timer action slots. The complete binary
 and transport reference is [config-v13.md](config-v13.md).

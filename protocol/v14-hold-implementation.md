@@ -27,7 +27,7 @@ configurator archive or release file was changed.
 
 ## Resulting Behavior and Encoding
 
-**Media / system hold with modifiers** uses provisional type 8: the auxiliary
+**Media / System Hold with Modifiers** uses provisional type 8: the auxiliary
 nibble holds the four modifier bits and the parameter is a nonzero eight-bit
 Consumer Page usage. All sixteen masks, including zero, are accepted. It works
 on physical keys, encoder press and chords; rotation, timers and macros reject
@@ -43,7 +43,7 @@ contributions. Held consumer bindings survive layer changes. Replacing an owner
 ends its modifier contribution; superseded holds are not restored. An older
 ordinary tap's pending release is preserved before a modified hold starts.
 
-**Set layer**, **Momentary layer** and **Relative layer** share type 9. Auxiliary
+**Set Layer**, **Momentary Layer** and **Relative Layer** share type 9. Auxiliary
 bits 0–1 select persistent, one-shot or hold (`00`, `01`, `10`); bit 2 selects
 relative, and bit 3 is reserved. Full first bytes are `09`, `19`, `29`, `49`,
 `59` and `69`. Type B is free and rejected during validation. GET_INFO advertises
@@ -214,27 +214,27 @@ unused alternatives with Reserved at D or E were not needed or measured.
 | Type | Current Action |
 | --- | --- |
 | `0` | **Nothing**; auxiliary `1` = **Pause**, auxiliary `2` = **Type Text** |
-| `1` | **Keyboard tap** |
-| `2` | **Keyboard hold** |
-| `3` | **Mouse click** |
-| `4` | **Mouse toggle / down / up / hold** |
-| `5` | **Scroll tap / hold** |
-| `6` | **Single-axis mouse movement** |
-| `7` | **Combined mouse movement** |
-| `8` | **Consumer tap**, twelve-bit usage |
-| `9` | **Consumer hold**, twelve-bit usage |
-| `A` | **Media / system with modifiers**, tap, eight-bit usage |
-| `B` | **Media / system hold with modifiers**, eight-bit usage |
-| `C` | **Set layer / Momentary layer / Relative layer**, all six modes |
-| `D` | **LED control** |
-| `E` | **Execute macro** |
+| `1` | **Keyboard Tap** |
+| `2` | **Keyboard Hold** |
+| `3` | **Mouse Click** |
+| `4` | **Mouse Toggle / Down / Up / Hold** |
+| `5` | **Scroll Tap / Hold** |
+| `6` | **Single-Axis Mouse Movement** |
+| `7` | **Combined Mouse Movement** |
+| `8` | **Consumer Tap**, twelve-bit usage |
+| `9` | **Consumer Hold**, twelve-bit usage |
+| `A` | **Media / System with Modifiers**, tap, eight-bit usage |
+| `B` | **Media / System Hold with Modifiers**, eight-bit usage |
+| `C` | **Set Layer / Momentary Layer / Relative Layer**, all six modes |
+| `D` | **LED Control** |
+| `E` | **Execute Macro** |
 | `F` | Reserved; all auxiliary/parameter combinations reject |
 
 In `src/actions.c` and `src/config.c`, media types 8–B now use bit 0 to select
 hold and bit 1 to select modified eight-bit usage. `(type & 0xD) == 9` recognizes
 both consumer holds, while pointer types 6/7 retain their even/odd decoding and
 shared mask. The compile-time guard checks the new consumer and pointer IDs.
-Macro playback's immediate-action cutoff now starts at **Mouse toggle**, type 4,
+Macro playback's immediate-action cutoff now starts at **Mouse Toggle**, type 4,
 which includes persistent mouse modes and all consumer/layer/LED actions after
 scroll/pointer processing. Leaving that cutoff tied to the modified-consumer
 ID would incorrectly process persistent mouse and unmodified media macro steps;

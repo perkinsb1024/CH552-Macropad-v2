@@ -1,6 +1,6 @@
-# Macropad configuration image, version 3
+# Macropad Configuration Image, Version 3
 
-| Image property | Value |
+| Image Property | Value |
 | --- | --- |
 | Size | 128 bytes |
 | Unused bytes | `0` |
@@ -34,9 +34,9 @@ The nine-byte header is:
 | 4 | **String**-pool length | Number of used bytes in the string pool. |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | **Chord window** | Bits 0–3: duration in 5ms units<br>Bits 4–7: `0` |
+| 8 | **Chord Window** | Bits 0–3: duration in 5ms units<br>Bits 4–7: `0` |
 
-| CRC16-CCITT-FALSE setting | Value |
+| CRC16-CCITT-FALSE Setting | Value |
 | --- | --- |
 | Polynomial | `0x1021` |
 | Initial value | `0xFFFF` |
@@ -48,38 +48,38 @@ Layers begin at image byte 9. Layer `n` starts at byte `9 + n × layer size`,
 with `n` starting at zero. Byte ranges below are relative to the start of a
 layer. Each binding uses the two-byte action encoding below.
 
-| Field | Six-key bytes (22-byte layer) | Three-key bytes (15-byte layer) | Encoding |
+| Field | Six-Key Bytes (22-Byte Layer) | Three-Key Bytes (15-Byte Layer) | Encoding |
 | --- | --- | --- | --- |
 | Physical-key bindings | 0–11 | 0–5 | Two bytes per key, in physical-key order |
 | Encoder button binding | 12–13 | 6–7 | Two-byte action |
 | Clockwise rotation binding | 14–15 | 8–9 | Two-byte action |
 | Counterclockwise rotation binding | 16–17 | 10–11 | Two-byte action |
 | Key LED palette indices | 18–20 | 12–13 | One nibble per key: even-numbered key in bits 0–3, odd-numbered key in bits 4–7. On three-key pads, bits 4–7 of byte 13 are `0`. |
-| **Layer options** | 21 | 14 | Bit fields below |
+| **Layer Options** | 21 | 14 | Bit fields below |
 
-| Layer-option bits | Meaning | Encoding |
+| Layer-Option Bits | Meaning | Encoding |
 | --- | --- | --- |
-| 0 | Layer-indicator brightness | `0` = dimmed, `1` = full brightness; applies in **On for 1.5 seconds**, **Blink by layer number**, and **Always on** modes |
+| 0 | Layer-indicator brightness | `0` = dimmed, `1` = full brightness; applies in **On for 1.5 Seconds**, **Blink by Layer Number**, and **Always On** modes |
 | 1 | Encoder-hold bootloader entry | `0` = disabled, `1` = enabled |
-| 2–3 | Layer-selection LED behavior | `0` = **Do not indicate**, `1` = **On for 1.5 seconds**, `2` = **Blink by layer number**, `3` = **Always on** |
+| 2–3 | Layer-selection LED behavior | `0` = **Do Not Indicate**, `1` = **On for 1.5 Seconds**, `2` = **Blink by Layer Number**, `3` = **Always On** |
 | 4–7 | Layer-indicator color | Palette index 0–15 |
 
 Holding the encoder button while powering up always enters the bootloader;
-this recovery gesture is not configurable. In **Always on** mode, idle keys use the
+this recovery gesture is not configurable. In **Always On** mode, idle keys use the
 indicator color at the brightness selected by bit 0. Pressed keys normally use
 their per-key color at full brightness. With header byte 5 bit 7 set, a pressed
 key whose color is index 15 (**Off**) instead displays its idle background,
 including dimming and animated **Rainbow**. Without an always-on background it is dark.
 
-**On for 1.5 seconds** displays the indicator continuously after a layer change.
-**Blink by layer number** displays one blink per one-based layer number, with
+**On for 1.5 Seconds** displays the indicator continuously after a layer change.
+**Blink by Layer Number** displays one blink per one-based layer number, with
 250ms lit and 250ms dark phases. Both indications override all pressed-key
 colors throughout the animation; dark blink phases are fully dark. Each new
 layer change replaces the previous animation. Timing uses 2ms ticks, so the
 first phase can be up to 1ms shorter than its nominal duration.
 
-Indicator color index 15 means animated **Rainbow** in **Always on**, *On for 1.5
-seconds*, and **Blink by layer number** modes, at the selected brightness. Numbered
+Indicator color index 15 means animated **Rainbow** in **Always On**, *On for 1.5
+seconds*, and **Blink by Layer Number** modes, at the selected brightness. Numbered
 blinks alternate between animated **Rainbow** and fully dark phases. Per-key index
 15 remains **Off**; the global flag only
 changes whether it obscures an idle background. USB color preview retains its
@@ -100,14 +100,14 @@ editor. When a layer-specific chord and a global chord have the same key pair,
 the layer-specific chord takes precedence on that layer. Chord identifiers are
 strictly ascending. Multiple actions may share one string.
 
-| **String**-pool property | Encoding |
+| **String**-Pool Property | Encoding |
 | --- | --- |
 | Location | Immediately after the last chord |
 | Used length | Header byte 4 |
 | **String** encoding | Zero-terminated printable US ASCII (`0x20`–`0x7E`), tab (`0x09`), or LF (`0x0A`) |
 | Action offset | Zero-based byte offset from the start of the pool; must point to a string start |
 
-| Action byte | Field | Encoding |
+| Action Byte | Field | Encoding |
 | --- | --- | --- |
 | 0, bits 0–3 | Type | Action code in the table below |
 | 0, bits 4–7 | Auxiliary data | Meaning depends on action type |
@@ -115,24 +115,24 @@ strictly ascending. Multiple actions may share one string.
 
 The action types are:
 
-| Type | Action | Auxiliary data | Parameter |
+| Type | Action | Auxiliary Data | Parameter |
 | --- | --- | --- | --- |
 | 0 | **None** | `0` | `0` |
-| 1 | **Keyboard tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
-| 2 | **Keyboard hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
-| 3 | **Mouse click** | `0` | Button mask 1–7 |
-| 4 | **Mouse double-click** | `0` | Button mask 1–7 |
-| 5 | **Mouse hold** | `0` | Button mask 1–7 |
-| 6 | **Mouse toggle** | `0` | Button mask 1–7 |
-| 7 | **Scroll step** | `0` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
-| 8 | **Consumer tap** | High four bits of the usage | Low eight bits of the usage |
+| 1 | **Keyboard Tap** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage |
+| 2 | **Keyboard Hold** | `Ctrl`/`Shift`/`Alt`/`GUI` modifier mask | Raw key usage; button release ends the hold |
+| 3 | **Mouse Click** | `0` | Button mask 1–7 |
+| 4 | **Mouse Double-Click** | `0` | Button mask 1–7 |
+| 5 | **Mouse Hold** | `0` | Button mask 1–7 |
+| 6 | **Mouse Toggle** | `0` | Button mask 1–7 |
+| 7 | **Scroll Step** | `0` | Signed 8-bit wheel delta from -127 to +127; firmware sends one-count reports in the requested direction |
+| 8 | **Consumer Tap** | High four bits of the usage | Low eight bits of the usage |
 | 9 | **String** | `0` | **String**-pool offset |
-| A | **Set layer** | `0` for persistent; `1` for one-shot | Layer index |
-| B | **Momentary layer** | `0` | Layer index |
+| A | **Set Layer** | `0` for persistent; `1` for one-shot | Layer index |
+| B | **Momentary Layer** | `0` | Layer index |
 | C | Reserved | Rejected by current firmware | Rejected by current firmware |
-| D | **Relative layer** | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -3 to +3; added to the selected base-layer index with wraparound. `0` has no effect. |
-| E | **Mouse X movement** | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
-| F | **Mouse Y movement** | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
+| D | **Relative Layer** | `0` for persistent; `1` for one-shot | Signed 8-bit offset from -3 to +3; added to the selected base-layer index with wraparound. `0` has no effect. |
+| E | **Mouse X Movement** | `0` for tap; `1` for hold | Signed 8-bit X delta from -127 to +127 |
+| F | **Mouse Y Movement** | `0` for tap; `1` for hold | Signed 8-bit Y delta from -127 to +127 |
 
 For action A and D, auxiliary value `0` changes the selected base layer
 persistently. Auxiliary value `1` makes that layer active for the next input
@@ -160,18 +160,18 @@ Repeat reports are skipped when USB is busy; they do not accumulate for later pl
 Auxiliary values 2–15 are invalid. **Tap** and hold action encodings are unchanged
 from the corresponding version 2 extension.
 
-Rotation bindings cannot use **Keyboard hold**, **Mouse hold**, **Momentary layer**,
+Rotation bindings cannot use **Keyboard Hold**, **Mouse Hold**, **Momentary Layer**,
 or X/Y movement in hold mode.
 For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
-With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for **Keyboard hold** actions).
+With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for **Keyboard Hold** actions).
 
 Palette version 3 uses the following colors. The representative hex values are
 the web editor's display colors, chosen to resemble the firmware LEDs on
 screen; they are intentionally not exact conversions of the firmware RGB
 values. Only palette indices are stored in the configuration image.
 
-| Index | Firmware RGB | Representative hex | Display name | Swatch |
+| Index | Firmware RGB | Representative Hex | Display Name | Swatch |
 | --- | --- | --- | --- | --- |
 | 0 | `(255, 0, 0)` | `#FF0000` | **Red** | ![Red](swatches/00.svg) |
 | 1 | `(255, 22, 7)` | `#FF6B5E` | **Coral** | ![Coral](swatches/01.svg) |
@@ -190,8 +190,8 @@ values. Only palette indices are stored in the configuration image.
 | 14 | `(255, 255, 255)` | `#FFFFFF` | **White** | ![White](swatches/14.svg) |
 | 15 | `(0, 0, 0)` | `#000000` | **Off** | ![Off](swatches/15.svg) |
 
-The editor's starter profile has two layers: **Mac shortcuts** followed by
-**Windows shortcuts**. Six-key pads use **Undo**, **Copy**, **Paste**, **Redo**, **Cut**,
-and **Select all**; three-key pads use the first three shortcuts on each layer.
+The editor's starter profile has two layers: **Mac Shortcuts** followed by
+**Windows Shortcuts**. Six-key pads use **Undo**, **Copy**, **Paste**, **Redo**, **Cut**,
+and **Select All**; three-key pads use the first three shortcuts on each layer.
 The layers use persistent **White** and **Yellow** lighting respectively, and the
 profile has a 40ms chord window with no chords or strings.

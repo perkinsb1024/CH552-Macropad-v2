@@ -152,9 +152,9 @@ export function App() {
           <span class="footer-version">Transport v{TRANSPORT_VERSION}</span>
         </span>
         <span>
-          <a href={siteUrl('versions/')}>Older firmware configurators</a>
+          <a href={siteUrl('versions/')}>Older Firmware Configurators</a>
           {' · '}
-          <a href={siteUrl('webUploader/')}>Web-based firmware uploader</a>
+          <a href={siteUrl('webUploader/')}>Web-Based Firmware Uploader</a>
         </span>
         <span class="muted">Saves write the device's 128-byte DataFlash and read it back before reporting success.</span>
       </footer>

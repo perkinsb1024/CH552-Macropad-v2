@@ -29,7 +29,7 @@ rather than inferred by adding individual results.
 | Timer loop bounds | Cache `configTimedCount()` before the loops in `timedEvent()` and `resetLayerTimers()` | Timer actions can change the layer, but cannot change the configuration or timer count during traversal. |
 | Chord layer count | Cache `configLayerCount()` in `configChord()` for its table offset and layer validation | Both operations inspect the same active configuration. |
 | USB report generation | Read `USB_reportGeneration()` once in `actionsPoll()` and compare/store that snapshot | A later interrupt change remains different from the stored snapshot and can be detected on a subsequent poll. The existing `i` temporary is reused. |
-| Chord window | Cache `configChordWindowMs()` for `actionsPress()` | Pending-action resolution can change the layer, but cannot change the configuration's chord window. The cached byte uses `__idata` to limit direct-RAM pressure. |
+| Chord Window | Cache `configChordWindowMs()` for `actionsPress()` | Pending-action resolution can change the layer, but cannot change the configuration's chord window. The cached byte uses `__idata` to limit direct-RAM pressure. |
 | LED color table | Compute `configLedColorOffset(layer)` once per frame, then use `configLedColorAt(offset, key)` for packed nibble reads | Rendering uses a stable layer and fixed hardware geometry. The caller supplies a valid layer and key, removing repeated layer/key validation and layer-offset calculation. |
 | Unchanged flash byte | Return success immediately when `writeByte()` finds that the byte already matches | A matching byte needs no write or second read. Actual writes retain their verification read and interrupt protection. |
 
@@ -48,7 +48,7 @@ stack changes describe available reserve, so less reserve is a cost.
 | Timer loop bounds | 14,324 | 6 | 1 byte added | 1 byte less |
 | Chord layer count | 14,322 | 8 | Unchanged | Unchanged |
 | USB report generation | 14,326 | 4 | Unchanged | Unchanged |
-| Chord window | 14,316 | 14 | Unchanged | Unchanged |
+| Chord Window | 14,316 | 14 | Unchanged | Unchanged |
 | LED color table | 14,318 | 12 | 1 byte released | 1 byte more |
 | Unchanged flash byte | 14,330 | 0 | Unchanged | Unchanged |
 | Combined Six Changes | 14,286 | 44 | Unchanged | Unchanged |

@@ -60,7 +60,7 @@ to fit both variants with this implementation.
 
 Other measured candidates:
 
-| Implementation | Flash Increase Per Variant | Result |
+| Implementation | Flash Increase per Variant | Result |
 | --- | ---: | --- |
 | Continuous GPIO polling using the 16-bit millisecond clock | 30 | Both variants exceed the limit |
 | Continuous GPIO polling using the low eight millisecond bits | 22 | Both variants exceed the limit |

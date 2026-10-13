@@ -27,14 +27,14 @@ it('adds steps, edits through the inspector, reorders, deletes, and supports und
   expect(selectedSlot.value).toEqual({ kind: 'macro', layer: 0, index: 0, step: 0 });
   expect(nodes(Inspector()).find(n => n.type === 'h2')!.props.children).toBe('Macro 1 · Step 1');
   setAction(selectedSlot.value!, { type: 'pause', ticks: 16 });
-  const slider = nodes(Inspector()).find(n => n.props['aria-label'] === 'Pause duration')!;
+  const slider = nodes(Inspector()).find(n => n.props['aria-label'] === 'Pause Duration')!;
   (slider.props.onInput as (e: unknown) => void)({ target: { value: '255' } });
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'pause', ticks: 255 });
-  const add = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add step'))!;
+  const add = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add Step'))!;
   (add.props.onClick as () => void)();
   expect(profile.value!.macros![0]!.actions).toHaveLength(2);
   draggedSlot.value = selectedSlot.value;
-  const target = nodes(MacrosPanel()).find(n => n.props['aria-label'] === 'Edit macro 1 step 1')!;
+  const target = nodes(MacrosPanel()).find(n => n.props['aria-label'] === 'Edit Macro 1 Step 1')!;
   const event = { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientY: 1,
     currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 100 }) } };
   (target.props.onDragOver as (event: unknown) => void)(event);
@@ -42,10 +42,10 @@ it('adds steps, edits through the inspector, reorders, deletes, and supports und
   (target.props.onDrop as (event: unknown) => void)(event);
   expect(profile.value!.macros![0]!.actions[1]!.type).toBe('pause');
   expect(selectedSlot.value).toMatchObject({ step: 0 });
-  click('Remove step 1'); expect(selectedSlot.value).toBeNull();
+  click('Remove Step 1'); expect(selectedSlot.value).toBeNull();
   undo(); expect(profile.value!.macros![0]!.actions).toHaveLength(2);
   redo(); expect(profile.value!.macros![0]!.actions).toHaveLength(1);
-  const addPause = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add pause'))!;
+  const addPause = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add Pause'))!;
   (addPause.props.onClick as () => void)();
   expect(profile.value!.macros![0]!.actions[1]).toEqual({ type: 'pause', ticks: 16 });
   expect(selectedSlot.value).toMatchObject({ kind: 'macro', index: 0, step: 1 });
@@ -60,20 +60,20 @@ it('prevents nested and held steps and edits invocation selection and repeats', 
   expect(canSwapSlots({ kind: 'key', layer: 0, index: 0 }, step)).toBe(false);
   selectedSlot.value = { kind: 'key', layer: 0, index: 1 };
   setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 1 });
-  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')).toBeUndefined();
+  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Run Count')).toBeUndefined();
   const repeatToggle = () => nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat')!;
   const on = nodes(repeatToggle()).find(n => n.type === 'button' && n.props.children === 'On')!;
   expect(on.props['aria-pressed']).toBe(false);
   (on.props.onClick as () => void)();
   expect(getAction(profile.value!, selectedSlot.value!)).toMatchObject({ repeats: 2 });
-  const repeats = nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')!;
+  const repeats = nodes(Inspector()).find(n => n.props['aria-label'] === 'Run Count')!;
   expect(repeats.props).toMatchObject({ type: 'range', min: 2, max: 16 });
   (repeats.props.onInput as (e: unknown) => void)({ target: { value: '16' } });
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type: 'macro', macro: 0, repeats: 16 });
   const off = nodes(repeatToggle()).find(n => n.type === 'button' && n.props.children === 'Off')!;
   (off.props.onClick as () => void)();
   expect(getAction(profile.value!, selectedSlot.value!)).toMatchObject({ repeats: 1 });
-  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')).toBeUndefined();
+  expect(nodes(Inspector()).find(n => n.props['aria-label'] === 'Run Count')).toBeUndefined();
 });
 it('clears removed macro bindings and renumbers surviving references across all sites', () => {
   start(); addMacro(); addMacro();
@@ -83,7 +83,7 @@ it('clears removed macro bindings and renumbers surviving references across all 
     p.chords = [{ layer: 0, keyA: 0, keyB: 1, action: { type: 'macro', macro: 1, repeats: 3 } }];
     p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: { type: 'macro', macro: 0, repeats: 1 }, resumeAction: { type: 'macro', macro: 1, repeats: 4 } }];
   });
-  click('Remove macro 1 and its bindings');
+  click('Remove Macro 1 and Its Bindings');
   expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'none' });
   expect(profile.value!.layers[0]!.clockwise).toEqual({ type: 'macro', macro: 0, repeats: 2 });
   expect(profile.value!.chords[0]!.action).toMatchObject({ macro: 0 });
@@ -107,7 +107,7 @@ it('remaps macro layer targets, tracks edits, and clears a step to a zero pause'
 it('inserts new steps before a layer switch and explains the restriction in the sidebar', () => {
   start(); addMacro();
   setAction(selectedSlot.value!, { type: 'oneShotRelativeLayer', offset: 0 });
-  const add = () => nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add step'))!;
+  const add = () => nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add Step'))!;
   expect(add().props.disabled).toBe(false);
   expect(JSON.stringify(nodes(Inspector()).filter(n => n.type === 'p').map(n => n.props.children))).toContain('final macro step');
   (add().props.onClick as () => void)();
@@ -127,7 +127,7 @@ it('marks invalid layer switches and inserts pauses before the first switch with
   expect(rows().map(n => String(n.props.class).includes('has-problem'))).toEqual([true, true, false]);
   const markers = () => nodes(MacrosPanel()).filter(n => n.props.class === 'hint macro-insertion-marker');
   expect(markers()).toHaveLength(1);
-  const add = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add pause'))!;
+  const add = nodes(MacrosPanel()).find(n => n.type === 'button' && Array.isArray(n.props.children) && n.props.children.includes(' Add Pause'))!;
   expect(add.props.disabled).toBe(false);
   (add.props.onClick as () => void)();
   expect(profile.value!.macros![0]!.actions.map(a => a.type)).toEqual(['pause', 'relativeLayer', 'oneShotRelativeLayer', 'setLayer']);
@@ -142,7 +142,7 @@ it('restricts repeats when selecting a layer-switching macro without silently ch
   setAction(selectedSlot.value!, { type: 'setLayer', layer: 0 });
   selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
   setAction(selectedSlot.value, { type: 'macro', macro: 0, repeats: 16 });
-  const repeat = nodes(Inspector()).find(n => n.props['aria-label'] === 'Run count')!;
+  const repeat = nodes(Inspector()).find(n => n.props['aria-label'] === 'Run Count')!;
   expect(repeat.props.disabled).toBe(true);
   const toggle = nodes(Inspector()).find(n => n.props['aria-label'] === 'Repeat')!;
   expect(nodes(toggle).find(n => n.props.children === 'On')!.props.disabled).toBe(true);
@@ -164,7 +164,7 @@ it('inserts a step across multiple rows instead of swapping and restores it with
   updateProfile(p => { p.macros = [{ actions: [4, 5, 6, 7].map(usage => ({ type: 'keyTap', usage, modifiers: 0 })) }]; });
   const before = structuredClone(profile.value);
   draggedSlot.value = { kind: 'macro', layer: 0, index: 0, step: 3 };
-  const target = nodes(MacrosPanel()).find(n => n.props['aria-label'] === 'Edit macro 1 step 1')!;
+  const target = nodes(MacrosPanel()).find(n => n.props['aria-label'] === 'Edit Macro 1 Step 1')!;
   const event = { preventDefault: vi.fn(), stopPropagation: vi.fn(), clientY: 1,
     currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 100 }) } };
   (target.props.onDragOver as (event: unknown) => void)(event);

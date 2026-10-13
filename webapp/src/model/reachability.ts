@@ -149,7 +149,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
     } else if (layer !== startup && visits.some(id => !canReturn.has(id))) {
       warnings.push({ layer, message: visits.every(id => !canReturn.has(id))
         ? `There is no path from ${name(layer)} back to startup ${name(startup)}.`
-        : `After some layer changes, ${name(layer)} has no path back to startup ${name(startup)}. Returning depends on layer history; Previous layer remembers only one layer.` });
+        : `After some layer changes, ${name(layer)} has no path back to startup ${name(startup)}. Returning depends on layer history; Previous Layer remembers only one layer.` });
     }
   }
   return warnings;

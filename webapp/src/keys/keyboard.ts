@@ -33,7 +33,7 @@ const main: KeyInfo[] = [
   { usage: 0x2f, name: '[ {', code: 'BracketLeft', group: 'Punctuation' },
   { usage: 0x30, name: '] }', code: 'BracketRight', group: 'Punctuation' },
   { usage: 0x31, name: '\\ |', code: 'Backslash', group: 'Punctuation' },
-  { usage: 0x32, name: '# ~ (non-US)', code: 'IntlBackslash', group: 'Punctuation' },
+  { usage: 0x32, name: '# ~ (Non-US)', code: 'IntlBackslash', group: 'Punctuation' },
   { usage: 0x33, name: '; :', code: 'Semicolon', group: 'Punctuation' },
   { usage: 0x34, name: "' \"", code: 'Quote', group: 'Punctuation' },
   { usage: 0x35, name: '` ~', code: 'Backquote', group: 'Punctuation' },
@@ -63,7 +63,7 @@ const main: KeyInfo[] = [
   { usage: 0x58, name: 'Keypad Enter', code: 'NumpadEnter', group: 'Keypad' },
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((digit, i) => ({ usage: 0x59 + i, name: `Keypad ${digit}`, code: `Numpad${digit}`, group: 'Keypad' as const })),
   { usage: 0x63, name: 'Keypad .', code: 'NumpadDecimal', group: 'Keypad' },
-  { usage: 0x64, name: '\\ | (non-US)', code: 'IntlBackslash', group: 'Punctuation' },
+  { usage: 0x64, name: '\\ | (Non-US)', code: 'IntlBackslash', group: 'Punctuation' },
   { usage: 0x65, name: 'Application (Menu)', code: 'ContextMenu', group: 'System' },
   ...Array.from({ length: 12 }, (_, i) => ({ usage: 0x68 + i, name: `F${i + 13}`, code: `F${i + 13}`, group: 'Function' as const })),
 ];
@@ -81,7 +81,7 @@ export function isSupportedUsage(usage: number): boolean {
 }
 
 export function keyName(usage: number): string {
-  if (usage === 0) return 'No key';
+  if (usage === 0) return 'No Key';
   return BY_USAGE.get(usage)?.name ?? `Usage 0x${usage.toString(16).toUpperCase().padStart(2, '0')}`;
 }
 

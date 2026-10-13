@@ -1,6 +1,6 @@
-# Held scrolling and acceleration experiment
+# Held Scrolling and Acceleration Experiment
 
-## Flashable standalone test build
+## Flashable Standalone Test Build
 
 The branch now builds with `ENABLE_COLOR_PREVIEW=0` and
 `ENABLE_RAINBOW_ANIMATION=0` in `platformio.ini`. Normal layer colors, key LEDs,
@@ -16,7 +16,7 @@ but neither **Consumer Hold** nor the timer precision experiment.
 
 To test, use this branch's configurator (`cd webapp`, `npm run build`) and ordinary
 firmware build/upload workflow. No firmware has been uploaded by this work.
-Select a **Scroll** action and choose **Off**, **Slow** or **Fast** from **Scroll acceleration (experiment)**. Keys/chords/encoder press also offer **Tap/Hold**. Try a base step of
+Select a **Scroll** action and choose **Off**, **Slow** or **Fast** from **Scroll Acceleration (Experiment)**. Keys/chords/encoder press also offer **Tap/Hold**. Try a base step of
 1 first; reverse direction, pause longer than 200ms and trigger another action
 to compare resets. Start with a fresh profile or an original v7 backup: this
 branch's configurator does not import v8 backups with **Consumer Hold**. Keep steps
@@ -40,7 +40,7 @@ branch. The standalone experiment retains the baseline version stamp until the
 **Consumer Hold** encoding/version change is combined. Do not use the unchanged
 configurator to edit experiment-only action encodings.
 
-| Build | Six-key flash | Three-key flash | Delta from baseline (6/3 key) | Free (6/3 key) |
+| Build | Six-Key Flash | Three-Key Flash | Delta from Baseline (6/3 Key) | Free (6/3 Key) |
 | --- | ---: | ---: | ---: | ---: |
 | Baseline | 14,263 | 14,259 | 0 / 0 | 73 / 77 |
 | Held scrolling only | 14,343 | 14,341 | +80 / +82 | -7 / -5 |
@@ -71,7 +71,7 @@ Temporary builds: `/private/tmp/macropad-v8-builds/scroll-hold-only/`.
 Flash priority: retain held scrolling before acceleration. If combined firmware
 does not fit, remove acceleration first. No hardware flashing performed.
 
-## Acceleration milestone
+## Acceleration Milestone
 
 Default acceleration's incremental cost over the isolated held-scrolling
 milestone is 442 flash bytes. It adds six persistent indirect-RAM bytes:

@@ -69,7 +69,7 @@ it('shows a blocking sidebar issue, navigates to its action, and clears when cor
   const slot: Slot = { kind: 'key', layer: 0, index: 0 };
   setAction(slot, { type: 'mouseXY', x: 0, y: 0 });
   expect(issues.value).toHaveLength(1);
-  const card = nodes(IssuesPanel()).find(n => n.type === 'details' && text(n).includes('Fix before saving'))!;
+  const card = nodes(IssuesPanel()).find(n => n.type === 'details' && text(n).includes('Fix Before Saving'))!;
   expect(card.props.open).toBe(true);
   expect(card.props.class).toContain('issues-error');
   expect(nodes(card).find(n => n.type === 'span' && n.props.class === 'warn')!.props.children).toBe(1);
@@ -78,5 +78,5 @@ it('shows a blocking sidebar issue, navigates to its action, and clears when cor
   expect(navigateToSlot).toHaveBeenCalledWith(slot);
   setAction(slot, { type: 'mouseXY', x: 4, y: 4 });
   expect(issues.value).toEqual([]);
-  expect(text(IssuesPanel())).not.toContain('Fix before saving');
+  expect(text(IssuesPanel())).not.toContain('Fix Before Saving');
 });

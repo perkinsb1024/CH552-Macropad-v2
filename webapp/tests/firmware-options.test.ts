@@ -57,11 +57,11 @@ describe('current firmware indicator options', () => {
     });
     const nodes = elements(LayerOptions());
     const mode = nodes.find((node) => node.type === 'option' && node.props.value === 1)!;
-    expect(text(mode)).toBe('On for 1.5 seconds');
+    expect(text(mode)).toBe('On for 1.5 Seconds');
     const off = nodes.find((node) => node.props.role === 'radio' && node.props['aria-label'] === 'Rainbow');
     expect(off).toBeDefined();
     expect(nodes.find((node) => node.type === ColorPreview)!.props.rainbow).toBe(true);
-    expect(nodes.some((node) => node.props['aria-label'] === 'Layer indicator brightness')).toBe(true);
+    expect(nodes.some((node) => node.props['aria-label'] === 'Layer Indicator Brightness')).toBe(true);
     const transparency = elements(ProfilePanel()).find((node) => node.type === 'button' && text(node) === 'Transparent')!;
     expect(transparency.props.disabled).toBe(undefined);
     // Transparency remains editable for the current firmware.

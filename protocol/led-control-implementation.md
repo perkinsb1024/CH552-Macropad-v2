@@ -1,4 +1,4 @@
-# LED control implementation, configuration version 6
+# LED Control Implementation, Configuration Version 6
 
 Implemented the complete agreed command set with no feature simplification or
 removal. Both variants retain color preview, invalid-config blinking, all existing
@@ -6,7 +6,7 @@ HID actions, and policy matching for relative common presets. No remembered-pres
 fallback was needed. Changes remain uncommitted on `experiment/led-brightness-action`;
 no branches were pushed and main was not committed.
 
-## Delivered behavior
+## Delivered Behavior
 
 Action F uses its auxiliary nibble for the value/signed step and its full parameter
 byte for the command. All 13 commands and all 112 valid payloads are implemented:
@@ -14,9 +14,9 @@ absolute/relative rainbow phase and speed, indicator/key/both brightness, restor
 all, and absolute/relative common presets. Every relative command accepts -7..-1
 and +1..+7. Absolute brightness uses **Off**=0, **Dim**=1, **Bright**=2, Configured=F.
 Phase options show **0°**, **30°**, **60°**, and **Variable**; the profile selector labels the
-fourth option “**Variable — Scattered colors**.”
+fourth option “**Variable — Scattered Colors**.”
 
-The five common presets include **Both as configured**. Their relative position follows
+The five common presets include **Both as Configured**. Their relative position follows
 the actual policy pair, including matching results from other brightness commands.
 Current firmware makes both-relative step once from the brighter resolved policy
 and assigns the result to both targets. This supersedes the original independent
@@ -32,17 +32,17 @@ GET_INFO format version gates compatibility; its payload and transport v1 are un
 The frozen v5 editor is added alongside v2/v3/v4 and has checksummed provenance.
 See [the v6 wire specification](config-v6.md) for encodings and lifecycle details.
 
-## Measured firmware size
+## Measured Firmware Size
 
 Measurements use the installed CH55xDuino 0.0.25 SDCC build.13407_4 toolchain,
 `--opt-code-size`, and the existing linker limit of 14,336 bytes, with
 `ENABLE_COLOR_PREVIEW=1`. Baseline is a fresh build before implementation, not
 previously checked-in HEX artifacts.
 
-| Variant | Baseline flash | Final flash | Net increase | Flash free | xRAM used / available | Stack region |
+| Variant | Baseline Flash | Final Flash | Net Increase | Flash Free | xRAM Used / Available | Stack Region |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,189 | 14,328 | 139 | 8 | 621 / 876 | 138 |
-| Six-key | 14,190 | 14,327 | 137 | 9 | 630 / 876 | 138 |
+| Three-Key | 14,189 | 14,328 | 139 | 8 | 621 / 876 | 138 |
+| Six-Key | 14,190 | 14,327 | 137 | 9 | 630 / 876 | 138 |
 
 xRAM grows by four bytes per variant (baseline 617/626): one byte each for current
 phase, speed, indicator policy, and key policy. This unpacked array produces smaller
@@ -59,9 +59,9 @@ Successful `pio run -t releases` exports:
 The dirty suffix identifies uncommitted firmware sources; it is not a new commit ID.
 These replace the prior checked-in release pair in the reviewable diff.
 
-## Scattered-colors drift experiment
+## Scattered-Colors Drift Experiment
 
-The fourth spacing preset shows “**Variable — Scattered colors**” and uses the tuned
+The fourth spacing preset shows “**Variable — Scattered Colors**” and uses the tuned
 starting increment of 109 hue steps. JSON continues to encode this preset as 150°. Each LED gains an extra hue step at a different rate
 (once every 4–128 rainbow frames), changing relative phases without abrupt color
 jumps. `RAINBOW_DRIFT_MASK` controls the first interval: 3 means four frames;
@@ -74,10 +74,10 @@ previews use the saved preset and current drift.
 
 Fresh builds with the same toolchain and preview enabled:
 
-| Variant | Before drift | With drift | Flash free | xRAM used | Stack region |
+| Variant | Before Drift | With Drift | Flash Free | xRAM Used | Stack Region |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,328 | 14,331 | 5 | 619 | 126 |
-| Six-key | 14,327 | 14,333 | 3 | 628 | 123 |
+| Three-Key | 14,328 | 14,331 | 5 | 619 | 126 |
+| Six-Key | 14,327 | 14,333 | 3 | 628 | 123 |
 
 The alternating layout adds 7 bytes on three-key and 10 bytes on six-key boards
 compared with assigning drift rates in key-number order (14,324/14,323 bytes).
@@ -92,7 +92,7 @@ observed stack usage under heavy workloads. Host renderer checks cover both vari
 drift and timer wraps, unchanged fixed presets, saved-preset previews, and reset.
 Build outputs are temporary; checked-in release artifacts were preserved.
 
-### Stack usage hardware validation
+### Stack Usage Hardware Validation
 
 Hardware validation is complete: the user measured a peak observed stack usage
 of 36 bytes, even under heavy workloads. Against the current documented
@@ -103,7 +103,7 @@ historical build measurements; the hardware result is a subsequent validation.
 The 36-byte result is the peak observed under the tested workloads. Linker
 capacity figures continue to describe available space rather than runtime usage.
 
-## Optimizations retained
+## Optimizations Retained
 
 The first full three-key implementation used 15,006 bytes. Behavior-preserving
 optimizations reduced it by 678 bytes, without relying on removal of preview:
@@ -133,7 +133,7 @@ ASCII table trimming was measured and discarded because it increased final code 
 
 - `python3 tests/run_host_tests.py`: configuration, action, protocol/storage, USB,
   and physical-input/renderer suites pass (input suite runs both variants).
-- Firmware and browser independently test all 4,096 **LED command**/value payloads on
+- Firmware and browser independently test all 4,096 **LED Command**/value payloads on
   both variants and agree on the 112 accepted combinations. Unknown commands,
   invalid absolute values, relative zero/-8, and nonzero restore-all values fail.
 - Renderer tests cover visibility, every brightness policy pair, held keys, blink
@@ -155,7 +155,7 @@ No hardware was flashed. Timing, USB, and renderer behavior were tested with hos
 register/USB stubs and the web simulator; physical USB enumeration, LEDs, and timing
 on actual three-key/six-key hardware remain the final hardware checks.
 
-## Implementation boundary
+## Implementation Boundary
 
 The renderer's internal `firmwareLedAction` entry point requires validated arguments,
 as documented in its header. Physical dispatch only reaches it through validated
@@ -164,11 +164,11 @@ validation; the helper does not duplicate that validation. This differs from the
 plan's additional defensive behavior for hypothetical callers outside validated paths.
 There are no such production callers. Future callers must preserve this precondition.
 
-## Preset / configured toggle extension
+## Preset / Configured Toggle Extension
 
 Added command `0D` (`commonPresetToggle`), accepting preset indices 1..4. The
-editor adds “**Toggle preset on/off**” and reuses the setting dropdown under
-“Preset,” defaulting to **Layers off, keys dim**. Configured itself is excluded.
+editor adds “**Toggle Preset On/Off**” and reuses the setting dropdown under
+“Preset,” defaulting to **Layers Off, Keys Dim**. Configured itself is excluded.
 Matching the current brightness policy pair restores both configured policies;
 any other pair applies the selected preset. Phase and speed are preserved, with
 no remembered toggle state or additional persistent RAM.
@@ -176,10 +176,10 @@ no remembered toggle state or additional persistent RAM.
 Fresh temporary builds with the same toolchain, preview enabled, and the normal
 14,336-byte linker limit:
 
-| Variant | Before toggle | With toggle | Flash free | xRAM used / available | Stack region |
+| Variant | Before Toggle | With Toggle | Flash Free | xRAM Used / Available | Stack Region |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,331 | 14,321 | 15 | 619 / 876 | 128 |
-| Six-key | 14,333 | 14,325 | 11 | 628 / 876 | 125 |
+| Three-Key | 14,331 | 14,321 | 15 | 619 / 876 | 128 |
+| Six-Key | 14,333 | 14,325 | 11 | 628 / 876 | 125 |
 
 The net reduction comes from returning the relative nibble's low three bits as
 the internal validation truth value, checking only the sign of validated nonzero
@@ -204,7 +204,7 @@ existing v6 profiles remain compatible with this extension. No hardware was
 flashed or release artifacts generated. Checked-in releases were preserved;
 the uploader packaging check still uses those existing releases.
 
-## Conditional indicator preset feasibility (not retained)
+## Conditional Indicator Preset Feasibility (Not Retained)
 
 See the [reimplementation guide](conditional-indicator-preset.md) for exact firmware
 steps, the saved prototype patch, editor changes, and required tests.
@@ -218,10 +218,10 @@ preset indices retained their meanings. No browser changes were made.
 
 Temporary builds with the normal 14,336-byte limit measured:
 
-| Variant | Working toggle baseline | Conditional preset prototype | Over limit |
+| Variant | Working Toggle Baseline | Conditional Preset Prototype | Over Limit |
 | --- | ---: | ---: | ---: |
-| Three-key | 14,321 | 14,352 | 16 |
-| Six-key | 14,325 | 14,356 | 20 |
+| Three-Key | 14,321 | 14,352 | 16 |
+| Six-Key | 14,325 | 14,356 | 20 |
 
 Both linker checks failed. The prototype added 31 bytes per variant; the six-key
 result exceeded the user's approximately 16-byte over-limit cutoff. The firmware
@@ -229,7 +229,7 @@ and validation edits were restored exactly to the working toggle implementation.
 The new preset was not retained or behavior-tested. No release artifacts were
 changed and no hardware was flashed for this experiment.
 
-## Synchronized relative-both brightness
+## Synchronized Relative-Both Brightness
 
 Current firmware resolves the indicator and key brightness policies, selects the
 brighter value, applies the signed step once through **Off** / **Dim** / **Bright**, and stores
@@ -243,10 +243,10 @@ firmware must be updated to obtain the synchronized behavior.
 Fresh temporary builds with CH55xDuino 0.0.25, SDCC build.13407_4,
 `--opt-code-size`, `ENABLE_COLOR_PREVIEW=1`, and the 14,336-byte limit measured:
 
-| Variant | Before synchronization | Updated flash | Increase | Flash free | Contiguous xRAM free | Stack capacity |
+| Variant | Before Synchronization | Updated Flash | Increase | Flash Free | Contiguous xRAM Free | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,201 | 14,259 | 58 | 77 | 231 | 123 |
-| Six-key | 14,205 | 14,263 | 58 | 73 | 222 | 120 |
+| Three-Key | 14,201 | 14,259 | 58 | 77 | 231 | 123 |
+| Six-Key | 14,205 | 14,263 | 58 | 73 | 222 | 120 |
 
 Before synchronization, the README documented 135 / 131 bytes of flash headroom,
 giving the baseline figures above. The first synchronized implementation added

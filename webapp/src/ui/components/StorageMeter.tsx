@@ -17,7 +17,7 @@ export function StorageMeter() {
   return (
     <section class={`card storage ${over ? 'is-over' : ''}`}>
       <header class="card-head">
-        <h2>Device storage</h2>
+        <h2>Device Storage</h2>
         <span class={over ? 'warn' : 'muted'}>
           {over ? `${-cap.remaining} byte${cap.remaining === -1 ? '' : 's'} over` : `${cap.remaining} of ${IMAGE_SIZE} bytes free`}
         </span>
@@ -43,7 +43,7 @@ export function StorageMeter() {
       </ul>
       {cap.pool.length > 0 && (
         <details class="pool">
-          <summary>String pool ({cap.strings} byte{cap.strings === 1 ? '' : 's'})</summary>
+          <summary>String Pool ({cap.strings} byte{cap.strings === 1 ? '' : 's'})</summary>
           <ol>
             {cap.pool.map((s, i) => (
               <li key={i}><code>{s === '' ? '(empty)' : s.replace(/\n/g, '⏎').replace(/\t/g, '⇥')}</code> <span class="muted mono">{s.length + 1}</span></li>

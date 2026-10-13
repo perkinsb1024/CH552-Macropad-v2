@@ -27,10 +27,10 @@ async function connectWithEdits() {
 it('compares the device with the editor without changing either or resolving the prompt', async () => {
   const edited = await connectWithEdits();
   const prompt = dialog.value!;
-  expect(prompt.title).toBe('Keep your unsaved edits?');
+  expect(prompt.title).toBe('Keep Your Unsaved Edits?');
   const comparison = prompt.comparison!;
   expect(comparison.editor).toEqual(edited);
-  expect(profileChanges(comparison.device, comparison.editor).map(c => c.where)).toEqual(['Chord window']);
+  expect(profileChanges(comparison.device, comparison.editor).map(c => c.where)).toEqual(['Chord Window']);
   expect(profile.value).toEqual(edited);
   expect(baseline.value).toBeNull();
   expect(dirty.value).toBe(true);
@@ -44,7 +44,7 @@ it('still keeps the editor when Keep my edits is selected', async () => {
   const edited = await connectWithEdits();
   const prompt = dialog.value!;
   const device = cloneProfile(prompt.comparison!.device);
-  prompt.actions.find(a => a.label === 'Keep my edits')!.onSelect();
+  prompt.actions.find(a => a.label === 'Keep My Edits')!.onSelect();
   expect(dialog.value).toBeNull();
   expect(profile.value).toEqual(edited);
   expect(baseline.value).toEqual(device);
@@ -55,7 +55,7 @@ it('still replaces the editor and clears the fresh start when Load from device i
   await connectWithEdits();
   const prompt = dialog.value!;
   const device = cloneProfile(prompt.comparison!.device);
-  prompt.actions.find(a => a.label === 'Load from device')!.onSelect();
+  prompt.actions.find(a => a.label === 'Load from Device')!.onSelect();
   expect(dialog.value).toBeNull();
   expect(profile.value).toEqual(device);
   expect(baseline.value).toEqual(device);

@@ -40,7 +40,7 @@ export function Shortcuts() {
         </button>
       </h2>
       <div id="shortcuts-content" class="shortcuts-content" hidden={!expanded}>
-        <div class="segmented" role="group" aria-label="Shortcut operating system">
+        <div class="segmented" role="group" aria-label="Shortcut Operating System">
           {FILTERS.map((filter) => (
             <button key={filter.value} type="button" class={os === filter.value ? 'is-selected' : ''}
               aria-pressed={os === filter.value} onClick={() => setOS(filter.value)}>{filter.label}</button>
@@ -48,10 +48,10 @@ export function Shortcuts() {
         </div>
         <div class="shortcuts-search">
           <IconSearch />
-          <input type="search" aria-label="Search shortcuts" placeholder="Search shortcuts…" value={query}
+          <input type="search" aria-label="Search Shortcuts" placeholder="Search Shortcuts…" value={query}
             onInput={(event) => setQuery((event.target as HTMLInputElement).value)} />
         </div>
-        <div class="shortcut-library-scroll-shadow"><div ref={libraryRef} class="shortcut-library" role="region" aria-label="Shortcut actions" tabIndex={0}>
+        <div class="shortcut-library-scroll-shadow"><div ref={libraryRef} class="shortcut-library" role="region" aria-label="Shortcut Actions" tabIndex={0}>
           {shortcuts.map((shortcut) => (
             <div key={shortcut.id} class="shortcut-preset" draggable
               title={[shortcut.binding, shortcut.note].filter(Boolean).join(' — ')}

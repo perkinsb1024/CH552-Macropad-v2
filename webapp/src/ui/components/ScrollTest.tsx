@@ -47,14 +47,14 @@ export function ScrollTest({ onClose }: { onClose(): void }) {
       <h2 id="scroll-test-title">Scroll &amp; Click Test</h2>
       <p>Move your pointer into the test area, then use your macropad to scroll or click. This tests the settings currently saved on the macropad.</p>
       {dirty.value && <div class="notice notice-warn" role="alert">You currently have unsaved changes. Be sure to save your changes to the macropad for this test to work correctly.</div>}
-      <div ref={area} class="scroll-test-area" tabIndex={0} aria-label="Scroll and click test area" onClick={countClick} onAuxClick={event => { event.preventDefault(); countClick(event); }} onContextMenu={event => event.preventDefault()} onMouseDown={event => { if (event.button !== 0) event.preventDefault(); }}>
+      <div ref={area} class="scroll-test-area" tabIndex={0} aria-label="Scroll and Click Test Area" onClick={countClick} onAuxClick={event => { event.preventDefault(); countClick(event); }} onContextMenu={event => event.preventDefault()} onMouseDown={event => { if (event.button !== 0) event.preventDefault(); }}>
         <div class="scroll-test-grid">
           {['Top left', 'Top', 'Top right', 'Left', 'Scroll in any direction', 'Right', 'Bottom left', 'Bottom', 'Bottom right'].map(label => <div key={label}>{label}</div>)}
         </div>
       </div>
       <p class="hint">The browser may intercept side buttons or expose only buttons 1–5. Missing events for buttons 6–8 do not establish whether another application supports them.</p>
       <div class="scroll-test-counts">
-        <h3>Click count</h3>
+        <h3>Click Count</h3>
         <div aria-live="polite" aria-atomic="true">
           {MOUSE_BUTTONS.map(({ label, bit }, index) => (
             <span key={bit} class="mouse-button-column"><span class={`mouse-button-state${heldButtons & bit ? ' is-held' : ''}`}>{heldButtons & bit ? 'Held' : 'Released'}</span><span>{label}: <output>{counts[index]}</output></span></span>
@@ -62,7 +62,7 @@ export function ScrollTest({ onClose }: { onClose(): void }) {
         </div>
       </div>
       <div class="dialog-actions">
-        <button type="button" class="btn" onClick={() => setCounts(MOUSE_BUTTONS.map(() => 0))}>Reset counts</button>
+        <button type="button" class="btn" onClick={() => setCounts(MOUSE_BUTTONS.map(() => 0))}>Reset Counts</button>
         <button type="button" class="btn btn-primary" onClick={onClose}>Close</button>
       </div>
     </dialog>

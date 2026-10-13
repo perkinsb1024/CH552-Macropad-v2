@@ -8,10 +8,10 @@ import { IconChevron } from './Icons';
 const initializedLayerOptions = new WeakSet<HTMLDetailsElement>();
 
 const BEHAVIORS = [
-  { value: LayerIndicatorBehavior.None, label: 'Do not indicate' },
-  { value: LayerIndicatorBehavior.TimedOn, label: 'On for 1.5 seconds' },
-  { value: LayerIndicatorBehavior.BlinkByLayer, label: 'Blink by layer number' },
-  { value: LayerIndicatorBehavior.AlwaysOn, label: 'Always on' },
+  { value: LayerIndicatorBehavior.None, label: 'Do Not Indicate' },
+  { value: LayerIndicatorBehavior.TimedOn, label: 'On for 1.5 Seconds' },
+  { value: LayerIndicatorBehavior.BlinkByLayer, label: 'Blink by Layer Number' },
+  { value: LayerIndicatorBehavior.AlwaysOn, label: 'Always On' },
 ];
 const BLINK_COUNTS = ['once', 'twice', 'three times', 'four times', 'five times', 'six times', 'seven times'];
 
@@ -34,7 +34,7 @@ export function LayerOptions() {
       </summary>
       <div class="field layer-indicator-options">
         <label class="field" htmlFor="layer-indicator-behavior">
-          <span class="field-label">Layer indicator mode</span>
+          <span class="field-label">Layer Indicator Mode</span>
           <select
             id="layer-indicator-behavior"
             value={layer.indicatorBehavior}
@@ -48,7 +48,7 @@ export function LayerOptions() {
         </label>
         {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
           <div class="field led-color-field">
-            <span class="field-label">Layer indicator color</span>
+            <span class="field-label">Layer Indicator Color</span>
             <div class="color-toolbar">
               <span class="color-selection">
                 <span
@@ -57,10 +57,10 @@ export function LayerOptions() {
                   aria-hidden="true"
                 />
                 {rainbow && layer.indicatorColor === 15 ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name ?? 'Unknown'}
-                {!layer.indicatorFullBrightness && ' (dim)'}
+                {!layer.indicatorFullBrightness && ' (Dim)'}
               </span>
             </div>
-            <div class="palette" role="radiogroup" aria-label="Layer indicator color">
+            <div class="palette" role="radiogroup" aria-label="Layer Indicator Color">
               {PALETTE.map((color) => {
                 const name = rainbow && color.index === 15 ? 'Rainbow' : color.name;
                 return (
@@ -79,7 +79,7 @@ export function LayerOptions() {
               })}
             </div>
             <div class="layer-indicator-controls">
-              <div class="segmented" role="group" aria-label="Layer indicator brightness">
+              <div class="segmented" role="group" aria-label="Layer Indicator Brightness">
                 <button
                   type="button"
                   class={layer.indicatorFullBrightness ? 'is-selected' : ''}

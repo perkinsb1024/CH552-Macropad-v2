@@ -1,9 +1,9 @@
-# Timed actions: second optimization investigation
+# Timed Actions: Second Optimization Investigation
 
 Baseline: checkpoint `0961153`, six-key 15,139 bytes (803 over), three-key
 15,135 bytes, SDCC build.13407_4. Preserve released features and retain full
 seven-bit intervals, optional input reset and resume actions where possible.
-**Timed actions** may use the existing tap/encoder-compatible action subset; held
+**Timed Actions** may use the existing tap/encoder-compatible action subset; held
 actions are outside this pass. No release generation, upload or push.
 
 ## Plan
@@ -41,14 +41,14 @@ resume action on the next input, independent mouse-toggle ownership, and all
 existing physical-input/LED/USB capabilities. The separate auto-sleep experiment
 was already absent from the checkpoint, so it contributed no new savings here.
 
-**Timed actions** still use the encoder-compatible subset: complete key taps and
+**Timed Actions** still use the encoder-compatible subset: complete key taps and
 other actions that do not require a held/released input lifecycle. A tap includes
 both key down and key up; physical key-down activity resets an opted-in timer even
 when that key has no binding. Timed holds remain outside this pass, as requested.
 Format-7 editor support remains unimplemented; this result is a size-compliant,
 host-tested firmware prototype, not a finished UI or hardware-tested release.
 
-## Primary references and conclusions
+## Primary References and Conclusions
 
 - [SDCC Compiler User Guide](https://sdcc.sourceforge.net/doc/sdccman.pdf), sections
   3.5.1, 3.15 and 4.1: memory-specific pointers and the small model make selective
@@ -69,12 +69,12 @@ host-tested firmware prototype, not a finished UI or hardware-tested release.
 No compiler upgrade, bootloader-space borrowing, reduced code-limit checks,
 assembly rewriting of application routines, or changed USB descriptors was needed.
 
-## Measured retained optimizations
+## Measured Retained Optimizations
 
 The rows are incremental builds in this order, using the same six-key geometry,
 24 MHz configuration and normal 14,336-byte linker limit.
 
-| Change | Saved bytes | Resulting flash | Free / over |
+| Change | Saved Bytes | Resulting Flash | Free / Over |
 | --- | ---: | ---: | ---: |
 | Checkpoint `0961153` | — | 15,139 | 803 over |
 | Validate a string start by its preceding NUL instead of rescanning the pool | 24 | 15,115 | 779 over |
@@ -84,7 +84,7 @@ The rows are incremental builds in this order, using the same six-key geometry,
 | Let startup clearing initialize two USB zero-valued globals | 2 | 14,289 | 47 free |
 | Omit unused XINIT copying while explicitly retaining XRAM clearing | 34 | 14,255 | 81 free |
 
-### Paged runtime state
+### Paged Runtime State
 
 The main saving is addressing, not a smaller feature set. Action state formerly
 required 16-bit DPTR setup and more register saving when accessing xRAM. The
@@ -110,7 +110,7 @@ on six-key and from 131 to 125 on three-key. These are historical linker capacit
 Subsequent [hardware stack validation](led-control-implementation.md#stack-usage-hardware-validation)
 measured 36 bytes peak observed usage under heavy workloads, leaving ample headroom.
 
-### Shared timer path
+### Shared Timer Path
 
 `timedEvent()` walks records once for either kind of event. It computes the new
 counter state and chooses no dispatch, expiry action or resume action, then uses
@@ -119,7 +119,7 @@ input precedence, independent periods, queue bounds and one-shot behavior are
 unchanged. Counter state is committed before dispatch; dispatched actions cannot
 mutate the timer configuration or reenter the timer service.
 
-### Startup optimization and rejected unsafe variant
+### Startup Optimization and Rejected Unsafe Variant
 
 Simply enabling `--no-xinit-opt` measured 14,219 bytes, but was rejected:
 it removes both the XINIT copier and implicit external-RAM zeroing, including
@@ -133,12 +133,12 @@ machine code for both geometries was inspected: it clears PSEG starting at 0x94,
 sets P2 to zero, and clears the separate XSEG range. Ordinary internal-RAM startup
 initialization is also retained.
 
-## Concession variants: still unnecessary
+## Concession Variants: Still Unnecessary
 
 All six builds below passed the normal linker and the new memory-layout checks.
 The retained design continues to use four timers and the full option set.
 
-| Variant | Flash | Free bytes | Paged bytes | Stack capacity |
+| Variant | Flash | Free Bytes | Paged Bytes | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: |
 | Retained, six-key | 14,255 | 81 | 102 | 122 |
 | Retained, three-key | 14,251 | 85 | 102 | 125 |
@@ -152,7 +152,7 @@ adds validation rather than saving code. Removing resume actions now saves only
 68 bytes relative to the compact variant because much of its implementation is
 shared. There is no reason to remove released features to fit the retained design.
 
-## Verification and reproduction
+## Verification and Reproduction
 
 - Complete `python3 tests/run_host_tests.py` suite passes: configuration, actions,
   protocol, USB, and physical input/LED rendering for both boards.
@@ -177,7 +177,7 @@ tree on top of the user's checkpoint; extra experiment branches were unnecessary
 The original [findings](timed-actions-findings.md) preserve the first-pass costs
 and remaining UI/behavior limitations. This report supersedes their size outcome.
 
-## Follow-up: fill the remaining six paged bytes
+## Follow-Up: Fill the Remaining Six Paged Bytes
 
 Starting from checkpoint `18fb0aa`, moved the six one-byte sketch variables
 previously identified in four groups: `encoderState`, `encoderMovement`,
@@ -189,10 +189,10 @@ the entire linked paged allocation now spans 0x0094–0x00FF.
 
 Fresh before/after temporary builds at the normal 14,336-byte limit measured:
 
-| Hardware | Before flash | After flash | Saved | After free | Stack before / after |
+| Hardware | Before Flash | After Flash | Saved | After Free | Stack Before / After |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Six-key | 14,255 | 14,231 | 24 | 105 | 122 / 122 |
-| Three-key | 14,251 | 14,227 | 24 | 109 | 125 / 125 |
+| Six-Key | 14,255 | 14,231 | 24 | 105 | 122 / 122 |
+| Three-Key | 14,251 | 14,227 | 24 | 109 | 125 / 125 |
 
 PSEG increases from 102 to 108 bytes. Ordinary XSEG decreases by six bytes
 (538 → 532 on six-key, 529 → 523 on three-key), leaving the final RAM address

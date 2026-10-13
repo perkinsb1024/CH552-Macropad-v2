@@ -73,7 +73,7 @@ it('preserves usage and modifiers when switching a modified tap to a hold', () =
   profile.value = defaultProfile(0);
   selectedSlot.value = { kind: 'key', layer: 0, index: 0 };
   setAction(selectedSlot.value, { type: 'consumerModified', usage: 0x70, modifiers: 15 });
-  const hold = nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Media behavior')!).find(n => n.type === 'button' && n.props.children === 'Hold')!;
+  const hold = nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Media Behavior')!).find(n => n.type === 'button' && n.props.children === 'Hold')!;
   (hold.props.onClick as () => void)();
   expect(getAction(profile.value, selectedSlot.value)).toEqual({ type: 'consumerModifiedHold', usage: 0x70, modifiers: 15 });
   const picker = nodes(Inspector()).find(n => typeof n.type === 'function' && n.type.name === 'ModifierPicker')!;

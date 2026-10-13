@@ -1,4 +1,4 @@
-# Always-on indicator inactivity sleep experiment
+# Always-On Indicator Inactivity Sleep Experiment
 
 Status: implemented in the working tree, over the flash limit, not released
 or flashed. The initial six-key result exceeded the user's 16-byte over-limit
@@ -6,7 +6,7 @@ cutoff. A subsequently authorized reuse/optimization pass reduced the excess to
 41 bytes, so the feature still cannot fit. There is no editor control or browser
 codec support for the flag yet.
 
-## Behavior and encoding
+## Behavior and Encoding
 
 Header byte 3 bit 6 (`0x40`, `CONFIG_HEADER_LED_SLEEP`) enables inactivity sleep.
 Clear means disabled. Layer count and startup-layer bits are unchanged. Header
@@ -35,7 +35,7 @@ the encoder writes it as zero. Browser work is deferred until the size decision:
 add an opt-in profile setting, binary/JSON preservation, defaults/migrations,
 validation, comparison/undo reporting, and a profile-panel control with tests.
 
-## One-byte timer
+## One-Byte Timer
 
 `ledIdle` is one additional direct internal RAM byte. Its low bit tracks bit 15
 of the existing 16-bit `now` value; every change of that clock phase increments
@@ -50,15 +50,15 @@ bit make the timeout approximate: around 69–70 minutes, rather than exactly
 4,194.304 seconds after every input. Detecting phase changes assumes the main loop
 continues running frequently enough not to skip a 32.768-second phase.
 
-## Initial measured cost
+## Initial Measured Cost
 
 Normal 14,336-byte linker limit, CH55xDuino 0.0.25 / SDCC build.13407_4,
 `--opt-code-size`, color preview enabled:
 
-| Variant | Baseline flash | With LED sleep | Added bytes | Over limit | xRAM used / available | Stack region |
+| Variant | Baseline Flash | With LED Sleep | Added Bytes | Over Limit | xRAM Used / Available | Stack Region |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,321 | 14,419 | 98 | 83 | 619 / 876 | 127 |
-| Six-key | 14,325 | 14,423 | 98 | 87 | 628 / 876 | 124 |
+| Three-Key | 14,321 | 14,419 | 98 | 83 | 619 / 876 | 127 |
+| Six-Key | 14,325 | 14,423 | 98 | 87 | 628 / 876 | 124 |
 
 The six-key baseline was freshly rebuilt in a separate temporary source copy;
 the three-key baseline matches the recorded working toggle measurement. Both new
@@ -74,19 +74,19 @@ removed by system cleanup. Regenerate them with the existing `build_firmware.py`
 using variant arguments 0/1 and limit 14336. No release-generation command was
 used, and checked-in release files were preserved.
 
-## Reuse and optimization measurements
+## Reuse and Optimization Measurements
 
 The retained implementation shares the renderer's existing indicator-suppression
-branch, rather than replacing the brightness policy through an **LED command**.
+branch, rather than replacing the brightness policy through an **LED Command**.
 That preserves timed/blink indications and the currently selected LED preset.
 Button events share their redraw path; completed encoder detents share reset and
 redraw handling in both directions. The clock-phase comparison explicitly narrows
 the shifted time to a byte, avoiding unnecessary 16-bit intermediate operations.
 
-| Variant | Initial prototype | Retained implementation | Bytes saved | Added over baseline | Over limit |
+| Variant | Initial Prototype | Retained Implementation | Bytes Saved | Added Over Baseline | Over Limit |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,419 | 14,373 | 46 | 52 | 37 |
-| Six-key | 14,423 | 14,377 | 46 | 52 | 41 |
+| Three-Key | 14,419 | 14,373 | 46 | 52 | 37 |
+| Six-Key | 14,423 | 14,377 | 46 | 52 | 41 |
 
 Both retained builds still fail the normal linker size check. RAM figures remain
 as above. Temporary retained measurements are in

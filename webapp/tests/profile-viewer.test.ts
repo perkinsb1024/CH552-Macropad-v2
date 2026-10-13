@@ -137,7 +137,7 @@ it('filters local chords with the viewed layer and keeps global chords and all t
     const chords = nodes(ViewerChords()).filter(n => n.type === 'li');
     expect(chords).toHaveLength(2);
     expect(text(chords[0])).toContain(layer === 0 ? '1+2' : '3+4');
-    expect(text(chords[1])).toContain('all layers');
+    expect(text(chords[1])).toContain('All Layers');
     expect(text(ViewerTimers())).toContain('consumed');
     expect(nodes(ViewerTimers()).some(n => ['input', 'button', 'select'].includes(String(n.type)))).toBe(false);
   }

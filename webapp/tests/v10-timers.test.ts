@@ -113,9 +113,9 @@ function nodes(v: unknown): Node[] {
 it('edits interval and scope, remaps moved layers and preserves timers when their layer is deleted', () => {
   profile.value = defaultProfile(0); profile.value.timedActions = [timer()];
   const field = (label: string) => nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === label)!;
-  (field('Timer 1 interval ticks').props.onInput as (e: unknown) => void)({ target: { value: '73' } });
+  (field('Timer 1 Interval Ticks').props.onInput as (e: unknown) => void)({ target: { value: '73' } });
   expect(profile.value.timedActions[0]!.ticks).toBe(73);
-  (field('Timer 1 layer').props.onChange as (e: unknown) => void)({ target: { value: '1' } });
+  (field('Timer 1 Layer').props.onChange as (e: unknown) => void)({ target: { value: '1' } });
   expect(profile.value.timedActions[0]!.layer).toBe(1);
   insertLayer(1, 0, 'before'); expect(profile.value!.timedActions![0]!.layer).toBe(0);
   removeLayer(0);

@@ -17,7 +17,7 @@ import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 import { ScrollTest } from './ScrollTest';
 
-const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED control', 'Macros'] as const;
+const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED Control', 'Macros'] as const;
 type MouseButtonAction = Extract<Action, { type: 'mouseClick' | 'mouseHold' | 'mouseToggle' | 'mouseDown' | 'mouseUp' }>;
 const MOUSE_BEHAVIORS = [
   { type: 'mouseClick', label: 'Click', hint: 'Press and release the selected buttons.' },
@@ -43,7 +43,7 @@ function ConsumerUsageInput({ usage, onChange, reduced = false }: { usage: numbe
     if (valid) onChange(parseInt(value, 16));
     setDraft(null);
   };
-  return <input class="mono" value={value} maxLength={digits} aria-label="Consumer usage in hex"
+  return <input class="mono" value={value} maxLength={digits} aria-label="Consumer Usage in Hex"
     aria-invalid={!valid} title={reduced ? "Enter a hexadecimal usage from 01 to FF" : "Enter a hexadecimal usage from 001 to FFF"}
     onInput={(e) => {
       const input = e.currentTarget;
@@ -84,7 +84,7 @@ function ConsumerControl({ action, onChange }: {
                 {choices.filter((c) => c.group === group).map((c) => <option key={c.usage} value={c.usage}>{c.name}</option>)}
               </optgroup>
             ))}
-            <optgroup label="Advanced"><option value="custom">Custom usage…</option></optgroup>
+            <optgroup label="Advanced"><option value="custom">Custom Usage…</option></optgroup>
           </select>
           {custom && (
             <div class="row">
@@ -114,7 +114,7 @@ function MouseButtons({ value, onChange }: { value: number; onChange(v: number):
   );
   return (
     <div class="field">
-      <span class="field-label">Mouse buttons</span>
+      <span class="field-label">Mouse Buttons</span>
       <div class="chips mouse-button-picker">
         {buttons.slice(0, 5).map(buttonControl)}
         <button type="button" class="inline-link" aria-expanded={showMore} onClick={() => setShowMore(!showMore)}>{showMore ? 'Less' : 'More'}</button>
@@ -158,7 +158,7 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
           <button type="button" class={negative ? 'is-selected' : ''} aria-pressed={negative} onClick={() => setDirection(true)}>{negativeLabel}</button>
           <button type="button" class={!negative ? 'is-selected' : ''} aria-pressed={!negative} onClick={() => setDirection(false)}>{positiveLabel}</button>
         </div>
-        {onTest && <span class="hint">Some computers may invert these settings, in which case you will need to swap {negativeLabel.toLowerCase()} and {positiveLabel.toLowerCase()}. <button type="button" class="inline-link" onClick={onTest}>Click here</button> to test the scrolling behavior.</span>}
+        {onTest && <span class="hint">Some computers may invert these settings, in which case you will need to swap {negativeLabel.toLowerCase()} and {positiveLabel.toLowerCase()}. <button type="button" class="inline-link" onClick={onTest}>Click Here</button> to test the scrolling behavior.</span>}
       </div>
   );
   return (
@@ -206,7 +206,7 @@ export function Inspector() {
   if (!p || !slot || !action) {
     return (
       <section class="card inspector inspector-empty">
-        <h2>Action editor</h2>
+        <h2>Action Editor</h2>
         <p class="muted">Select a key, the encoder, a chord, a timed action, or a macro step on the left to edit what it does.</p>
       </section>
     );
@@ -297,22 +297,22 @@ export function Inspector() {
       <header class="card-head">
         <div class="inspector-title">
           <h2>{slot.kind === 'timed' || slot.kind === 'macro' ? slotLabel(slot) : slotLabel(slot).split(' · ')[1]}</h2>
-          <span class="muted">{slot.kind === 'timed' || slot.kind === 'macro' ? 'Across all layers' : layerName(slot.layer)}</span>
+          <span class="muted">{slot.kind === 'timed' || slot.kind === 'macro' ? 'Across All Layers' : layerName(slot.layer)}</span>
         </div>
         {slot.kind === 'chord' && (
-          <button class="btn btn-icon btn-ghost" aria-label="Remove chord" onClick={() => removeChord(slot)}><IconTrash /></button>
+          <button class="btn btn-icon btn-ghost" aria-label="Remove Chord" onClick={() => removeChord(slot)}><IconTrash /></button>
         )}
       </header>
 
       <label class="field">
         <span class="field-label">Action</span>
         <select value={isPointerAction(action) ? 'mouseX' : isMouseButtonAction(action) ? 'mouseClick' : actionFamilyType(action.type)} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
-          {!actionDescriptor && <option value={action.type} disabled>Unsupported saved action</option>}
+          {!actionDescriptor && <option value={action.type} disabled>Unsupported Saved Action</option>}
           {GROUPS.filter(group => selectableActions.some(d => d.group === group)).map((group) => (
             <optgroup key={group} label={group}>
               {selectableActions.filter(d => d.group === group).map((d) => (
                 <option key={d.type} value={d.type} disabled={rotation && d.needsRelease}>
-                  {d.type === 'keyTap' ? 'Key press' : d.type === 'mouseX' ? 'Move mouse' : d.label}{rotation && d.needsRelease ? ' (buttons only)' : ''}
+                  {d.type === 'keyTap' ? 'Key Press' : d.type === 'mouseX' ? 'Move Mouse' : d.label}{rotation && d.needsRelease ? ' (Buttons Only)' : ''}
                 </option>
               ))}
             </optgroup>
@@ -323,9 +323,9 @@ export function Inspector() {
 
       {(isKeyAction(action) || isMediaAction(action) || isLayerAction(action)) && <div class="field">
         <span class="field-label">Behavior</span>
-        <div class="segmented" role="group" aria-label={isKeyAction(action) ? 'Key behavior' : isMediaAction(action) ? 'Media behavior' : 'Layer behavior'} aria-describedby="family-behavior-hint">
+        <div class="segmented" role="group" aria-label={isKeyAction(action) ? 'Key Behavior' : isMediaAction(action) ? 'Media Behavior' : 'Layer Behavior'} aria-describedby="family-behavior-hint">
           {ACTION_FAMILIES[actionFamilyType(action.type) as keyof typeof ACTION_FAMILIES].map((type, index) => {
-            const label = isLayerAction(action) ? ['Switch', 'One-shot', 'Hold'][index] : ['Tap', 'Hold'][index];
+            const label = isLayerAction(action) ? ['Switch', 'One-Shot', 'Hold'][index] : ['Tap', 'Hold'][index];
             const hold = ACTION_DESCRIPTORS.find(d => d.type === type)!.needsRelease;
             return <button key={type} type="button" class={action.type === type ? 'is-selected' : ''} aria-pressed={action.type === type}
               disabled={hold && (rotation || isPreviousLayer(action))} onClick={() => setFamilyBehavior(type)}>{label}</button>;
@@ -336,7 +336,7 @@ export function Inspector() {
             ? actionNeedsRelease(action) ? 'Hold the selected control until physical release.' : 'Press and release the selected control once.'
             : actionDescriptor?.hint}
           {rotation && <> Hold is not available on this input because it has no physical release.</>}
-          {isPreviousLayer(action) && !rotation && <> Hold is not available for Previous layer. Choose a specific target layer to use Hold.</>}
+          {isPreviousLayer(action) && !rotation && <> Hold is not available for Previous Layer. Choose a specific target layer to use Hold.</>}
         </span>
       </div>}
 
@@ -344,7 +344,7 @@ export function Inspector() {
       {action.type === 'macro' && <>
         <label class="field"><span class="field-label">Macro</span>
           <select aria-label="Macro" value={action.macro} onChange={e => { const index = Number((e.target as HTMLSelectElement).value); update({ ...action, macro: index, repeats: macroSwitchesLayer(p.macros?.[index]?.actions ?? []) ? 1 : action.repeats }); }}>
-            {!p.macros?.[action.macro] && <option value={action.macro}>Choose a macro — add one in Macros</option>}
+            {!p.macros?.[action.macro] && <option value={action.macro}>Choose a Macro — Add One in Macros</option>}
             {p.macros?.map((macro, index) => <option value={index}>Macro {index + 1} ({macro.actions.length} step{macro.actions.length === 1 ? '' : 's'})</option>)}
           </select>
         </label>
@@ -355,18 +355,18 @@ export function Inspector() {
             <button type="button" class={action.repeats === 1 ? 'is-selected' : ''} aria-pressed={action.repeats === 1} onClick={() => update({ ...action, repeats: 1 })}>Off</button>
           </div>
           {action.repeats > 1 && <label class="field macro-run-count-field">
-            <span class="field-label">Run count <output>{action.repeats}</output></span>
-            <input type="range" aria-label="Run count" min={2} max={16} step={1} disabled={singleRun} value={action.repeats} onInput={e => update({ ...action, repeats: singleRun ? 1 : Math.max(2, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value) || 2))) })} />
+            <span class="field-label">Run Count <output>{action.repeats}</output></span>
+            <input type="range" aria-label="Run Count" min={2} max={16} step={1} disabled={singleRun} value={action.repeats} onInput={e => update({ ...action, repeats: singleRun ? 1 : Math.max(2, Math.min(16, Math.round(Number((e.target as HTMLInputElement).value) || 2))) })} />
           </label>}
         </div>}
       </>}
       {singleRun && <p class="hint">This macro switches layers, so it cannot be repeated</p>}
-      {action.type === 'pause' && <label class="field"><span class="field-label">Pause duration <output>{action.ticks * 16}ms</output></span>
-        <input type="range" aria-label="Pause duration" min={0} max={255} value={action.ticks} onInput={e => update({ ...action, ticks: Number((e.target as HTMLInputElement).value) })} />
+      {action.type === 'pause' && <label class="field"><span class="field-label">Pause Duration <output>{action.ticks * 16}ms</output></span>
+        <input type="range" aria-label="Pause Duration" min={0} max={255} value={action.ticks} onInput={e => update({ ...action, ticks: Number((e.target as HTMLInputElement).value) })} />
         <span class="hint">16ms steps. Add consecutive pauses for longer waits.</span>
       </label>}
       {action.type === 'ledControl' && <>
-        <label class="field"><span class="field-label">LED command</span>
+        <label class="field"><span class="field-label">LED Command</span>
           <select value={isLedEffect(action.command) ? 'temporaryEffect' : action.command} onChange={(e) => {
             const selection = (e.target as HTMLSelectElement).value;
             const command = (selection === 'temporaryEffect' ? 'effectRestore' : selection) as LedCommand;
@@ -375,7 +375,7 @@ export function Inspector() {
             update({ type: 'ledControl', command, value: spec.relative ? 1 : command === 'restoreAll' || command === 'effectRestore' ? 0 : command === 'commonPresetSet' ? 0 : command === 'commonPresetToggle' ? 3 : 'asConfigured' });
           }}>
             {LED_COMMANDS.filter((c) => c.command !== 'restoreAll' && !isLedEffect(c.command)).map((c) => <option value={c.command}>{c.label}</option>)}
-            <option value="temporaryEffect">Set all LEDs</option>
+            <option value="temporaryEffect">Set All LEDs</option>
             <option value="" disabled>────────────────────</option>
             {LED_COMMANDS.filter((c) => c.command === 'restoreAll').map((c) => <option value={c.command}>{c.label}</option>)}
           </select>
@@ -389,28 +389,28 @@ export function Inspector() {
               update({ type: 'ledControl', command, value: command === 'effectRestore' ? 0 : action.command === 'effectRestore' ? 15 : action.value,
                 ...(command !== 'effectRestore' && action.brightness === 'dim' ? { brightness: 'dim' as const } : {}) });
             }}>
-              <option value="effectRestore">As configured</option>
-              <option value="effectOn">Always on</option>
+              <option value="effectRestore">As Configured</option>
+              <option value="effectOn">Always On</option>
               <option value="blink">Blink</option>
             </select>
           </label>
           {action.command.startsWith('effectBlink') && <label class="field">
-            <span class="field-label">Blink count <output>{ledCommandSpec(action.command)!.code - 0x81} {action.command === 'effectBlink1' ? 'time' : 'times'}</output></span>
-            <input type="range" min={1} max={8} step={1} value={ledCommandSpec(action.command)!.code - 0x81} aria-label="Blink count" onInput={(e) => {
+            <span class="field-label">Blink Count <output>{ledCommandSpec(action.command)!.code - 0x81} {action.command === 'effectBlink1' ? 'time' : 'times'}</output></span>
+            <input type="range" min={1} max={8} step={1} value={ledCommandSpec(action.command)!.code - 0x81} aria-label="Blink Count" onInput={(e) => {
               const count = Number((e.target as HTMLInputElement).value);
               if (Number.isInteger(count) && count >= 1 && count <= 8) update({ ...action, command: `effectBlink${count}` as LedCommand });
             }} />
           </label>}
           {action.command !== 'effectRestore' && <div class="field led-color-field">
             <span class="field-label">Color</span>
-            <div class="palette" role="radiogroup" aria-label="Temporary LED effect color">
+            <div class="palette" role="radiogroup" aria-label="Temporary LED Effect Color">
               {PALETTE.map(c => <button type="button" role="radio" aria-checked={action.value === c.index}
                 aria-label={c.index === 15 ? 'Rainbow' : c.name} title={c.index === 15 ? 'Rainbow' : c.name}
                 class={`swatch-btn ${action.value === c.index ? 'is-selected' : ''}`}
                 style={c.index === 15 ? 'background:linear-gradient(135deg, red, yellow, lime, cyan, blue, magenta)' : `--c:${c.hex}`}
                 onClick={() => update({ ...action, value: c.index })} />)}
             </div>
-            <div class="segmented" role="group" aria-label="Temporary LED effect brightness">
+            <div class="segmented" role="group" aria-label="Temporary LED Effect Brightness">
               <button type="button" class={action.brightness !== 'dim' ? 'is-selected' : ''}
                 aria-pressed={action.brightness !== 'dim'} onClick={() => {
                   const { brightness, ...brightAction } = action;
@@ -420,9 +420,9 @@ export function Inspector() {
                 aria-pressed={action.brightness === 'dim'} onClick={() => update({ ...action, brightness: 'dim' })}>Dim</button>
             </div>
           </div>}
-          <p class="hint">Always on persists until replaced, restored, or the layer changes. Key feedback can cover it. Blinking covers key feedback. Clearing or finishing an effect restores normal lighting without replaying the layer's blink or timed indication; brightness overrides remain in effect.</p>
+          <p class="hint">Always On persists until replaced, restored, or the layer changes. Key feedback can cover it. Blinking covers key feedback. Clearing or finishing an effect restores normal lighting without replaying the layer's blink or timed indication; brightness overrides remain in effect.</p>
         </> : ledCommandSpec(action.command)?.relative ?
-          <label class="field"><span class="field-label">Relative step</span>
+          <label class="field"><span class="field-label">Relative Step</span>
             <select value={action.value} onChange={(e) => {
               const value = Number((e.target as HTMLSelectElement).value);
               if (ledRelativeSteps.includes(value)) update({ ...action, value });
@@ -433,7 +433,7 @@ export function Inspector() {
             </select>
             <span class="hint">{ledRelativeCycle(action.command, action.value)}</span>
           </label>
-          : action.command !== 'restoreAll' && <label class="field"><span class="field-label">{action.command === 'commonPresetToggle' ? 'Preset' : 'LED setting'}</span>
+          : action.command !== 'restoreAll' && <label class="field"><span class="field-label">{action.command === 'commonPresetToggle' ? 'Preset' : 'LED Setting'}</span>
             <select value={action.value} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; update({ ...action, value: v === 'asConfigured' ? v : Number(v) as LedValue }); }}>
               {ledValueOptions(action.command).map((o) => <option value={o.value}>{o.label}</option>)}
             </select>
@@ -441,7 +441,7 @@ export function Inspector() {
           </label>}
         {!isLedEffect(action.command) && <p class="hint">{action.command === 'commonPresetToggle'
           ? 'Lighting overrides apply across layers. Indicator brightness preserves its configured visibility mode.'
-          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative starts from the brighter current brightness, applies the step once, and sets both to the result. As configured resolves to the current layer indicator brightness and bright key feedback. Common presets include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
+          : 'Lighting overrides apply across layers. Key LEDs off lets the idle background show. Both-relative starts from the brighter current brightness, applies the step once, and sets both to the result. As Configured resolves to the current layer indicator brightness and bright key feedback. Common presets include configured behavior. Indicator brightness preserves its configured visibility mode.'}</p>}
       </>}
 
       {(action.type === 'consumerModified' || action.type === 'consumerModifiedHold') && (
@@ -455,7 +455,7 @@ export function Inspector() {
       {isMouseButtonAction(action) && <>
         <label class="field">
           <span class="field-label">Behavior</span>
-          <select aria-label="Mouse behavior" aria-describedby="mouse-behavior-hint" value={action.type}
+          <select aria-label="Mouse Behavior" aria-describedby="mouse-behavior-hint" value={action.type}
             onChange={e => setMouseBehavior((e.target as HTMLSelectElement).value as MouseButtonAction['type'])}>
             {MOUSE_BEHAVIORS.map(behavior => <option key={behavior.type} value={behavior.type} disabled={behavior.type === 'mouseHold' && rotation}>{behavior.label}</option>)}
           </select>
@@ -473,28 +473,28 @@ export function Inspector() {
       {action.type === 'mouseClick' && (
         <div class="field">
           <span class="field-label">Clicks</span>
-          <div class="segmented" role="group" aria-label="Click behavior">
+          <div class="segmented" role="group" aria-label="Click Behavior">
             <button type="button" class={(action.clicks ?? 1) === 1 ? 'is-selected' : ''} aria-pressed={(action.clicks ?? 1) === 1} onClick={() => update({ type: 'mouseClick', buttons: action.buttons })}>Single</button>
             <button type="button" class={action.clicks === 2 ? 'is-selected' : ''} aria-pressed={action.clicks === 2} onClick={() => update({ ...action, clicks: 2 })}>Double</button>
             <button type="button" class={(action.clicks ?? 1) >= 3 ? 'is-selected' : ''} aria-pressed={(action.clicks ?? 1) >= 3} onClick={() => update({ ...action, clicks: (action.clicks ?? 1) >= 3 ? action.clicks : rememberedCustomClickCount(slot) })}>Custom</button>
           </div>
           {(action.clicks ?? 1) >= 3 && <label class="field click-count-field">
-            <span class="field-label">Click count <output>{action.clicks}</output></span>
-            <input type="range" min={3} max={16} step={1} value={action.clicks} aria-label="Click count" onInput={(e) => update({ ...action, clicks: Math.max(3, Math.min(singleRun ? 1 : 16, Math.round(Number((e.target as HTMLInputElement).value)))) })} />
+            <span class="field-label">Click Count <output>{action.clicks}</output></span>
+            <input type="range" min={3} max={16} step={1} value={action.clicks} aria-label="Click Count" onInput={(e) => update({ ...action, clicks: Math.max(3, Math.min(singleRun ? 1 : 16, Math.round(Number((e.target as HTMLInputElement).value)))) })} />
             <span class="hint">This click action will take about {(((action.clicks ?? 1) * 8 + ((action.clicks ?? 1) - 1) * 200) / 1000).toFixed(1)} seconds, delaying subsequent queued actions.</span>
           </label>}
         </div>
       )}
 
       {isMouseButtonAction(action) && (
-        <p class="hint"><button type="button" class="inline-link" onClick={() => setShowScrollTest(true)}>Click here</button> to test your configured mouse events.</p>
+        <p class="hint"><button type="button" class="inline-link" onClick={() => setShowScrollTest(true)}>Click Here</button> to test your configured mouse events.</p>
       )}
 
       {action.type === 'scroll' && (
-        <DirectionalStep onTest={() => setShowScrollTest(true)} label="Wheel step" directionLabel="Scroll direction" negativeLabel={action.horizontal ? 'Left' : 'Up'} positiveLabel={action.horizontal ? 'Right' : 'Down'} hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })}>
+        <DirectionalStep onTest={() => setShowScrollTest(true)} label="Wheel Step" directionLabel="Scroll Direction" negativeLabel={action.horizontal ? 'Left' : 'Up'} positiveLabel={action.horizontal ? 'Right' : 'Down'} hint={action.hold ? 'Wheel counts per repeat.' : 'Wheel counts per press or encoder detent.'} value={action.delta} onChange={(delta) => update({ ...action, delta })}>
           <div class="field">
-            <span class="field-label">Scroll axis</span>
-            <div class="segmented" role="group" aria-label="Scroll axis">
+            <span class="field-label">Scroll Axis</span>
+            <div class="segmented" role="group" aria-label="Scroll Axis">
               <button type="button" class={!action.horizontal ? 'is-selected' : ''} aria-pressed={!action.horizontal} onClick={() => update({ ...action, horizontal: false })}>Vertical</button>
               <button type="button" class={action.horizontal ? 'is-selected' : ''} aria-pressed={!!action.horizontal} onClick={() => update({ ...action, horizontal: true })}>Horizontal</button>
             </div>
@@ -504,8 +504,8 @@ export function Inspector() {
       {(action.type === 'scroll' || action.type === 'mouseX' || action.type === 'mouseY' || action.type === 'mouseXY') && (
         <div class="field">
           {!rotation && <>
-            <span class="field-label">{action.type === 'scroll' ? 'Scroll behavior' : 'Behavior'}</span>
-            <div class="segmented" role="group" aria-label={action.type === 'scroll' ? 'Scroll behavior' : 'Behavior'}>
+            <span class="field-label">{action.type === 'scroll' ? 'Scroll Behavior' : 'Behavior'}</span>
+            <div class="segmented" role="group" aria-label={action.type === 'scroll' ? 'Scroll Behavior' : 'Behavior'}>
               <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
               <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
             </div>
@@ -532,8 +532,8 @@ export function Inspector() {
       )}
 
       {action.type === 'mouseXY' && <>
-        <DirectionalStep directionFirst label="Horizontal amount" directionLabel="Horizontal direction" negativeLabel="Left" positiveLabel="Right" min={4} max={64} step={4} value={action.x} onChange={x => update({ ...action, x })} />
-        <DirectionalStep directionFirst label="Vertical amount" directionLabel="Vertical direction" negativeLabel="Up" positiveLabel="Down" min={4} max={64} step={4} value={action.y} onChange={y => update({ ...action, y })} />
+        <DirectionalStep directionFirst label="Horizontal Amount" directionLabel="Horizontal Direction" negativeLabel="Left" positiveLabel="Right" min={4} max={64} step={4} value={action.x} onChange={x => update({ ...action, x })} />
+        <DirectionalStep directionFirst label="Vertical Amount" directionLabel="Vertical Direction" negativeLabel="Up" positiveLabel="Down" min={4} max={64} step={4} value={action.y} onChange={y => update({ ...action, y })} />
       </>}
 
       {(action.type === 'consumer' || action.type === 'consumerHold' || action.type === 'consumerModified' || action.type === 'consumerModifiedHold') && (
@@ -554,11 +554,11 @@ export function Inspector() {
           }} onInput={(e) => update({ ...action, text: normalizeText((e.target as HTMLTextAreaElement).value) })} placeholder="Typed with the US keyboard layout" />
           {action.text.length > 0 && <span class="hint" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>Preview: “{visibleText(action.text)}”</span>}
           {savedStrings.length > 0 && (
-            <select aria-label="Reuse an existing string" value="" onChange={(e) => {
+            <select aria-label="Reuse an Existing String" value="" onChange={(e) => {
               const text = (e.target as HTMLSelectElement).value;
               if (text) update({ ...action, text });
             }}>
-              <option value="">Reuse an existing string…</option>
+              <option value="">Reuse an Existing String…</option>
               {savedStrings.map((text) => <option key={text} value={text}>{visibleText(text)}</option>)}
             </select>
           )}
@@ -568,10 +568,10 @@ export function Inspector() {
 
       {(action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && (
         <label class="field">
-          <span class="field-label">Target layer</span>
+          <span class="field-label">Target Layer</span>
           <select value={action.layer} onChange={(e) => update({ ...action, layer: Number((e.target as HTMLSelectElement).value) })}>
             {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}{slot.kind !== 'timed' && i === slot.layer ? ' (this layer)' : ''}</option>)}
-            {action.type !== 'momentaryLayer' && <option value={PREVIOUS_LAYER}>Previous layer</option>}
+            {action.type !== 'momentaryLayer' && <option value={PREVIOUS_LAYER}>Previous Layer</option>}
             {action.layer >= layerCount && !isPreviousLayer(action) && <option value={action.layer}>Layer {action.layer + 1} (missing)</option>}
           </select>
           {isPreviousLayer(action) && <span class="hint">{action.type === 'oneShotSetLayer'
@@ -582,8 +582,8 @@ export function Inspector() {
 
       {(action.type === 'relativeLayer' || action.type === 'oneShotRelativeLayer' || action.type === 'momentaryRelativeLayer') && (
         <label class="field">
-          <span class="field-label">Relative offset <output>{action.offset > 0 ? `+${action.offset}` : action.offset}</output></span>
-          <input type="range" min={1 - maxLayers(p.variant)} max={maxLayers(p.variant) - 1} step={1} value={action.offset} aria-label="Relative offset" onInput={(e) => update({ ...action, offset: Number((e.target as HTMLInputElement).value) })} />
+          <span class="field-label">Relative Offset <output>{action.offset > 0 ? `+${action.offset}` : action.offset}</output></span>
+          <input type="range" min={1 - maxLayers(p.variant)} max={maxLayers(p.variant) - 1} step={1} value={action.offset} aria-label="Relative Offset" onInput={(e) => update({ ...action, offset: Number((e.target as HTMLInputElement).value) })} />
           <span class="hint">{action.type === 'momentaryRelativeLayer' ? 'Relative to the selected base layer at press time. The target stays fixed until release.' : slot.kind === 'timed' ? 'Relative to the active layer when the timer fires.' : `Layer ${slot.layer + 1} → Layer ${relativeTargetLayer(slot.layer, action.offset, layerCount) + 1}`}</span>
         </label>
       )}
@@ -597,7 +597,7 @@ export function Inspector() {
 
       {keyIndex !== null && (
         <div class="field led-color-field">
-          <span class="field-label">LED color on key press</span>
+          <span class="field-label">LED Color on Key Press</span>
           <div class="color-toolbar">
             <span class="color-selection">
               <span class={`color-selection-dot ${layer.leds[keyIndex] === 15 ? 'swatch-off' : ''}`} style={`--c:${PALETTE[layer.leds[keyIndex]!]?.hex ?? '#000000'}`} aria-hidden="true" />
@@ -605,11 +605,11 @@ export function Inspector() {
             </span>
             {keyCount(p.variant) > 1 && (
               <button type="button" class="btn btn-small color-apply" title="Apply this color to every key on the current layer" onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds = d.layers[slot.layer]!.leds.map(() => layer.leds[keyIndex]!); })}>
-                Apply to layer
+                Apply to Layer
               </button>
             )}
           </div>
-          <div class="palette" role="radiogroup" aria-label="LED color">
+          <div class="palette" role="radiogroup" aria-label="LED Color">
             {PALETTE.map((c) => (
               <button
                 key={c.index}

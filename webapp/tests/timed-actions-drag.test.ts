@@ -32,7 +32,7 @@ function fire(node: Node, name: string, e = event()) {
   return e;
 }
 function timedButton(resume: boolean, index = 0) {
-  return nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === `Edit timer ${index + 1} ${resume ? 'resume action' : 'action'}`)!;
+  return nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === `Edit Timer ${index + 1} ${resume ? 'Resume Action' : 'Action'}`)!;
 }
 const timerSlot = (resume: boolean, index = 0): Slot => ({ kind: 'timed', layer: 0, index, resume });
 

@@ -13,7 +13,7 @@ export function IssuesPanel() {
     <>
       {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
         <summary class="card-head">
-          <h2><IconWarning /> Fix before saving</h2>
+          <h2><IconWarning /> Fix Before Saving</h2>
           <span class="warn">{list.length}</span>
           <IconChevron />
         </summary>
@@ -31,16 +31,16 @@ export function IssuesPanel() {
         </ul>
       </details>}
       {unused.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
-        <summary class="card-head"><h2><IconWarning /> Macros without triggers</h2><span class="warn">{unused.length}</span><IconChevron /></summary>
+        <summary class="card-head"><h2><IconWarning /> Macros without Triggers</h2><span class="warn">{unused.length}</span><IconChevron /></summary>
         <p class="hint">These warnings do not block saving or upload.</p>
         <ul>{unused.map(index => <li key={index}>
           <button class="link" onClick={() => navigateToMacro(index)}>Macro {index + 1}</button>
-          <span>No triggering action is assigned. Assign <strong>Execute macro</strong> to a key, encoder, chord, or timer to run it.</span>
+          <span>No triggering action is assigned. Assign <strong>Execute Macro</strong> to a key, encoder, chord, or timer to run it.</span>
         </li>)}</ul>
       </details>}
       {toggles.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
         <summary class="card-head">
-          <h2><IconWarning /> Repeating toggle actions</h2>
+          <h2><IconWarning /> Repeating Toggle Actions</h2>
           <span class="warn">{toggles.length}</span>
           <IconChevron />
         </summary>
@@ -56,7 +56,7 @@ export function IssuesPanel() {
       </details>}
       {layerWarnings.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
         <summary class="card-head">
-          <h2><IconWarning /> Self-referential layer changes</h2>
+          <h2><IconWarning /> Self-Referential Layer Changes</h2>
           <span class="warn">{layerWarnings.length}</span>
           <IconChevron />
         </summary>
@@ -72,7 +72,7 @@ export function IssuesPanel() {
       </details>}
       {warnings.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite">
         <summary class="card-head">
-          <h2><IconWarning /> Layer reachability</h2>
+          <h2><IconWarning /> Layer Reachability</h2>
           <span class="warn">{warnings.length}</span>
           <IconChevron />
         </summary>

@@ -23,7 +23,7 @@ export function ShortcutPills({ usage, modifiers, hold = false, showTooltip = tr
 export function ActionLabel({ action, showTooltip = true }: { action: Action; showTooltip?: boolean }) {
   if (action.type === 'string') return (
     <span class="text-action-preview" title={showTooltip ? actionTooltip(action) : undefined}>
-      {action.text.length ? `“${visibleText(action.text)}”` : 'Empty text'}
+      {action.text.length ? `“${visibleText(action.text)}”` : 'Empty Text'}
     </span>
   );
   if (action.type === 'none') return <NonePill />;

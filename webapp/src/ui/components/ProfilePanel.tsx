@@ -2,7 +2,7 @@ import { DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAI
 import { baseline, layerName, profile, updateProfile } from '../store';
 import { IconChevron } from './Icons';
 
-const PHASE_LABELS = ['All LEDs together', 'Gentle color wave', 'Rainbow sweep', 'Scattered colors'];
+const PHASE_LABELS = ['All LEDs Together', 'Gentle Color Wave', 'Rainbow Sweep', 'Scattered Colors'];
 
 export function ProfilePanel() {
   const p = profile.value!;
@@ -21,7 +21,7 @@ export function ProfilePanel() {
       </summary>
       <div class="field-grid">
         <label class="field field-wide">
-          <span class="field-label">Startup layer</span>
+          <span class="field-label">Startup Layer</span>
           <select value={p.startupLayer} onChange={(e) => updateProfile((d) => { d.startupLayer = Number((e.target as HTMLSelectElement).value); })}>
             {p.layers.map((_, i) => <option key={i} value={i}>{layerName(i)}</option>)}
             {p.startupLayer >= p.layers.length && <option value={p.startupLayer}>Layer {p.startupLayer + 1} (missing)</option>}
@@ -29,7 +29,7 @@ export function ProfilePanel() {
         </label>
         {p.chords.length > 0 && <label class="field field-wide">
           <span class="field-label">
-            Chord window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5}ms`}</output>
+            Chord Window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5}ms`}</output>
           </span>
           <input type="range" min={0} max={15} step={1} value={p.chordWindow} onInput={(e) => updateProfile((d) => { d.chordWindow = Number((e.target as HTMLInputElement).value); }, 'chord-window')} />
           <span class="hint">
@@ -39,7 +39,7 @@ export function ProfilePanel() {
           </span>
         </label>}
         {showRainbowSettings && <div class="field">
-          <label class="field-label" htmlFor="rainbow-phase">Rainbow phase spacing</label>
+          <label class="field-label" htmlFor="rainbow-phase">Rainbow Phase Spacing</label>
           <select id="rainbow-phase" value={p.rainbowPhase} onChange={(e) => updateProfile((d) => { d.rainbowPhase = Number((e.target as HTMLSelectElement).value); })}>
             {RAINBOW_PHASE_LABELS.map((label, i) => <option key={i} value={i}>{`${label} — ${PHASE_LABELS[i]}`}</option>)}
           </select>
@@ -47,7 +47,7 @@ export function ProfilePanel() {
           {phaseUnsaved && <span class="notice notice-info" role="status">Color previews will not use this setting until it is saved to the device</span>}
         </div>}
         {showRainbowSettings && <div class="field">
-          <label class="field-label" htmlFor="rainbow-speed">Rainbow speed</label>
+          <label class="field-label" htmlFor="rainbow-speed">Rainbow Speed</label>
           <select id="rainbow-speed" value={p.rainbowSpeed} onChange={(e) => updateProfile((d) => { d.rainbowSpeed = Number((e.target as HTMLSelectElement).value); })}>
             {RAINBOW_SPEED_LABELS.map((label, i) => <option key={i} value={i}>{label}</option>)}
           </select>
@@ -55,8 +55,8 @@ export function ProfilePanel() {
           {speedUnsaved && <span class="notice notice-info" role="status">Color previews will not use this setting until it is saved to the device</span>}
         </div>}
         {showOffBehavior && <div class="field field-wide">
-          <span class="field-label">For key LEDs, "Off" means:</span>
-          <div class="segmented" role="group" aria-label={'For key LEDs, "Off" means'}>
+          <span class="field-label">For Key LEDs, "Off" Means:</span>
+          <div class="segmented" role="group" aria-label={'For Key LEDs, "Off" Means'}>
             <button
               type="button"
               class={p.transparentBlack ? 'is-selected' : ''}

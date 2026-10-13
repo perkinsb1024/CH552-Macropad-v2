@@ -1,4 +1,4 @@
-# Six-byte timer intervals and flash fit
+# Six-Byte Timer Intervals and Flash Fit
 
 The opt-in repository scheduler now implements the later
 [eleven-bit variant](eleven-bit-timer-findings.md). The eight-bit results below
@@ -16,7 +16,7 @@ both boards without degrading or removing a feature. Armed next-input actions
 survive layer transitions; scoped intervals reset at actual effective-layer
 changes, including momentary and one-shot layers.
 
-| Retained build | Six-key flash | Three-key flash | Free, six / three |
+| Retained Build | Six-Key Flash | Three-Key Flash | Free, Six / Three |
 | --- | ---: | ---: | ---: |
 | Optimized normal v9 firmware, existing five-byte timers | 14,142 | 14,138 | 194 / 198 |
 | Opt-in six-byte, eight-bit, layer-scoped experiment | 14,292 | 14,290 | 44 / 46 |
@@ -30,7 +30,7 @@ No feature-degradation/removal choices are needed. Color preview, invalid-config
 LED blinking, both bootloader entry paths, all action types, layers, chords,
 lighting, scrolling, USB reports and configuration validation remain available.
 
-## Global-only interval costs, before optimization
+## Global-Only Interval Costs, Before Optimization
 
 These are the requested six-byte records without any layer-specific validation,
 countdown gating or layer-change hooks. They retain expiry/next-input actions,
@@ -41,7 +41,7 @@ its size by subtracting a layer feature cost.
 The first comparison spends the extra interval bits on resolution while retaining
 the existing maximum duration of 8,388.608 s (2 h 19 min 48.608 s):
 
-| Interval bits | Selectable step | Six-key flash | Three-key flash | Added flash on either board |
+| Interval Bits | Selectable Step | Six-Key Flash | Three-Key Flash | Added Flash on Either Board |
 | --- | ---: | ---: | ---: | ---: |
 | 8 | 32.768 s | 14,344 | 14,340 | 14 |
 | 10 | 8.192 s | 14,430 | 14,426 | 100 |
@@ -57,7 +57,7 @@ is 107 / 110 bytes; these wider-counter probes report 97 / 100.
 The fine-clock step also changes to keep 256 fractional increments per selectable
 interval unit. Counter wrap therefore imposes different maximum gaps between polls:
 
-| Interval bits | Fine-clock quantum | Poll gap must remain below |
+| Interval Bits | Fine-Clock Quantum | Poll Gap Must Remain Below |
 | --- | ---: | ---: |
 | 8 | 128ms | 32.768 s |
 | 10 | 32ms | 8.192 s |
@@ -72,13 +72,13 @@ The fourteen-bit build is smaller than ten/twelve because SDCC emits shorter
 code for shifting `millis()` by one bit. That does not make fourteen-bit counters
 intrinsically cheaper than ten-bit counters.
 
-### Alternative: spend the bits on range
+### Alternative: Spend the Bits on Range
 
 A second comparison keeps the eight-bit design's 32.768-second interval unit and
 128ms fine clock. This preserves its 32.768-second polling-wrap tolerance and
 extends the maximum duration instead:
 
-| Interval bits | Maximum duration | Six-key flash | Three-key flash | Added flash on either board |
+| Interval Bits | Maximum Duration | Six-Key Flash | Three-Key Flash | Added Flash on Either Board |
 | --- | ---: | ---: | ---: | ---: |
 | 10 | 33,554.432 s, about 9 h 19 min | 14,420 | 14,416 | 90 |
 | 12 | 134,217.728 s, about 37 h 17 min | 14,420 | 14,416 | 90 |
@@ -93,7 +93,7 @@ Ten bits would still leave enough room for a three-bit layer selector in a
 different packing; twelve and fourteen would not. The retained scoped eight-bit
 layout remains the initial experiment's scope-in-bits-0–2 encoding.
 
-## Retained optimizations
+## Retained Optimizations
 
 The most useful change is shortening USB control-transfer arithmetic while
 retaining sixteen-bit host-request semantics. All current descriptors are under
@@ -112,7 +112,7 @@ sections and host-visible responses are unchanged.
 The following table shows incremental retained measurements for six-key
 experimental firmware. The three-key savings are the same.
 
-| Change | Incremental saving | Resulting flash |
+| Change | Incremental Saving | Resulting Flash |
 | --- | ---: | ---: |
 | Previous scoped eight-bit prototype | — | 14,508 |
 | Byte-sized USB transfer lengths, with saturation | 126 | 14,382 |
@@ -137,7 +137,7 @@ previous hardware study observed a 36-byte peak, but this changed firmware has
 not had a new hardware stack measurement. No allocation crosses the USB DMA
 reservation, page-zero boundary or physical external-RAM limit.
 
-### Rejected alternatives
+### Rejected Alternatives
 
 Moving upload state into internal or paged RAM made the prototype 10–18 bytes
 larger. Moving USB queue scalars in the first combinations caused direct-RAM
@@ -151,7 +151,7 @@ Moving a 32-byte protocol inbox into paged RAM saved 38 bytes, but required movi
 button-state relocation reduced six-key stack capacity to 45 bytes. The retained
 code simplification avoids that tradeoff and keeps substantially more stack room.
 
-## Retained experimental code and compatibility
+## Retained Experimental Code and Compatibility
 
 The opt-in scheduler is in `src/timed_actions_experiment.inc`, included by
 `actions.c` only when `CONFIG_TIMED_LAYER_EXPERIMENT=1`. Its config validation,
@@ -171,7 +171,7 @@ A published format, migration and editor support remain separate work. No
 config-v10 document, configurator change, release generation, upload or commit
 was made in this investigation.
 
-## Verification and reproduction
+## Verification and Reproduction
 
 - Both retained modes and both boards build at the real 14,336-byte limit.
 - The full normal firmware host suite passes: config, actions, protocol, USB,

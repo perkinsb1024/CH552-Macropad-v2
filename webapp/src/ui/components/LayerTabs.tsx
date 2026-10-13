@@ -33,15 +33,15 @@ function AddLayerMenu() {
       }
     }}>
       <div class="layer-add-buttons">
-        <button type="button" class="tab tab-add" onClick={() => { setOpen(false); addLayer(); }} title="Create a new blank layer"><IconPlus /> Add layer</button>
-        <button type="button" class="tab tab-add layer-add-trigger" ref={triggerRef} aria-label="More layer options" title="More layer options" aria-haspopup="menu" aria-expanded={open} aria-controls={open ? 'layer-add-options' : undefined} onClick={() => setOpen(!open)}><IconChevron /></button>
+        <button type="button" class="tab tab-add" onClick={() => { setOpen(false); addLayer(); }} title="Create a new blank layer"><IconPlus /> Add Layer</button>
+        <button type="button" class="tab tab-add layer-add-trigger" ref={triggerRef} aria-label="More Layer Options" title="More Layer Options" aria-haspopup="menu" aria-expanded={open} aria-controls={open ? 'layer-add-options' : undefined} onClick={() => setOpen(!open)}><IconChevron /></button>
       </div>
-      {open && <div class="menu-list" id="layer-add-options" role="menu" aria-label="Layer options">
+      {open && <div class="menu-list" id="layer-add-options" role="menu" aria-label="Layer Options">
         <button type="button" role="menuitem" ref={itemRef} onClick={() => {
           setOpen(false);
           triggerRef.current?.focus();
           addLayer('duplicate');
-        }}>Duplicate current layer</button>
+        }}>Duplicate Current Layer</button>
       </div>}
     </div>
   );
@@ -72,7 +72,7 @@ export function LayerTabs() {
       body: `All local chords and bindings on this layer will be deleted. Global chords will be kept. Timers assigned to this layer will need a new layer assignment.${p.startupLayer === current ? '\nLayer 1 will become the new startup layer.' : ''}\nNothing changes on the device until you save.`,
       actions: [
         { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
-        { label: 'Remove layer', tone: 'danger', onSelect: () => { removeLayer(current); closeDialog(); } },
+        { label: 'Remove Layer', tone: 'danger', onSelect: () => { removeLayer(current); closeDialog(); } },
       ],
     });
   };

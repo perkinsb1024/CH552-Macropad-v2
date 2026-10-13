@@ -11,8 +11,8 @@ export function ColorPreview({ color, fullBrightness = true, rainbow = false }: 
   }
   return (
     <div class="color-preview-actions">
-      <button type="button" class="btn btn-small color-preview-button" disabled={!available} onClick={() => void previewColor(color, fullBrightness, rainbow)}>Preview color</button>
-      <button type="button" class="btn btn-small btn-ghost" disabled={!available} onClick={() => void cancelPreview()}>Cancel preview</button>
+      <button type="button" class="btn btn-small color-preview-button" disabled={!available} onClick={() => void previewColor(color, fullBrightness, rainbow)}>Preview Color</button>
+      <button type="button" class="btn btn-small btn-ghost" disabled={!available} onClick={() => void cancelPreview()}>Cancel Preview</button>
     </div>
   );
 }

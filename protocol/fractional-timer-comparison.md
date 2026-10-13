@@ -1,4 +1,4 @@
-# Eleven-bit timers with and without fractional phase
+# Eleven-Bit Timers with and without Fractional Phase
 
 Decision: retain the fractional counters. Removing them increases flash use,
 and preserving the current stack capacity is a priority for subsequent work.
@@ -12,7 +12,7 @@ in both versions. The comparison changes temporary source copies only.
 
 All quantities are bytes.
 
-| Pad | Per-timer fractional counter | Flash | Spare flash | Internal RAM occupied | Paged RAM | Other external RAM | Available stack |
+| Pad | Per-Timer Fractional Counter | Flash | Spare Flash | Internal RAM Occupied | Paged RAM | Other External RAM | Available Stack |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Six keys | Present | 14,294 | 42 | 180 | 108 | 496 | 75 |
 | Six keys | Removed | 14,302 | 34 | 176 | 108 | 496 | 79 |
@@ -29,7 +29,7 @@ Removal saves four internal bytes, enlarges the stack region by four bytes and
 uses eight additional flash bytes on either board. Paged and other external RAM
 are unchanged. Both versions fit the actual 14,336-byte application limit.
 
-## Implementation and timing tradeoff
+## Implementation and Timing Tradeoff
 
 The retained version uses `millis()` bits 4–11 for a 16ms fine clock and one
 fractional byte per timer. After 256 fine ticks, a timer's interval age advances
@@ -55,7 +55,7 @@ to eight bytes, as shown above. An alternative that combined the two clock
 fragments generated a smaller flash estimate but failed internal-RAM allocation;
 it was rejected and is not a usable build.
 
-## Validation and reproduction
+## Validation and Reproduction
 
 Both final pairs passed the targeted host probes and actual-limit firmware
 builds, including startup and RAM layout checks. The probes cover interval

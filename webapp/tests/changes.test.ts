@@ -14,7 +14,7 @@ describe('unsaved profile changes', () => {
     saved.layers[0]!.leds[0] = 0;
     const edited = cloneProfile(saved);
     edited.layers[0]!.leds[0] = 1;
-    expect(profileChanges(saved, edited)).toContainEqual({ where: 'Layer 1 · Key 1 color', before: 'Red', after: 'Coral' });
+    expect(profileChanges(saved, edited)).toContainEqual({ where: 'Layer 1 · Key 1 Color', before: 'Red', after: 'Coral' });
     edited.layers[0]!.leds[0] = saved.layers[0]!.leds[0]!;
     expect(profileChanges(saved, edited)).toEqual([]);
     expect(profileChanges(edited, cloneProfile(edited))).toEqual([]);
@@ -34,12 +34,12 @@ describe('unsaved profile changes', () => {
     layer.indicatorFullBrightness = !saved.layers[0]!.indicatorFullBrightness;
     const changes = profileChanges(saved, edited);
     expect(changes.map((change) => change.where)).toEqual([
-      'Layer 1 · Key 1', 'Layer 1 · Encoder button', 'Layer 1 · Clockwise',
-      'Layer 1 · Counterclockwise', 'Layer 1 · Layer selection LEDs',
-      'Layer 1 · Indicator color', 'Layer 1 · Indicator brightness',
+      'Layer 1 · Key 1', 'Layer 1 · Encoder Button', 'Layer 1 · Clockwise',
+      'Layer 1 · Counterclockwise', 'Layer 1 · Layer Selection LEDs',
+      'Layer 1 · Indicator Color', 'Layer 1 · Indicator Brightness',
     ]);
     expect(changes[0]!.after).toBe(`Type ${JSON.stringify(layer.keys[0].text)}`);
-    expect(changes.find((change) => change.where.endsWith('Indicator color'))!.after).toBe('Rainbow');
+    expect(changes.find((change) => change.where.endsWith('Indicator Color'))!.after).toBe('Rainbow');
   });
 
   it('describes profile settings and added or removed layers', () => {
@@ -51,8 +51,8 @@ describe('unsaved profile changes', () => {
     edited.transparentBlack = !saved.transparentBlack;
     edited.chordWindow = 0;
     expect(profileChanges(saved, edited)).toEqual(expect.arrayContaining([
-      { where: 'Startup layer', before: 'Layer 1', after: 'Layer 2' },
-      { where: 'Chord window', before: `${saved.chordWindow * 5}ms`, after: 'Disabled' },
+      { where: 'Startup Layer', before: 'Layer 1', after: 'Layer 2' },
+      { where: 'Chord Window', before: `${saved.chordWindow * 5}ms`, after: 'Disabled' },
       { where: 'Layer 2', after: 'Added' },
     ]));
     expect(profileChanges(edited, saved)).toContainEqual({ where: 'Layer 2', before: 'Removed' });
@@ -70,9 +70,9 @@ describe('unsaved profile changes', () => {
     edited.chords[0]!.action = { type: 'string', text: 'Hello' };
     edited.chords[1]!.global = true;
     const changes = profileChanges(saved, edited);
-    expect(changes).toContainEqual({ where: 'All layers · Chord 2 + 3', before: 'Nothing', after: 'Type "Hello"' });
+    expect(changes).toContainEqual({ where: 'All Layers · Chord 2 + 3', before: 'Nothing', after: 'Type "Hello"' });
     expect(changes).toContainEqual({ where: 'Layer 1 · Chord 1 + 2', before: 'Nothing', after: 'Removed' });
-    expect(changes).toContainEqual({ where: 'All layers · Chord 1 + 2', before: 'Not assigned', after: 'Nothing' });
+    expect(changes).toContainEqual({ where: 'All Layers · Chord 1 + 2', before: 'Not Assigned', after: 'Nothing' });
   });
 
   it('explains when no comparison baseline exists', () => {
@@ -148,7 +148,7 @@ describe('unsaved profile changes', () => {
     saved.layers[0]!.indicatorBehavior = LayerIndicatorBehavior.None;
     const edited = cloneProfile(saved);
     edited.layers[0]!.indicatorBehavior = LayerIndicatorBehavior.AlwaysOn;
-    expect(changesWithUndo(saved, edited).map((change) => change.where)).toEqual(['Layer 1 · Layer selection LEDs']);
+    expect(changesWithUndo(saved, edited).map((change) => change.where)).toEqual(['Layer 1 · Layer Selection LEDs']);
   });
 
   it('records a row revert in the main undo history', () => {

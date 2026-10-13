@@ -132,12 +132,12 @@ it('offers Previous layer only for persistent and one-shot selectors, including 
     selectedSlot.value = { kind: 'key', layer: 0, index: 0 }; setAction(selectedSlot.value, { type, layer: 0 });
     const options = nodes(Inspector()).filter(n => n.type === 'option' && n.props.value === 255);
     expect(options).toHaveLength(type === 'momentaryLayer' ? 0 : 1);
-    if (options.length) expect(options[0]!.props.children).toBe('Previous layer');
+    if (options.length) expect(options[0]!.props.children).toBe('Previous Layer');
   }
   selectedSlot.value = { kind: 'timed', layer: 0, index: 0, resume: true };
   expect(nodes(Inspector()).some(n => n.props.children === 'Layer 256 (missing)')).toBe(false);
-  expect(nodes(Inspector()).some(n => n.props.children === 'Previous layer')).toBe(true);
-  expect(summarize(previous)).toBe('Previous layer'); expect(summarize(oneShot)).toBe('Previous layer (one-shot)');
+  expect(nodes(Inspector()).some(n => n.props.children === 'Previous Layer')).toBe(true);
+  expect(summarize(previous)).toBe('Previous Layer'); expect(summarize(oneShot)).toBe('Previous Layer (One-Shot)');
   expect(isPreviousLayer({ type: 'momentaryLayer', layer: 255 })).toBe(false);
 });
 

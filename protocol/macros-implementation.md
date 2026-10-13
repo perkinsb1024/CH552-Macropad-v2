@@ -11,7 +11,7 @@ and [macros-measurements.json](macros-measurements.json).
 SDCC 4.2.2 build.13407_4, 24 MHz, 148 USB DMA bytes, actual 14,336-byte
 application limit. Native outputs are temporary; releases are unchanged.
 
-| Resource, bytes | Six-key | Three-key |
+| Resource, Bytes | Six-Key | Three-Key |
 | --- | ---: | ---: |
 | Flash used | 14,284 | 14,280 |
 | Flash remaining | 52 | 56 |
@@ -82,8 +82,8 @@ encoding is relevant only to those experiment artifacts. Final v11 uses type F.
 
 ## Web Configuration and Migration
 
-The final action map shifts old types 5–F down one; **Execute macro** is F,
-**LED control** is E, and **Pause** is full byte 20. The decoder interprets the
+The final action map shifts old types 5–F down one; **Execute Macro** is F,
+**LED Control** is E, and **Pause** is full byte 20. The decoder interprets the
 source version before remapping. Existing auxiliary values/parameters, consumer
 usages, click counts, layer history targets, held flags and axes are preserved.
 V10 migration adds no profile bytes. V7–v9 timers still grow from five to six
@@ -134,7 +134,7 @@ suite also passes AddressSanitizer and UndefinedBehaviorSanitizer on both boards
 
 Chrome visual validation used a separate six-key simulator tab: added a macro,
 selected **Pause**, verified the 256ms slider and storage accounting, assigned
-**Execute macro** to a key, entered 16 repeats, and saved/read back all 128 bytes.
+**Execute Macro** to a key, entered 16 repeats, and saved/read back all 128 bytes.
 The project owner subsequently completed firmware hardware testing on both
 three-key and six-key macropads, and confirmed reliable Codex text entry with
 the fixed 32ms character pause. General firmware hardware testing is normally
@@ -154,7 +154,7 @@ behavior remains outstanding.
 
 Layer-switching actions must finish a macro, including absolute/relative and
 one-shot variants even when their target might already be active. Every
-invocation of such a macro must use repeat count 1. **Add step** and **Add pause**
+invocation of such a macro must use repeat count 1. **Add Step** and **Add Pause**
 insert before the first layer switch, with a labeled divider at that position;
 the buttons remain below the steps and are disabled only by storage capacity.
 Nonfinal layer-switch steps have a red border. The editor blocks saving invalid

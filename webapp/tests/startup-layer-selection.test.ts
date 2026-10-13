@@ -66,8 +66,8 @@ it('selects the draft startup layer when choosing a draft on connection', async 
   const p = startupProfile(3);
   storeDraft(p, {});
   await connectSimulator(0);
-  expect(dialog.value?.title).toBe('Restore your draft?');
-  dialog.value!.actions.find(a => a.label === 'Use the draft')!.onSelect();
+  expect(dialog.value?.title).toBe('Restore Your Draft?');
+  dialog.value!.actions.find(a => a.label === 'Use the Draft')!.onSelect();
   expect(selectedLayer.value).toBe(3);
   expect(selectedSlot.value).toBeNull();
 });

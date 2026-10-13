@@ -64,7 +64,7 @@ it('preserves existing larger relative steps but only permits editing to minus o
 });
 it('shows phase degrees without approximation marks and permits configured restores', () => {
   setup(); change(selects()[1]!, 'rainbowPhaseSet');
-  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['0°', '30°', '60°', 'Variable', 'As configured']);
+  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['0°', '30°', '60°', 'Variable', 'As Configured']);
   change(selects()[2]!, 'asConfigured');
   expect(profile.value!.layers[0]!.keys[0]).toEqual({ type: 'ledControl', command: 'rainbowPhaseSet', value: 'asConfigured' });
 });
@@ -76,7 +76,7 @@ it('defaults the toggle to dark mode and excludes the configured endpoint', () =
 });
 
 function effectColors() {
-  const group = nodes(Inspector()).find(n => n.props['aria-label'] === 'Temporary LED effect color');
+  const group = nodes(Inspector()).find(n => n.props['aria-label'] === 'Temporary LED Effect Color');
   return nodes(group).filter(n => n.props.role === 'radio');
 }
 it('groups temporary effects into one command, hides restored controls, and selects rainbow', () => {
@@ -88,7 +88,7 @@ it('groups temporary effects into one command, hides restored controls, and sele
   for (const mode of LED_COMMANDS.filter(c => isLedEffect(c.command) && c.command !== 'effectRestore')) {
     change(selects()[2]!, mode.command === 'effectOn' ? 'effectOn' : 'blink');
     if (mode.command !== 'effectOn') {
-      const slider = nodes(Inspector()).find(n => n.props['aria-label'] === 'Blink count')!;
+      const slider = nodes(Inspector()).find(n => n.props['aria-label'] === 'Blink Count')!;
       (slider.props.onInput as (e: unknown) => void)({ target: { value: String(mode.code - 0x81) } });
     }
     const colors = effectColors();
@@ -104,13 +104,13 @@ it('groups temporary effects into one command, hides restored controls, and sele
 });
 
 function brightnessButtons() {
-  return nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Temporary LED effect brightness')).filter(n => n.type === 'button');
+  return nodes(nodes(Inspector()).find(n => n.props['aria-label'] === 'Temporary LED Effect Brightness')).filter(n => n.type === 'button');
 }
-function blinkSlider() { return nodes(Inspector()).find(n => n.props['aria-label'] === 'Blink count'); }
+function blinkSlider() { return nodes(Inspector()).find(n => n.props['aria-label'] === 'Blink Count'); }
 
 it('offers one Blink mode and a 1–8 count slider, preserving color and dim brightness', () => {
   setup(); change(selects()[1]!, 'temporaryEffect');
-  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['As configured', 'Always on', 'Blink']);
+  expect(nodes(selects()[2]!.props.children).map(n => n.props.children)).toEqual(['As Configured', 'Always On', 'Blink']);
   expect(blinkSlider()).toBeUndefined();
   expect(brightnessButtons()).toHaveLength(0);
   change(selects()[2]!, 'effectOn');

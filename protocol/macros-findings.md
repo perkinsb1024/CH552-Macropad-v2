@@ -1,7 +1,7 @@
-# Macro feasibility and implementation experiments
+# Macro Feasibility and Implementation Experiments
 
 This investigation records prototype revision `38e5816`, including its initial
-macro type `0x4`. Final v11 uses **Execute macro** at `0xF` and shifts previous
+macro type `0x4`. Final v11 uses **Execute Macro** at `0xF` and shifts previous
 `0x5–0xF` actions down one; its source/editor implementation and latest memory
 measurements are in [macros-implementation.md](macros-implementation.md). The
 historical tables and failed probes below are retained for pre-release review.
@@ -20,13 +20,13 @@ and the recorded optimization probes, including failures. Baseline is revision
 14,336-byte application flash limit. No release artifacts were generated,
 no hardware was flashed, and the web app was not changed.
 
-## Designs compared
+## Designs Compared
 
 All sizes below come from separate temporary native builds. Flash and stack
 columns show six-key / three-key bytes. The pair and counted comparisons omit
 **Pause** so that storage/execution differences can be compared directly.
 
-| Design | Sequence length | Executions per trigger | Flash bytes | Spare flash | Stack capacity |
+| Design | Sequence Length | Executions per Trigger | Flash Bytes | Spare Flash | Stack Capacity |
 | --- | --- | --- | ---: | ---: | ---: |
 | Production v10 baseline | One action | 1 | 14,294 / 14,292 | 42 / 44 | 75 / 78 |
 | Fixed pairs | Exactly two slots | 1 | 14,208 / 14,206 | 128 / 130 | 78 / 81 |
@@ -41,9 +41,9 @@ columns show six-key / three-key bytes. The pair and counted comparisons omit
 The unaligned comparison exceeds flash and does not produce a usable build.
 The other designs pass both the real flash limit and memory-layout checks.
 
-### Fixed pairs
+### Fixed Pairs
 
-Each definition occupies four configuration bytes. **Execute macro** carries an
+Each definition occupies four configuration bytes. **Execute Macro** carries an
 absolute definition address; its high nibble is either reserved or the execution
 count minus one. No definitions means no allocated macro data. One-action macros
 use **Nothing** in the second slot. This is simple, but cannot represent the
@@ -53,7 +53,7 @@ The final pair executor saves only about two dozen flash bytes relative to the
 unrestricted executor with the same repeat option. That saving does not justify
 restricting every macro to two slots.
 
-### Counted sequences
+### Counted Sequences
 
 The invocation's auxiliary nibble stores action count minus one. Its parameter
 stores a six-bit absolute word address. The remaining two parameter bits can
@@ -68,9 +68,9 @@ while offering fewer actions and repeats. The no-repeat version saves a little
 flash and three stack bytes, but neither saving is needed. This alternative is
 reproduced as experimental format 13; it is not compatible with v11 images.
 
-### Terminated sequences: recommended
+### Terminated Sequences: Recommended
 
-Type `0x4` becomes **Execute macro**. The parameter is an absolute image address;
+Type `0x4` becomes **Execute Macro**. The parameter is an absolute image address;
 the auxiliary nibble encodes 1–16 executions. A prospective editor can present
 names or macro numbers and resolve those to addresses during encoding.
 
@@ -94,7 +94,7 @@ queue entry; steps stream directly from the active image instead of expanding
 into the eight-event queue. A 40-step host test verifies that queue capacity does
 not impose an eight-step limit. Long macros can delay later queued actions.
 
-### Repeats and pauses
+### Repeats and Pauses
 
 The repeat option adds roughly 20 bytes of flash and one runtime byte to the
 unrestricted executor. It reloads the original steps, including string indices
@@ -110,14 +110,14 @@ but caps a step at 255ms; the 256ms choice is coarse for short waits. The 16ms
 choice provides useful precision and a four-second range, matching the existing
 fine timer quantum. Longer waits can use consecutive pause steps.
 
-The example is **Keyboard tap** with GUI+Space → **Pause** for 256ms → **Type Text**
-with `chrome` → **Keyboard tap** with Enter. It adds 17 configuration bytes:
+The example is **Keyboard Tap** with GUI+Space → **Pause** for 256ms → **Type Text**
+with `chrome` → **Keyboard Tap** with Enter. It adds 17 configuration bytes:
 seven for `chrome\0` and ten for four steps plus their terminator. Changing the
 execution count adds no configuration bytes. Host tests verify the action order
 and pause timing; actual Spotlight/application readiness requires hardware/OS
 validation and may need a different delay.
 
-## Supported behavior and deliberate limits
+## Supported Behavior and Deliberate Limits
 
 - Keys, encoder press/rotation, chords, timer expiry and timer resume can invoke
   macros. Releasing a physical trigger does not cancel its sequence.
@@ -140,9 +140,9 @@ validation and may need a different delay.
 - Overflow rejects an invocation as one queue item and uses the existing saturated
   drop counters. Long sequences can still fill the queue with later invocations.
 
-## RAM accounting and stack
+## RAM Accounting and Stack
 
-| Allocation | Baseline six / three | Recommended six / three |
+| Allocation | Baseline Six / Three | Recommended Six / Three |
 | --- | ---: | ---: |
 | Occupied internal RAM, including banks/overlays | 180 / 177 | 179 / 176 |
 | Paged external RAM | 108 / 108 | 108 / 108 |
@@ -175,7 +175,7 @@ Stack figures are linker-reserved capacity, the same metric as the previous
 high-water result cannot establish v11's runtime peak; no v11 hardware stack
 measurement was performed.
 
-## Optimization investigation
+## Optimization Investigation
 
 The first straightforward prototypes exceeded flash by roughly 350–470 bytes
 and exposed direct-RAM allocation failures. A header-bit draft was discarded
@@ -217,7 +217,7 @@ manual produces identical code. No compiler upgrade, code-limit relaxation,
 assembly rewrite, bootloader borrowing, timer-range reduction or release-feature
 removal was needed.
 
-## Validation, artifacts and reproduction
+## Validation, Artifacts and Reproduction
 
 Run:
 

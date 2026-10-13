@@ -13,39 +13,39 @@ export interface ActionDescriptor {
   type: ActionType;
   code: ActionCode;
   label: string;
-  group: 'Keyboard' | 'Mouse' | 'Media' | 'Text' | 'Layers' | 'LED control' | 'None' | 'Macros';
+  group: 'Keyboard' | 'Mouse' | 'Media' | 'Text' | 'Layers' | 'LED Control' | 'None' | 'Macros';
   /** Whether the action needs a physical release, and so cannot be bound to rotation. */
   needsRelease: boolean;
   hint: string;
 }
 
 export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
-  { type: 'macro', code: ActionCode.Macro, label: 'Execute macro', group: 'Macros', needsRelease: false, hint: 'Run an ordered sequence 1–16 times. Define its steps in Macros.' },
+  { type: 'macro', code: ActionCode.Macro, label: 'Execute Macro', group: 'Macros', needsRelease: false, hint: 'Run an ordered sequence 1–16 times. Define its steps in Macros.' },
   { type: 'pause', code: ActionCode.Pause, label: 'Pause', group: 'Macros', needsRelease: false, hint: 'Wait up to 4 seconds before the next action' },
-  { type: 'ledControl', code: ActionCode.LedControl, label: 'LED control', group: 'LED control', needsRelease: false, hint: 'Adjust global lighting at runtime; resets on configuration save or USB reset.' },
+  { type: 'ledControl', code: ActionCode.LedControl, label: 'LED Control', group: 'LED Control', needsRelease: false, hint: 'Adjust global lighting at runtime; resets on configuration save or USB reset.' },
   { type: 'none', code: ActionCode.None, label: 'Nothing', group: 'None', needsRelease: false, hint: 'Leave this input unassigned.' },
-  { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
-  { type: 'keyHold', code: ActionCode.KeyHold, label: 'Key hold', group: 'Keyboard', needsRelease: true, hint: 'Hold a key combination while the button is held.' },
-  { type: 'mouseClick', code: ActionCode.MouseClick, label: 'Mouse click', group: 'Mouse', needsRelease: false, hint: 'Click one or more mouse buttons.' },
-  { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
-  { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
-  { type: 'mouseDown', code: ActionCode.MouseDown, label: 'Mouse down', group: 'Mouse', needsRelease: false, hint: 'Keep selected mouse buttons down until Mouse up, toggle, a layer change or reset. Repeated down leaves them down.' },
-  { type: 'mouseUp', code: ActionCode.MouseUp, label: 'Mouse up', group: 'Mouse', needsRelease: false, hint: 'Release selected persistent mouse buttons from any input or macro. Physical holds and clicks stay independent.' },
+  { type: 'keyTap', code: ActionCode.KeyTap, label: 'Key Tap', group: 'Keyboard', needsRelease: false, hint: 'Press and release a key combination.' },
+  { type: 'keyHold', code: ActionCode.KeyHold, label: 'Key Hold', group: 'Keyboard', needsRelease: true, hint: 'Hold a key combination while the button is held.' },
+  { type: 'mouseClick', code: ActionCode.MouseClick, label: 'Mouse Click', group: 'Mouse', needsRelease: false, hint: 'Click one or more mouse buttons.' },
+  { type: 'mouseHold', code: ActionCode.MouseHold, label: 'Mouse Hold', group: 'Mouse', needsRelease: true, hint: 'Hold mouse buttons while the button is held.' },
+  { type: 'mouseToggle', code: ActionCode.MouseToggle, label: 'Mouse Toggle', group: 'Mouse', needsRelease: false, hint: 'Latch mouse buttons; press again to release.' },
+  { type: 'mouseDown', code: ActionCode.MouseDown, label: 'Mouse Down', group: 'Mouse', needsRelease: false, hint: 'Keep selected mouse buttons down until Mouse Up, toggle, a layer change or reset. Repeated down leaves them down.' },
+  { type: 'mouseUp', code: ActionCode.MouseUp, label: 'Mouse Up', group: 'Mouse', needsRelease: false, hint: 'Release selected persistent mouse buttons from any input or macro. Physical holds and clicks stay independent.' },
   { type: 'scroll', code: ActionCode.Scroll, label: 'Scroll', group: 'Mouse', needsRelease: false, hint: 'Send a vertical or horizontal wheel step, or repeat while held.' },
-  { type: 'mouseX', code: ActionCode.MouseAxis, label: 'Move pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
-  { type: 'mouseY', code: ActionCode.MouseAxis, label: 'Move pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
-  { type: 'mouseXY', code: ActionCode.MouseXY, label: 'Move pointer X/Y', group: 'Mouse', needsRelease: false, hint: 'Move both axes together, from 4–64 mouse counts per axis in steps of 4.' },
-  { type: 'consumer', code: ActionCode.Consumer, label: 'Media / system', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
-  { type: 'consumerHold', code: ActionCode.ConsumerHold, label: 'Media / system hold', group: 'Media', needsRelease: true, hint: 'Hold a media or system control until release. Repetition depends on the host.' },
-  { type: 'consumerModifiedHold', code: ActionCode.ConsumerModifiedHold, label: 'Media / system hold with modifiers', group: 'Media', needsRelease: true, hint: 'Hold an 8-bit consumer control and its modifiers until physical release.' },
-  { type: 'consumerModified', code: ActionCode.ConsumerModified, label: 'Media / system with modifiers', group: 'Media', needsRelease: false, hint: 'Tap an 8-bit consumer control with Ctrl, Shift, Alt or GUI. Modifiers release automatically after the control.' },
-  { type: 'string', code: ActionCode.String, label: 'Type text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
-  { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
-  { type: 'oneShotSetLayer', code: ActionCode.SetLayer, label: 'Switch to layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use a layer for the next action, then return to the previous layer.' },
-  { type: 'relativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer', group: 'Layers', needsRelease: false, hint: 'Move forward or backward through layers, wrapping around. Zero displays the current layer’s indicator.' },
-  { type: 'oneShotRelativeLayer', code: ActionCode.RelativeLayer, label: 'Relative layer (one-shot)', group: 'Layers', needsRelease: false, hint: 'Use the next relative layer for one action, then return to the previous layer.' },
-  { type: 'momentaryRelativeLayer', code: ActionCode.MomentaryRelativeLayer, label: 'Relative layer while held', group: 'Layers', needsRelease: true, hint: 'Resolve a relative layer at press time and use it until physical release.' },
-  { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer while held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
+  { type: 'mouseX', code: ActionCode.MouseAxis, label: 'Move Pointer X', group: 'Mouse', needsRelease: false, hint: 'Move the pointer horizontally.' },
+  { type: 'mouseY', code: ActionCode.MouseAxis, label: 'Move Pointer Y', group: 'Mouse', needsRelease: false, hint: 'Move the pointer vertically.' },
+  { type: 'mouseXY', code: ActionCode.MouseXY, label: 'Move Pointer X/Y', group: 'Mouse', needsRelease: false, hint: 'Move both axes together, from 4–64 mouse counts per axis in steps of 4.' },
+  { type: 'consumer', code: ActionCode.Consumer, label: 'Media / System', group: 'Media', needsRelease: false, hint: 'Volume, playback, brightness and other consumer controls.' },
+  { type: 'consumerHold', code: ActionCode.ConsumerHold, label: 'Media / System Hold', group: 'Media', needsRelease: true, hint: 'Hold a media or system control until release. Repetition depends on the host.' },
+  { type: 'consumerModifiedHold', code: ActionCode.ConsumerModifiedHold, label: 'Media / System Hold with Modifiers', group: 'Media', needsRelease: true, hint: 'Hold an 8-bit consumer control and its modifiers until physical release.' },
+  { type: 'consumerModified', code: ActionCode.ConsumerModified, label: 'Media / System with Modifiers', group: 'Media', needsRelease: false, hint: 'Tap an 8-bit consumer control with Ctrl, Shift, Alt or GUI. Modifiers release automatically after the control.' },
+  { type: 'string', code: ActionCode.String, label: 'Type Text', group: 'Text', needsRelease: false, hint: 'Type a short ASCII string. Uses the US keyboard layout.' },
+  { type: 'setLayer', code: ActionCode.SetLayer, label: 'Switch to Layer', group: 'Layers', needsRelease: false, hint: 'Make a layer the active base layer.' },
+  { type: 'oneShotSetLayer', code: ActionCode.SetLayer, label: 'Switch to Layer (One-Shot)', group: 'Layers', needsRelease: false, hint: 'Use a layer for the next action, then return to the previous layer.' },
+  { type: 'relativeLayer', code: ActionCode.RelativeLayer, label: 'Relative Layer', group: 'Layers', needsRelease: false, hint: 'Move forward or backward through layers, wrapping around. Zero displays the current layer’s indicator.' },
+  { type: 'oneShotRelativeLayer', code: ActionCode.RelativeLayer, label: 'Relative Layer (One-Shot)', group: 'Layers', needsRelease: false, hint: 'Use the next relative layer for one action, then return to the previous layer.' },
+  { type: 'momentaryRelativeLayer', code: ActionCode.MomentaryRelativeLayer, label: 'Relative Layer While Held', group: 'Layers', needsRelease: true, hint: 'Resolve a relative layer at press time and use it until physical release.' },
+  { type: 'momentaryLayer', code: ActionCode.MomentaryLayer, label: 'Layer While Held', group: 'Layers', needsRelease: true, hint: 'Use a layer only while the button is held.' },
 ];
 
 const BY_TYPE = new Map(ACTION_DESCRIPTORS.map((d) => [d.type, d]));
@@ -138,14 +138,14 @@ export function summarize(action: Action): string {
     case 'keyHold': {
       const parts = modifierNames(action.modifiers);
       if (action.usage) parts.push(keyName(action.usage));
-      const combo = parts.length ? parts.join(' + ') : 'No key';
+      const combo = parts.length ? parts.join(' + ') : 'No Key';
       return action.type === 'keyHold' ? `Hold ${combo}` : combo;
     }
     case 'consumerModifiedHold':
     case 'consumerModified':
       return `${action.type === 'consumerModifiedHold' ? 'Hold ' : ''}${[...modifierNames(action.modifiers), consumerName(action.usage)].join(' + ')}`;
     case 'mouseClick':
-      return `Mouse ${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
+      return `Mouse ${(action.clicks ?? 1) === 1 ? 'Click' : action.clicks === 2 ? 'Double' : `${action.clicks} Clicks`} ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseHold':
       return `Mouse Hold ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'mouseDown':
@@ -155,32 +155,32 @@ export function summarize(action: Action): string {
     case 'mouseToggle':
       return `Mouse Toggle ${mouseButtonNames(action.buttons).join('+') || '?'}`;
     case 'scroll':
-      return `${action.delta < 0 ? `Scroll ${action.horizontal ? 'left' : 'up'} ${-action.delta}` : `Scroll ${action.horizontal ? 'right' : 'down'} ${action.delta}`}${action.hold ? ' (hold)' : ''}`;
+      return `${action.delta < 0 ? `Scroll ${action.horizontal ? 'Left' : 'Up'} ${-action.delta}` : `Scroll ${action.horizontal ? 'Right' : 'Down'} ${action.delta}`}${action.hold ? ' (Hold)' : ''}`;
     case 'mouseX':
-      return `Mouse X ${action.delta}${action.hold ? ' (hold)' : ''}`;
+      return `Mouse X ${action.delta}${action.hold ? ' (Hold)' : ''}`;
     case 'mouseY':
-      return `Mouse Y ${action.delta}${action.hold ? ' (hold)' : ''}`;
+      return `Mouse Y ${action.delta}${action.hold ? ' (Hold)' : ''}`;
     case 'mouseXY':
-      return `Mouse X ${action.x}, Y ${action.y}${action.hold ? ' (hold)' : ''}`;
+      return `Mouse X ${action.x}, Y ${action.y}${action.hold ? ' (Hold)' : ''}`;
     case 'consumer':
       return consumerName(action.usage);
     case 'consumerHold':
       return `Hold ${consumerName(action.usage)}`;
     case 'string': {
       const text = visibleText(action.text);
-      return text.length ? `“${text.length > 14 ? text.slice(0, 13) + '…' : text}”` : 'Empty text';
+      return text.length ? `“${text.length > 14 ? text.slice(0, 13) + '…' : text}”` : 'Empty Text';
     }
     case 'setLayer':
-      return isPreviousLayer(action) ? 'Previous layer' : `Layer ${action.layer + 1}`;
+      return isPreviousLayer(action) ? 'Previous Layer' : `Layer ${action.layer + 1}`;
     case 'oneShotSetLayer':
-      return isPreviousLayer(action) ? 'Previous layer (one-shot)' : `Layer ${action.layer + 1} (one-shot)`;
+      return isPreviousLayer(action) ? 'Previous Layer (One-Shot)' : `Layer ${action.layer + 1} (One-Shot)`;
     case 'momentaryLayer':
-      return `Layer ${action.layer + 1} (hold)`;
+      return `Layer ${action.layer + 1} (Hold)`;
     case 'momentaryRelativeLayer':
     case 'relativeLayer':
-      return `Relative Layer${action.type === 'momentaryRelativeLayer' ? ' (hold)' : ''}: ${action.offset > 0 ? '+' : ''}${action.offset}`;
+      return `Relative Layer${action.type === 'momentaryRelativeLayer' ? ' (Hold)' : ''}: ${action.offset > 0 ? '+' : ''}${action.offset}`;
     case 'oneShotRelativeLayer':
-      return `Relative Layer (one-shot): ${action.offset > 0 ? '+' : ''}${action.offset}`;
+      return `Relative Layer (One-Shot): ${action.offset > 0 ? '+' : ''}${action.offset}`;
   }
 }
 
@@ -193,9 +193,9 @@ export function actionTooltip(action: Action): string {
     case 'keyHold': {
       const parts = modifierNames(action.modifiers);
       if (action.usage) parts.push(keyName(action.usage));
-      return `${label}: ${parts.join(' + ') || 'No key'}`;
+      return `${label}: ${parts.join(' + ') || 'No Key'}`;
     }
-    case 'string': return `${label}: ${action.text.length ? `“${visibleText(action.text)}”` : 'Empty text'}`;
+    case 'string': return `${label}: ${action.text.length ? `“${visibleText(action.text)}”` : 'Empty Text'}`;
     case 'mouseHold':
     case 'mouseDown':
     case 'mouseUp':

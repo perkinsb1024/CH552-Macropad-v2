@@ -53,7 +53,7 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
         <span class="field-label">Key</span>
         <div class="row">
           <select value={usage} onChange={(e) => onChange(Number((e.target as HTMLSelectElement).value), modifiers)} aria-label="Key">
-            <option value={0}>No key (modifiers only)</option>
+            <option value={0}>No Key (Modifiers Only)</option>
             {KEY_GROUPS.map((group) => (
               <optgroup key={group} label={group}>
                 {KEYS.filter((k) => k.group === group).map((k) => <option key={k.usage} value={k.usage}>{k.name}</option>)}
@@ -61,7 +61,7 @@ export function KeyPicker({ usage, modifiers, onChange }: Props) {
             ))}
           </select>
           <button class={`btn ${capturing ? 'btn-capturing' : ''}`} onClick={() => setCapturing(!capturing)} aria-pressed={capturing} title="Press a shortcut on your keyboard to fill in the key and modifiers">
-            {capturing ? 'Press a shortcut…' : 'Capture'}
+            {capturing ? 'Press a Shortcut…' : 'Capture'}
           </button>
         </div>
         {capturing && <span class="hint">Listening. Some shortcuts are intercepted by the OS or browser and cannot be captured; pick them from the list instead.</span>}

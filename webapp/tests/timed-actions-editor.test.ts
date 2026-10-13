@@ -44,11 +44,11 @@ it('adds and edits expiry/resume actions through the common inspector, including
   start(); add();
   expect(profile.value!.timedActions).toHaveLength(1);
   expect(selectedSlot.value).toMatchObject({ kind: 'timed', index: 0, resume: false });
-  expect(nodes(Inspector()).find(n => n.type === 'h2')?.props.children).toBe('Timed action 1');
+  expect(nodes(Inspector()).find(n => n.type === 'h2')?.props.children).toBe('Timed Action 1');
   const selector = nodes(Inspector()).find(n => n.type === 'select')!;
   expect(nodes(selector.props.children).filter(n => ['keyHold'].includes(String(n.props.value))).every(n => n.props.disabled)).toBe(true);
   setAction(selectedSlot.value!, { type: 'ledControl', command: 'commonPresetSet', value: 3 });
-  click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Edit timer 1 resume action')!);
+  click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Edit Timer 1 Resume Action')!);
   setAction(selectedSlot.value!, { type: 'ledControl', command: 'brightnessBothSet', value: 'asConfigured' });
   expect(getAction(profile.value!, selectedSlot.value!)?.type).toBe('ledControl');
   undo(); expect(profile.value!.timedActions![0]!.resumeAction).toEqual({ type: 'none' });
@@ -57,21 +57,21 @@ it('adds and edits expiry/resume actions through the common inspector, including
 });
 it('edits interval and reset flag, and removes a timer without leaving a stale selection', () => {
   start(); add(); add();
-  const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
+  const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 Interval Ticks')!;
   expect(input.props).toMatchObject({ type: 'range', min: 1, max: 2048, step: 1 });
   (input.props.onInput as (e: unknown) => void)({ target: { value: '55' } });
-  const reset = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 reset timer on input')!;
+  const reset = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 Reset Timer on Input')!;
   const choices = nodes(reset).filter(n => n.type === 'button');
   expect(choices.map(n => n.props['aria-pressed'])).toEqual([true, false]);
   click(choices[1]!);
-  const updated = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 reset timer on input')!;
+  const updated = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 Reset Timer on Input')!;
   expect(nodes(updated).filter(n => n.type === 'button').map(n => n.props['aria-pressed'])).toEqual([false, true]);
   undo(); expect(profile.value!.timedActions![0]!.resetOnInput).toBe(true);
   redo();
   expect(profile.value!.timedActions![0]).toMatchObject({ ticks: 55, resetOnInput: false });
-  click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove timer 1')!);
+  click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove Timer 1')!);
   expect(selectedSlot.value).toMatchObject({ index: 0 });
-  click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove timer 1')!);
+  click(nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Remove Timer 1')!);
   expect(profile.value!.timedActions).toBeUndefined();
   expect(selectedSlot.value).toBeNull();
   expect(approximateDuration(55)).toBe('≈ 3 minutes 45 seconds');
@@ -109,7 +109,7 @@ it('round-trips timer drafts and clipboard actions while rejecting pasted holds'
 it('clamps edits and provides whole-number durations', () => {
   start(); add();
   for (const [value, ticks] of [['9999',2048], ['0',1], ['-5',1], ['1.5',2], ['',1]] as const) {
-    const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 interval ticks')!;
+    const input = nodes(TimedActionsPanel()).find(n => n.props['aria-label'] === 'Timer 1 Interval Ticks')!;
     const target = { value };
     (input.props.onInput as (e: unknown) => void)({ target });
     expect(profile.value!.timedActions![0]!.ticks).toBe(ticks);

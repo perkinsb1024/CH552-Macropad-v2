@@ -731,12 +731,12 @@ export function resetToDefaults(): void {
   const p = profile.value;
   if (!p) return;
   ask({
-    title: 'Reset to the starter profile?',
+    title: 'Reset to the Starter Profile?',
     body: 'All layers, chords and text in the editor will be replaced with the starter profile. Nothing is written to the device until you save.',
     actions: [
       { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
       {
-        label: 'Reset editor',
+        label: 'Reset Editor',
         tone: 'danger',
         onSelect: () => {
           recordHistory();
@@ -935,22 +935,22 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
       // Editor already holds unsaved edits (e.g. offline editing before plugging in).
       const current = profile.value;
       ask({
-        title: 'Keep your unsaved edits?',
+        title: 'Keep Your Unsaved Edits?',
         body: 'The editor has changes that are not on the device. You can keep editing them, or replace them with the profile stored on the device.',
         comparison: { device: cloneProfile(fromDevice), editor: cloneProfile(current) },
         actions: [
-          { label: 'Load from device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Keep my edits', tone: 'primary', onSelect: () => { profile.value = current; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
+          { label: 'Load from Device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
+          { label: 'Keep My Edits', tone: 'primary', onSelect: () => { profile.value = current; baseline.value = cloneProfile(fromDevice); closeDialog(); } },
         ],
       });
     } else if (draftDiffers) {
       ask({
-        title: 'Restore your draft?',
+        title: 'Restore Your Draft?',
         body: `This browser has a draft saved ${new Date(draft.savedAt).toLocaleString()} that differs from the device. Which one do you want to edit?`,
         comparison: { device: cloneProfile(fromDevice), editor: cloneProfile(draft.profile), editorLabel: 'Draft' },
         actions: [
-          { label: 'Load from device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Use the draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); selectedLayer.value = draft.profile.startupLayer; selectedSlot.value = null; closeDialog(); } },
+          { label: 'Load from Device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
+          { label: 'Use the Draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); selectedLayer.value = draft.profile.startupLayer; selectedSlot.value = null; closeDialog(); } },
         ],
       });
     } else {
@@ -978,7 +978,7 @@ export async function save(): Promise<void> {
   if (deviceDecode.value && !deviceDecode.value.ok && deviceDecode.value.reason === 'unsupported-version' &&
       deviceFlash.value && peekHeader(deviceFlash.value).version > FORMAT_VERSION) {
     ask({
-      title: 'Overwrite a newer profile?',
+      title: 'Overwrite a Newer Profile?',
       body: `The device holds a profile in a format this app cannot read. Saving will replace it with a version ${FORMAT_VERSION} profile. Export the raw bytes first if you want a backup.`,
       actions: [
         { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
@@ -1118,7 +1118,7 @@ function importProfileText(text: string, source: string): void {
     };
     if (dirty.value) {
       ask({
-        title: 'Replace unsaved edits?',
+        title: 'Replace Unsaved Edits?',
         body: `Importing ${source} will replace the profile in the editor. Unsaved edits will be lost.`,
         actions: [
           { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },

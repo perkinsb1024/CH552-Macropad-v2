@@ -64,7 +64,7 @@ it.each([0, 1] as const)('round-trips held scrolling on keys, chords and wheel p
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
-  expect(summarize(hold)).toBe('Scroll up 127 (hold)');
+  expect(summarize(hold)).toBe('Scroll Up 127 (Hold)');
 });
 
 it.each([[0x0f, 1], [0x34, 0], [0xF4, 0], [0x30, 0], [0, 1], [0x20, 0], [9, 0], [0x15, 1], [0x25, 1], [0x95, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {

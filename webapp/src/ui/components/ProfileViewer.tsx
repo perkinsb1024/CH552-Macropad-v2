@@ -19,7 +19,7 @@ export function ViewerChords() {
       {chords.map(c => <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`}>
         <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
         <ActionLabel action={c.action} />
-        {c.global && <span class="tab-badge">all layers</span>}
+        {c.global && <span class="tab-badge">All Layers</span>}
       </li>)}
     </ul> : <p class="muted">No chords on this layer.</p>}
     {chords.length > 0 && p.chordWindow === 0 && <p class="hint warn">Chords are disabled in this profile.</p>}
@@ -30,15 +30,15 @@ export function ViewerTimers() {
   const timers = profile.value!.timedActions ?? [];
   if (!timers.length) return null;
   return <section class="card viewer-bindings">
-    <header class="card-head"><h2>Timed actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2></header>
+    <header class="card-head"><h2>Timed Actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2></header>
     <ul class="viewer-binding-list viewer-timers">
       {timers.map((timer, index) => <li key={index}>
-        <div><strong>Timer {index + 1}</strong><span class="muted">{timer.layer === undefined ? 'All layers' : layerName(timer.layer)}</span><span class="muted">
+        <div><strong>Timer {index + 1}</strong><span class="muted">{timer.layer === undefined ? 'All Layers' : layerName(timer.layer)}</span><span class="muted">
           {timer.resetOnInput ? 'After ' : 'Repeats every '}{duration(timer.ticks * TIMED_TICK_SECONDS)}{timer.resetOnInput ? ' of inactivity' : ''}
         </span></div>
-        <div><span class="muted">When fired</span><ActionLabel action={timer.action} /></div>
+        <div><span class="muted">When Fired</span><ActionLabel action={timer.action} /></div>
         {(timer.resumeAction.type !== 'none' || timer.consumeInput) && <div>
-          <span class="muted">Next input</span><ActionLabel action={timer.resumeAction} />
+          <span class="muted">Next Input</span><ActionLabel action={timer.resumeAction} />
           {timer.consumeInput && <span class="tab-badge">consumed</span>}
         </div>}
       </li>)}
@@ -83,7 +83,7 @@ export function ProfileViewer() {
     <TopBar readOnly />
     <ArchivedFirmwareNotice />
     <main class="viewer-workspace">
-      {!p ? <section class="card viewer-empty"><h2>Learn your macropad profile</h2>
+      {!p ? <section class="card viewer-empty"><h2>Learn Your Macropad Profile</h2>
         <p class="muted">Connect your macropad to display its saved shortcuts and follow layer changes.</p>
         {c.kind === 'connected' && <p class="warn">There is no valid saved profile to display. Open the configurator to repair it.</p>}
       </section> : <>
@@ -98,11 +98,11 @@ export function ProfileViewer() {
           {(mismatch || !knownLayer) && <div class="viewer-layer-status" aria-live="polite">
             {mismatch ? <div class="notice notice-warn" role="status">
               Viewing {layerName(selectedLayer.value)}. Your macropad is on {layerName(deviceLayer!)}.
-              <button class="btn" onClick={() => { selectedLayer.value = deviceLayer!; }}>Follow device</button>
+              <button class="btn" onClick={() => { selectedLayer.value = deviceLayer!; }}>Follow Device</button>
             </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
           </div>}
           <DeviceView readOnly />
-          <p class="muted viewer-indicator">Layer indicator: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
+          <p class="muted viewer-indicator">Layer Indicator: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
         </section>
         <div class="viewer-extras"><ViewerChords /><ViewerTimers /><ViewerMacros /></div>
       </>}

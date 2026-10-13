@@ -28,7 +28,7 @@ function current() { return getAction(profile.value!, selectedSlot.value!)!; }
 function selector() { return nodes(Inspector()).find(n => n.type === 'select')!; }
 function choose(type: string) { (selector().props.onChange as (event: unknown) => void)({ target: { value: type } }); }
 function behaviors() {
-  return nodes(nodes(Inspector()).find(n => ['Key behavior', 'Media behavior', 'Layer behavior'].includes(String(n.props['aria-label'])))).filter(n => n.type === 'button');
+  return nodes(nodes(Inspector()).find(n => ['Key Behavior', 'Media Behavior', 'Layer Behavior'].includes(String(n.props['aria-label'])))).filter(n => n.type === 'button');
 }
 function behavior(label: string) { return behaviors().find(n => n.props.children === label)!; }
 function click(node: Node) { (node.props.onClick as () => void)(); }
@@ -49,7 +49,7 @@ it.each(Object.entries(ACTION_FAMILIES))('shows every saved %s variant under its
     const options = nodes(selector());
     const group = options.find(n => n.type === 'optgroup' && n.props.label === (family === 'keyTap' ? 'Keyboard' : family.startsWith('consumer') ? 'Media' : 'Layers'))!;
     expect(nodes(group).filter(n => n.type === 'option').map(n => n.props.value)).toEqual(family === 'keyTap' ? ['keyTap'] : family.startsWith('consumer') ? ['consumer', 'consumerModified'] : ['setLayer', 'relativeLayer']);
-    if (family === 'keyTap') expect(nodes(group).find(n => n.type === 'option')!.props.children).toContain('Key press');
+    if (family === 'keyTap') expect(nodes(group).find(n => n.type === 'option')!.props.children).toContain('Key Press');
     choose(family);
     expect(current()).toEqual(before);
   }
@@ -76,7 +76,7 @@ it.each([...releaseSlots, ...noReleaseSlots])('enforces all families’ hold res
     click(behaviors()[0]!);
     expect(current()).toEqual(before);
     if (types.length === 3) {
-      click(behavior('One-shot'));
+      click(behavior('One-Shot'));
       expect(current()).toEqual({ ...before, type: types[1] });
     }
   }
@@ -128,7 +128,7 @@ it.each(['setLayer', 'relativeLayer'] as const)('preserves current %s parameters
   start(family === 'setLayer' ? { type: 'momentaryLayer', layer: 0 } : { type: 'momentaryRelativeLayer', offset: 1 });
   const parameter = family === 'setLayer' ? { layer: 1 } : { offset: -2 };
   setAction(selectedSlot.value!, { type: types[0], ...parameter } as Action);
-  for (const [label, type] of [['Hold', types[2]], ['One-shot', types[1]], ['Switch', types[0]]] as const) {
+  for (const [label, type] of [['Hold', types[2]], ['One-Shot', types[1]], ['Switch', types[0]]] as const) {
     click(behavior(label));
     expect(current()).toEqual({ type, ...parameter });
   }
@@ -139,7 +139,7 @@ it('disables Hold for Previous layer, preserves its one-shot target and excludes
   expect(behavior('Hold').props.disabled).toBe(true);
   click(behavior('Hold'));
   expect(current()).toEqual({ type: 'setLayer', layer: PREVIOUS_LAYER });
-  click(behavior('One-shot'));
+  click(behavior('One-Shot'));
   expect(current()).toEqual({ type: 'oneShotSetLayer', layer: PREVIOUS_LAYER });
   click(behavior('Hold'));
   expect(current()).toEqual({ type: 'oneShotSetLayer', layer: PREVIOUS_LAYER });
@@ -185,7 +185,7 @@ it('rejects invalid remembered parameters and preserves modes when changing laye
   start({ type: 'momentaryLayer', layer: PREVIOUS_LAYER });
   choose('keyTap'); choose('setLayer');
   expect(current()).toEqual({ type: 'setLayer', layer: 0 });
-  click(behavior('One-shot')); choose('relativeLayer');
+  click(behavior('One-Shot')); choose('relativeLayer');
   expect(current()).toEqual({ type: 'oneShotRelativeLayer', offset: 1 });
   click(behavior('Hold')); choose('setLayer');
   expect(current()).toEqual({ type: 'momentaryLayer', layer: 0 });

@@ -1,4 +1,4 @@
-# Timed wake consumption and temporary LED effects
+# Timed Wake Consumption and Temporary LED Effects
 
 Baseline: `168fbca`, four timers, 14,231 / 14,227 flash bytes (six/three keys).
 The existing investigation notes are local in `toInvestigate.md`.
@@ -10,7 +10,7 @@ Keep baseline on `experiment/timed-actions`; checkpoint wake consumption on
 Keep size probes and source snapshots in temporary build directories. Commit
 only the investigation changes, firmware, and tests; preserve release files.
 
-## Investigation and implementation
+## Investigation and Implementation
 
 1. Rebuild both variants and record flash, page-zero allocation, and stack size.
 2. Compare two consume-wake encodings without restricting resume actions:

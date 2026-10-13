@@ -51,7 +51,7 @@ export function ChordPanel() {
       }
     }}>
       <summary class="card-head">
-        <h2>Chords ({chords.length} on this layer)</h2>
+        <h2>Chords ({chords.length} on This Layer)</h2>
         <IconChevron />
       </summary>
       {chords.length === 0 && <p class="empty">No chords on this layer. Each chord uses 3 bytes of device storage.</p>}
@@ -111,8 +111,8 @@ export function ChordPanel() {
                   <span class="chord-action"><ActionLabel action={c.action} /></span>
                   {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
                 </button>
-                <button class={`btn btn-icon chord-global ${c.global ? 'is-on' : ''}`} aria-label={c.global ? 'Make chord local to this layer' : 'Make chord global'} aria-pressed={!!c.global} title={globeDisabled ? 'This key pair already has a chord at that scope' : c.global ? 'Active on all layers; click to make local to this layer' : 'Click to use this chord on all layers'} disabled={globeDisabled} onClick={() => setChordGlobal(c, !c.global, li)}><IconGlobe /></button>
-                <button class="btn btn-icon btn-danger" aria-label="Remove chord" onClick={() => removeChord(c)}><IconTrash /></button>
+                <button class={`btn btn-icon chord-global ${c.global ? 'is-on' : ''}`} aria-label={c.global ? 'Make Chord Local to This Layer' : 'Make Chord Global'} aria-pressed={!!c.global} title={globeDisabled ? 'This key pair already has a chord at that scope' : c.global ? 'Active on all layers; click to make local to this layer' : 'Click to use this chord on all layers'} disabled={globeDisabled} onClick={() => setChordGlobal(c, !c.global, li)}><IconGlobe /></button>
+                <button class="btn btn-icon btn-danger" aria-label="Remove Chord" onClick={() => removeChord(c)}><IconTrash /></button>
               </li>
             );
           })}
@@ -120,14 +120,14 @@ export function ChordPanel() {
       )}
       {addUnavailableReasons.length === 0 ? (
         <div class="chord-add">
-          <select value={pick || (first ? `${first[0]}-${first[1]}` : '')} onChange={(e) => setPick((e.target as HTMLSelectElement).value)} aria-label="Key pair">
+          <select value={pick || (first ? `${first[0]}-${first[1]}` : '')} onChange={(e) => setPick((e.target as HTMLSelectElement).value)} aria-label="Key Pair">
             {available.map(([a, b]) => <option key={`${a}-${b}`} value={`${a}-${b}`}>Keys {a + 1} + {b + 1}</option>)}
           </select>
           <button class="btn btn-primary" onClick={() => {
             const [a, b] = (pick || `${first![0]}-${first![1]}`).split('-').map(Number) as [number, number];
             addChord(li, a, b);
             setPick('');
-          }}><IconPlus /> Add chord</button>
+          }}><IconPlus /> Add Chord</button>
         </div>
       ) : <p class="hint">{addUnavailableReasons.join(' ')}</p>}
       {p.chordWindow === 0 && chords.length > 0 && <p class="hint warn">The chord window is set to off, so these chords will not trigger.</p>}

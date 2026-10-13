@@ -1,22 +1,22 @@
-# Conditional indicator brightness preset: reimplementation guide
+# Conditional Indicator Brightness Preset: Reimplementation Guide
 
 Status: deferred after a firmware size experiment. This feature is not in the
 working firmware or editor. The accompanying
 [prototype patch](conditional-indicator-preset.patch) preserves the exact firmware
 changes measured in the experiment; it is a starting point, not a tested feature.
 
-## Intended behavior
+## Intended Behavior
 
 Add one common brightness preset with these policies:
 
-| Configured layer indicator mode | Indicator behavior while preset is active |
+| Configured Layer Indicator Mode | Indicator Behavior While Preset Is Active |
 | --- | --- |
-| **Timed on** | **Dim** during the configured indication, then off |
+| **Timed On** | **Dim** during the configured indication, then off |
 | **Blink** by layer | **Dim** during lit phases; dark phases remain black |
-| **Always on** | **Off**; no idle layer background |
+| **Always On** | **Off**; no idle layer background |
 | **None** | Remains off |
 
-Key brightness stays **As configured**, currently **Bright**. Existing indication
+Key brightness stays **As Configured**, currently **Bright**. Existing indication
 priority still applies: timed/blink feedback can temporarily obscure key feedback,
 including blink dark phases. This preset does not change that priority, colors,
 visibility modes, durations, rainbow phase, or rainbow speed.
@@ -26,18 +26,18 @@ including when changing layers. It changes no saved profile bytes. Existing rese
 events restore configured policies, and hardware color preview bypasses the policy.
 
 Expose it through all three existing common-preset commands: Set, Relative, and
-**Toggle preset on/off**. No new command or action-record bytes are needed.
+**Toggle Preset On/Off**. No new command or action-record bytes are needed.
 
-## Measured flash and RAM
+## Measured Flash and RAM
 
 These measurements use the working preset-toggle implementation as the baseline,
 CH55xDuino 0.0.25, SDCC build.13407_4, `--opt-code-size`, preview enabled, and the
 normal 14,336-byte linker limit. Outputs were temporary; releases were preserved.
 
-| Variant | Baseline flash | Prototype flash | Added bytes | Over limit | xRAM used / available | Stack region |
+| Variant | Baseline Flash | Prototype Flash | Added Bytes | Over Limit | xRAM Used / Available | Stack Region |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Three-key | 14,321 | 14,352 | 31 | 16 | 619 / 876 | 127 |
-| Six-key | 14,325 | 14,356 | 31 | 20 | 628 / 876 | 124 |
+| Three-Key | 14,321 | 14,352 | 31 | 16 | 619 / 876 | 127 |
+| Six-Key | 14,325 | 14,356 | 31 | 20 | 628 / 876 | 124 |
 
 Both linker checks failed. The six-key result exceeded the user's approximately
 16-byte over-limit cutoff, so the prototype was removed without optimization work.
@@ -48,7 +48,7 @@ Subsequent [hardware stack validation](led-control-implementation.md#stack-usage
 measured 36 bytes peak observed usage under heavy workloads in the tested firmware.
 Persistent xRAM usage did not increase.
 
-## Firmware changes
+## Firmware Changes
 
 1. In `CH552_Universal_Macropad.ino`, extend the internal indicator policy byte:
    **Off**=0, **Dim**=1, **Bright**=2, Configured=3, conditional **Dim**/**Off**=4. Keep the key policy
@@ -73,7 +73,7 @@ Persistent xRAM usage did not increase.
    __code uint8_t ledPresets[6] = {27, 25, 9, 8, 0, 28};
    ```
 
-   | Wire preset | Indicator policy | Key policy | Internal packed pair |
+   | Wire Preset | Indicator Policy | Key Policy | Internal Packed Pair |
    | --- | --- | --- | ---: |
    | 0 | Configured | Configured | 27 |
    | 1 | **Dim** | Configured | 25 |
@@ -82,7 +82,7 @@ Persistent xRAM usage did not increase.
    | 4 | **Off** | **Off** | 0 |
    | 5 | Conditional **Dim**/**Off** | Configured | 28 |
 
-4. In `indicatorBrightness(options)`, resolve policy 4 to zero for **Always on** and
+4. In `indicatorBrightness(options)`, resolve policy 4 to zero for **Always On** and
    one otherwise. The existing renderer suppresses mode **None** and suppresses
    indications whose resolved brightness is zero:
 
@@ -114,7 +114,7 @@ Persistent xRAM usage did not increase.
    `--aux`. Preserve rejection of toggle zero and all other invalid values.
    No new command constant is needed in `src/config.h`.
 
-## Editor and format documentation
+## Editor and Format Documentation
 
 - Append a sixth label to `COMMON_PRESET_LABELS` in
   `webapp/src/model/ledControl.ts`, for example:
@@ -136,7 +136,7 @@ Persistent xRAM usage did not increase.
   If versioning requirements change, handle that separately rather than claiming
   this is already supported by all v6 firmware.
 
-## Tests required before retaining it
+## Tests Required Before Retaining It
 
 The measured prototype was not behavior-tested and had no editor changes. Complete
 these checks when implementing it:
@@ -147,7 +147,7 @@ these checks when implementing it:
 - `tests/led_input_cases.h`: change internal pair shifts to 3, configured pairs
   to 27, preset loop bounds/counts to 6, and unmatched-cycle expectations to modulo
   6. Include indicator policies 0..4 and key policies 0..3; never generate key
-  policy 4. Conditional indicator stepping resolves to 0 on **Always on** and 1 on
+  policy 4. Conditional indicator stepping resolves to 0 on **Always On** and 1 on
   other modes before applying the signed step.
 - Extend renderer cases to include the conditional policy for every visibility
   mode, saved brightness, held-key state, and blink phase. Verify dim timed/blink
@@ -158,13 +158,13 @@ these checks when implementing it:
   configured brightness on a second invocation even after a layer change.
 - Confirm other LED commands replace the conditional policy normally, configured
   restores remove it, phase/speed are preserved, active-image bytes are unchanged,
-  and color preview bypasses it on an **Always on** layer.
+  and color preview bypasses it on an **Always On** layer.
 - Browser tests: include preset 5 in editor options, validate the default remains
   legal, test Set/Toggle binary and JSON round trips, and update the exhaustive
   payload count. Then run the complete host/browser suites and production build.
 - Measure both variants again and test the behavior on hardware once they fit.
 
-## Applying the saved prototype and measuring it
+## Applying the Saved Prototype and Measuring It
 
 From the project root, first check the patch against the current sources:
 

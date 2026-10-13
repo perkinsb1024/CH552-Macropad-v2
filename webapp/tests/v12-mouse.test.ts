@@ -28,7 +28,7 @@ it.each([0, 1] as const)('round-trips all 255 masks and new modes on variant %s'
   expect(encodeAction({ type: 'mouseDown', buttons: 128 }, new Map())).toEqual([0x14, 128]);
   expect(encodeAction({ type: 'mouseUp', buttons: 255 }, new Map())).toEqual([0x24, 255]);
   expect(summarize({ type: 'mouseDown', buttons: 0x88 })).toBe('Mouse Down Button 4+Button 8');
-  expect(actionTooltip({ type: 'mouseUp', buttons: 128 })).toBe('Mouse up: Button 8');
+  expect(actionTooltip({ type: 'mouseUp', buttons: 128 })).toBe('Mouse Up: Button 8');
 });
 
 it.each([0, 1] as const)('matches firmware reserved-mode validation at every trigger on variant %s', variant => {

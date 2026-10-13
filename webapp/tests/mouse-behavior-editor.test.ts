@@ -32,7 +32,7 @@ function start(slot: Slot, action: Action) {
   setAction(slot, action);
 }
 function choose(type: Action['type']) {
-  const select = nodes(Inspector()).find(n => n.props['aria-label'] === 'Mouse behavior')!;
+  const select = nodes(Inspector()).find(n => n.props['aria-label'] === 'Mouse Behavior')!;
   (select.props.onChange as (e: unknown) => void)({ target: { value: type } });
 }
 afterEach(() => vi.unstubAllGlobals());
@@ -43,10 +43,10 @@ it.each(['mouseClick', 'mouseHold', 'mouseToggle', 'mouseDown', 'mouseUp'] as co
   const actionSelect = tree.find(n => n.type === 'select')!;
   expect(actionSelect.props.value).toBe('mouseClick');
   expect(nodes(actionSelect).filter(n => n.type === 'option' && ['mouseClick', 'mouseHold', 'mouseToggle', 'mouseDown', 'mouseUp'].includes(String(n.props.value))).map(n => n.props.value)).toEqual(['mouseClick']);
-  const behavior = tree.find(n => n.props['aria-label'] === 'Mouse behavior')!;
+  const behavior = tree.find(n => n.props['aria-label'] === 'Mouse Behavior')!;
   expect(behavior.props.value).toBe(type);
   expect(nodes(behavior).filter(n => n.type === 'option').map(n => n.props.children)).toEqual(['Click', 'Hold', 'Toggle', 'Down', 'Up']);
-  expect(tree.some(n => n.props['aria-label'] === 'Click behavior')).toBe(type === 'mouseClick');
+  expect(tree.some(n => n.props['aria-label'] === 'Click Behavior')).toBe(type === 'mouseClick');
   (actionSelect.props.onChange as (e: unknown) => void)({ target: { value: 'mouseClick' } });
   expect(getAction(profile.value!, selectedSlot.value!)).toEqual({ type, buttons: 5 });
 });

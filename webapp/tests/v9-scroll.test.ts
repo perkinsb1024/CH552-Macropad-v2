@@ -39,8 +39,8 @@ it.each([0, 1] as const)('round-trips horizontal buttons, chords, rotation and b
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
-  expect(summarize(hold)).toBe('Scroll left 127 (hold)');
-  expect(summarize(p.layers[0]!.counterclockwise)).toBe('Scroll right 127');
+  expect(summarize(hold)).toBe('Scroll Left 127 (Hold)');
+  expect(summarize(p.layers[0]!.counterclockwise)).toBe('Scroll Right 127');
   const json = JSON.parse(exportProfile(p)); json.version = 8;
   expect(() => importProfile(JSON.stringify(json))).toThrow('Horizontal scrolling requires profile version 9');
   image[2] = 8; sealImage(image);

@@ -29,14 +29,14 @@ it.each(['key', 'clockwise', 'timed', 'macro'] as const)('edits both axes with a
   expect(tree.filter(n => n.type === 'option' && ['mouseX', 'mouseY', 'mouseXY'].includes(n.props.value as string))).toHaveLength(1);
   expect(tree.find(n => n.type === 'select')!.props.value).toBe('mouseX');
   expect(tree.some(n => n.props['aria-label'] === 'Behavior')).toBe(kind === 'key');
-  const component = tree.find(n => typeof n.type === 'function' && n.type.name === 'DirectionalStep' && n.props.label === 'Horizontal amount')!;
+  const component = tree.find(n => typeof n.type === 'function' && n.type.name === 'DirectionalStep' && n.props.label === 'Horizontal Amount')!;
   const controls = nodes((component.type as (p: unknown) => unknown)(component.props));
   const slider = controls.find(n => n.type === 'input')!;
   expect([slider.props.min, slider.props.max, slider.props.step, slider.props.value]).toEqual([4, 64, 4, 4]);
   (slider.props.onInput as (e: unknown) => void)({ target: { value: '8' } });
   expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: -8, y: 60 });
   tree = nodes(Inspector());
-  const horizontal = tree.find(n => typeof n.type === 'function' && n.type.name === 'DirectionalStep' && n.props.label === 'Horizontal amount')!;
+  const horizontal = tree.find(n => typeof n.type === 'function' && n.type.name === 'DirectionalStep' && n.props.label === 'Horizontal Amount')!;
   const right = nodes((horizontal.type as (p: unknown) => unknown)(horizontal.props)).find(n => n.type === 'button' && n.props.children === 'Right')!;
   (right.props.onClick as () => void)();
   expect(getAction(profile.value, slot)).toEqual({ type: 'mouseXY', x: 8, y: 60 });
@@ -57,7 +57,7 @@ it.each([
   selectedSlot.value = slot;
   setAction(slot, action);
   const tree = nodes(Inspector());
-  expect(tree.find(n => n.type === 'option' && n.props.value === 'mouseX')!.props.children).toContain('Move mouse');
+  expect(tree.find(n => n.type === 'option' && n.props.value === 'mouseX')!.props.children).toContain('Move Mouse');
   const axis = tree.find(n => n.props['aria-label'] === 'Axis')!;
   expect(nodes(axis).filter(n => n.type === 'button').map(n => [n.props.children, n.props['aria-pressed']])).toEqual([
     ['X', action.type === 'mouseX'], ['Y', action.type === 'mouseY'], ['Both', action.type === 'mouseXY'],
@@ -114,7 +114,7 @@ it.each(['mouseX', 'mouseY'] as const)('uses a valid nonzero step when changing 
   expect(getAction(profile.value, slot)).toEqual({ type, delta: 4 });
 });
 
-it.each(['Horizontal amount', 'Vertical amount'])('clamps %s to the combined magnitude limits', label => {
+it.each(['Horizontal Amount', 'Vertical Amount'])('clamps %s to the combined magnitude limits', label => {
   profile.value = defaultProfile(0);
   const slot: Slot = { kind: 'key', layer: 0, index: 0 };
   selectedSlot.value = slot;
@@ -124,6 +124,6 @@ it.each(['Horizontal amount', 'Vertical amount'])('clamps %s to the combined mag
     const slider = nodes((component.type as (p: unknown) => unknown)(component.props)).find(n => n.type === 'input')!;
     (slider.props.onInput as (e: unknown) => void)({ target: { value: input } });
     const action = getAction(profile.value, slot);
-    expect(action).toEqual({ type: 'mouseXY', x: label === 'Horizontal amount' ? expected : -8, y: label === 'Vertical amount' ? expected : -8 });
+    expect(action).toEqual({ type: 'mouseXY', x: label === 'Horizontal Amount' ? expected : -8, y: label === 'Vertical Amount' ? expected : -8 });
   }
 });

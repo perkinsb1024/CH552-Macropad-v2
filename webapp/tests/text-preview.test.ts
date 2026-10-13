@@ -24,6 +24,6 @@ it('reveals all spaces for boundary whitespace or consecutive whitespace', () =>
 it('uses the full string to decide visibility before truncating summaries', () => {
   const action = { type: 'string', text: 'hello world with trailing whitespace ' } as const;
   expect(summarize(action)).toBe('“hello␣world␣w…”');
-  expect(actionTooltip(action)).toBe('Type text: “hello␣world␣with␣trailing␣whitespace␣”');
+  expect(actionTooltip(action)).toBe('Type Text: “hello␣world␣with␣trailing␣whitespace␣”');
   expect(summarize({ type: 'string', text: 'hello world longer' })).toBe('“hello world l…”');
 });

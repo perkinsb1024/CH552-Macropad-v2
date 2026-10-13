@@ -158,7 +158,7 @@ describe('configuration clipboard event scope', () => {
     ]);
     selectedSlot.value = { kind: 'clockwise', layer: 0 };
     fire('paste', body, { clipboardData: { getData: vi.fn(() => text) } });
-    expect(toasts.value.at(-1)!.text).toBe('Pasted "Relative Layer: +1" to Layer 1, Encoder clockwise');
+    expect(toasts.value.at(-1)!.text).toBe('Pasted "Relative Layer: +1" to Layer 1, Encoder Clockwise');
     const count = toasts.value.length;
     fire('paste', body, { clipboardData: { getData: vi.fn(() => 'ordinary text') } });
     expect(toasts.value.length).toBe(count);

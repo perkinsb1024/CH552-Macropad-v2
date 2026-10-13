@@ -95,7 +95,7 @@ describe('rainbow phase spacing', () => {
     edited.rainbowPhase = 0;
     const changes = profileChanges(saved, edited);
     expect(changes).toHaveLength(1);
-    expect(changes[0]).toMatchObject({ where: 'Rainbow phase spacing', before: '60°', after: '0°' });
+    expect(changes[0]).toMatchObject({ where: 'Rainbow Phase Spacing', before: '60°', after: '0°' });
     changes[0]!.undo!(edited);
     expect(edited).toEqual(saved);
   });
@@ -118,7 +118,7 @@ describe('rainbow phase spacing', () => {
     expect(selector.props.value).toBe(2);
     expect(elements(selector.props.children).filter((e) => e.type === 'option').map((e) => e.props.value)).toEqual([0, 1, 2, 3]);
     expect(elements(selector.props.children).map((e) => e.props.children)).toEqual([
-      '0° — All LEDs together', '30° — Gentle color wave', '60° — Rainbow sweep', 'Variable — Scattered colors',
+      '0° — All LEDs Together', '30° — Gentle Color Wave', '60° — Rainbow Sweep', 'Variable — Scattered Colors',
     ]);
     // Start a fresh history before invoking the actual selector callback.
     updateProfile((p) => { p.rainbowPhase = 2; });

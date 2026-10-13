@@ -21,7 +21,7 @@ it('detects the five-layer forward-only trap and conditional return from Layer 5
   expect(warnings.map(w => w.layer)).toEqual([1, 2, 3, 4]);
   for (const w of warnings.slice(0, 3)) expect(w.message).toContain('There is no path');
   expect(warnings[3]!.message).toContain('After some layer changes');
-  expect(warnings[3]!.message).toContain('Previous layer remembers only one layer');
+  expect(warnings[3]!.message).toContain('Previous Layer remembers only one layer');
 });
 it('finds a trap even when another history on the same layer can return', () => {
   const p = profile(3);

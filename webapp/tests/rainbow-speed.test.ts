@@ -123,14 +123,14 @@ describe('rainbow speed', () => {
     const info = () => controls().filter((e) => e.props.class === 'notice notice-info');
     const selector = controls().find((e) => e.props.id === 'rainbow-speed')!;
     expect(selector.props.value).toBe(1);
-    expect(elements(selector.props.children).map((e) => e.props.children)).toEqual(['Extra fast', 'Fast', 'Slow', 'Extra slow']);
+    expect(elements(selector.props.children).map((e) => e.props.children)).toEqual(['Extra Fast', 'Fast', 'Slow', 'Extra Slow']);
     const fields = controls().filter((e) => e.props.class === 'field');
     expect(fields.filter((e) => elements(e).some((child) => child.props.id === 'rainbow-phase' || child.props.id === 'rainbow-speed'))).toHaveLength(2);
     expect(info()).toHaveLength(0);
     (selector.props.onChange as (event: unknown) => void)({ target: { value: '0' } });
     expect(profile.value!.rainbowSpeed).toBe(0);
     expect(info()).toHaveLength(1);
-    expect(profileChanges(baseline.value, profile.value!)[0]).toMatchObject({ where: 'Rainbow speed', before: 'Fast', after: 'Extra fast' });
+    expect(profileChanges(baseline.value, profile.value!)[0]).toMatchObject({ where: 'Rainbow Speed', before: 'Fast', after: 'Extra Fast' });
     undo();
     expect(profile.value!.rainbowSpeed).toBe(1);
     expect(info()).toHaveLength(0);

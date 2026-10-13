@@ -1,4 +1,4 @@
-# Layer expansion experiment
+# Layer Expansion Experiment
 
 Format 4 supports five layers on six-key hardware and seven on three-key hardware.
 The same 128-byte saved image and 9-byte header remain in use. Each six-key layer
@@ -13,13 +13,13 @@ wrapping, which only works for layer counts dividing 12 (1–4). The new arithme
 adds eight times the actual layer count, ensuring a nonnegative value for every
 supported offset before repeated subtraction. No division helper is needed.
 
-## Measured firmware cost
+## Measured Firmware Cost
 
 Built before and after with the same CH55xDuino 0.0.25 / SDCC build.13407_4
 toolchain, 24 MHz clock, 148-byte USB RAM setting, and size optimization. Figures
 come from the generated `firmware.mem` linker reports, not HEX file sizes.
 
-| Hardware | Before flash | After flash | Increase | Free of 14,336 bytes | XRAM before/after |
+| Hardware | Before Flash | After Flash | Increase | Free of 14,336 Bytes | XRAM Before/After |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Six keys | 14,126 | 14,134 | 8 | 202 | 626 / 626 |
 | Three keys | 14,125 | 14,133 | 8 | 203 | 617 / 617 |

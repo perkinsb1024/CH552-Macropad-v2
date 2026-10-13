@@ -18,7 +18,7 @@ export const RAINBOW_PHASE_DEGREES = [0, 30, 60, 150] as const;
 export const RAINBOW_PHASE_LABELS = ['0°', '30°', '60°', 'Variable'] as const;
 export const DEFAULT_RAINBOW_PHASE = 2;
 export const HEADER_RAINBOW_PHASE_SHIFT = 4;
-export const RAINBOW_SPEED_LABELS = ['Extra fast', 'Fast', 'Slow', 'Extra slow'] as const;
+export const RAINBOW_SPEED_LABELS = ['Extra Fast', 'Fast', 'Slow', 'Extra Slow'] as const;
 export const RAINBOW_SPEED_FRAME_MS = [4, 6, 10, 18] as const;
 export const DEFAULT_RAINBOW_SPEED = 1;
 export const HEADER_RAINBOW_SPEED_SHIFT = 6;
@@ -49,7 +49,7 @@ export function pairCount(variant: Variant): number {
 }
 
 export function variantName(variant: Variant): string {
-  return variant === VARIANT_THREE_KEYS ? 'Three-key' : 'Six-key';
+  return variant === VARIANT_THREE_KEYS ? 'Three-Key' : 'Six-Key';
 }
 
 /** Action type codes; the numbering is part of the saved format. */

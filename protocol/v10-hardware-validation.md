@@ -1,4 +1,4 @@
-# v10 hardware validation
+# v10 Hardware Validation
 
 Preparation steps 1–4 and the full v10 hardware validation suite are complete.
 The user confirmed the suite passed. Normal v10 release HEX files were generated
@@ -9,7 +9,7 @@ per-timer fractional counters are enabled in production source.
 - [Three-key release HEX](../releases/ch552-macropad-3-key-30101c94.hex)
 - [Six-key release HEX](../releases/ch552-macropad-6-key-30101c94.hex)
 
-## Historical test builds
+## Historical Test Builds
 
 These temporary HEX files advertise format 10 and use the actual 14,336-byte
 application limit. They were built from the uncommitted preparation source.
@@ -19,7 +19,7 @@ application limit. They were built from the uncommitted preparation source.
 - [Build measurements](/private/tmp/macropad-v10-test-builds-yyy9oi45/results.json)
 - [HEX checksums](/private/tmp/macropad-v10-test-builds-yyy9oi45/sha256.json)
 
-| Hardware | Flash used | Flash spare | Paged RAM | External RAM | Stack capacity |
+| Hardware | Flash Used | Flash Spare | Paged RAM | External RAM | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Three keys | 14,292 | 44 | 108 | 487 | 78 |
 | Six keys | 14,294 | 42 | 108 | 496 | 75 |
@@ -27,7 +27,7 @@ application limit. They were built from the uncommitted preparation source.
 The configurator and bundled web uploader now target the v10 release files above.
 The temporary images are retained here as provenance for the completed test run.
 
-## Hardware checklist
+## Hardware Checklist
 
 Run on both hardware variants where available. Export the existing profile with
 the matching v9 editor before installing a v10 test image.
@@ -39,13 +39,13 @@ the matching v9 editor before installing a v10 test image.
    and reconnect. Inputs should work and the saved profile should persist.
 2. Set a global timer to one tick (4.096 seconds), with input restart off and a
    visible expiry action. Confirm repetition while using the pad and changing
-   layers. Enable **Restart on key / encoder input** and confirm that key
+   layers. Enable **Restart on Key / Encoder Input** and confirm that key
    presses, wheel-button presses and completed detents postpone expiry.
 3. Assign a timer to **Layer 2** with an 8.192-second interval. It should stay
    inactive on **Layer 1**. Enter **Layer 2**, leave before expiry, and return:
-   the complete interval should restart. Also exercise **Layer while held**
+   the complete interval should restart. Also exercise **Layer While Held**
    and one-shot returns. Selecting the already-active layer should not reset it.
-4. Arm a scoped timer's **On next input** action, change layers, then use the
+4. Arm a scoped timer's **On Next Input** action, change layers, then use the
    pad. The armed action should still run once. Repeat with **Consume this
    input** off and on, and with the follow-up set to **Nothing**. Verify that
    consuming an input preserves a pending one-shot return.
@@ -70,7 +70,7 @@ The maximum interval and all counter boundaries have automated coverage; a
 maximum-duration wall-clock test is optional. Record the hardware variant,
 profile, elapsed time and any unexpected behavior for failures.
 
-## Completed automated checks
+## Completed Automated Checks
 
 - Firmware host tests: configuration, dispatcher, protocol, USB, timed actions
   and real input scanning on both variants, plus five build-memory checks.

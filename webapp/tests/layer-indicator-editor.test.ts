@@ -37,7 +37,7 @@ describe('same-layer indicator actions', () => {
     ['relativeLayer', 1, 6], ['oneShotRelativeLayer', 1, 6],
   ] as const)('offers a slider with zero for %s on variant %s', (type, variant, limit) => {
     const nodes = edit({ type, offset: 1 }, variant);
-    const slider = nodes.find((node) => node.type === 'input' && node.props['aria-label'] === 'Relative offset')!;
+    const slider = nodes.find((node) => node.type === 'input' && node.props['aria-label'] === 'Relative Offset')!;
     expect(slider.props).toMatchObject({ type: 'range', min: -limit, max: limit, step: 1, value: 1 });
     expect(nodes.filter((node) => node.type === 'output').map(text)).toContain('+1');
     expect(nodes.some((node) => text(node) === message)).toBe(false);

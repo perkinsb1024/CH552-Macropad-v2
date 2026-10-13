@@ -1,4 +1,4 @@
-# V9 horizontal scroll implementation
+# V9 Horizontal Scroll Implementation
 
 Configuration format 9 adds auxiliary bit 3 to **Scroll** for **Horizontal**.
 Bit 2 continues to select **Hold**; bits 0–1 remain reserved. The first action
@@ -12,7 +12,7 @@ physical release.
 
 Ordinary source builds, without release generation:
 
-| Resource | Six-key | Three-key |
+| Resource | Six-Key | Three-Key |
 | --- | ---: | ---: |
 | Flash used / 14,336 bytes | 14,330 | 14,326 |
 | Flash free | 6 | 10 |
@@ -33,7 +33,7 @@ into existing padding solved the RAM issue. Byte-sized validator arithmetic,
 constant-index consumer report packing, and removing redundant descriptor
 size, usage-page and logical-minimum items recovered flash. All existing features remain enabled.
 
-## Compatibility and checks
+## Compatibility and Checks
 
 The latest editor writes binary and JSON version 9. It imports older profiles
 and recovers v8 drafts without changing their source. Existing v8 scroll records
@@ -61,6 +61,6 @@ A browser simulator check confirmed axis selection changes directions and
 binding summaries while preserving wheel step.
 
 Horizontal HID signs remain unchanged by host scroll preferences. A direction
-hint opens **Scroll & click test**, with scrolling on both axes, a warning for
+hint opens **Scroll & Click Test**, with scrolling on both axes, a warning for
 unsaved edits and separate mouse-button counters. Users can swap the selected
 direction to match their computer without changing firmware HID conventions.

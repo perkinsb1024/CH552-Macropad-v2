@@ -12,7 +12,7 @@ export function Welcome() {
             <span class="mini-knob" />
           </div>
         </div>
-        <h2>Configure your macropad</h2>
+        <h2>Configure Your Macropad</h2>
         <p>
           Bind key presses, chords and the encoder across multiple layers, pick LED colors, and save
           everything to the device. Settings live on the macropad, so nothing here needs to run afterwards.
@@ -33,22 +33,22 @@ export function Welcome() {
 
         <div class="welcome-actions">
           <button class="btn btn-primary btn-large" onClick={() => void connectHid()} disabled={!hidSupported}>
-            <IconConnect /> Connect macropad
+            <IconConnect /> Connect Macropad
           </button>
           <div class="welcome-secondary">
             <span class="muted">or edit offline for a</span>
-            <button class="link" onClick={() => startOffline(0)}>six-key</button>
+            <button class="link" onClick={() => startOffline(0)}>Six-Key</button>
             <span class="muted">/</span>
-            <button class="link" onClick={() => startOffline(1)}>three-key</button>
+            <button class="link" onClick={() => startOffline(1)}>Three-Key</button>
             <span class="muted">device, or try a</span>
-            <button class="link" onClick={() => void connectSimulator(0)}>simulated macropad</button>
+            <button class="link" onClick={() => void connectSimulator(0)}>Simulated Macropad</button>
           </div>
         </div>
 
         <details class="welcome-help">
-          <summary>Device not showing up?</summary>
+          <summary>Device Not Showing Up?</summary>
           <ul>
-            <li>Check browser and device permissions on your operating system. <button class="link" onClick={showInputMonitoringHelp}>Show connection &amp; permission help</button></li>
+            <li>Check browser and device permissions on your operating system. <button class="link" onClick={showInputMonitoringHelp}>Show Connection &amp; Permission Help</button></li>
             <li>Plug the macropad in with a USB-A to USB-C cable. The default, factory firmware usually types "C" for each key press</li>
             <li>
               Your macropad must be running this <a href="https://github.com/perkinsb1024/CH552-Macropad-v2#how-to-upload-the-firmware" target="_blank">custom firmware</a>. Any other firmware, including factory firmware is not editable with this tool.

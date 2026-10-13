@@ -94,15 +94,15 @@ export function slotLabel(slot: Slot): string {
   switch (slot.kind) {
     case 'macro': return `Macro ${slot.index + 1} · Step ${slot.step + 1}`;
     case 'timed':
-      return `Timed action ${slot.index + 1}${slot.resume ? ' · Resume' : ''}`;
+      return `Timed Action ${slot.index + 1}${slot.resume ? ' · Resume' : ''}`;
     case 'key':
       return `${layer} · Key ${slot.index + 1}`;
     case 'encoderButton':
-      return `${layer} · Encoder button`;
+      return `${layer} · Encoder Button`;
     case 'clockwise':
-      return `${layer} · Encoder clockwise`;
+      return `${layer} · Encoder Clockwise`;
     case 'counterclockwise':
-      return `${layer} · Encoder counterclockwise`;
+      return `${layer} · Encoder Counterclockwise`;
     case 'chord':
       return `${slot.global ? 'Global' : layer} · Chord ${slot.keyA + 1}+${slot.keyB + 1}`;
   }
@@ -131,7 +131,7 @@ export function validateProfile(profile: Profile): Issue[] {
   }
 
   if (!Number.isInteger(profile.rainbowSpeed) || profile.rainbowSpeed < 0 || profile.rainbowSpeed > 3) {
-    issues.push({ where: 'Profile', message: 'Rainbow speed must be Extra fast, Fast, Slow or Extra slow.' });
+    issues.push({ where: 'Profile', message: 'Rainbow speed must be Extra Fast, Fast, Slow or Extra Slow.' });
   }
 
   profile.layers.forEach((layer, li) => {
@@ -185,10 +185,10 @@ export function validateProfile(profile: Profile): Issue[] {
   }
 
   const timers = profile.timedActions ?? [];
-  if (!Array.isArray(timers)) return [...issues, { where: 'Timed actions', message: 'Timed actions must be a list.' }];
-  if (timers.length > MAX_TIMED_ACTIONS) issues.push({ where: 'Timed actions', message: `At most ${MAX_TIMED_ACTIONS} timed actions are supported.` });
+  if (!Array.isArray(timers)) return [...issues, { where: 'Timed Actions', message: 'Timed actions must be a list.' }];
+  if (timers.length > MAX_TIMED_ACTIONS) issues.push({ where: 'Timed Actions', message: `At most ${MAX_TIMED_ACTIONS} timed actions are supported.` });
   timers.forEach((timer, index) => {
-    const where = `Timed action ${index + 1}`;
+    const where = `Timed Action ${index + 1}`;
     if (!Number.isInteger(timer.ticks) || timer.ticks < 1 || timer.ticks > MAX_TIMED_TICKS)
       issues.push({ where, message: `Interval must be a whole number from 1 to ${MAX_TIMED_TICKS} ticks.` });
     if (timer.layer !== undefined && (!Number.isInteger(timer.layer) || timer.layer < 0 || timer.layer >= layerCount))

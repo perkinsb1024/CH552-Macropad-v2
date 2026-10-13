@@ -1,6 +1,6 @@
-# Timed actions investigation plan
+# Timed Actions Investigation Plan
 
-## Goal and constraints
+## Goal and Constraints
 
 Investigate a new profile-wide trigger alongside physical keys, encoder inputs,
 and chords. A timer interval is 1–128 ticks of 65.536 seconds, with an optional
@@ -13,7 +13,7 @@ The committed LED-sleep experiment already exceeds the 14,336-byte limit. Remove
 that experiment from the timed-actions prototype so measurements compare against
 the working preset-toggle firmware. Retain its source in commit 2709c23.
 
-## Questions and semantic decisions
+## Questions and Semantic Decisions
 
 - Timers are global, not duplicated per layer. Resolve layer-changing actions
   against the active layer at execution time. Store action bytes with each timer.
@@ -45,7 +45,7 @@ the working preset-toggle firmware. Retain its source in commit 2709c23.
   repeating mouse delta drifts. Two opposing periodic actions can demonstrate
   the scheduling primitive, but a dedicated jiggle action is out of scope.
 
-## Encoding proposal for the first probe
+## Encoding Proposal for the First Probe
 
 Use format 7 for the structural extension; support reading existing v6 images
 in updated firmware. Old firmware must reject v7 rather than reinterpret records.
@@ -59,7 +59,7 @@ contains interval/flags, a two-byte action, and a two-byte resume action (**None
 encoded as zero). Cost: five configuration bytes per timer, no runtime copy of
 action records. **String** offsets must account for the timer region.
 
-## Work sequence
+## Work Sequence
 
 1. Save this plan before firmware edits; record clean branch and baseline sizes.
 2. Inspect existing action dispatcher/queue, one-shot state, validation and pool
@@ -80,21 +80,21 @@ action records. **String** offsets must account for the timer region.
    that evidence and outstanding “any action”/UI work rather than build a polished
    editor for an unflashable design. If it fits or looks credibly close, implement
    full release lifecycles and editor/model/binary/JSON/capacity/migration support.
-8. For a viable design, add a **Timed actions** list with interval, reset-on-input,
+8. For a viable design, add a **Timed Actions** list with interval, reset-on-input,
    action inspector and optional resume action. Display approximate duration and
    image capacity, keep detailed options collapsed. Preserve old draft/profile
    defaults and version archives. Run browser tests/build and firmware suites.
 9. Update this plan with measured results, limitations, retained variants and
    exact reproduction commands. No release build or push is authorized.
 
-## Acceptance evidence
+## Acceptance Evidence
 
 Distinguish compiled/host-tested prototypes from hardware-tested behavior. Record
 the normal linker failures rather than raising the hardware code limit. Report
 stack capacity as capacity, never measured usage. Record features omitted from
 the prototype separately from existing features removed (target: none).
 
-## Investigation result
+## Investigation Result
 
 The retained prototype and compile-time concession variants were implemented and
 measured. The six-key retained build is 803 bytes over, and even the no-resume
@@ -106,7 +106,7 @@ prototype is substantially over the available space. See
 [timed-actions-findings.md](timed-actions-findings.md) for measured variants,
 limitations, optimizations and reproduction instructions.
 
-## Second optimization pass
+## Second Optimization Pass
 
 The user authorized a deeper optimization investigation after checkpoint
 `0961153`, accepting the existing tap/encoder-compatible timed-action subset.

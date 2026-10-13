@@ -61,7 +61,7 @@ export function Sidebar({ children }: { children: ComponentChildren }) {
   };
   return <aside class="column-side" ref={ref}>
     <div class="sidebar-scroll"><div class="column">{children}</div></div>
-    <button type="button" class="sidebar-scroll-arrow sidebar-scroll-up" aria-label="Scroll sidebar up" title="Scroll up" onClick={() => scrollPage(-1)}><IconArrow up /></button>
-    <button type="button" class="sidebar-scroll-arrow sidebar-scroll-down" aria-label="Scroll sidebar down" title="Scroll down" onClick={() => scrollPage(1)}><IconArrow /></button>
+    <button type="button" class="sidebar-scroll-arrow sidebar-scroll-up" aria-label="Scroll Sidebar Up" title="Scroll up" onClick={() => scrollPage(-1)}><IconArrow up /></button>
+    <button type="button" class="sidebar-scroll-arrow sidebar-scroll-down" aria-label="Scroll Sidebar Down" title="Scroll down" onClick={() => scrollPage(1)}><IconArrow /></button>
   </aside>;
 }

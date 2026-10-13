@@ -20,18 +20,18 @@ function ConnectMenu({ disabled = false }: { disabled?: boolean }) {
     <div class="menu" ref={ref}>
       <div class="btn-group">
         <button class="btn btn-primary" onClick={() => void connectHid()} disabled={disabled || !hidSupported} title={disabled ? 'Macropad already connected or an operation is in progress' : hidSupported ? 'Choose a macropad via WebHID' : 'WebHID is unavailable in this browser'}>
-          <IconConnect /> Connect macropad
+          <IconConnect /> Connect Macropad
         </button>
-        <button class="btn btn-primary btn-icon" disabled={disabled} aria-label="More connection options" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button class="btn btn-primary btn-icon" disabled={disabled} aria-label="More Connection Options" aria-expanded={open} onClick={() => setOpen(!open)}>
           <IconChevron />
         </button>
       </div>
       {open && (
         <div class="menu-list" role="menu">
-          <div class="menu-heading">Try without hardware</div>
-          <button role="menuitem" onClick={() => { setOpen(false); void connectSimulator(0); }}>Simulated six-key macropad</button>
-          <button role="menuitem" onClick={() => { setOpen(false); void connectSimulator(1); }}>Simulated three-key macropad</button>
-          <button role="menuitem" onClick={() => { setOpen(false); void connectSimulator(0, true); }}>Simulated six-key, blank flash</button>
+          <div class="menu-heading">Try without Hardware</div>
+          <button role="menuitem" onClick={() => { setOpen(false); void connectSimulator(0); }}>Simulated Six-Key Macropad</button>
+          <button role="menuitem" onClick={() => { setOpen(false); void connectSimulator(1); }}>Simulated Three-Key Macropad</button>
+          <button role="menuitem" onClick={() => { setOpen(false); void connectSimulator(0, true); }}>Simulated Six-Key, Blank Flash</button>
         </div>
       )}
     </div>
@@ -42,7 +42,7 @@ function SaveButton() {
   const s = saveState.value;
   const c = connection.value;
   if (s.phase === 'busy') {
-    const label = s.step === 'uploading' ? 'Uploading' : s.step === 'saving' ? 'Writing flash' : 'Verifying';
+    const label = s.step === 'uploading' ? 'Uploading' : s.step === 'saving' ? 'Writing Flash' : 'Verifying';
     return (
       <button class="btn btn-primary btn-busy" disabled>
         <span class="spinner" /> {label}… {s.step !== 'saving' ? `${Math.round(s.fraction * 100)}%` : ''}
@@ -57,7 +57,7 @@ function SaveButton() {
   else if (!canSave.value) title = 'Fix the listed problems before saving';
   return (
     <button class={`btn btn-primary ${dirty.value && canSave.value ? 'btn-attention' : ''}`} disabled={!canSave.value} onClick={() => void save()} title={title}>
-      {s.phase === 'saved' && !dirty.value ? <><IconCheck /> Saved</> : <><IconSave /> Save to device</>}
+      {s.phase === 'saved' && !dirty.value ? <><IconCheck /> Saved</> : <><IconSave /> Save to Device</>}
     </button>
   );
 }
@@ -104,11 +104,11 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
   }, []);
   const c = connection.value;
   const confirmRead = () => ask({
-    title: 'Read from device?',
+    title: 'Read from Device?',
     body: 'This replaces the profile in the editor and clears its undo history. Unsaved changes will be lost.',
     actions: [
       { label: 'Cancel', tone: 'neutral', onSelect: closeDialog },
-      { label: 'Read from device', tone: 'danger', onSelect: () => { closeDialog(); void loadFromDevice(); } },
+      { label: 'Read from Device', tone: 'danger', onSelect: () => { closeDialog(); void loadFromDevice(); } },
     ],
   });
   useEffect(() => {
@@ -175,7 +175,7 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
         {c.kind === 'connected' ? (
           <>
             <button class="btn" onClick={readOnly ? () => void loadFromDevice() : confirmRead} disabled={saveState.value.phase === 'busy'} title="Read the profile stored on the device">
-              <IconReadDevice /> Read from device
+              <IconReadDevice /> Read from Device
             </button>
             <button class="btn toolbar-disconnect" onClick={() => void disconnect()} disabled={saveState.value.phase === 'busy'} title="Disconnect" aria-label="Disconnect">
               <IconClose /> Disconnect

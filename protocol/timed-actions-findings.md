@@ -1,4 +1,4 @@
-# Timed actions investigation findings
+# Timed Actions Investigation Findings
 
 > Historical first-pass measurements at checkpoint `0961153`. The subsequent
 > [optimization investigation](timed-actions-optimization.md) fits the full
@@ -23,7 +23,7 @@ implementation. Code, measurements, tests and reproduction instructions are
 retained so this is not merely a speculative estimate. This is not a complete
 or flashable implementation of the requested feature.
 
-## Implemented trigger and resume behavior
+## Implemented Trigger and Resume Behavior
 
 - **Profile**-wide independent timers, four by default. An interval byte represents
   1–128 ticks of 65.536 seconds; bit 7 requests reset on physical input.
@@ -58,10 +58,10 @@ fire shortly after an input near a boundary; it is not a guaranteed minimum
 65.536-second idle interval. Exact independent deadlines would require additional
 state or logic. Subsequent uninterrupted periods have the selected tick count.
 
-### LED wake example
+### LED Wake Example
 
-Assign the timed action **Set common brightness preset: Layers off, keys dim**.
-Assign its resume action **Set both brightnesses: As configured**. The timer
+Assign the timed action **Set Common Brightness Preset: Layers Off, Keys Dim**.
+Assign its resume action **Set Both Brightnesses: As Configured**. The timer
 applies the dark preset; the next physical input restores configured brightness.
 If that key itself sets brightness, its action takes precedence over restoration.
 Real renderer host tests cover this ordering on both physical variants.
@@ -72,7 +72,7 @@ prior brightness overrides; resume runs the specifically configured action.
 Exact previous-state restoration or always-on-only suppression would require
 additional semantics. It must not be presented as automatically available.
 
-### Repeating mouse movement
+### Repeating Mouse Movement
 
 Mouse X/Y steps can use timed dispatch. A lone repeated positive step causes
 drift; a jiggle needs opposing movements, for example two simultaneous timers
@@ -80,13 +80,13 @@ with +1 and -1 X actions. Both actions depend on ordinary queue capacity. The
 65.536-second minimum quantum may be too slow for some host inactivity policies.
 No physical mouse movement or host keep-awake behavior was tested.
 
-## Configuration prototype
+## Configuration Prototype
 
 Structural changes use format 7, with existing format 6 still accepted by
 the updated firmware. Older firmware rejects format 7 instead of interpreting
 timer records as chords/strings. Existing action and layer encodings remain.
 
-| Field | Prototype encoding |
+| Field | Prototype Encoding |
 | --- | --- |
 | Header byte 3 bits 0–5 | Existing layer count/startup layer |
 | Header byte 3 bits 6–7 | Timer-count low two bits |
@@ -109,14 +109,14 @@ variant uses three-byte records. These are experimental layouts, not mutually
 interchangeable despite sharing provisional format number 7. A shipping format
 would require selecting one stable layout and updating its versioned editor.
 
-## Measured variants
+## Measured Variants
 
 Toolchain: CH55xDuino 0.0.25 / SDCC build.13407_4, size optimization, preview enabled,
 normal linker limit. All final variants have a valid RAM layout and fail only the
 flash-size check. Early exploratory builds also had direct-RAM allocation errors;
 they were corrected before the measurements below.
 
-| Variant | Flash bytes | Over 14,336 | xRAM used / 876 | Stack capacity |
+| Variant | Flash Bytes | Over 14,336 | xRAM Used / 876 | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: |
 | Working toggle, six-key baseline | 14,325 | Fits, 11 free | 628 | 125 |
 | Committed LED sleep, six-key | 14,377 | 41 | 628 | 124 |
@@ -144,7 +144,7 @@ measured 36 bytes peak observed usage under heavy workloads, leaving ample headr
 in the tested firmware. These results do not establish hardware behavior for each
 experimental prototype.
 
-## RAM and optimizations
+## RAM and Optimizations
 
 The scheduler uses four byte counters and one shared clock byte. Each counter's
 high bit remembers whether the timer fired, avoiding a separate resume-state
@@ -153,7 +153,7 @@ runtime RAM. Four extra mouse-toggle latch slots preserve independent ownership.
 The total measured xRAM increase over working toggle is fourteen bytes, including
 compiler temporaries and state moved out of scarce direct RAM.
 
-Retained changes reuse action validation, HID playback, **LED control**, and layer
+Retained changes reuse action validation, HID playback, **LED Control**, and layer
 dispatch. `consumerReleasePending`, `layerSelectionPending`, `clicksLeft`, timer
 offset temporaries, and a string argument were placed in xRAM to resolve direct
 RAM/overlay allocation pressure. All original physical action regressions pass.
@@ -164,7 +164,7 @@ Packing resume state was retained. Ordinary hardware geometry is still resolved
 at compile time, and color preview remains enabled. No existing release feature
 was disabled to fit a variant.
 
-## Scope still missing
+## Scope Still Missing
 
 The probe supports rotation-compatible timer actions: key taps, mouse
 click/double-click/toggle, scrolling, non-held pointer steps, consumer/string
@@ -184,7 +184,7 @@ Further architecture work would need to recover roughly 800 bytes before adding
 those missing firmware semantics. These measurements establish the cost of this
 implementation, not a proof that every possible design is impossible.
 
-## Verification and reproduction
+## Verification and Reproduction
 
 The complete host suite passes on the retained sources, including both physical
 input/rendering variants. New tests cover count/bounds validation, string offsets,
@@ -212,7 +212,7 @@ preserves existing build flags, adds the flags below, captures logs, prints
 `firmware.mem`, and returns nonzero when linker checks fail. It does not increase
 the code limit, generate releases, or upload hardware.
 
-| Variant | Additional flags |
+| Variant | Additional Flags |
 | --- | --- |
 | Retained | **None** |
 | All reset | `-DCONFIG_TIMED_ALL_RESET=1` |

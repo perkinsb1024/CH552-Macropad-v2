@@ -1,4 +1,4 @@
-# Layer-scoped timed actions: feasibility measurements
+# Layer-Scoped Timed Actions: Feasibility Measurements
 
 This is the initial measurement record. The subsequent
 [interval-width and flash-fit investigation](six-byte-timer-intervals-and-fit.md)
@@ -31,14 +31,14 @@ leave roughly 78–128 bytes of six-key headroom after this combined prototype;
 it is a target, not an established saving. These measurements are working
 prototypes, not a claim that the implementations are size-optimal.
 
-## Firmware sizes
+## Firmware Sizes
 
 The application limit is 14,336 bytes. Negative headroom means the image is too
 large for the application region. All candidate numbers include configuration
 validation, changed record/string addressing where needed, runtime behavior,
 and the RAM-placement adjustments needed to link.
 
-| Prototype | Six-key flash | Three-key flash | Increase, six / three | Headroom, six / three |
+| Prototype | Six-Key Flash | Three-Key Flash | Increase, Six / Three | Headroom, Six / Three |
 | --- | ---: | ---: | ---: | ---: |
 | Current firmware | 14,330 | 14,326 | 0 / 0 | 6 / 10 |
 | RAM placement only, control measurement | 14,332 | 14,328 | 2 / 2 | 4 / 8 |
@@ -55,7 +55,7 @@ The eight-bit interval alone costs 14 bytes. Adding it to the scoped reset
 prototype costs another 22 bytes. Compiler register allocation and interactions
 between paths make those incremental costs different.
 
-## Configuration storage
+## Configuration Storage
 
 Three bits can encode the optional scope without an additional enable bit:
 `0` means all layers; `1–7` means the corresponding layer, with zero-based
@@ -69,7 +69,7 @@ String-pool addressing and capacity validation account for those two bytes.
 
 The combined six-byte prototype uses this experimental layout:
 
-| Record offset | Meaning |
+| Record Offset | Meaning |
 | --- | --- |
 | 0 | Interval minus one, 0–255 means 1–256 interval units |
 | 1–2 | Expiry action, existing two-byte encoding |
@@ -82,7 +82,7 @@ The combined six-byte prototype uses this experimental layout:
 The original-interval six-byte probes keep the existing first byte and use only
 the scope bits in byte 5, to isolate the cost of layer support.
 
-| Timer count | Current timer bytes | Shared-selector layout | Six-byte layout |
+| Timer Count | Current Timer Bytes | Shared-Selector Layout | Six-Byte Layout |
 | --- | ---: | ---: | ---: |
 | 0 | 0 | 0 | 0 |
 | 1 | 5 | 7 | 6 |
@@ -96,13 +96,13 @@ This is a reduction in available profile/string capacity, separate from the
 firmware code costs above. Both layouts would require a format change and
 migration before use in a product.
 
-## Interval resolution
+## Interval Resolution
 
 An eight-bit interval does not require a longer maximum duration. The probe
 changes the shared fine clock from `millis() >> 9` to `millis() >> 7`, retaining
 the existing eight-bit per-timer fractional accumulator:
 
-| Property | Current | Eight-bit prototype |
+| Property | Current | Eight-Bit Prototype |
 | --- | --- | --- |
 | Selectable interval unit | 131.072 s | 32.768 s |
 | Number of interval units | 1–64 | 1–256 |
@@ -123,7 +123,7 @@ eight bits for age requires separate pending state. The prototype uses four
 bit-mask alternative was not measured; its smaller RAM use does not necessarily
 mean smaller 8051 code.
 
-## Layer behavior and next-input actions
+## Layer Behavior and Next-Input Actions
 
 The reset variants implement the user's selected behavior at the actual effective
 layer transition, rather than discovering it during a later timer poll:
@@ -146,11 +146,11 @@ The final additional variant resets only interval state and retains the pending
 next-input action. Once armed, that action runs on the first physical input even
 if another layer is now active, including the existing consume flag. This allows
 an expiry action to select another layer and a next-input action to restore
-**Previous layer**. Its measured flash size is identical to the cancelling
+**Previous Layer**. Its measured flash size is identical to the cancelling
 variant. Retaining the pending action is the recommended starting point for a
 future implementation, subject to the intended user-visible behavior.
 
-## RAM and implementation constraints
+## RAM and Implementation Constraints
 
 Direct internal RAM allocation is a real constraint as well as flash. Straight
 additions initially failed the linker because new compiler temporaries did not
@@ -168,7 +168,7 @@ capacity changes from 111 / 114 bytes to 106 / 109 bytes for cancellation, or
 107 / 110 for retaining next-input actions. These are static linker capacities;
 no new hardware stack-usage measurement was performed.
 
-## Verification and reproduction
+## Verification and Reproduction
 
 The unchanged production firmware passed the complete
 `python3 tests/run_host_tests.py` suite. Each of the twenty final board/prototype

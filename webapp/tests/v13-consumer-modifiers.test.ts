@@ -32,8 +32,8 @@ it.each([0, 1] as const)('round-trips every consumer modifier mask at all action
     expect(validator.accepts(image, variant)).toBe(true);
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
   }
-  expect(summarize({ type, usage: 0x6f, modifiers: 6 })).toBe('Shift + Alt + Brightness up');
-  expect(actionTooltip({ type, usage: 0x70, modifiers: 6 })).toBe('Media / system with modifiers: Shift + Alt + Brightness down');
+  expect(summarize({ type, usage: 0x6f, modifiers: 6 })).toBe('Shift + Alt + Brightness Up');
+  expect(actionTooltip({ type, usage: 0x70, modifiers: 6 })).toBe('Media / System with Modifiers: Shift + Alt + Brightness Down');
 });
 
 it.each([0, 1] as const)('matches firmware usage validation on variant %s', variant => {

@@ -1,20 +1,20 @@
-# Previous-layer investigation
+# Previous-Layer Investigation
 
 The firmware prototype fits both variants without removing existing features.
-It reuses **Set layer** action A with parameter `0xFF` (255) to mean the previous persistent
+It reuses **Set Layer** action A with parameter `0xFF` (255) to mean the previous persistent
 base layer. Real indices remain 0–4 on six-key and 0–6 on three-key hardware.
 Record size remains two bytes; there is no extra configuration storage or version
 bump. This can be folded into the still-unpublished v7 after the UI work is added.
 The preserved baseline is `experiment/timed-alerts-v7-64` at `7a7d066`; the
 prototype is committed separately on `experiment/previous-layer`.
 
-## Measured cost
+## Measured Cost
 
 The original measurements below used parameter 7. Fresh comparison builds confirm
 that replacing it with `0xFF` changes neither flash usage nor RAM/stack capacity
 in either variant. Parameter 7 is no longer accepted as a previous-layer target.
 
-| Variant | Baseline flash | Prototype flash | Added | Remaining flash | Baseline stack | Prototype stack |
+| Variant | Baseline Flash | Prototype Flash | Added | Remaining Flash | Baseline Stack | Prototype Stack |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Six keys | 14,165 | 14,217 | 52 | 119 | 121 | 120 |
 | Three keys | 14,161 | 14,213 | 52 | 123 | 124 | 123 |
@@ -44,7 +44,7 @@ also produces the selected six-key result. The pre-clean build cache reported
 up-to-date while holding the baseline output; measurements use fresh temporary
 builds and the cleaned ordinary build, not that stale cached output.
 
-## Proposed semantics
+## Proposed Semantics
 
 - Initialize history to the startup layer whenever actions are initialized.
   Selecting previous before any persistent switch therefore stays on startup.
@@ -66,7 +66,7 @@ builds and the cleaned ordinary build, not that stale cached output.
   on the next physical action; this prototype does not change those semantics.
 - Layer changes use the existing action/update path, so held bindings, queued-output
   cancellation and temporary-effect clearing retain their existing behavior.
-- Same-layer selections keep normal **Set layer** indication behavior; only history
+- Same-layer selections keep normal **Set Layer** indication behavior; only history
   remains unchanged. This is not a new promise that selecting a layer has no effect.
 
 Example: user selects layer 3; timer expiry selects layer 5; the next-input action
@@ -75,17 +75,17 @@ layer 5 was active. Consume can suppress the dismissing input's normal binding.
 The temporary LED feature already covers reminders without switching layers, so
 this is an additional navigation/return option rather than a prerequisite.
 
-## Validation and completed editor work
+## Validation and Completed Editor Work
 
-Firmware accepts parameter `0xFF` only for **Set layer**, with auxiliary 0 or 1, in v7.
-It remains invalid for **Momentary layer** and v6. Other out-of-range parameters remain
+Firmware accepts parameter `0xFF` only for **Set Layer**, with auxiliary 0 or 1, in v7.
+It remains invalid for **Momentary Layer** and v6. Other out-of-range parameters remain
 invalid. Ordinary relative offsets retain their existing meaning.
 
 The original investigation stopped at firmware. The v7 completion now includes
-**Previous layer** in persistent and one-shot target selectors, excluding Momentary
+**Previous Layer** in persistent and one-shot target selectors, excluding Momentary
 layer, with named labels and explanatory history text. Model validation, binary
 decoding, JSON and drafts accept `layer: 255` only in v7; older profiles reject it.
-Encoding reuses the unchanged **Set layer** record.
+Encoding reuses the unchanged **Set Layer** record.
 
 The shared `isPreviousLayer` helper protects the target during layer insertion,
 deletion, reorder/duplication, clipboard and undo, including per-change layer undo
@@ -107,7 +107,7 @@ measured 36 bytes peak observed usage under heavy workloads.
   history, same-layer selection, relative changes, momentary priority, one-shot
   previous and return, repeated timers and consume-on-resume, and timer changes
   during a pending one-shot visit.
-- Configuration tests exhaustively check all 256 **Set layer** parameters and auxiliary
+- Configuration tests exhaustively check all 256 **Set Layer** parameters and auxiliary
   values 0–2 for v6/v7 on both hardware variants, plus Momentary rejection.
 - Both hardware builds pass the actual flash limit and RAM/startup layout checks.
 - All 291 web regressions pass, including previous-layer binary/JSON/draft and

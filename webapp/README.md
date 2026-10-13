@@ -39,20 +39,20 @@ SUBSYSTEM=="hidraw", KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct
 This grants all local users read/write access to this macropad's HID interfaces.
 On shared systems, ask your administrator for a group-restricted rule instead.
 Run `sudo udevadm control --reload-rules`, unplug and reconnect the macropad,
-then try **Connect macropad** again. A sandboxed browser package may also need
+then try **Connect Macropad** again. A sandboxed browser package may also need
 its device permissions adjusted. These permissions apply to the running firmware;
 see the [installer's Linux setup](../webUploader/README.md#linux) for bootloader access.
 
 ## Trying It without Hardware
 
-The current editor waits for **Connect macropad** before opening hardware, even if
+The current editor waits for **Connect Macropad** before opening hardware, even if
 the browser has previously granted access. Firmware-version notices only appear
 after an explicit connection attempt.
 
 The connect button's dropdown offers a simulated macropad that implements the same
 protocol handler as the firmware, including invalid-flash and failed-commit paths.
 `?sim=six`, `?sim=three`, or `?sim=blank` in the URL auto-connects the simulator,
-which is useful for demo links and screenshots. "**Edit offline**" on the welcome
+which is useful for demo links and screenshots. "**Edit Offline**" on the welcome
 screen edits a profile for either variant without any device.
 
 ## Live View
@@ -67,7 +67,7 @@ chords, and compact timed-action summaries. It has no editing, saving, drag/drop
 or configuration clipboard shortcuts. Device status is polled every 500ms.
 Manual tab selection shows a persistent warning when it differs from the active
 device layer. Ordinary polls preserve that selection; the next reported device
-layer change selects the device layer again. **Follow device** also resynchronizes
+layer change selects the device layer again. **Follow Device** also resynchronizes
 immediately. On disconnect, the last loaded profile remains available with a
 disconnected notice. Blank/invalid device profiles do not display starter bindings.
 
@@ -158,11 +158,11 @@ and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11/v12/v13 drafts without overwriti
 
 Version 2–13 binary profiles, version 1–13 JSON files, and older drafts can still be
 migrated into the active format 14 editor after a firmware upgrade. Bindings and
-colors are preserved; **Blink once** becomes the timed indication and transparency
-defaults to off. **Rainbow phase spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
+colors are preserved; **Blink Once** becomes the timed indication and transparency
+defaults to off. **Rainbow Phase Spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
 through the active editor to store v14. Older stored profiles remain readable but inactive until saved as v14.
 
-**LED control** bindings expose existing LED commands plus **Set all LEDs**, relative steps of -1 or +1,
+**LED Control** bindings expose existing LED commands plus **Set All LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
 Relative rainbow phase and speed also offer -2 and +2 to toggle between settings
 two positions apart in their four-setting cycles.
@@ -178,11 +178,11 @@ migration unchanged. JSON and drafts retain semantic action names as action code
 Four timers share the profile's storage budget, at six bytes each. Intervals
 use 1–2048 ticks of 4.096 seconds. **Interval** provides a full-width slider
 with an approximate duration shown in hours, minutes and seconds as needed.
-**Run on** selects **All layers** or a specific layer. A scoped timer advances
+**Run On** selects **All Layers** or a specific layer. A scoped timer advances
 only on its assigned layer; actual layer transitions reset scoped intervals but
-preserve armed **On next input** actions. Global timer phases continue.
+preserve armed **On Next Input** actions. Global timer phases continue.
 
-**Reset timer on input** defaults to **Yes**; **Consume this input**
+**Reset Timer on Input** defaults to **Yes**; **Consume This Input**
 is disabled by default. Optional next-input actions run once after firing,
 including after leaving the assigned layer. Consumption suppresses the normal
 physical binding even with no next-input action. Each timer retains an independent
@@ -199,19 +199,19 @@ Legacy timer ticks multiply by 32 exactly. Migration adds one byte per timer;
 oversized profiles remain editable/exportable with saving blocked until the user
 reduces storage. Current JSON and drafts are not scaled again.
 
-**Set all LEDs** is a single LED-command choice with an effect selector (**As configured**,
-**Always on**, **Blink**), a 1–8 blink-count slider shown only for **Blink**, and color swatches
-including **Rainbow** with a **Full Brightness / Dim** control. **As configured** hides these
+**Set All LEDs** is a single LED-command choice with an effect selector (**As Configured**,
+**Always On**, **Blink**), a 1–8 blink-count slider shown only for **Blink**, and color swatches
+including **Rainbow** with a **Full Brightness / Dim** control. **As Configured** hides these
 controls. Always-on permits pressed-key feedback; blinking covers it. Clearing or
 finishing an effect does not replay the layer's blink/timed indication.
 No dedicated reminder layer is required. JSON uses optional `brightness: "dim"`
 for effects; omission defaults to **Bright**, preserving existing profiles.
 
-Persistent and one-shot **Switch to layer** selectors offer **Previous layer**, represented
+Persistent and one-shot **Switch to Layer** selectors offer **Previous Layer**, represented
 by `layer: 255` in v7 and later JSON and `0xFF` in the two-byte action record. The target is
 preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
-**Previous layer** remembers persistent base selections, ignoring momentary/one-shot
-visits. Repeating a persistent **Previous layer** action swaps between two layers.
+**Previous Layer** remembers persistent base selections, ignoring momentary/one-shot
+visits. Repeating a persistent **Previous Layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
 The protocol simulator accepts only valid v14 profiles and round-trips the new
@@ -222,7 +222,7 @@ maximum-capacity starter files use v14 JSON and are checked against the firmware
 
 ## Consumer Hold and Held Scrolling (v8)
 
-**Media / system hold** appears directly after **Media / system**. Switching
+**Media / System Hold** appears directly after **Media / System**. Switching
 between them preserves the selected 12-bit Control. Repetition depends on the
 host; the newest media action wins without restoring previous holds. Keyboard
 and consumer holds retain their original binding across layers until release.
@@ -243,7 +243,7 @@ be read and migrated without being automatically overwritten.
 
 ## Mouse Clicks (v8+)
 
-**Mouse click** offers **Single / Double / Custom**, with a 3–16 slider for **Custom**.
+**Mouse Click** offers **Single / Double / Custom**, with a 3–16 slider for **Custom**.
 The last custom count is remembered per slot in local settings when switching
 modes. **Custom** displays an estimated duration to one decimal, based on 8ms per
 press plus 200ms between clicks. Later queued actions wait for the sequence;
@@ -281,21 +281,21 @@ Oversized older imports remain editable/exportable until reduced.
 
 ## Horizontal Scrolling (v9)
 
-**Scroll axis** selects **Vertical** or **Horizontal** while preserving step and
-**Tap**/**Hold** behavior. **Scroll direction** shows **Up**/**Down** or
+**Scroll Axis** selects **Vertical** or **Horizontal** while preserving step and
+**Tap**/**Hold** behavior. **Scroll Direction** shows **Up**/**Down** or
 **Left**/**Right** accordingly. Auxiliary bit 3 selects horizontal; bit 2 still
 selects hold. Both axes use the same 100ms hold delay. JSON version 9 stores
 optional boolean `horizontal`; older imports retain vertical scrolling.
 
-Under **Scroll direction**, an inversion hint names the selected axis and offers
-**Click here** to open **Scroll & click test**. Its test area starts centered with
-room to scroll vertically and horizontally. **Click count** tracks **Left**,
+Under **Scroll Direction**, an inversion hint names the selected axis and offers
+**Click Here** to open **Scroll & Click Test**. Its test area starts centered with
+room to scroll vertically and horizontally. **Click Count** tracks **Left**,
 **Middle** and **Right** clicks inside the area; double clicks count twice.
-**Reset counts** clears all counters. Unsaved edits show a warning above the
+**Reset Counts** clears all counters. Unsaved edits show a warning above the
 area because the hardware continues to use its saved configuration. The modal
 uses native dialog focus handling and closes with **Close** or Escape.
 
-**Mouse click**, **Mouse hold**, **Mouse toggle**, **Mouse down** and **Mouse up** also offer **Click here** to
+**Mouse Click**, **Mouse Hold**, **Mouse Toggle**, **Mouse Down** and **Mouse Up** also offer **Click Here** to
 open **Scroll & Click Test**. Each mouse button shows **Held** or **Released**
 next to its click counter, so held and toggled outputs can be checked. Releases
 outside the test area are tracked; leaving the browser clears the display until
@@ -304,13 +304,13 @@ another mouse event reports its current button state.
 ## Macros (V11+)
 
 **Macros** adds numbered definitions with ordered steps. Select a step to use the
-common **Action editor**; move it up/down, swap/clipboard compatible actions, or
-remove it. **Execute macro** selects a definition and **Repeat count** (1–16).
-**Pause duration** is 0–4080ms in 16ms increments. Held actions, nested macros
+common **Action Editor**; move it up/down, swap/clipboard compatible actions, or
+remove it. **Execute Macro** selects a definition and **Repeat Count** (1–16).
+**Pause Duration** is 0–4080ms in 16ms increments. Held actions, nested macros
 and **Nothing** steps are unavailable. Layer switches (absolute, relative and
 one-shot) must be the final step, even if their target is already active, and
-invocations of these macros must have **Repeat count** set to 1. **Add step** and
-**Add pause** remain below the steps and insert before the first layer switch,
+invocations of these macros must have **Repeat Count** set to 1. **Add Step** and
+**Add Pause** remain below the steps and insert before the first layer switch,
 at a labeled divider. Invalid nonfinal layer-switch steps have a red border.
 The buttons are disabled only when storage is full.
 Profile validation blocks saving invalid step order or repeat counts across all
@@ -323,13 +323,13 @@ JSON v11 adds optional `macros: [{ actions: [...] }]`, invocation
 `{ type: "macro", macro: 0, repeats: 1 }`, and pause `{ type: "pause", ticks: 16 }`.
 Macro indices are zero-based. On every encode, definitions follow the shared
 string pool and indices become absolute addresses. No reserved macro storage,
-count or directory is needed. **Device storage** counts two bytes per step plus
+count or directory is needed. **Device Storage** counts two bytes per step plus
 one per terminator, omitting the last terminator at an exact image boundary.
 Macro text is deduplicated with text in all other bindings. Definitions fit the
 same shared 128 bytes as layers, chords and six-byte timers.
 
 The decoder remaps v10 action types `0x5–0xF` to v11 `0x4–0xE` in every binding;
-**Execute macro** becomes `0xF`. It retains auxiliary values and parameters.
+**Execute Macro** becomes `0xF`. It retains auxiliary values and parameters.
 V10 profile migration needs no additional bytes. Older text/double-click action
 maps and five-byte timers still migrate according to their source version.
 V11 drafts recover older drafts without modifying their namespaces. Oversized
@@ -339,7 +339,7 @@ One macro streams from the active image; its invocation consumes one event slot.
 Long sequences delay later queued output. Overflow drops complete invocations,
 never a partial expansion. Physical/timer immediate actions can interleave;
 effective layer changes, configuration application and USB reset cancel playback.
-All **Mouse toggle** actions share one global button state across physical inputs,
+All **Mouse Toggle** actions share one global button state across physical inputs,
 chords, timers and macros. Any toggle can undo another toggle for the same button;
 held actions retain their physical ownership. Layer-route analysis follows steps
 until cancellation.
@@ -349,9 +349,9 @@ See [the complete v14 reference](../protocol/config-v14.md) and
 ## Mouse Buttons and Persistent Actions (V12)
 
 All mouse actions support masks 1–255, covering **Left**, **Right**, **Middle**
-and **Button 4** through **Button 8**. **Mouse down** (`mouseDown`) sets selected
-persistent bits; **Mouse up** (`mouseUp`) clears them; both share the global
-**Mouse toggle** state. Repeated down/up is idempotent. Physical holds and clicks
+and **Button 4** through **Button 8**. **Mouse Down** (`mouseDown`) sets selected
+persistent bits; **Mouse Up** (`mouseUp`) clears them; both share the global
+**Mouse Toggle** state. Repeated down/up is idempotent. Physical holds and clicks
 remain independent, and macro completion leaves persistent state intact.
 Layer changes and resets clear it. Down/up are valid macro steps, rotation
 bindings and timer actions without additional record bytes.
@@ -370,17 +370,17 @@ the two scroll axes into separate signed nibbles without changing report size.
 
 The frozen v13 editor exports JSON v13 and stores drafts under `format-v13:`.
 Older binary, JSON and draft profiles migrate into v13 without changing their
-named action behavior. Old **Mouse hold** records move to auxiliary mode 3 of
+named action behavior. Old **Mouse Hold** records move to auxiliary mode 3 of
 the shared mouse action; legacy pointer steps become signed single-axis deltas.
 
-**Media / system** taps expose **Ctrl**, **Shift**, **Alt** and **GUI** modifiers
+**Media / System** taps expose **Ctrl**, **Shift**, **Alt** and **GUI** modifiers
 for eight-bit usages. Twelve-bit unmodified taps and holds remain available;
 modified usages above `0xFF` are rejected. The active v14 editor also supports
 modified holds. Firmware drains
 the keyboard modifier report before the consumer press, then drains the
 consumer release before removing temporary modifiers.
 
-**Move mouse** offers **X**, **Y** and **Both** axes. Single-axis amounts are
+**Move Mouse** offers **X**, **Y** and **Both** axes. Single-axis amounts are
 1–127; **Both** stores independent magnitudes 4–64 in steps of 4 and independent
 signs in one two-byte action. Buttons and chords support **Tap** and **Hold**;
 rotation, timers and macro steps use taps. Each combined axis must be nonzero. Codec/firmware agreement and editor migration are covered
@@ -391,14 +391,14 @@ by regression tests. USB product names are **3-Key Macropad** and **6-Key Macrop
 The active editor exports JSON v14, writes binary format 14 and stores local
 profiles under `format-v14:`. Its codec uses the reordered types in
 [the complete format reference](../protocol/config-v14.md), including swapped
-**Pause**/**Type text** records and the shared layer action modes. Migration
+**Pause**/**Type Text** records and the shared layer action modes. Migration
 decodes every binding, both timer fields and every macro step using the source
 version, then re-encodes and computes the CRC. Authentic finalized v13 binary
 fixtures cover both hardware variants; legacy regression tests cover earlier
 formats. JSON actions retain their named meanings and metadata. Archived drafts
-remain unchanged, and device flash changes only after **Save to device**.
+remain unchanged, and device flash changes only after **Save to Device**.
 
-**Media / system hold with modifiers** holds an eight-bit control together with
+**Media / System Hold with Modifiers** holds an eight-bit control together with
 **Ctrl**, **Shift**, **Alt** or **GUI** until physical release. Switching between
 modified taps and holds preserves the usage and modifier mask. **Relative layer
 while held** resolves its signed offset from the selected base layer at press

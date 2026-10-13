@@ -23,7 +23,7 @@ optimization and regression-test patch on `24ba81f`. The standalone format is [c
 | Brightness examples | `64 6F` / `64 70` for Shift + Alt with up/down |
 
 The action is a tap available to keys, encoder press/rotation, chords, both timer
-fields and macro steps. **Mouse hold** remains at `0x35`. The existing twelve-bit
+fields and macro steps. **Mouse Hold** remains at `0x35`. The existing twelve-bit
 consumer tap/hold actions and HID descriptor remain unchanged. There is no
 lookup table or modified hold mode.
 
@@ -37,7 +37,7 @@ tap or hold. Layer/configuration/action reset cleanup follows that same order.
 Macros wait for output reports to drain before dependent steps advance.
 
 The active configurator replaces the persistent modifier controls with
-**Media / system with modifiers**, an eight-bit control picker, custom usage input
+**Media / System with Modifiers**, an eight-bit control picker, custom usage input
 and four modifier controls. JSON/drafts reject removed persistent action names.
 V12 mouse holds still migrate to `0x35`; the existing frozen v12 archive and all
 other archives remain unchanged. The experiment retains format number 13 because

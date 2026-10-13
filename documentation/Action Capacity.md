@@ -1,5 +1,5 @@
 # Intro
-Information on this page is based on [configuration format v14](../protocol/config-v14.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Media / system with modifiers** and **Relative layer** set to **Hold** use two-byte action records, so the physical-input capacity tables remain unchanged.
+Information on this page is based on [configuration format v14](../protocol/config-v14.md), which supports up to 7 layers on a 3-key macropad and up to 5 layers on a 6-key macropad. **Media / System with Modifiers** and **Relative Layer** set to **Hold** use two-byte action records, so the physical-input capacity tables remain unchanged.
 
 Each count is the total number of assignable physical-input action slots across all configured layers, with no timed actions or macros configured. Encoder wheel actions count clockwise and counterclockwise separately. **Chords** are simultaneous presses of two physical keys; the encoder press cannot currently be assigned as part of a chord.
 
@@ -32,7 +32,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 1 Layer
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 3 | 6 |
 | Encoder press | 1 | 1 |
@@ -44,7 +44,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 2 Layers
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 6 | 12 |
 | Encoder press | 2 | 2 |
@@ -56,7 +56,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 3 Layers
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 9 | 18 |
 | Encoder press | 3 | 3 |
@@ -68,7 +68,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 4 Layers
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 12 | 24 |
 | Encoder press | 4 | 4 |
@@ -80,7 +80,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 5 Layers
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 15 | 30 |
 | Encoder press | 5 | 5 |
@@ -92,7 +92,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 6 Layers
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 18 | N/A |
 | Encoder press | 6 | N/A |
@@ -104,7 +104,7 @@ Each table compares the two macropads at the same layer count. Chord counts are 
 
 ## 7 Layers
 
-| Action / storage | 3-Key Macropad | 6-Key Macropad |
+| Action / Storage | 3-Key Macropad | 6-Key Macropad |
 | --- | ---: | ---: |
 | Keys | 21 | N/A |
 | Encoder press | 7 | N/A |

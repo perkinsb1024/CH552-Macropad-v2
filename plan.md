@@ -1,8 +1,8 @@
-# HID configuration implementation plan
+# HID Configuration Implementation Plan
 
 This plan covers firmware and a browser configurator for the existing CH552 macropad. Configuration remains on the device and works without the web app after saving. The design uses the 128-byte DataFlash region and requires no hardware changes or application-code flash storage.
 
-## 1. Agreed scope
+## 1. Agreed Scope
 
 - Support a configurable count of one through four layers.
 - Support two physical variants: one with six keys and one with three. Each has one RGB LED per key and the same encoder with a push button.
@@ -20,13 +20,13 @@ This plan covers firmware and a browser configurator for the existing CH552 macr
 
 Physical pin assignments, encoder electrical decoding parameters, and button debounce timing remain board/firmware definitions. Header information such as variant, layer count, startup layer, and chord window describes the whole profile; action and LED settings belong to individual layers.
 
-## 2. Persistent format: version 1
+## 2. Persistent Format: Version 1
 
 Use explicit byte serialization rather than writing C structs. This avoids compiler padding, bitfield layout, and pointer-size dependencies. All multibyte integers are little-endian.
 
 Every upload and flash readback is a canonical 128-byte image. Unused bytes are zero. Unsupported versions and malformed images are rejected before they can become active.
 
-### Header: nine bytes
+### Header: Nine Bytes
 
 | Offset | Size | Field |
 | --- | ---: | --- |
@@ -40,18 +40,18 @@ Every upload and flash readback is a canonical 128-byte image. Unused bytes are 
 
 Specify CRC parameters in the protocol document: polynomial 0x1021, initial value 0xFFFF, no reflection, final XOR zero. Store the resulting CRC low byte first. A low-nibble value of 8 gives the initial 40ms window. Zero disables chord recognition while retaining saved chord bindings.
 
-### Layer records: 22 or 15 bytes
+### Layer Records: 22 or 15 Bytes
 
 The six-key variant uses a 22-byte layer record; the three-key variant uses a 15-byte record. Layer N starts at byte 9 + record size × N. Layer and input indices start at zero. The encoder button follows the physical keys in each record, then clockwise and counterclockwise rotation bindings. This variant-specific layout gives the three-key device seven more string-pool bytes per layer.
 
-| Field | Six-key offset/size | Three-key offset/size |
+| Field | Six-Key Offset/Size | Three-Key Offset/Size |
 | --- | --- | --- |
 | Physical key bindings | 0–11 / 12 bytes | 0–5 / 6 bytes |
 | Encoder-button binding | 12–13 / 2 bytes | 6–7 / 2 bytes |
 | Clockwise encoder binding | 14–15 / 2 bytes | 8–9 / 2 bytes |
 | Counterclockwise encoder binding | 16–17 / 2 bytes | 10–11 / 2 bytes |
 | LED palette indices | 18–20 / 3 bytes | 12–13 / 2 bytes |
-| **Layer options** | 21 / 1 byte | 14 / 1 byte |
+| **Layer Options** | 21 / 1 byte | 14 / 1 byte |
 
 Each binding occupies two bytes. Pack two LED palette indices per byte, with the even-numbered LED in the low nibble and the odd-numbered LED in the high nibble. The unused high nibble of the three-key variant's second LED byte must be zero.
 
@@ -59,32 +59,32 @@ Layer-option bits are: bit 0 reserved and zero, bit 1 allows bootloader entry by
 
 For the encoder-button hold gesture, capture the originating layer's bootloader-from-run setting when the button is pressed. This prevents a layer change during a hold from unexpectedly enabling the gesture. Preserve the unconditional first-three-keys power-up recovery gesture documented in README.md.
 
-### Sparse two-key chord table
+### Sparse Two-Key Chord Table
 
 The chord table begins immediately after the final layer and has the count encoded in header byte 5. Each configured chord uses three bytes: one key-pair/layer identifier followed by a normal two-byte action record. Unlisted pairs retain their separate single-key bindings. A six-key layer has 15 possible pairs; a three-key layer has three. **Chords** do not include the encoder button or rotation.
 
 In the identifier, bits 0–3 encode the unordered physical-key pair in lexicographic order (for six keys: (0,1), (0,2), ... (4,5)); bits 4–5 encode the layer index; bits 6–7 must be zero. For three keys only pair indices 0–2 are valid. Store entries in ascending identifier order, with no duplicate pair on a layer. Validate that all layer and pair indices exist, the table fits before the string pool, and each action is legal for a button press.
 
-### Two-byte action record
+### Two-Byte Action Record
 
 Byte 0 holds the action type in its low nibble and auxiliary data in its high nibble. Byte 1 holds the parameter. For keyboard actions, auxiliary bits represent **Ctrl**, **Shift**, Alt, and **GUI**, in that order. There is one modifier category per key; independent left/right modifier selection is outside version 1.
 
-| Type | Action | Parameter and auxiliary data |
+| Type | Action | Parameter and Auxiliary Data |
 | --- | --- | --- |
 | 0x0 | **None** | Both parameter and auxiliary data zero |
-| 0x1 | **Keyboard tap** | One raw keyboard HID usage plus modifier mask; press then release |
-| 0x2 | **Keyboard hold** | Same encoding; release when the physical button is released |
-| 0x3 | **Mouse click** | **Left**/right/middle button mask; auxiliary data zero |
-| 0x4 | **Mouse double-click** | Mouse button mask; auxiliary data zero |
-| 0x5 | **Mouse hold** | Mouse button mask; release with physical button |
-| 0x6 | **Mouse toggle** | Mouse button mask; alternate latched press/release |
-| 0x7 | **Scroll step** | Signed 8-bit vertical wheel-count magnitude; firmware emits one-count reports; auxiliary data zero |
+| 0x1 | **Keyboard Tap** | One raw keyboard HID usage plus modifier mask; press then release |
+| 0x2 | **Keyboard Hold** | Same encoding; release when the physical button is released |
+| 0x3 | **Mouse Click** | **Left**/right/middle button mask; auxiliary data zero |
+| 0x4 | **Mouse Double-Click** | Mouse button mask; auxiliary data zero |
+| 0x5 | **Mouse Hold** | Mouse button mask; release with physical button |
+| 0x6 | **Mouse Toggle** | Mouse button mask; alternate latched press/release |
+| 0x7 | **Scroll Step** | Signed 8-bit vertical wheel-count magnitude; firmware emits one-count reports; auxiliary data zero |
 | 0x8 | Consumer-control tap | 12-bit usage: auxiliary nibble is high four bits, parameter is low eight bits |
 | 0x9 | **String** | Offset relative to string-pool start; auxiliary data zero |
-| 0xA | **Set layer** | Destination layer index; auxiliary 0 persistent, 1 one-shot |
-| 0xB | **Momentary layer** | Destination layer while the physical button is held |
+| 0xA | **Set Layer** | Destination layer index; auxiliary 0 persistent, 1 one-shot |
+| 0xB | **Momentary Layer** | Destination layer while the physical button is held |
 | 0xC | Reserved | Rejected by current firmware; no action assigned |
-| 0xD | **Relative layer** | Auxiliary 0 persistent, 1 one-shot; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
+| 0xD | **Relative Layer** | Auxiliary 0 persistent, 1 one-shot; signed offset -3 to +3, added to the selected base layer with wraparound. Zero has no effect. |
 | 0xE | Mouse X step | Signed 8-bit relative X delta; auxiliary data zero |
 | 0xF | Mouse Y step | Signed 8-bit relative Y delta; auxiliary data zero |
 
@@ -96,11 +96,11 @@ Encoder rotation accepts actions that complete on a detent, including key taps, 
 
 Action code 0xC remains reserved. Assigning it in the future requires updating firmware validation, the editor, and the format documentation. Additional action families beyond this slot require a versioned extension or revised encoding.
 
-### String pool and capacity
+### String Pool and Capacity
 
 The pool begins immediately after the chord table. Strings are zero-terminated, and the pool is shared by all layers. Multiple bindings, including chords, may point to the same string. Offsets must reference the start of a complete string within the declared used pool; embedded zero bytes are forbidden.
 
-| Layers | Six-key header plus layers | Six-key bytes for chords and strings | Three-key header plus layers | Three-key bytes for chords and strings |
+| Layers | Six-Key Header Plus Layers | Six-Key Bytes for Chords and Strings | Three-Key Header Plus Layers | Three-Key Bytes for Chords and Strings |
 | ---: | ---: | ---: | ---: | ---: |
 | 1 | 31 | 97 | 24 | 104 |
 | 2 | 53 | 75 | 39 | 89 |
@@ -113,15 +113,15 @@ Each distinct string consumes its encoded length plus one terminator. The web ap
 
 Version 1 supports printable ASCII plus tab and newline. Normalize pasted line endings to LF. The firmware translates these bytes into keyboard events using a documented keyboard-layout mapping, initially US. Reject unsupported characters in the editor and firmware; do not silently truncate or substitute Unicode text. Typed output still depends on the host keyboard layout.
 
-## 3. Firmware work
+## 3. Firmware Work
 
-### Establish resource and build limits
+### Establish Resource and Build Limits
 
 Record the current CH55xduino version, board options, USB RAM setting, and build procedure. Compile a baseline and retain code, xRAM, and internal RAM/stack usage. The CH552 has approximately 14 KiB available for application code with its bootloader, 1 KiB xRAM, and 256 bytes internal RAM; USB buffers already consume part of that budget.
 
 Keep configuration and transport buffers in explicitly assigned SDCC memory spaces. Plan for a 128-byte active image and a 128-byte upload buffer, plus small fixed USB inbox/outbox and action-state structures. Keep the palette and lookup tables in code memory. Avoid allocation, recursion, full-size per-layer RAM structures, and an additional flash-readback image. Compile and inspect the memory map after each milestone; firmware size and RAM fit remain implementation checks.
 
-### Configuration access and invalid flash behavior
+### Configuration Access and Invalid Flash Behavior
 
 Add a configuration module that validates, loads, and accesses the serialized image. Read bindings directly from the selected layer record. Do not expand all four layers into separate arrays in RAM.
 
@@ -129,7 +129,7 @@ Do not synthesize a fallback profile when flash is invalid. Keep keys, encoder a
 
 Replace the existing parallel configuration arrays with accessors into the active image. Replace the preprocessor test of INVERT_SCROLLING with a runtime check: the current bool variable cannot control a preprocessor #if expression.
 
-### Input and action engine
+### Input and Action Engine
 
 Separate physical input scanning, logical actions, and USB report construction. Initialize all configured key pins, including the currently omitted KEY3–KEY5 pullups. Initialize state from actual pin readings.
 
@@ -143,7 +143,7 @@ Provide raw keyboard-usage APIs for configurable bindings instead of passing raw
 
 Track ownership of pressed keys, modifiers, and mouse buttons so releasing one action does not release an output still held by another action. Use bounded key slots and counts rather than a 256-entry keyboard table. Define and test behavior at the existing six-key rollover limit.
 
-### Layer behavior
+### Layer Behavior
 
 Maintain a selected base layer and bounded momentary overrides. The most recently pressed, still-held momentary layer takes precedence; releasing it restores the next override or the base layer.
 
@@ -153,7 +153,7 @@ Clear latched mouse toggles on effective layer changes, releasing only the outpu
 
 Applying a new configuration, entering the bootloader, or resetting clears all output ownership and pending actions. After applying a configuration, suppress already-held inputs until their next release. Do not persist active-layer changes; power-up starts at the configured startup layer and does not consume flash writes.
 
-### USB descriptors and report handlers
+### USB Descriptors and Report Handlers
 
 Retain the existing VID/PID and rename the product descriptor to **Universal Macropad**, updating its length. Keep keyboard report ID 1 and mouse report ID 2. Add a vendor-defined top-level Application collection on usage page 0xFF00, usage 0x0001, for configuration. Keep it outside the protected keyboard and mouse collections.
 
@@ -175,7 +175,7 @@ Support output delivery through interrupt OUT and the HID SET_REPORT control-tra
 
 Early in implementation, confirm that the vendor collection can be opened in Chrome/Edge on Windows, macOS, and Linux while normal keyboard/mouse operation continues. If a target OS requires a separate configuration HID interface, make that adjustment before building the full editor and account for its endpoint/RAM cost.
 
-### DataFlash persistence
+### DataFlash Persistence
 
 Use CH55xduino's DataFlash byte API with explicit offsets 0–127 and readback checks. The write API currently returns no success indication, so verification must read the stored bytes. Keep hardware register access and short interrupt-critical operations confined to the storage module.
 
@@ -185,7 +185,7 @@ If the staged image already matches flash, skip programming. Otherwise invalidat
 
 At boot, invalid flash or an image for the other physical variant leaves physical inputs and LEDs inactive while configuration access remains available. Do not automatically rewrite flash or select a fallback profile. Interrupted uploads never affect flash. A reported save failure leaves the last active RAM configuration available until a retry or reset.
 
-## 4. Configuration protocol
+## 4. Configuration Protocol
 
 Publish a versioned protocol specification and shared golden byte fixtures before implementing both ends. Transport version and persistent-format version are separate.
 
@@ -208,11 +208,11 @@ GET_INFO may be returned in chunks if necessary. Use an application-specific ide
 
 Return explicit error statuses for unsupported version/opcode, invalid length/offset, incomplete upload, invalid configuration, CRC mismatch, busy, and flash verification failure. Reset-to-defaults can use the normal upload/save flow. After a COMMIT timeout, read flash and status before retrying; the save may already have completed.
 
-## 5. Web app work
+## 5. Web App Work
 
 Build a small TypeScript app with Vite and ordinary HTML/CSS controls. Keep the configuration model, binary codec, transport, and UI separate. Serve it over HTTPS, with localhost supported for development. Provide a browser capability check and instructions for desktop Chrome/Edge; document Linux device-access permissions where needed.
 
-### Connect and load
+### Connect and Load
 
 The Connect button calls navigator.hid.requestDevice with VID/PID and the vendor usage-page/usage filter. Open the selected device, install reply listeners, query identity/capabilities, and display its product name. Reading must not change the device configuration.
 
@@ -226,11 +226,11 @@ Selecting a control opens an action editor with the applicable fields. Provide e
 
 Provide per-layer palette selectors and scroll/bootloader options. Represent layer destinations explicitly. When removing layers, require dangling layer actions and startup-layer references to be corrected. Changing the layer count must rebuild the string pool and offsets.
 
-Show a live storage meter: variant-specific layer bytes, chord-table bytes, string bytes including terminators, and remaining bytes. Deduplicate identical strings during encoding. Disable Save with a precise capacity or validation explanation when the profile is too large. Adding a layer must never silently **delete** or truncate chords or strings.
+Show a live storage meter: variant-specific layer bytes, chord-table bytes, string bytes including terminators, and remaining bytes. Deduplicate identical strings during encoding. Disable Save with a precise capacity or validation explanation when the profile is too large. Adding a layer must never silently **Delete** or truncate chords or strings.
 
 Keep layer names and other optional editor annotations in browser storage or exported JSON; they do not consume device storage. Label such annotations as local metadata if introduced.
 
-### Save, verify, and backups
+### Save, Verify, and Backups
 
 Serialize and validate a canonical image, upload it sequentially, then commit. Show separate uploading, saving, and verifying states. After firmware success, independently READ_FLASH all 128 bytes and compare them byte-for-byte with the uploaded image. Only then show **Saved** and replace the editor's last-saved baseline.
 
@@ -238,7 +238,7 @@ Keep unsaved changes on disconnect or save failure. Reconnecting must not automa
 
 Support versioned JSON import/export with readable action names and strings, plus explicit Reset to defaults. Validate imports using the same constraints as interactive edits. Browser backups are useful but not required for normal operation after a successful save.
 
-## 6. Suggested source organization
+## 6. Suggested Source Organization
 
 - Firmware: keep the sketch as setup/loop orchestration; introduce C-compatible configuration, action, input, storage, and protocol modules under src.
 - USB: update the existing src/userUsbHidKeyboardMouse descriptor, handler, and report files, keeping changes local to this repository.
@@ -246,7 +246,7 @@ Support versioned JSON import/export with readable action names and strings, plu
 - Shared contract: protocol/config-v2.md, protocol/hid-v1.md, and golden JSON/binary fixtures for both physical variants used by firmware-side host tests and TypeScript tests.
 - Documentation: update README.md with build instructions, one-time firmware upgrade, configuration workflow, palette, string/layout limits, and interrupted-save recovery by reconnecting and saving again.
 
-## 7. Implementation sequence and acceptance checks
+## 7. Implementation Sequence and Acceptance Checks
 
 1. Freeze format and prove resource fit. Implement the 128-byte codec/validator, compile the firmware, and record memory headroom. Establish golden fixtures for every action type, both board variants, sparse chords, and one through four layers.
 2. Prove browser transport. Add the vendor collection and GET_INFO/read commands. Confirm discovery, access, descriptor correctness, and continued keyboard/mouse use on the target desktop operating systems.
@@ -270,7 +270,7 @@ Required checks:
 - Test all one-to-four layer counts and both three-key and six-key board definitions as available. Reject cross-variant images and a nonzero unused LED nibble. Confirm bootloader gestures follow the defined layer policy.
 - Record final code/RAM usage and confirm stack, USB DMA buffers, active configuration, staging buffer, and action queues do not overlap.
 
-## 8. Reference constraints
+## 8. Reference Constraints
 
 - [WCH CH552 datasheet, sections 6.2 and 6.5](https://cdn-learn.adafruit.com/assets/assets/000/129/847/original/CH552DS1.PDF?1715004485=): DataFlash capacity, byte programming, memory map, and endurance. Save explicitly and skip unchanged bytes; do not autosave each editor change.
 - [CH55xduino DataFlash implementation](https://github.com/DeqingSun/ch55xduino/blob/ch55xduino/ch55xduino/ch55x/cores/ch55xduino/eeprom.c): current eeprom_read_byte/eeprom_write_byte implementation and address mapping.

@@ -55,9 +55,9 @@ export function Dialog() {
     return (
       <div class="scrim" role="presentation">
         <div class="dialog dialog-comparison" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-          <h2 id="dialog-title">Profile differences</h2>
+          <h2 id="dialog-title">Profile Differences</h2>
           <p>Device → {editorLabel}. {changes.length} {changes.length === 1 ? 'difference' : 'differences'}.</p>
-          <div class="dialog-comparison-content" tabIndex={0} aria-label="Profile differences">
+          <div class="dialog-comparison-content" tabIndex={0} aria-label="Profile Differences">
             <ChangeList changes={changes} note={changes.length === 0 ? 'The profiles have identical device settings.' : undefined} />
           </div>
           <div class="dialog-actions">
@@ -77,7 +77,7 @@ export function Dialog() {
         <h2 id="dialog-title">{spec.title}</h2>
         <p>{spec.body}</p>
         {spec.inputMonitoringHelp && <InputMonitoringHelp />}
-        {spec.comparison && <button ref={differencesLink} type="button" class="dialog-differences-link" onClick={() => setShowDifferences(true)}>Show differences</button>}
+        {spec.comparison && <button ref={differencesLink} type="button" class="dialog-differences-link" onClick={() => setShowDifferences(true)}>Show Differences</button>}
         {spec.textInput && (
           <>
             <label for="dialog-profile-json">{spec.textInput.label}</label>

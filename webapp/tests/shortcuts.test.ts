@@ -49,7 +49,7 @@ describe('shortcut library', () => {
     const word = filterShortcuts('mac', '  MICROSOFT WORD superscript  ');
     expect(word.map((shortcut) => shortcut.name)).toEqual(['Word: Superscript']);
     expect(filterShortcuts('windows', 'Google Docs list').map((shortcut) => shortcut.name)).toEqual([
-      'Google Docs: Bulleted list', 'Google Docs: Numbered list', 'Google Docs: Checklist',
+      'Google Docs: Bulleted List', 'Google Docs: Numbered List', 'Google Docs: Checklist',
     ]);
     expect(filterShortcuts('windows', 'spotlight')).toEqual([]);
     expect(filterShortcuts('mac', 'virtual desktop')).toEqual([]);
@@ -107,7 +107,7 @@ describe('shortcut library', () => {
     expect(preset('tmux-command-prompt').action).toEqual({ type: 'keyTap', usage: 0x33, modifiers: 2 });
     expect(preset('tmux-resize-pane-left-1-cell').action).toEqual({ type: 'keyTap', usage: 0x50, modifiers: MOD_CTRL });
     expect(preset('tmux-resize-pane-left-5-cells').action).toEqual({ type: 'keyTap', usage: 0x50, modifiers: 4 });
-    expect(tmux.filter(shortcut => /^tmux: Select window \d$/.test(shortcut.name))).toHaveLength(10);
+    expect(tmux.filter(shortcut => /^tmux: Select Window \d$/.test(shortcut.name))).toHaveLength(10);
     for (const shortcut of tmux.filter(shortcut => shortcut.id !== 'tmux-prefix')) {
       expect(shortcut.name).not.toContain('(after prefix)');
       expect(shortcut.note).toContain('Sends only the command key');
