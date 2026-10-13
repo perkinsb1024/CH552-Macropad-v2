@@ -52,10 +52,10 @@ __idata uint8_t macroRepeat;
 #endif
 // Toggle/down/up share one persistent mouse-button state; holds remain separate.
 __pdata uint8_t persistentMouse;
-__pdata uint8_t timedAge[CONFIG_TIMED_MAX];
+__pdata uint8_t timedAge[CONFIG_TIMED_MAX + 1];
 // High interval-counter bits occupy the same positions as record bits 3-5.
-__idata uint8_t timedHigh[CONFIG_TIMED_MAX];
-__idata uint8_t timedFraction[CONFIG_TIMED_MAX];
+__idata uint8_t timedHigh[CONFIG_TIMED_MAX + 1];
+__idata uint8_t timedFraction[CONFIG_TIMED_MAX + 1];
 __pdata uint8_t timedClock;
 __pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerModifiers; // Temporary ownership in the latest-wins lane.
@@ -545,9 +545,9 @@ static void releaseAction(uint8_t input) {
 #endif
   if (buttonPressed[input]) {
     // Keep a brief hold alive until its press report has been accepted.
-    buttonPressed[input] = type == CONFIG_ACTION_KEY_HOLD ||
-                           buttonFirst[input] == CONFIG_ACTION_MOUSE_HOLD ||
-                           (type & 0xD) == CONFIG_ACTION_CONSUMER_HOLD ? 2 : 0;
+    buttonPressed[input] = 0;
+    if (type == CONFIG_ACTION_KEY_HOLD || buttonFirst[input] == CONFIG_ACTION_MOUSE_HOLD ||
+        (type & 0xD) == CONFIG_ACTION_CONSUMER_HOLD) buttonPressed[input] = 2;
   }
 }
 
@@ -714,11 +714,12 @@ void actionsPoll(uint16_t now) {
       currentFirst = 0;
     } else if (type == CONFIG_ACTION_SCROLL) {
       int8_t delta = currentSecond;
+      uint8_t scroll = delta < 0 ? 15 : 1;
+      if (currentFirst & CONFIG_SCROLL_HORIZONTAL) scroll <<= 4;
       if (!delta) {
         currentFirst = 0;
       } else if (USB_queueMousePacked(mouseButtons(), 0, 0,
-                 currentFirst & CONFIG_SCROLL_HORIZONTAL ?
-                   (delta < 0 ? 0xF0 : 0x10) : (delta < 0 ? 0x0F : 0x01))) {
+                 scroll)) {
         currentSecond = delta < 0 ? delta + 1 : delta - 1;
         if (!currentSecond) {
           scrollRepeated = now; // Wait after the whole step, including large deltas.

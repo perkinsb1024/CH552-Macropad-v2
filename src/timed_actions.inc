@@ -3,21 +3,22 @@
 // interval bits in bits 3-5 and scope 0/global or 1-7/layer+1 in bits 0-2,
 // consume in bit 6 and restart-on-input in bit 7. Pending input actions survive
 // layer transitions and are serviced even outside their timer's assigned layer.
-__idata uint8_t timedPending[CONFIG_TIMED_MAX];
-// 440 independent 4.096-second ticks: 30 minutes 2.240 seconds.
-// Zero latches sleep until physical input, even after a layer transition.
-__pdata uint16_t sleepRemaining;
-__pdata uint8_t sleepFraction;
 
+// The last runtime slot uses a synthesized record after the saved image.
+// User timers retain their original order and all four configuration slots.
+// Bit 0 of timedHigh latches the pending next-input action; bits 3-5 are age.
 void actionsTimedReset(uint8_t tick) {
   timedClock = tick;
-  sleepRemaining = 440;
-  sleepFraction = 0;
-  for (uint8_t i = 0; i < CONFIG_TIMED_MAX; i++) {
+  activeConfig[CONFIG_SIZE + 0] = 183; // 440 ticks minus one, low byte.
+  activeConfig[CONFIG_SIZE + 1] = 0x4D;
+  activeConfig[CONFIG_SIZE + 2] = CONFIG_LED_PRESET_SET;
+  activeConfig[CONFIG_SIZE + 3] = CONFIG_ACTION_LED_CONTROL;
+  activeConfig[CONFIG_SIZE + 4] = CONFIG_LED_PRESET_SET;
+  activeConfig[CONFIG_SIZE + 5] = 200; // Consume, reset, interval high=1.
+  for (uint8_t i = 0; i <= CONFIG_TIMED_MAX; i++) {
     timedAge[i] = 0;
     timedHigh[i] = 0;
     timedFraction[i] = 0;
-    timedPending[i] = 0;
   }
 }
 
@@ -25,27 +26,30 @@ static ACTION_BIT timedEvent(uint8_t tick) {
   uint8_t offset = configTimedOffset();
   uint8_t count = configTimedCount();
   ACTION_BIT consume = 0;
-  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
+  for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
+    if (i == count) {
+      offset = CONFIG_SIZE;
+      if (tick && !(configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP)) continue;
+    }
     uint8_t age = timedAge[i];
     uint8_t action = 0;
     uint8_t flags = activeConfig[offset + 5];
     if (tick) {
-      if ((flags & 7) && (flags & 7) != (uint8_t)(effectiveLayer + 1)) continue;
+      if ((flags & 7) && (uint8_t)((flags & 7) - 1) != effectiveLayer) continue;
       // Each carry of the 16 ms fine clock advances age by 4.096 seconds.
       timedFraction[i] += tick;
       if (timedFraction[i] >= tick) continue;
-      if (age == activeConfig[offset] && timedHigh[i] == (flags & 56)) {
+      if (age == activeConfig[offset] && (timedHigh[i] & 56) == (flags & 56)) {
         age = 0;
-        timedHigh[i] = 0;
-        timedPending[i] = 1;
+        timedHigh[i] = 1;
         action = 1;
       } else if (!++age) timedHigh[i] += 8;
     } else {
-      if (timedPending[i]) {
+      if (timedHigh[i] & 1) {
         action = 3;
         if (flags & CONFIG_TIMED_CONSUME) consume = 1;
       }
-      timedPending[i] = 0;
+      timedHigh[i] &= ~1;
       if (CONFIG_TIMED_ALL_RESET || (flags & 128)) {
         age = 0;
         timedHigh[i] = 0;
@@ -65,40 +69,27 @@ static ACTION_BIT timedEvent(uint8_t tick) {
 void actionsTimedPoll(uint8_t tick) {
   uint8_t elapsed = tick - timedClock;
   timedClock = tick;
-  if (elapsed) {
-    if (sleepRemaining && (configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP)) {
-      sleepFraction += elapsed;
-      if (sleepFraction < elapsed && !--sleepRemaining)
-        firmwareLedAction(CONFIG_LED_PRESET_SET, 4);
-    }
-    timedEvent(elapsed);
-  }
+  if (elapsed) timedEvent(elapsed);
 }
 
 ACTION_BIT actionsTimedInput(void) {
-  ACTION_BIT waking = !sleepRemaining;
-  if (waking) firmwareLedAction(CONFIG_LED_PRESET_SET, 0);
-  sleepRemaining = 440;
-  sleepFraction = 0;
 #if CONFIG_SCROLL_ACCELERATION
-  ACTION_BIT consumed = timedEvent(0) | waking;
+  ACTION_BIT consumed = timedEvent(0);
   if (consumed) scrollFirst = 0;
   return consumed;
 #else
-  return timedEvent(0) | waking;
+  return timedEvent(0);
 #endif
 }
 
 static void resetLayerTimers(void) {
-  if (sleepRemaining) sleepRemaining = 440;
-  sleepFraction = 0;
   uint8_t offset = configTimedOffset();
   uint8_t count = configTimedCount();
-  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
+  for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t scope = activeConfig[offset + 5] & 7;
-    if (scope) {
+    if (scope || i == count) {
       timedAge[i] = 0;
-      timedHigh[i] = 0;
+      timedHigh[i] &= 1;
       timedFraction[i] = 0;
     }
   }

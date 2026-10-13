@@ -5,7 +5,7 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 14 experiment: modified consumer holds and absolute/relative layer modes.
+// Format 15 adds per-layer built-in LED auto-sleep.
 #define CONFIG_VERSION 15
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
@@ -24,6 +24,8 @@
 #define CONFIG_TIMED_INTERVAL_MASK 255
 #define CONFIG_TIMED_RESUME 1
 #define CONFIG_TIMED_SIZE 6
+// Runtime-only built-in timer follows the 128-byte saved image.
+#define CONFIG_ACTIVE_SIZE (CONFIG_SIZE + CONFIG_TIMED_SIZE)
 #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
 #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
 #define CONFIG_HEADER_TRANSPARENT_BLACK 0x80
@@ -125,7 +127,7 @@
 #define CONFIG_MOUSE_X_NEGATIVE        0x20
 #define CONFIG_MOUSE_Y_NEGATIVE        0x40
 
-// Per-layer option byte: full brightness bit 0, deprecated/ignored bit 1, indicator bits 2–3, palette bits 4–7.
+// Per-layer options: full brightness bit 0, auto-sleep bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01
 #define CONFIG_LAYER_OPT_AUTO_SLEEP     0x02
 #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
@@ -139,9 +141,9 @@
 #define CONFIG_LAYER_INDICATOR_ALWAYS_ON     3
 
 #ifdef __SDCC
-extern __xdata __at (0x300) uint8_t activeConfig[CONFIG_SIZE];
+extern __xdata __at (0x300) uint8_t activeConfig[CONFIG_ACTIVE_SIZE];
 #else
-extern __xdata uint8_t activeConfig[CONFIG_SIZE];
+extern __xdata uint8_t activeConfig[CONFIG_ACTIVE_SIZE];
 #endif
 extern __code uint8_t configPalette[16][3];
 

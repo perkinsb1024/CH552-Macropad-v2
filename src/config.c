@@ -3,9 +3,9 @@
 // Page alignment shortens indexed reads. protocolInit loads every byte before
 // use; build_firmware.py checks this absolute allocation separately from XSEG.
 #ifdef __SDCC
-__xdata __at (0x300) uint8_t activeConfig[CONFIG_SIZE];
+__xdata __at (0x300) uint8_t activeConfig[CONFIG_ACTIVE_SIZE];
 #else
-__xdata uint8_t activeConfig[CONFIG_SIZE];
+__xdata uint8_t activeConfig[CONFIG_ACTIVE_SIZE];
 #endif
 
 __code uint8_t configPalette[16][3] = {
@@ -228,7 +228,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     }
     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
         __idata uint8_t scope = validationImage[offset + 5] & 7;
-        if (scope && scope > validationLayers) return 0;
+        if (scope > validationLayers) return 0;
         if (!actionValid(offset + 1, 1)) return 0;
 #if CONFIG_TIMED_RESUME
         if (!actionValid(offset + 3, 1)) return 0;
@@ -239,7 +239,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     }
     for (i = 0; i < validationUsed; i++) {
         uint8_t c = validationImage[validationPool + i];
-        if (c != 0 && c != 9 && c != 10 && (c < 32 || c > 126)) {
+        if ((uint8_t)(c - 32) > 94 && c && (uint8_t)(c - 9) > 1) {
             return 0;
         }
     }

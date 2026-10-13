@@ -9,7 +9,7 @@
 // enabled. Button dispatch and output polling also synchronize this clock.
 extern __idata uint16_t actionsInputNow;
 
-// Low byte of millis() >> 9: 512 ms ticks, polled at least every 131 seconds.
+// Low byte of millis() >> 4: 16ms ticks, polled at least every 4.096 seconds.
 void actionsTimedReset(uint8_t tick);
 void actionsTimedPoll(uint8_t tick);
 ACTION_BIT actionsTimedInput(void); // True consumes this physical event.

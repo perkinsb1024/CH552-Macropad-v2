@@ -26,3 +26,44 @@ geometries, inactive layers, restart phase, saturated sleep, wake consumption,
 layer transitions, reset and simultaneous availability of all four user timers.
 Native measurement links pass layout checks. Hardware validation is outstanding.
 No firmware release files were generated.
+
+## Fitted Shared-Timer Result
+
+The fitted implementation synthesizes a six-byte timer after the saved image
+in aligned external RAM. Configuration uploads, reads, CRCs and DataFlash remain
+128 bytes; the private runtime buffer is 134 bytes. Five runtime age/fraction
+slots accommodate all four user timers plus auto-sleep. The built-in interval
+is 440 ticks, or 30 minutes 2.240 seconds, with the same less-than 16ms early clock
+quantization as user timers. Its flags always restart on physical input and
+consume the wake input. It advances only while the effective layer opts in.
+Layer transitions reset its interval while preserving a pending wake. Like the
+user recipe, it repeats **Both Off** at each idle expiry and coalesces the
+**Both as Configured** wake into one input. Other LED actions and preview/effects
+retain their ordinary interactions with brightness presets.
+
+| Build | Six-Key Flash | Three-Key Flash | Stack Capacity | Free Flash |
+| --- | ---: | ---: | --- | --- |
+| Final | 14,332 | 14,330 | 85 / 88 | 4 / 6 |
+
+No features are removed or degraded. Net flash growth is 2 bytes per variant;
+stack reserve increases 4 bytes per variant against the measured baseline.
+PSEG 106, XSEG 365/356, absolute active/runtime buffer 134 and USB DMA 148 yield
+753/744 allocated external bytes. PSEG ends 0xFD; XSEG ends 0x27E/0x261; active
+buffer occupies 0x300–0x385. The stack figures describe capacity, not hardware
+high-water usage. Both real 14336-byte links and layout/startup checks pass.
+
+The fitting changes pack pending timer bits into the age-high byte, simplify
+scope comparison and adjacent record loads, encode scroll signs before selecting
+axis, remove a release-state ternary, and narrow validated protocol/text ranges.
+All behavior-preserving candidates and rejected approaches are preserved in the
+local optimization ledger and temporary source/patch files. Neither absolute
+image alignment nor short pdata/xdata pointer assumptions are expanded beyond
+the bounds checked by the native builder. The saved format bump is required:
+older ignored layer bit 1 must be cleared by migration, never relabeled as v15.
+
+Host suites pass with color preview enabled and disabled, including both
+hardware variants, wake/consumed release for keys and encoder button, unbound
+wake, both complete detent directions, partial-detent rejection, held/released
+inputs, layer transitions, independent phase, repeated inactivity, simultaneous
+four user timers and USB/configuration reset. Hardware validation is outstanding.
+No firmware release generation or flashing was performed.

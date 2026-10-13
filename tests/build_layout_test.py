@@ -65,6 +65,16 @@ class MemoryLayoutTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Unexpected absolute"):
             self.check(_activeConfig=0x380)
 
+    def test_runtime_timer_capacity(self):
+        text = "\n".join(f"    {value:08X} {name}" for name, value in dict(
+            s_PSEG=148, l_PSEG=106, s_XSEG=274, l_XSEG=365,
+            _activeConfig=0x300, l_XINIT=0, l_XISEG=0,
+            __mcs51_genXRAMCLEAR=92).items())
+        builder.check_memory_layout(text, 148, 134)
+        builder.check_memory_layout(text, 148, 256)
+        with self.assertRaisesRegex(RuntimeError, "runtime timer exceed"):
+            builder.check_memory_layout(text, 148, 257)
+
     def test_startup_copy_and_clear(self):
         for area in ("l_XINIT", "l_XISEG"):
             with self.assertRaisesRegex(RuntimeError, "XINIT"):

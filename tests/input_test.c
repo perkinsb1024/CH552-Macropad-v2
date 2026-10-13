@@ -821,7 +821,85 @@ static void testStartupDebounce(void) {
     }
 }
 
+static void advanceSleep(uint32_t fineTicks) {
+    while (fineTicks) {
+        uint8_t step = fineTicks > 128 ? 128 : fineTicks;
+        currentMs += (uint32_t)step * 16;
+        actionsTimedPoll((uint16_t)currentMs >> 4);
+        fineTicks -= step;
+    }
+}
+
+static void initAutoSleep(void) {
+    testLoadStarterProfile(PHYSICAL_VARIANT);
+    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] =
+        CONFIG_LAYER_OPT_AUTO_SLEEP | CONFIG_LAYER_OPT_FULL_BRIGHTNESS |
+        (CONFIG_LAYER_INDICATOR_ALWAYS_ON << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
+        (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+    activeConfigValid = 1;
+    P1 = P3 = 0xFF; UsbConfig = 1;
+    startupWaiting = startupWarning = 0;
+    currentMs = 0; previewOptions = 0; frameCount = 0;
+    firmwareApplyConfig(1);
+    actionsPoll(0); frameCount = 0;
+}
+
+static void testAutoSleepInput(void) {
+    const uint32_t interval = 440UL * 256;
+    for (uint8_t input = 0; input < 3; input++) {
+        initAutoSleep();
+        advanceSleep(interval - 1); assert(ledSettings[2] == 3);
+        advanceSleep(1); assertBlack();
+        assert(ledSettings[2] == 0 && ledSettings[3] == 0);
+        if (input == 2) activeConfig[9] = activeConfig[10] = 0; // Unbound key wakes too.
+        uint8_t index = input == 1 ? NUM_LEDS : 0;
+        if (input == 1) P3 &= ~8; else P1 &= ~2;
+        scanButton(index, currentMs);
+        currentMs += DEBOUNCE_MS;
+        scanButton(index, currentMs);
+        actionsPoll(currentMs);
+        assert(ledSettings[2] == 3 && ledSettings[3] == 3 && frameCount == 0);
+        if (input == 1) P3 |= 8; else P1 |= 2;
+        scanButton(index, currentMs);
+        currentMs += DEBOUNCE_MS; scanButton(index, currentMs);
+        actionsPoll(currentMs); assert(frameCount == 0); // Release is consumed.
+        if (input != 2) {
+            if (input == 1) P3 &= ~8; else P1 &= ~2;
+            scanButton(index, currentMs); currentMs += DEBOUNCE_MS;
+            scanButton(index, currentMs); actionsPoll(currentMs);
+            assert(frameCount > 0); // Next ordinary press still works.
+        }
+    }
+    for (uint8_t clockwise = 0; clockwise < 2; clockwise++) {
+        initAutoSleep(); advanceSleep(interval);
+        const uint8_t forward[] = {2, 0, 1, 3};
+        const uint8_t backward[] = {1, 0, 2, 3};
+        for (uint8_t step = 0; step < 4; step++) {
+            P3 = (P3 & ~3) | (clockwise ? forward[step] : backward[step]);
+            scanEncoder();
+            if (step < 3) assert(ledSettings[2] == 0); // Partial turns don't wake.
+        }
+        assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+        actionsPoll(currentMs); assert(frameCount == 0);
+        for (uint8_t step = 0; step < 4; step++) {
+            P3 = (P3 & ~3) | (clockwise ? forward[step] : backward[step]);
+            scanEncoder();
+        }
+        actionsPoll(currentMs); assert(frameCount > 0);
+    }
+    initAutoSleep();
+    // A held no-op key and its release do not keep the timer awake.
+    activeConfig[9] = activeConfig[10] = 0;
+    P1 &= ~2; scanButton(0, 0); scanButton(0, DEBOUNCE_MS);
+    advanceSleep(interval); assertBlack();
+    P1 |= 2; scanButton(0, currentMs); scanButton(0, currentMs + DEBOUNCE_MS);
+    assertBlack();
+    firmwareApplyConfig(0); assert(ledSettings[2] == 3);
+    assert(!actionsTimedInput());
+}
+
 int main(void) {
+    testAutoSleepInput();
     testStartupDebounce();
     testStartupIndicatorEnumeration();
     testStartupWarningDismissal();

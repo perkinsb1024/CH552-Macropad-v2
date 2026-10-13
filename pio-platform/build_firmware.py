@@ -36,7 +36,7 @@ def locations():
     return hardware, sdcc, tools
 
 
-def check_memory_layout(map_text, usb_ram):
+def check_memory_layout(map_text, usb_ram, active_size=134):
     """Paged pointers wrap at 256; SDCC's size check alone misses this hazard."""
     symbols = {
         name: int(value, 16)
@@ -76,10 +76,12 @@ def check_memory_layout(map_text, usb_ram):
     # is omitted from l_XSEG, so it needs an explicit overlap/capacity check.
     active_start = symbols.get("_activeConfig")
     if active_start is not None and (active_start == 0x300 or not (
-        external_start <= active_start and active_start + 128 <= external_start + external_size
+        external_start <= active_start and active_start + active_size <= external_start + external_size
     )):
         if active_start != 0x300:
             raise RuntimeError("Unexpected absolute active configuration address")
+        if active_start + active_size > 1024:
+            raise RuntimeError("Active configuration and runtime timer exceed CH552 RAM")
         if paged_start + paged_size > active_start or external_start + external_size > active_start:
             raise RuntimeError("External RAM overlaps the absolute active configuration")
     # Our startup omits the XINIT copier, but must retain clearing/P2 setup.

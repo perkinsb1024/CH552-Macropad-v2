@@ -282,7 +282,8 @@ static void autoSleep(void) {
     advanceFine(interval - 1); assert(ledCalls == 0);
     advanceFine(1); assert(ledCalls == 1);
     assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 4);
-    advanceFine(interval * 10); assert(ledCalls == 1); // Latches across wraps.
+    advanceFine(interval * 10); assert(ledCalls == 11); // Repeated Off coalesces wake.
+    ledCalls = 1;
     assert(actionsTimedInput());
     assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 0);
     assert(!actionsTimedInput());
@@ -307,7 +308,7 @@ static void autoSleep(void) {
     advanceFine(interval); assert(ledCalls == 1);
     assert(actionsTimedInput()); assert(ledCalls == 2);
     advanceFine(2048UL * 256 - interval);
-    assert(ledCalls == 7); // Four independent user expiries plus another sleep.
+    assert(ledCalls == 9); // Four user expiries and three additional Off periods.
 }
 
 int main(void) {

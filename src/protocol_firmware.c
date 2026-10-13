@@ -105,7 +105,7 @@ static uint8_t processRequest(void) {
   }
   if (opcode == PROTOCOL_READ_FLASH || opcode == PROTOCOL_READ_ACTIVE ||
       opcode == PROTOCOL_WRITE_CHUNK) {
-    if (!length || (uint16_t)offset + length > CONFIG_SIZE) {
+    if (!length || offset > (uint8_t)(CONFIG_SIZE - length)) {
       return PROTOCOL_BAD_RANGE;
     }
   } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
@@ -149,7 +149,7 @@ static uint8_t processRequest(void) {
         return PROTOCOL_INCOMPLETE;
       }
       if (offset != uploadNext) {
-        if ((uint16_t)offset + length > uploadNext) {
+        if ((uint8_t)(offset + length) > uploadNext) {
           return PROTOCOL_BAD_SEQUENCE;
         }
         for (i = 0; i < length; i++) {
