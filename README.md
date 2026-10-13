@@ -65,6 +65,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
+| [v15](protocol/config-v15.md) | - Per-layer **Auto-Sleep** turns LEDs off after about 30 minutes of inactivity, then restores configured lighting and consumes the wake input<br> - No extra profile bytes or **Timed Action** slot required |
 | [v14](protocol/config-v14.md) | - **Media / System with Modifiers** now supports **Hold**<br> - Added support for **Relative Layer While Held**<br> *This version also reorganized action types to keep logical groups together* |
 | [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier key support for 8-bit **Media / System** taps<br> - USB device names identify three-key and six-key macropads |
 | [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse Down** / **Mouse Up** actions for separate inputs and macro drags<br> - **Enter Bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
@@ -87,7 +88,7 @@ Below are the primary firmware features added with each version
 >
 > Pre-built v14 firmware files are available for [three-key](releases/ch552-macropad-3-key-518f6bd3.hex) and [six-key](releases/ch552-macropad-6-key-518f6bd3.hex) macropads, built from source revision `518f6bd3`. This version adds **Media / System Hold with Modifiers** and **Relative Layer While Held**, with reorganized action encoding and older-profile migration in the configurator. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [current v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v14 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to Device** to activate it in v14. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
+Use the [frozen v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/) with these v14 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware. Back up your profile before updating, then import it and click **Save to Device** to activate it in v14. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -146,19 +147,19 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current firmware, in bytes, with a 14,336-byte application flash limit:
+Memory in the current format 15 firmware source, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash used | 14,328 | 14,330 |
-| Flash remaining | 8 | 6 |
+| Flash used | 14,330 | 14,332 |
+| Flash remaining | 6 | 4 |
 | USB DMA RAM | 148 | 148 |
-| Paged external RAM (PSEG) | 105 | 105 |
+| Paged external RAM (PSEG) | 106 | 106 |
 | Ordinary external RAM (XSEG) | 356 | 365 |
-| Absolute active configuration image | 128 | 128 |
-| Total external RAM allocated | 737 | 746 |
-| External RAM unallocated (including gaps) | 287 | 278 |
-| Stack available (linker reserve) | 84 | 81 |
+| Absolute active image and runtime timer | 134 | 134 |
+| Total external RAM allocated | 744 | 753 |
+| External RAM unallocated (including gaps) | 280 | 271 |
+| Stack available (linker reserve) | 88 | 85 |
 
 ### Build Release HEX Files for Both Variants
 
@@ -245,7 +246,7 @@ Bootloader entry methods:
 - At power-up: Unplug the macropad, hold the encoder button, and reconnect USB. This method is always available, even if no valid profile is saved.
 - During use with v12 or later firmware: Click **Enter Bootloader** in the [browser firmware installer](webUploader/). Select the running macropad, then click **Connect Bootloader** to upload firmware. Runtime encoder holds do not enter bootloader mode.
 
-Current v14 firmware checks that the encoder stays pressed across a 10ms startup
+Firmware checks that the encoder stays pressed across a 10ms startup
 window, sampling every 1ms. Hold it steadily before connecting USB.
 
 Older v11 firmware supports an optional three-second encoder hold on enabled
@@ -281,7 +282,9 @@ On first use, or when the saved profile is invalid, key and encoder actions stay
 
 Definitions allocate storage only when present: two bytes per step plus a one-byte terminator (the last sequence can use the image boundary). Repeats cost no extra configuration bytes. Strings share the normal pool. Held actions and nested macros are unavailable. Layer switches must be the final step, and macros containing them must have **Repeat Count** set to 1. Playback streams steps through one active macro instead of filling the eight-event queue; later queued actions wait, and new invocations are dropped if that queue fills. Immediate actions may interleave, and an effective layer change cancels playback.
 
-Configuration format 14 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
+Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
+
+**Auto-Sleep** in **Layer Options** provides the common LED inactivity recipe without extra storage or a timer slot: after about 30 minutes, select **Both Off**; the next press or complete encoder turn selects **Both as Configured** and is consumed. Input and effective layer transitions restart its interval. The active editor targets format 15; published v14 firmware uses the frozen v14 editor linked above.
 
 **Media / System** set to **Hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
@@ -324,7 +327,7 @@ shows the existing blinking red error LED instead.
 
 **Switch to Layer** and its one-shot variant include **Previous Layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous Layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous Layer** option visits the remembered layer for one action, then returns. **Timed Actions** can use either variant.
 
-The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to Device** to apply it. See [configuration format 14](protocol/config-v14.md) for the complete format reference.
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to Device** to apply it. See [configuration format 15](protocol/config-v15.md) for the complete format reference.
 
 Use **Export JSON** and **Import Profile** in **Backup & Restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to Device** to apply it to the macropad.
 
@@ -383,5 +386,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration format](protocol/config-v14.md)
+- [Configuration Format](protocol/config-v15.md)
 - [USB configuration protocol](protocol/hid-v1.md)

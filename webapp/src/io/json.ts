@@ -7,7 +7,7 @@ import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 14;
+export const JSON_VERSION = 15;
 const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
@@ -34,6 +34,7 @@ export interface ExportedProfile {
     indicatorBehavior: number;
     indicatorColor: number;
     indicatorFullBrightness: boolean;
+    autoSleep: boolean;
   }>;
   chords: Array<{ layer: number; keys: [number, number]; global?: boolean; action: Action }>;
   timedActions?: TimedAction[];
@@ -60,6 +61,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       indicatorBehavior: layer.indicatorBehavior,
       indicatorColor: layer.indicatorColor,
       indicatorFullBrightness: layer.indicatorFullBrightness,
+      autoSleep: layer.autoSleep,
     })),
     chords: profile.chords.map((c) => ({ layer: c.layer, keys: [c.keyA, c.keyB], global: !!c.global, action: c.action })),
   };
@@ -166,7 +168,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -183,6 +185,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       indicatorBehavior: l.indicatorBehavior === undefined ? 0 : int(l.indicatorBehavior, `Layer ${li + 1} indicatorBehavior`),
       indicatorColor: l.indicatorColor === undefined ? 0 : int(l.indicatorColor, `Layer ${li + 1} indicatorColor`),
       indicatorFullBrightness: bool(l.indicatorFullBrightness, `Layer ${li + 1} indicatorFullBrightness`),
+      autoSleep: Number(raw.version) >= 15 ? bool(l.autoSleep, `Layer ${li + 1} autoSleep`) : false,
     };
     if (l.invertScroll === true) (layer as Layer & { invertScroll?: boolean }).invertScroll = true;
     return layer;

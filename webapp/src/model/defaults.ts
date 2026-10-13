@@ -17,6 +17,7 @@ export function emptyLayer(variant: Variant): Layer {
     indicatorBehavior: 0,
     indicatorColor: 0,
     indicatorFullBrightness: false,
+    autoSleep: false,
   };
 }
 
@@ -43,6 +44,7 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
     indicatorBehavior: LayerIndicatorBehavior.AlwaysOn,
     indicatorColor: windows ? 4 : 14,
     indicatorFullBrightness: false,
+    autoSleep: false,
   };
 }
 
@@ -80,6 +82,8 @@ export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VE
     layer.indicatorBehavior ??= 0;
     layer.indicatorColor ??= 0;
     layer.indicatorFullBrightness ??= false;
+    if (sourceVersion < 15) layer.autoSleep = false;
+    else layer.autoSleep ??= false;
     layer.keys = layer.keys.map(migrateAction);
     layer.encoderButton = migrateAction(layer.encoderButton);
     layer.clockwise = migrateAction(layer.clockwise);

@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 **Universal Macropad**. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v14.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v15.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -126,7 +126,7 @@ the complete site and verifies archives. Direct pushes to `main` are supported;
 pull requests and repository protection are optional, as described in the
 [release process](../documentation/Firmware%20Release%20Process.md#publish-after-validation).
 
-The active format 14 editor is served at the project site's root. Frozen
+The active format 15 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -144,9 +144,11 @@ is rebuilt from dependencies in CI.
 - `versions/format-v11/` serves the frozen v11 editor and live view from the finalized v11 release.
 - `versions/format-v10/` serves the frozen v10 editor and live view built before v11 changes.
 - `versions/format-v9/` serves the frozen v9 editor and live view built before the v10 changes.
+- `versions/format-v14/` serves the frozen outgoing v14 editor and live view from `0fb6132`.
+- `versions/format-v13/` serves the frozen published v13 editor and live view.
 - `versions/format-v7/` serves the frozen v7 editor and live view from commit `196e81e`.
 
-The footer links to the archive list. Detecting format 2–12 firmware presents a
+The footer links to the archive list. Detecting format 2–14 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -154,13 +156,13 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11/v12/v13 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11/v12/v13/v14 drafts without overwriting or clearing the archived namespace.
 
-Version 2–13 binary profiles, version 1–13 JSON files, and older drafts can still be
-migrated into the active format 14 editor after a firmware upgrade. Bindings and
+Version 2–14 binary profiles, version 1–14 JSON files, and older drafts can still be
+migrated into the active format 15 editor after a firmware upgrade. Bindings and
 colors are preserved; **Blink Once** becomes the timed indication and transparency
 defaults to off. **Rainbow Phase Spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to store v14. Older stored profiles remain readable but inactive until saved as v14.
+through the active editor to store v15. Older stored profiles remain readable but inactive until saved as v15.
 
 **LED Control** bindings expose existing LED commands plus **Set All LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
@@ -214,11 +216,11 @@ preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
 visits. Repeating a persistent **Previous Layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
-The protocol simulator accepts only valid v14 profiles and round-trips the new
+The protocol simulator accepts only valid v15 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Previous released firmware has been hardware tested on both geometries; see
-**Release Firmware Status** for current v13 coverage. Bundled `../profiles/*.json`
-maximum-capacity starter files use v14 JSON and are checked against the firmware parser in the regression suite.
+**Release Firmware Status** for published v14 coverage. Bundled `../profiles/*.json`
+maximum-capacity starter files use v15 JSON and are checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
 
@@ -238,7 +240,7 @@ and media controls. Acceleration is not part of this merged build.
 v8 writes **Type Text** with first byte `0x10`; old type-9 text is decoded according
 to its source version before re-encoding. **None** remains `00 00`. Binary, JSON,
 draft and raw-device migration cover every binding location, including timers.
-Legacy firmware connects through its frozen editor, while old flash on v14 can
+Legacy firmware connects through its frozen editor, while old flash on v15 can
 be read and migrated without being automatically overwritten.
 
 ## Mouse Clicks (v8+)
@@ -271,8 +273,9 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 The release HEX files and bundled uploader use v14 firmware from revision
 `518f6bd3`: [three-key](../releases/ch552-macropad-3-key-518f6bd3.hex) and
-[six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). The [active v14 editor](index.html) matches
-these releases. Automated tests and native builds pass on both geometries;
+[six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). The [frozen v14 editor](public/versions/format-v14/) matches
+these releases. The active editor targets format 15 with **Auto-Sleep**; no v15
+release files have been generated. Automated tests and native builds pass on both geometries;
 the user has completed v14 hardware validation.
 Older-firmware connections link to the matching archive and updater. Back up
 profiles, update firmware, then load/import and explicitly save in the active
@@ -343,7 +346,7 @@ All **Mouse Toggle** actions share one global button state across physical input
 chords, timers and macros. Any toggle can undo another toggle for the same button;
 held actions retain their physical ownership. Layer-route analysis follows steps
 until cancellation.
-See [the complete v14 reference](../protocol/config-v14.md) and
+See [the complete v15 reference](../protocol/config-v15.md) and
 [implementation and optimization notes](../protocol/macros-implementation.md).
 
 ## Mouse Buttons and Persistent Actions (V12)
@@ -375,7 +378,7 @@ the shared mouse action; legacy pointer steps become signed single-axis deltas.
 
 **Media / System** taps expose **Ctrl**, **Shift**, **Alt** and **GUI** modifiers
 for eight-bit usages. Twelve-bit unmodified taps and holds remain available;
-modified usages above `0xFF` are rejected. The active v14 editor also supports
+modified usages above `0xFF` are rejected. The active v15 editor also supports
 modified holds. Firmware drains
 the keyboard modifier report before the consumer press, then drains the
 consumer release before removing temporary modifiers.
@@ -388,9 +391,9 @@ by regression tests. USB product names are **3-Key Macropad** and **6-Key Macrop
 
 ## Action Ordering and Holds (V14)
 
-The active editor exports JSON v14, writes binary format 14 and stores local
-profiles under `format-v14:`. Its codec uses the reordered types in
-[the complete format reference](../protocol/config-v14.md), including swapped
+The active editor exports JSON v15, writes binary format 15 and stores local
+profiles under `format-v15:`. Its codec uses the reordered types in
+[the complete format reference](../protocol/config-v15.md), including swapped
 **Pause**/**Type Text** records and the shared layer action modes. Migration
 decodes every binding, both timer fields and every macro step using the source
 version, then re-encodes and computes the CRC. Authentic finalized v13 binary
@@ -409,3 +412,22 @@ analysis includes relative holds.
 The finalized v13 editor and live view are frozen at `public/versions/format-v13/`
 with source provenance and checksums. Published v13 firmware connects through
 that editor; the shared uploader offers v13 as a previous release and v14 as the latest release.
+
+## Auto-Sleep (v15)
+
+**Layer Options** includes **Auto-Sleep**, disabled by default. The fixed timer
+selects **Both Off** after 30 minutes 2.240 seconds without physical input on an
+enabled layer. The next press or complete encoder detent selects **Both as
+Configured** and is consumed, including its release. Effective layer changes
+restart the interval and preserve an already pending wake. Unbound presses and
+complete turns count; releases, holds, partial turns and USB traffic do not.
+
+The option uses existing layer bit 1, adding no profile bytes and reserving no
+user timer slot. JSON v15 and local drafts preserve `autoSleep` per layer, with
+validation, comparisons and undo. Binary v2–v14, JSON v1–v14 and older drafts
+migrate with **Auto-Sleep** disabled, clearing the ignored legacy layer bit.
+
+The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
+outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
+and file checksums. Published v14 firmware routes there; the shared uploader
+continues to bundle the published v14 release.

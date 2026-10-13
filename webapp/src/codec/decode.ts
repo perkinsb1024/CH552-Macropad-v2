@@ -1,7 +1,7 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
   PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
-  LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_INDICATOR_SHIFT,
+  LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
@@ -177,7 +177,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
   if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
+  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
   if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = image[2]! >= 4;
   const configurableRainbow = image[2]! >= 5;
@@ -231,7 +231,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       leds.push(i & 1 ? byte >> 4 : byte & 15);
     }
     const options = image[base + size - 1]!;
-    // Bit 1 is the deprecated runtime bootloader permission; accept and ignore it.
+    // Only v15 assigns bit 1 to auto-sleep; older formats ignore it.
     const layer: Layer = {
       keys: actions.slice(0, keys),
       encoderButton: actions[keys]!,
@@ -241,6 +241,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       indicatorBehavior: (options >> LAYER_OPT_INDICATOR_SHIFT) & 3,
       indicatorColor: options >> 4,
       indicatorFullBrightness: !!(options & LAYER_OPT_FULL_BRIGHTNESS),
+      autoSleep: image[2]! >= 15 && !!(options & LAYER_OPT_AUTO_SLEEP),
     };
     layers.push(layer);
   }

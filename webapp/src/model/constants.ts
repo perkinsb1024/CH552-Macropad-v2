@@ -1,7 +1,7 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 14;
+export const FORMAT_VERSION = 15;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
@@ -96,6 +96,7 @@ export const MOUSE_BUTTONS = [
 ] as const;
 
 export const LAYER_OPT_FULL_BRIGHTNESS = 0x01;
+export const LAYER_OPT_AUTO_SLEEP = 0x02;
 export const LAYER_OPT_INDICATOR_SHIFT = 2;
 export const LAYER_OPT_COLOR_SHIFT = 4;
 

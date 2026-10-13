@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v14 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v15 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -82,3 +82,10 @@ from finalized v13 configurator source `15660bc`, which includes the released
 HTML banners link to the latest editor; the installer redirects to the shared
 uploader. The manifest records provenance and SHA-256 hashes, including source
 maps. The existing v13 draft namespace and application assets are preserved.
+
+The frozen v14 editor and live view are in `../public/versions/format-v14/`,
+built from finalized outgoing v14 source `0fb6132`. All 663 source tests,
+TypeScript, Vite, uploader generation and existing archive checks passed.
+HTML entry points add archive banners and latest-editor links; the installer
+redirects to the shared uploader. Its v14 draft namespace and application assets
+are preserved. The manifest records source provenance and SHA-256 hashes.

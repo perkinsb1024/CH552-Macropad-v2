@@ -64,7 +64,7 @@ it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting 
   const read = decodeImage(image); expect(read).toEqual({ ok: true, profile: p });
   if (!read.ok) throw new Error(read.detail);
   const migrated = encodeProfile(read.profile);
-  expect(migrated[2]).toBe(14);
+  expect(migrated[2]).toBe(15);
   for (const offset of offsets) expect(migrated[offset]).toBe(0x34);
   expect(validator.accepts(migrated, variant)).toBe(true);
   const json = JSON.parse(exportProfile(p)); json.version = 12;
@@ -73,7 +73,7 @@ it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting 
   const original = JSON.stringify({ formatVersion: 12, profile: p, meta: { profileName: 'Hold' }, savedAt: 'old' });
   const storage = new Map([[oldKey, original]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
-  expect(loadDraft(variant)).toMatchObject({ formatVersion: 14, profile: p });
+  expect(loadDraft(variant)).toMatchObject({ formatVersion: 15, profile: p });
   storeDraft(p, { profileName: 'Hold' });
   expect(loadDraft(variant)?.profile).toEqual(p);
   expect(storage.get(oldKey)).toBe(original);

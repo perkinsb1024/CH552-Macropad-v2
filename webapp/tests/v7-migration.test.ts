@@ -23,7 +23,7 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   const decoded = decodeImage(original); expect(decoded).toEqual({ ok: true, profile: p });
   if (!decoded.ok) throw new Error('decode failed');
   const migrated = encodeProfile(decoded.profile);
-  expect(migrated[2]).toBe(14);
+  expect(migrated[2]).toBe(15);
   const reverted = migrated.slice(); legacyTextCodes(reverted); reverted[2] = 6; sealImage(reverted);
   expect(reverted).toEqual(original);
   expect(validator.accepts(original, variant)).toBe(false);
@@ -41,7 +41,7 @@ it('validates and round-trips every bundled current-format starter profile again
   const profiles = import.meta.glob('../../profiles/*-max-action-slots.json', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
   expect(Object.keys(profiles)).toHaveLength(2);
   for (const text of Object.values(profiles)) {
-    expect(JSON.parse(text).version).toBe(14);
+    expect(JSON.parse(text).version).toBe(15);
     const { profile: p, meta } = importProfile(text);
     expect(importProfile(exportProfile(p, meta))).toEqual({ profile: p, meta });
     expect(computeCapacity(p).remaining).toBe(p.variant === 1 ? 2 : 0);

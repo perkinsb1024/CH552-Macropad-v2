@@ -102,6 +102,7 @@ export function ProfileViewer() {
             </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
           </div>}
           <DeviceView readOnly />
+          <p class="muted">Auto-Sleep: {viewedLayer?.autoSleep ? 'On · About 30 Minutes' : 'Off'}</p>
           <p class="muted viewer-indicator">Layer Indicator: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
         </section>
         <div class="viewer-extras"><ViewerChords /><ViewerTimers /><ViewerMacros /></div>

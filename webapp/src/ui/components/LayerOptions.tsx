@@ -99,6 +99,15 @@ export function LayerOptions() {
         )}
       </div>
 
+      <details class="layer-advanced">
+        <summary>Advanced</summary>
+        <label class="check">
+          <input type="checkbox" checked={layer.autoSleep}
+            onChange={(e) => updateProfile((d) => { d.layers[li]!.autoSleep = (e.target as HTMLInputElement).checked; })} />
+          Auto-Sleep
+        </label>
+        <p class="hint">Turn LEDs off after about 30 minutes without input on this layer. The next press or complete encoder turn restores configured lighting and is consumed.</p>
+      </details>
     </details>
   );
 }

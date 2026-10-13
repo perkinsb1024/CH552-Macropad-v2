@@ -22,12 +22,14 @@ const fixtures = v13Fixtures as {
 };
 it.each(fixtures.fixtures)('migrates authentic finalized v13 bytes, JSON and drafts for variant $profile.variant', ({ profile: p, hex }) => {
   const original = Uint8Array.from(hex.match(/../g)!, byte => parseInt(byte, 16));
+  p = structuredClone(p);
+  for (const layer of p.layers) layer.autoSleep = false;
   expect(original[2]).toBe(13);
   const result = decodeImage(original);
   expect(result).toEqual({ ok: true, profile: p });
   if (!result.ok) throw new Error(result.detail);
   const upgraded = encodeProfile(result.profile);
-  expect(upgraded[2]).toBe(14);
+  expect(upgraded[2]).toBe(15);
   expect(validator.accepts(upgraded, p.variant)).toBe(true);
   expect(decodeImage(upgraded)).toEqual(result);
   expect([...original].map(byte => byte.toString(16).padStart(2, '0')).join('')).toBe(hex);
@@ -37,7 +39,7 @@ it.each(fixtures.fixtures)('migrates authentic finalized v13 bytes, JSON and dra
   const oldDraft = JSON.stringify({ formatVersion: 13, profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
   const storage = new Map([[oldKey, oldDraft]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
-  expect(loadDraft(p.variant)).toEqual({ formatVersion: 14, profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
+  expect(loadDraft(p.variant)).toEqual({ formatVersion: 15, profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
   storeDraft(p, { profileName: 'Migrated' });
   expect(storage.has(draftKey(p.variant))).toBe(true);
   expect(storage.get(oldKey)).toBe(oldDraft);

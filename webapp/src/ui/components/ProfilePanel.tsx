@@ -1,5 +1,5 @@
 import { DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior } from '../../model/constants';
-import { baseline, layerName, profile, updateProfile } from '../store';
+import { autoSleepMode, baseline, layerName, profile, setAutoSleepMode, updateProfile } from '../store';
 import { IconChevron } from './Icons';
 
 const PHASE_LABELS = ['All LEDs Together', 'Gentle Color Wave', 'Rainbow Sweep', 'Scattered Colors'];
@@ -76,6 +76,19 @@ export function ProfilePanel() {
             This only applies to "Always On" - Timed and Blink layer indications will override a "Black" key
           </span>
         </div>}
+        <div class="field field-wide">
+          <span class="field-label">Auto-Sleep</span>
+          <div class="segmented" role="group" aria-label="Profile Auto-Sleep">
+            {(['On', 'Per Layer', 'Off'] as const).map(mode => <button
+              key={mode}
+              type="button"
+              class={autoSleepMode.value === mode ? 'is-selected' : ''}
+              aria-pressed={autoSleepMode.value === mode}
+              onClick={() => setAutoSleepMode(mode)}
+            >{mode}</button>)}
+          </div>
+          <span class="hint">On or Off applies to every layer. Per Layer keeps the current settings so you can adjust each layer under Advanced.</span>
+        </div>
       </div>
     </details>
   );

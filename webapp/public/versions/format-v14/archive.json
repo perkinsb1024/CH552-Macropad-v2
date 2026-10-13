@@ -1,0 +1,23 @@
+{
+  "formatVersion": 14,
+  "sourceCommit": "0fb61321d64343b78ebacfb892c456101b15bac8",
+  "changes": [
+    "Frozen finalized v14 editor and live view, preserving the v14 draft namespace. HTML archive banners and shared uploader redirect; application assets unchanged.",
+    "Built using installed dependencies matching the source lockfile."
+  ],
+  "validation": "All 663 source tests passed; TypeScript and complete production build passed.",
+  "sha256": {
+    "assets/configurator-Cf_bV7mc.js.map": "0a299aefb489e13e52df401ff1541b78b2905494a8b180404b4b59ad8c668ce6",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-BD3TZSSW.js": "ecb989d75ddd7c2ebae949a62d8a4cf457e610211dc8469c8446cda88ad8675b",
+    "assets/main-BD3TZSSW.js.map": "e414e8689d67339876a2482e1aa1718e5741ceeda36f6a8508248f2a4fef7ad4",
+    "assets/main-CudpaDTR.css": "2a9071a3fb5665c2df8469d401010fc03fb8268b95988f5b0d8c6c515c69c85c",
+    "assets/viewer-Cf_bV7mc.js.map": "dcfc5bd4c529421e9a50bfdff98624763dd60871c849a7cb4f7750f73087d64e",
+    "favicon.svg": "eb47e87c540ce093bdf9b1ba415afa1ca495b7229ed1b2fff8fb94b51996f961",
+    "index.html": "76a0ae7fdd0e129f0ca18852be7a340de8ca241accfabc6676714c54eaf4570e",
+    "liveView/index.html": "7b4e9003655542ac012ea532febf87bd845a162fdea616d57c32394139e07c59",
+    "webUploader/index.html": "29a77dfb01c27d4af02976b18f45332b4374e17ff9c66382e73810883027c63d",
+    "wheel-debug.html": "e67bc00d70e8654df88232e11c91edd35cbeec3cc286bbca2e78c58bc905fb8a"
+  }
+}

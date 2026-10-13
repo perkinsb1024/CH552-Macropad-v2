@@ -141,6 +141,9 @@ export function validateProfile(profile: Profile): Issue[] {
     if (!Number.isInteger(layer.indicatorColor) || layer.indicatorColor < 0 || layer.indicatorColor > 15) {
       issues.push({ where: `Layer ${li + 1}`, message: 'Layer indicator color must be 0–15.' });
     }
+    if (typeof layer.autoSleep !== 'boolean') {
+      issues.push({ where: `Layer ${li + 1}`, message: 'Auto-sleep must be on or off.' });
+    }
     if (typeof layer.indicatorFullBrightness !== 'boolean') {
       issues.push({ where: `Layer ${li + 1}`, message: 'Full brightness must be on or off.' });
     }

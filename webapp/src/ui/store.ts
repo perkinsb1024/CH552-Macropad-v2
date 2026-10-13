@@ -56,6 +56,32 @@ export const freshStart = signal<{ profile: Profile; kind: 'imported' | 'starter
 export const changesBaseline = computed(() => freshStart.value?.profile ?? baseline.value);
 export const meta = signal<LocalMetadata>({});
 export const selectedLayer = signal(0);
+export type AutoSleepMode = 'On' | 'Per Layer' | 'Off';
+const perLayerAutoSleep = signal(false);
+const layerAutoSleepStates = computed(() => profile.value?.layers.map(layer => Number(layer.autoSleep)).join(',') ?? null);
+// Choosing Per Layer is only an editor preference; reset it when sleep settings
+// change or a profile is loaded, imported, or reset.
+effect(() => {
+  layerAutoSleepStates.value;
+  baseline.value;
+  freshStart.value;
+  perLayerAutoSleep.value = false;
+});
+export const autoSleepMode = computed<AutoSleepMode>(() => {
+  const layers = profile.value?.layers ?? [];
+  if (perLayerAutoSleep.value) return 'Per Layer';
+  if (layers.every(layer => layer.autoSleep)) return 'On';
+  if (layers.every(layer => !layer.autoSleep)) return 'Off';
+  return 'Per Layer';
+});
+export function setAutoSleepMode(mode: AutoSleepMode): void {
+  perLayerAutoSleep.value = mode === 'Per Layer';
+  if (mode !== 'Per Layer') {
+    updateProfile(draft => {
+      draft.layers.forEach(layer => { layer.autoSleep = mode === 'On'; });
+    });
+  }
+}
 export const selectedSlot = signal<Slot | null>(null);
 /** The binding currently being moved with native drag and drop. */
 export const draggedSlot = signal<Slot | null>(null);
@@ -160,7 +186,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/', 13: 'versions/format-v13/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/', 13: 'versions/format-v13/', 14: 'versions/format-v14/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {

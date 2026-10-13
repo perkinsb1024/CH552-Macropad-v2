@@ -42,6 +42,7 @@ export interface Layer {
   indicatorBehavior: LayerIndicatorBehavior;
   indicatorColor: number;
   indicatorFullBrightness: boolean;
+  autoSleep: boolean;
 }
 
 export interface Chord {

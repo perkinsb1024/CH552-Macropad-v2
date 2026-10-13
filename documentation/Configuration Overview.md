@@ -69,7 +69,7 @@ For editing without a connection, choose **Edit Offline** for a three-key or six
 | Macropad layout | Click a numbered key, **Turn Left**, **Press**, or **Turn Right** to select its action |
 | **Action Editor** | Choose what the selected control does and adjust its settings. For a numbered key, you can also pick its key-press color here |
 | **Chords** | Assign actions to two-key combinations |
-| **Layer Options** | Set the current layer's indicator lighting |
+| **Layer Options** | Set the current layer's indicator lighting and **Auto-Sleep** |
 | **Timed Actions** | Run actions repeatedly or after inactivity, across all layers or on one selected layer |
 | **Shortcuts** | Search ready-made actions and drag them onto an input |
 | **Device Storage** | See how much of the 128-byte budget your profile uses |
@@ -395,6 +395,20 @@ In **Layer Options**, set **Layer Selection LEDs**:
 
 Choose the **Layer Indicator Color** and **Full Brightness** or **Dim**. The timed and blinking indications temporarily cover key-press colors. The always-on background allows key-press colors to show over it.
 
+### Auto-Sleep
+
+With format 15 firmware, enable **Auto-Sleep** in **Layer Options** to turn off
+indicator and key lighting after about 30 minutes without input. It adds no
+profile bytes and leaves all four **Timed Actions** available. The next press
+or complete encoder turn restores **Both as Configured** and is consumed; the
+following input runs normally. Unbound inputs count as activity too.
+
+Presses and completed encoder turns restart the timer. Releases, held inputs,
+partial turns and USB traffic do not. Entering a layer starts a fresh interval;
+only layers with **Auto-Sleep** enabled advance it. A pending wake remains armed
+after leaving that layer. This changes LED brightness, while USB and scanning
+continue. Use **Timed Actions** for a custom timeout or different sleep/wake actions.
+
 ### Rainbow Settings and an Off Key
 
 When a layer uses a rainbow indicator, **Profile** shows settings to adjust the rainbow (applies to all layers):
@@ -527,7 +541,7 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 ## Macros
 
 Macros are supported by the [pre-built v14 release firmware](../README.md#how-to-compile-the-firmware)
-and its [matching v14 configurator](../webapp/index.html). Older firmware uses its matching archived editor; versions before v11 do not support macros.
+and its [matching v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/). Older firmware uses its matching archived editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add Macro**
 2. Select a step to edit it in the **Action Editor**; choose **Add Step** to extend the sequence
@@ -725,7 +739,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type Text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v14 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v15 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume This Input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

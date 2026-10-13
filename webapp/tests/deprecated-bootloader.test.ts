@@ -9,6 +9,7 @@ describe('deprecated runtime bootloader permission', () => {
   it.each([0, 1] as const)('accepts existing bits but clears them on save for variant %i', variant => {
     const profile = defaultProfile(variant);
     const image = encodeProfile(profile);
+    image[2] = 14;
     const size = variant ? 15 : 22;
     for (let layer = 0; layer < profile.layers.length; layer++) image[9 + size * (layer + 1) - 1]! |= 2;
     sealImage(image);

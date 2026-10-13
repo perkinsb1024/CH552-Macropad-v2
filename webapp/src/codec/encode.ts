@@ -2,7 +2,7 @@ import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
   TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_INDICATOR_SHIFT,
-  LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, keyCount, layerSize,
+  LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, keyCount, layerSize,
 } from '../model/constants';
 import type { Action, Profile } from '../model/types';
 import { descriptor } from '../model/actions';
@@ -118,6 +118,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
       image[ledBase + (i >> 1)]! |= i & 1 ? (led & 15) << 4 : led & 15;
     });
     image[base + size - 1] =
+      (layer.autoSleep ? LAYER_OPT_AUTO_SLEEP : 0) |
       (layer.indicatorFullBrightness ? LAYER_OPT_FULL_BRIGHTNESS : 0) |
       ((layer.indicatorBehavior & 3) << LAYER_OPT_INDICATOR_SHIFT) |
       ((layer.indicatorColor & 15) << LAYER_OPT_COLOR_SHIFT);

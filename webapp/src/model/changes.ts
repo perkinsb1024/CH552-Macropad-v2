@@ -93,6 +93,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
       where: `${label} · Indicator Color`, before: indicatorColor(oldLayer.indicatorColor, oldLayer.indicatorBehavior), after: indicatorColor(newLayer.indicatorColor, newLayer.indicatorBehavior),
       undo: (draft) => { draft.layers[i]!.indicatorColor = oldLayer.indicatorColor; },
     });
+    change(`${label} · Auto-Sleep`, oldLayer.autoSleep, newLayer.autoSleep, (v) => v ? 'On' : 'Off', (draft) => { draft.layers[i]!.autoSleep = oldLayer.autoSleep; });
     change(`${label} · Indicator Brightness`, oldLayer.indicatorFullBrightness, newLayer.indicatorFullBrightness, (v) => v ? 'Full Brightness' : 'Dim', (draft) => { draft.layers[i]!.indicatorFullBrightness = oldLayer.indicatorFullBrightness; });
   }
   const oldChords = new Map(before.chords.map((chord) => [chordId(chord), chord]));

@@ -1,6 +1,6 @@
 {
   "format": "universal-macropad-profile",
-  "version": 14,
+  "version": 15,
   "variant": "six-key",
   "startupLayer": 0,
   "transparentBlack": false,
@@ -48,7 +48,8 @@
       ],
       "indicatorBehavior": 1,
       "indicatorColor": 0,
-      "indicatorFullBrightness": false
+      "indicatorFullBrightness": false,
+      "autoSleep": false
     },
     {
       "keys": [
@@ -90,7 +91,8 @@
       ],
       "indicatorBehavior": 1,
       "indicatorColor": 4,
-      "indicatorFullBrightness": false
+      "indicatorFullBrightness": false,
+      "autoSleep": false
     },
     {
       "keys": [
@@ -132,7 +134,8 @@
       ],
       "indicatorBehavior": 1,
       "indicatorColor": 5,
-      "indicatorFullBrightness": false
+      "indicatorFullBrightness": false,
+      "autoSleep": false
     },
     {
       "keys": [
@@ -174,7 +177,8 @@
       ],
       "indicatorBehavior": 1,
       "indicatorColor": 8,
-      "indicatorFullBrightness": false
+      "indicatorFullBrightness": false,
+      "autoSleep": false
     },
     {
       "keys": [
@@ -216,7 +220,8 @@
       ],
       "indicatorBehavior": 1,
       "indicatorColor": 10,
-      "indicatorFullBrightness": false
+      "indicatorFullBrightness": false,
+      "autoSleep": false
     }
   ],
   "chords": [

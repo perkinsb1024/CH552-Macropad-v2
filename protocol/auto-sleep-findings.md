@@ -29,6 +29,8 @@ No firmware release files were generated.
 
 ## Fitted Shared-Timer Result
 
+Firmware commit: `3e74977`.
+
 The fitted implementation synthesizes a six-byte timer after the saved image
 in aligned external RAM. Configuration uploads, reads, CRCs and DataFlash remain
 128 bytes; the private runtime buffer is 134 bytes. Five runtime age/fraction
@@ -67,3 +69,23 @@ wake, both complete detent directions, partial-detent rejection, held/released
 inputs, layer transitions, independent phase, repeated inactivity, simultaneous
 four user timers and USB/configuration reset. Hardware validation is outstanding.
 No firmware release generation or flashing was performed.
+
+## Configurator and Documentation Validation
+
+The active v15 editor adds **Auto-Sleep** under **Layer Options**, disabled by
+default, with binary/JSON encoding, older-profile migration, namespaced draft
+recovery, device comparisons, live view, and undo/redo. Migration explicitly
+clears the former ignored flag for binary v2–v14 and disables the new property
+for older JSON/drafts. All four user timer slots and the profile storage budget
+remain unchanged. The v14 editor is frozen from outgoing source `0fb6132`;
+663 source tests, its production build and checksums pass. Existing archives
+remain byte-for-byte unchanged.
+
+Validation on firmware revision `3e74977` with uncommitted configurator and
+documentation changes: 671 configurator tests, 89 uploader tests, TypeScript,
+complete production site build and all 13 archive checksum manifests pass through
+`npm run verify:deploy`. Browser inspection verifies the visible checkbox,
+unchanged storage use, and undo. Uploader routing preserves published v14 as the
+bundled release and links to its frozen matching editor; a regression now checks
+that an older bundled release always has that archive. No v15 release files,
+push, deployment or hardware flashing were performed.

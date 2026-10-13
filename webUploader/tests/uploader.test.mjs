@@ -531,7 +531,7 @@ test('historical selection retains the default release and cannot cross board va
   }
 });
 
-test('previous release choices show each version once and select its newest build', () => {
+test('previous release choices show each version once and select its newest build', async () => {
   for (const keys of [3, 6]) {
     const choices = previousReleases(manifest, keys);
     const versions = [...new Set(history.firmware.filter(entry => entry.name.startsWith(`ch552-macropad-${keys}-key-`)).map(entry => entry.formatVersion))].sort((a, b) => b - a);
@@ -542,7 +542,14 @@ test('previous release choices show each version once and select its newest buil
       assert.ok(manifest.releaseNotes[entry.formatVersion]?.length);
     }
   }
-  assert.ok(manifest.firmware.every(entry => entry.formatVersion === currentFormatVersion));
+  const latestFormats = [...new Set(manifest.firmware.map(entry => entry.formatVersion))];
+  assert.equal(latestFormats.length, 1, 'both hardware variants must bundle the same released format');
+  assert.ok(latestFormats[0] <= currentFormatVersion);
+  if (latestFormats[0] < currentFormatVersion) {
+    const archive = JSON.parse(await readFile(new URL(`../../webapp/public/versions/format-v${latestFormats[0]}/archive.json`, import.meta.url), 'utf8'));
+    assert.equal(archive.formatVersion, latestFormats[0]);
+    assert.ok(archive.sha256['index.html'], 'the bundled release needs a frozen matching editor');
+  }
 });
 
 test('bundled release notes match the README and cover every published format', async () => {
