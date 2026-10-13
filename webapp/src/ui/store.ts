@@ -66,7 +66,7 @@ export const timerDrop = signal<{ index: number; position: DropPosition } | null
 export const draggedMacro = signal<number | null>(null);
 export const macroDrop = signal<{ index: number; position: DropPosition } | null>(null);
 export type DropPosition = 'before' | 'after' | 'swap';
-export const slotDrop = signal<{ slot: Slot; position: DropPosition; rowBoundary?: boolean } | null>(null);
+export const slotDrop = signal<{ slot: Slot; position: DropPosition } | null>(null);
 export const layerDrop = signal<{ index: number; position: DropPosition } | null>(null);
 
 interface EditorSnapshot { profile: Profile; meta: LocalMetadata; freshStart: typeof freshStart.value }

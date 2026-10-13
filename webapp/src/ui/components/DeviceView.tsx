@@ -41,15 +41,24 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const valid = (source: Slot, target: Slot, position: DropPosition) => position === 'swap'
     ? canSwapSlots(source, target)
     : canInsertSlot(source, target, position);
+  const insertionTarget = (slot: Slot, position: 'before' | 'after'): { slot: Slot; position: 'before' | 'after' } => {
+    // Both sides of an internal key gap share the preceding key's after target.
+    // Row starts stay separate so before key 4 and after key 3 remain available.
+    if (slot.kind === 'key' && position === 'before' && slot.index % 3 !== 0) {
+      return { slot: { ...slot, index: slot.index - 1 }, position: 'after' };
+    }
+    return { slot, position };
+  };
   const drop = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical') => {
     if (shortcutDrop(event, target)) return;
     event.preventDefault();
     const source = draggedSlot.value;
     const position = source?.kind === 'timed' ? 'swap' : slotDrop.value && sameSlot(slotDrop.value.slot, target)
       ? slotDrop.value.position : dropPosition(event, orientation);
-    if (source && valid(source, target, position)) {
-      if (position === 'swap') swapSlotActions(source, target);
-      else insertSlotAction(source, target, position);
+    const destination = position === 'swap' ? { slot: target, position } : insertionTarget(target, position);
+    if (source && valid(source, destination.slot, destination.position)) {
+      if (destination.position === 'swap') swapSlotActions(source, destination.slot);
+      else insertSlotAction(source, destination.slot, destination.position);
     }
     dragEnd();
   };
@@ -57,23 +66,23 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     if (shortcutDragOver(event, target)) return;
     const source = draggedSlot.value;
     const position = source?.kind === 'timed' ? 'swap' : dropPosition(event, orientation);
-    if (!source || !valid(source, target, position)) {
+    const destination = position === 'swap' ? { slot: target, position } : insertionTarget(target, position);
+    if (!source || !valid(source, destination.slot, destination.position)) {
       slotDrop.value = null;
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
       return;
     }
     event.preventDefault();
-    if (!slotDrop.value || !sameSlot(slotDrop.value.slot, target) || slotDrop.value.position !== position || slotDrop.value.rowBoundary) slotDrop.value = { slot: target, position };
+    if (!slotDrop.value || !sameSlot(slotDrop.value.slot, destination.slot) || slotDrop.value.position !== destination.position) slotDrop.value = destination;
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
   };
-  const gridGapTarget = (event: DragEvent): { slot: Slot; position: 'before' | 'after'; rowBoundary?: boolean } | null => {
+  const gridGapTarget = (event: DragEvent): { slot: Slot; position: 'before' | 'after' } | null => {
     const buttons = Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.keycap'));
     if (buttons.length === 6) {
       const topRow = buttons[0]!.getBoundingClientRect();
       const bottomRow = buttons[3]!.getBoundingClientRect();
-      if (event.clientY > topRow.bottom && event.clientY < bottomRow.top) {
-        return { slot: { kind: 'key', layer: li, index: 2 }, position: 'after', rowBoundary: true };
-      }
+      // Insertion follows the side edges of each row, not the horizontal gap.
+      if (event.clientY >= topRow.bottom && event.clientY <= bottomRow.top) return null;
     }
     let closest: { index: number; position: 'before' | 'after'; distance: number } | null = null;
     buttons.forEach((button, index) => {
@@ -87,7 +96,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     });
     if (!closest) return null;
     const { index, position } = closest as { index: number; position: 'before' | 'after' };
-    return { slot: { kind: 'key', layer: li, index }, position };
+    return insertionTarget({ kind: 'key', layer: li, index }, position);
   };
   const gridDragOver = (event: DragEvent) => {
     if ((event.target as HTMLElement).closest('.keycap')) return;
@@ -95,9 +104,12 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     const target = gridGapTarget(event);
     if (source && target && canInsertSlot(source, target.slot, target.position)) {
       event.preventDefault();
-      slotDrop.value = target;
+      if (!slotDrop.value || !sameSlot(slotDrop.value.slot, target.slot) || slotDrop.value.position !== target.position) slotDrop.value = target;
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    } else slotDrop.value = null;
+    } else {
+      slotDrop.value = null;
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'none';
+    }
   };
   const gridDrop = (event: DragEvent) => {
     if ((event.target as HTMLElement).closest('.keycap')) return;
@@ -174,7 +186,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         <span class="keycap-index">{index + 1}</span>
         <span class="keycap-label"><ActionLabel action={action} showTooltip={false} /></span>
         {chordKeys.has(index) && <span class={`keycap-chord ${selectedChord && (selectedChord.keyA === index || selectedChord.keyB === index) ? 'is-selected' : ''}`} title="Part of a chord on this layer">chord</span>}
-        {intent === 'before' || intent === 'after' ? <span class={`drop-line ${slotDrop.value?.rowBoundary ? 'drop-line-row' : `drop-line-${intent}`}`} aria-hidden="true" /> : null}
+        {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>
     );
   };
