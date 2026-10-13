@@ -3,3 +3,6 @@
 **/.DS_Store
 __pycache__/
 webUploader/dist/
+
+# RP2350 build outputs and downloaded build dependencies.
+/tools/rp2350-*/build*/
