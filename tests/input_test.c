@@ -1001,7 +1001,7 @@ int main(void) {
     for (uint8_t valid = 0; valid < 2; valid++) {
         if (valid) {
             testLoadStarterProfile(PHYSICAL_VARIANT);
-            activeConfig[30] &= ~CONFIG_LAYER_OPT_UNUSED;
+            activeConfig[30] &= ~CONFIG_LAYER_OPT_AUTO_SLEEP;
             memcpy(flash, activeConfig, CONFIG_SIZE);
         } else {
             memset(flash, 0xFF, sizeof(flash));

@@ -6,7 +6,7 @@
 
 #define CONFIG_SIZE 128
 // Format 14 experiment: modified consumer holds and absolute/relative layer modes.
-#define CONFIG_VERSION 14
+#define CONFIG_VERSION 15
 #ifndef CONFIG_MACRO_REPEAT
 #define CONFIG_MACRO_REPEAT 1
 #endif
@@ -127,7 +127,7 @@
 
 // Per-layer option byte: full brightness bit 0, deprecated/ignored bit 1, indicator bits 2–3, palette bits 4–7.
 #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01
-#define CONFIG_LAYER_OPT_UNUSED         0x02 // Deprecated; accepted and ignored.
+#define CONFIG_LAYER_OPT_AUTO_SLEEP     0x02
 #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
 #define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C
 #define CONFIG_LAYER_OPT_COLOR_SHIFT     4

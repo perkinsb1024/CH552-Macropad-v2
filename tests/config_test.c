@@ -28,7 +28,7 @@ static void testStarterFixture(uint8_t variant) {
     assert(configStartupLayer() == 0);
     assert(configKeyCount() == (variant ? 3 : 6));
     assert(configChordWindowMs() == 40);
-    assert(configLayerOptions(0) == CONFIG_LAYER_OPT_UNUSED);
+    assert(configLayerOptions(0) == 0);
     activeConfig[9 + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
     seal();
     assert(configValid(activeConfig, variant));

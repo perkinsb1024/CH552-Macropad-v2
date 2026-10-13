@@ -272,7 +272,45 @@ static void layers(void) {
     probeLayer(2); advanceFine(256); assert(ledCalls == 6);
 }
 
+static void autoSleep(void) {
+    const uint32_t interval = 440UL * 256;
+    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+    probeInit(0);
+    advanceFine(interval * 2); assert(ledCalls == 0);
+    assert(!actionsTimedInput());
+    activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+    advanceFine(interval - 1); assert(ledCalls == 0);
+    advanceFine(1); assert(ledCalls == 1);
+    assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 4);
+    advanceFine(interval * 10); assert(ledCalls == 1); // Latches across wraps.
+    assert(actionsTimedInput());
+    assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 0);
+    assert(!actionsTimedInput());
+    advanceFine(interval - 1); assert(ledCalls == 2);
+    actionsTimedInput(); // Restart independent phase immediately before expiry.
+    advanceFine(interval - 1); assert(ledCalls == 2);
+    advanceFine(1); assert(ledCalls == 3);
+    probeLayer(1); // Pending wake survives leaving the opted-in layer.
+    assert(actionsTimedInput()); assert(ledCalls == 4);
+    advanceFine(interval * 2); assert(ledCalls == 4);
+    probeLayer(0); advanceFine(interval / 2);
+    probeLayer(1); probeLayer(0);
+    advanceFine(interval - 1); assert(ledCalls == 4);
+    advanceFine(1); assert(ledCalls == 5);
+    actionsTimedReset(fine); assert(!actionsTimedInput());
+    // All four user timers remain available alongside auto-sleep.
+    probeInit(4); activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+    for (uint8_t i = 0; i < 4; i++) {
+        uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
+        activeConfig[offset] = 255; activeConfig[offset + 5] = 56;
+    }
+    advanceFine(interval); assert(ledCalls == 1);
+    assert(actionsTimedInput()); assert(ledCalls == 2);
+    advanceFine(2048UL * 256 - interval);
+    assert(ledCalls == 7); // Four independent user expiries plus another sleep.
+}
+
 int main(void) {
-    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers();
+    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers(); autoSleep();
     return 0;
 }
