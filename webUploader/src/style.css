@@ -124,13 +124,20 @@ button:not(:disabled):hover { filter: brightness(.94); }
 .install-actions button { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; padding: 11px 16px; }
 .install-actions > span { color: var(--muted); font-size: 11px; max-width: 240px; }
 .status-message { position: relative; padding: 12px 14px 12px 38px; border-radius: 8px; margin: 16px 0 0; background: var(--sunken); font-size: 12px; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
-.status-message::before { content: 'i'; position: absolute; top: 14px; left: 14px; display: grid; place-items: center; width: 15px; height: 15px; border: 1px solid currentColor; border-radius: 50%; font-size: 10px; font-weight: 600; }
+.status-message::before { content: 'i'; position: absolute; top: 14px; left: 14px; display: grid; place-items: center; width: 15px; height: 15px; border: 1px solid currentColor; border-radius: 50%; font-size: 10px; font-weight: 600; line-height: 1; }
 [data-state="success"], .connection-step p[data-state="success"] { color: var(--ok); }
 [data-state="error"], .connection-step p[data-state="error"] { color: var(--danger); }
 .status-message[data-state="success"] { background: var(--ok-soft); }
 .status-message[data-state="error"] { background: var(--danger-soft); }
 .status-message[data-state="success"]::before { content: '✓'; background: var(--ok); color: var(--card); border: 0; }
-.status-message[data-state="error"]::before { content: '×'; background: var(--danger); color: var(--card); border: 0; font-size: 13px; }
+.status-message[data-state="error"]::before {
+  content: '';
+  border: 0;
+  background:
+    linear-gradient(45deg, transparent calc(50% - .75px), var(--card) calc(50% - .75px), var(--card) calc(50% + .75px), transparent calc(50% + .75px)) center / 7px 7px no-repeat,
+    linear-gradient(-45deg, transparent calc(50% - .75px), var(--card) calc(50% - .75px), var(--card) calc(50% + .75px), transparent calc(50% + .75px)) center / 7px 7px no-repeat,
+    var(--danger);
+}
 .status-message[data-state="working"]::before { content: ''; border: 2px solid color-mix(in srgb, var(--accent) 20%, transparent); border-top-color: var(--accent); animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 progress { display: block; width: 100%; height: 8px; margin-top: 18px; accent-color: var(--accent); border: 0; border-radius: 99px; overflow: hidden; }
