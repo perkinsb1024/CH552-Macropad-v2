@@ -27,7 +27,7 @@ It supports the action map below, including modified consumer holds and relative
 layer holds. It imports binary versions 2–14, JSON versions 1–14 and older local
 drafts by decoding their source format before v15 encoding.
 
-Native builds from firmware source `3e74977` and automated regressions pass on
+Native builds and automated regressions pass on
 both hardware variants. No pre-built v15 release has been generated, and v15
 hardware validation is outstanding. Published v14 firmware uses its frozen
 configurator at `versions/format-v14/`.
@@ -209,6 +209,11 @@ the effective layer has **Auto-Sleep** enabled. A pending wake survives leaving
 that layer. The first subsequent physical input restores configured brightness
 and is consumed, including its release. The next normal input executes its
 binding. A consumed wake does not use an armed one-shot layer.
+Wake requests the current effective layer's indicator again: **On for 1.5 Seconds** starts
+a fresh 1500ms indication and **Blink by Layer Number** starts a fresh sequence of
+layer-number blinks. **Always On** and **Do Not Indicate** retain their configured behavior.
+This request does not select a layer or change the previous or one-shot layer.
+User-defined timer resume actions do not automatically request an indication.
 
 While idle, successive expiries repeat **Both Off** and coalesce the pending
 wake, matching the standard timer recipe. The preset affects both indicator
@@ -1150,8 +1155,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,332 | 4 | 106 | 365 | 134 | 85 |
-| Three keys | 14,330 | 6 | 106 | 356 | 134 | 88 |
+| Six keys | 14,332 | 4 | 105 | 365 | 134 | 85 |
+| Three keys | 14,330 | 6 | 105 | 356 | 134 | 88 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator
@@ -1176,9 +1181,9 @@ the last active slot reserved for **Auto-Sleep**. Pending next-input state occup
 bit 0 of each timer's high-age byte; bits 3–5 hold its interval age.
 
 USB DMA reserves 148 bytes. Total allocated external RAM, including USB DMA,
-PSEG, XSEG and the absolute buffer, is 753 bytes on six keys and 744 bytes on
-three keys, leaving 271/280 unallocated bytes including gaps. PSEG occupies
-`0x094–0x0FD`, with two bytes remaining in page zero. Ordinary XSEG occupies
-`0x112–0x27E` on six keys and `0x0FE–0x261` on three keys. The build checks paged,
+PSEG, XSEG and the absolute buffer, is 752 bytes on six keys and 743 bytes on
+three keys, leaving 272/281 unallocated bytes including gaps. PSEG occupies
+`0x094–0x0FC`, with three bytes remaining in page zero. Ordinary XSEG occupies
+`0x111–0x27D` on six keys and `0x0FD–0x260` on three keys. The build checks paged,
 external, absolute-buffer and interrupt-parameter layout. Stack figures from
 the linker represent reserved capacity, not runtime high-water measurements.

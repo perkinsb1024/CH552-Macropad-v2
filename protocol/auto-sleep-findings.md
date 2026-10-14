@@ -89,3 +89,33 @@ unchanged storage use, and undo. Uploader routing preserves published v14 as the
 bundled release and links to its frozen matching editor; a regression now checks
 that an older bundled release always has that archive. No v15 release files,
 push, deployment or hardware flashing were performed.
+
+## Wake Layer Reminder
+
+Measured on `c1e91045` with uncommitted changes. The built-in timer's next-input
+resume requests the current effective layer's existing indicator. **On for 1.5 Seconds**
+restarts for 1500ms; **Blink by Layer Number** restarts the layer-number blink sequence.
+**Always On** and **Do Not Indicate** retain their configured behavior. The first wake input
+and release remain consumed; no layer selection/history or one-shot state is
+changed. User-defined timer resumes do not automatically request an indication.
+
+The straightforward trigger costs 12 flash bytes per variant. Moving the
+existing boolean indication request from a paged byte to a native 8051 bit
+recovers 12 bytes per variant, giving zero net flash growth without feature cuts.
+
+| Build | Six-Key Flash | Three-Key Flash | Stack Capacity, Six/Three | Paged RAM |
+| --- | ---: | ---: | --- | ---: |
+| Before Wake Reminder | 14,332 | 14,330 | 85/88 | 106 |
+| Reminder with Byte Flag | 14,344 | 14,342 | 85/88 | 106 |
+| Reminder with Bit Flag | 14,332 | 14,330 | 85/88 | 105 |
+
+Both final variants pass the real 14,336-byte application limit and layout checks,
+leaving 4/6 flash bytes free. External allocation decreases to 752/743 bytes;
+ordinary XSEG and the 134-byte active/runtime buffer remain unchanged. Host
+regressions pass with preview enabled and disabled, including indicator timing,
+blink counts and wake inputs on every supported layer and both pad geometries.
+The shared deployment gate passes configurator tests, uploader tests, the complete
+site build and all 13 archive manifests. Source patches, native maps and temporary
+outputs are retained under `/private/tmp/macropad-wake-indicator-*`; optimization
+details are recorded in the local ledger. No commit, release generation or
+hardware flashing was performed; hardware validation remains outstanding.

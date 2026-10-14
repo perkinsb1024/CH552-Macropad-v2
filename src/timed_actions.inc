@@ -48,6 +48,8 @@ static ACTION_BIT timedEvent(uint8_t tick) {
       if (timedHigh[i] & 1) {
         action = 3;
         if (flags & CONFIG_TIMED_CONSUME) consume = 1;
+        // Reuse the normal indication without changing or consuming the layer.
+        if (i == count) layerSelectionPending = 1;
       }
       timedHigh[i] &= ~1;
       if (CONFIG_TIMED_ALL_RESET || (flags & 128)) {

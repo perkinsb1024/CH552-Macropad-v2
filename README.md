@@ -151,15 +151,10 @@ Memory in the current format 15 firmware source, in bytes, with a 14,336-byte ap
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash used | 14,330 | 14,332 |
-| Flash remaining | 6 | 4 |
-| USB DMA RAM | 148 | 148 |
-| Paged external RAM (PSEG) | 106 | 106 |
-| Ordinary external RAM (XSEG) | 356 | 365 |
-| Absolute active image and runtime timer | 134 | 134 |
-| Total external RAM allocated | 744 | 753 |
-| External RAM unallocated (including gaps) | 280 | 271 |
-| Stack available (linker reserve) | 88 | 85 |
+| Flash Used | 14,330 | 14,332 |
+| Flash Remaining | 6 | 4 |
+| Total External RAM Allocated | 743 | 752 |
+| Stack Available (Linker Reserve) | 88 | 85 |
 
 ### Build Release HEX Files for Both Variants
 
@@ -284,7 +279,7 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Auto-Sleep** in **Layer Options** provides the common LED inactivity recipe without extra storage or a timer slot: after about 30 minutes, select **Both Off**; the next press or complete encoder turn selects **Both as Configured** and is consumed. Input and effective layer transitions restart its interval. The active editor targets format 15; published v14 firmware uses the frozen v14 editor linked above.
+**Auto-Sleep** in **Layer Options** provides the common LED inactivity recipe without extra storage or a timer slot: after about 30 minutes, select **Both Off**; the next press or complete encoder turn selects **Both as Configured** and is consumed. Wake restarts the current layer's **On for 1.5 Seconds** or **Blink by Layer Number** indicator; **Always On** and **Do Not Indicate** retain their configured behavior. Input and effective layer transitions restart its interval. The active editor targets format 15; published v14 firmware uses the frozen v14 editor linked above.
 
 **Media / System** set to **Hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous

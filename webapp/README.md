@@ -421,6 +421,8 @@ enabled layer. The next press or complete encoder detent selects **Both as
 Configured** and is consumed, including its release. Effective layer changes
 restart the interval and preserve an already pending wake. Unbound presses and
 complete turns count; releases, holds, partial turns and USB traffic do not.
+Wake restarts the current layer's **On for 1.5 Seconds** or **Blink by Layer Number** indicator;
+**Always On** and **Do Not Indicate** retain their configured behavior.
 
 The option uses existing layer bit 1, adding no profile bytes and reserving no
 user timer slot. JSON v15 and local drafts preserve `autoSleep` per layer, with

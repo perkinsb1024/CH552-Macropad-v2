@@ -898,8 +898,74 @@ static void testAutoSleepInput(void) {
     assert(!actionsTimedInput());
 }
 
+static void testAutoSleepWakeIndicator(void) {
+    const uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
+        for (uint8_t behavior = 0; behavior < 4; behavior++) {
+            for (uint8_t full = 0; full < 2; full++) {
+                for (uint8_t input = 0; input < 4; input++) {
+                    initAutoSleep();
+                    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+                    activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3);
+                    activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+                    memset(activeConfig + 9 + size * layer + 2 * (NUM_LEDS + 3),
+                           0xFF, (NUM_LEDS + 1) / 2); // Suppress held-key feedback.
+                    activeConfig[9 + size * (layer + 1) - 1] =
+                        CONFIG_LAYER_OPT_AUTO_SLEEP | full |
+                        (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
+                        (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+                    firmwareApplyConfig(1);
+                    // Finish the startup indication before sleeping.
+                    for (uint16_t now = 0; now <= 4000; now++) tick(now);
+                    assert(layerIndicatorPhasesLeft == 0);
+                    frameCount = 0; // Discard configuration-apply neutral reports.
+                    advanceSleep(440UL * 256);
+                    assertBlack();
+                    indicatorRisingEdges = indicatorWasLit = 0;
+                    if (input < 2) {
+                        if (input) P3 &= ~8; else P1 &= ~2;
+                        tick((uint16_t)currentMs);
+                        tick((uint16_t)(currentMs + DEBOUNCE_MS));
+                    } else {
+                        const uint8_t forward[] = {2, 0, 1, 3};
+                        const uint8_t backward[] = {1, 0, 2, 3};
+                        for (uint8_t step = 0; step < 4; step++) {
+                            P3 = (P3 & ~3) | (input == 2 ? forward[step] : backward[step]);
+                            tick((uint16_t)currentMs);
+                            if (step < 3) assertBlack();
+                        }
+                    }
+                    uint16_t wake = currentMs;
+                    uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
+                    uint8_t blink = behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER;
+                    uint8_t always = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON;
+                    uint8_t phases = timed ? 6 : blink ? 2 * (layer + 1) : 0;
+                    assert(actionsLayer() == layer && frameCount == 0);
+                    assert(layerIndicatorPhasesLeft == phases);
+                    assertIndicatorLeds(full, timed || blink || always, 0);
+                    for (uint16_t elapsed = 1; elapsed <= 250 * (phases + 1); elapsed++) {
+                        // Release does not restart the reminder or execute a binding.
+                        if (elapsed == 25) P1 = P3 = 0xFF;
+                        tick(wake + elapsed);
+                        uint8_t completed = (((wake + elapsed) >> 1) - (wake >> 1)) /
+                                            LAYER_INDICATOR_PHASE_TICKS;
+                        assert(layerIndicatorPhasesLeft == (completed < phases ? phases - completed : 0));
+                        assertIndicatorLeds(full, always ||
+                            (completed < phases && (timed || !(completed & 1))), 0);
+                        assert(actionsLayer() == layer && frameCount == 0);
+                    }
+                    assert(indicatorRisingEdges == (timed || always ? 1 : blink ? layer + 1 : 0));
+                    assert(!actionsTimedInput());
+                    assert(!actionsTakeLayerSelection());
+                }
+            }
+        }
+    }
+}
+
 int main(void) {
     testAutoSleepInput();
+    testAutoSleepWakeIndicator();
     testStartupDebounce();
     testStartupIndicatorEnumeration();
     testStartupWarningDismissal();

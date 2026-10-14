@@ -32,7 +32,8 @@ __pdata uint8_t droppedRotation;
 __data uint8_t baseLayer;
 __data uint8_t previousLayer;
 __data uint8_t effectiveLayer;
-__pdata uint8_t layerSelectionPending;
+// Selection and auto-sleep wake share a boolean indication request.
+static ACTION_BIT layerSelectionPending;
 // 0xFF means no one-shot layer is waiting to be consumed.
 __data uint8_t oneShotReturnLayer;
 __data uint8_t currentFirst;

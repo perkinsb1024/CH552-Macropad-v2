@@ -402,6 +402,9 @@ indicator and key lighting after about 30 minutes without input. It adds no
 profile bytes and leaves all four **Timed Actions** available. The next press
 or complete encoder turn restores **Both as Configured** and is consumed; the
 following input runs normally. Unbound inputs count as activity too.
+Wake also restarts the current layer's **On for 1.5 Seconds** or **Blink by Layer Number** indicator
+to remind you which layer is active. **Always On** and **Do Not Indicate** retain their
+configured behavior.
 
 Presses and completed encoder turns restart the timer. Releases, held inputs,
 partial turns and USB traffic do not. Entering a layer starts a fresh interval;

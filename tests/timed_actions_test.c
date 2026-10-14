@@ -278,21 +278,29 @@ static void autoSleep(void) {
     probeInit(0);
     advanceFine(interval * 2); assert(ledCalls == 0);
     assert(!actionsTimedInput());
+    assert(!actionsTakeLayerSelection());
     activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
     advanceFine(interval - 1); assert(ledCalls == 0);
     advanceFine(1); assert(ledCalls == 1);
     assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 4);
     advanceFine(interval * 10); assert(ledCalls == 11); // Repeated Off coalesces wake.
+    assert(!actionsTakeLayerSelection()); // Expiry does not request an indication.
     ledCalls = 1;
     assert(actionsTimedInput());
+    assert(actionsTakeLayerSelection());
+    assert(!actionsTakeLayerSelection());
     assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 0);
     assert(!actionsTimedInput());
+    assert(!actionsTakeLayerSelection()); // Ordinary input does not retrigger it.
     advanceFine(interval - 1); assert(ledCalls == 2);
     actionsTimedInput(); // Restart independent phase immediately before expiry.
     advanceFine(interval - 1); assert(ledCalls == 2);
     advanceFine(1); assert(ledCalls == 3);
     probeLayer(1); // Pending wake survives leaving the opted-in layer.
+    assert(actionsTakeLayerSelection());
     assert(actionsTimedInput()); assert(ledCalls == 4);
+    assert(actionsTakeLayerSelection()); // Remind the current layer on wake.
+    assert(actionsLayer() == 1);
     advanceFine(interval * 2); assert(ledCalls == 4);
     probeLayer(0); advanceFine(interval / 2);
     probeLayer(1); probeLayer(0);
@@ -307,8 +315,17 @@ static void autoSleep(void) {
     }
     advanceFine(interval); assert(ledCalls == 1);
     assert(actionsTimedInput()); assert(ledCalls == 2);
+    assert(actionsTakeLayerSelection());
     advanceFine(2048UL * 256 - interval);
     assert(ledCalls == 9); // Four user expiries and three additional Off periods.
+    // Only the built-in pending wake requests an indication. Subsequent user
+    // timer resumes with no built-in sleep pending leave it clear.
+    assert(actionsTimedInput());
+    assert(actionsTakeLayerSelection());
+    activeConfig[options] &= ~CONFIG_LAYER_OPT_AUTO_SLEEP;
+    advanceFine(2048UL * 256);
+    actionsTimedInput();
+    assert(!actionsTakeLayerSelection());
 }
 
 int main(void) {
