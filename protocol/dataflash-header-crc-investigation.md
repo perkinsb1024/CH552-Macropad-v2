@@ -2,8 +2,11 @@
 
 Recorded October 13, 2026, on `experiment/v15-updated-header`.
 Baseline source: `a14798a4450c85d88d96f9e5cad598da552de0b6`, initially clean.
-This investigation evaluates alternatives; it does not select a new production
-format or implement the deferred **Auto-Sleep** extension.
+The measurements below evaluate alternatives and leave active firmware unchanged.
+The subsequent user-approved target retains CRC-16 and uses the single-byte marker
+with a reordered header, a five-bit chord count and 20ms–90ms **Chord Window**
+presets. See [Header Repacking Target and Firmware Plan](header-repacking-plan.md)
+for that selected layout and firmware sequence; new sleep behavior remains deferred.
 
 ## Goal and Existing Protection
 
@@ -43,8 +46,8 @@ repair data or identify semantically wrong settings encoded with a matching CRC.
 Configuration-format numbers need change only when the format changes, not for
 every firmware revision. Borrowed version bits must remain CRC-covered.
 
-The user prefers keeping marker and version adjacent. A distinct new single-byte
-marker at byte 0 can identify a layout with version at byte 1 and settings at
+The earlier minimal-reordering proposal kept marker and version adjacent. A
+distinct new single-byte marker at byte 0 can identify a layout with version at byte 1 and settings at
 byte 2. Old `MP` images continue to use version at byte 2. Bytes 3–8 and layer
 offsets can remain unchanged. The marker must distinguish these layouts before
 reading the version; updated importers can decode both. Old firmware and frozen
@@ -204,10 +207,12 @@ must be larger.
 
 CRC strength remains a separate decision. No production CRC change has been
 adopted, and these measurements do not establish hardware corruption rates.
-For the next decision, CRC-8 is the measured option that improves both DataFlash
-capacity and firmware headroom; a single-byte marker preserves CRC-16 but its
-code-size effect has not been measured here. Borrowed version bits also remain
-an alternative when only two or three new settings bits are needed.
+At the end of measurement, CRC-8 was the option that improved both DataFlash
+capacity and firmware headroom; a single-byte marker preserved CRC-16 but its
+code-size effect was unmeasured. The subsequent user decision selected the
+single-byte marker and retained CRC-16, followed by the repacked header in the
+[target plan](header-repacking-plan.md). The CRC candidates remain preserved
+alternatives, not the chosen implementation.
 
 ## Validation and Preserved Artifacts
 

@@ -119,13 +119,15 @@ The nine-byte header is:
 | --- | --- | --- |
 | 0–1 | Marker | ASCII `MP` |
 | 2 | Format version | `15` |
-| 3 | Layers, startup layer, timer count | Bits 0–2: layer count minus one<br>Bits 3–5: startup layer<br>Bits 6–7: low two bits of timer count |
-| 4 | **String**-pool length and timer count | Bits 0–6: used pool bytes<br>Bit 7: high bit of timer count |
+| 3 | Layers, startup layer, number of timed actions | Bits 0–2: layer count minus one<br>Bits 3–5: startup layer<br>Bits 6–7: low two bits of the number of timed actions |
+| 4 | **String**-pool length and number of timed actions | Bits 0–6: used pool bytes<br>Bit 7: high bit of the number of timed actions |
 | 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
 | 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
 | 8 | **Chord Window** and rainbow settings | Bits 0–3: chord duration in 5ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra Fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra Slow**) |
 
-Timer count is `(byte3 >> 6) | ((byte4 >> 7) << 2)` and must be 0–4.
+The number of configured timed actions is `(byte3 >> 6) | ((byte4 >> 7) << 2)`
+and must be 0–4. This is a saved configuration value; elapsed timer state is
+maintained in RAM and does not update DataFlash.
 Layer and startup-layer indices are zero-based. The startup layer must exist.
 The chord window is 0–75ms in 5ms units; zero disables chord recognition.
 A second press must arrive strictly before the window expires to activate a

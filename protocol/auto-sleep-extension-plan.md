@@ -1,7 +1,8 @@
 # Auto-Sleep Extension Investigation Plan
 
-Recorded October 13, 2026. Status: deferred investigation; no implementation or
-configuration-layout decision has been made.
+Recorded October 13, 2026. Status: header storage/layout selected; new sleep
+behavior and five-bit setting meanings remain deferred. The approved target and
+firmware sequence are in [Header Repacking Target and Firmware Plan](header-repacking-plan.md).
 
 ## Goal
 
@@ -10,10 +11,11 @@ Evaluate whether selectable **Auto-Sleep** intervals of **15 Minutes**,
 storage and firmware code. Preserve the existing fixed-timeout implementation
 as the baseline and a valid outcome if the extension provides insufficient value.
 
-The main tradeoff is user-visible capacity: the current feature uses a previously
-unused layer-option bit and consumes no additional DataFlash bytes. A required
-settings byte would reduce usable profile storage for everyone, including users
-who disable **Auto-Sleep**.
+The selected target allocates five sleep-setting bits within a repacked nine-byte
+header, retaining the current payload capacity. It uses a single-byte marker,
+CRC-16 at bytes 7–8, a five-bit chord count and eight **Chord Window** choices
+from 20ms through 90ms. Three bits remain reserved within the sleep-settings byte.
+The existing fixed-timeout behavior remains the baseline for measuring extensions.
 
 ## Current Behavior
 
@@ -52,6 +54,11 @@ The current timer's quantization, foreground delay and oscillator accuracy still
 apply. Four timeout choices require two configuration bits; enablement is separate.
 
 ## Maximum Capacity Findings
+
+The tenth-header-byte comparison below is retained as historical analysis. The
+selected nine-byte target avoids those capacity losses. Its reduced chord-count
+field represents every currently valid profile, including global chords; see the
+capacity proof in the [header plan](header-repacking-plan.md).
 
 Using the formula and assumptions in
 [Action Capacity](../documentation/Action%20Capacity.md): no text, timers or
@@ -96,6 +103,9 @@ unchanged. Text and macro capacity can still decrease even where these action
 totals do not change.
 
 ## Storage Options to Compare
+
+These are historical alternatives; the user selected repacking existing header
+storage, without a tenth byte or conditional settings-byte offsets.
 
 The [DataFlash Header and CRC Investigation](dataflash-header-crc-investigation.md)
 records additional ways to reclaim existing header storage, marker/version layout
@@ -178,11 +188,12 @@ reserved. Spare DataFlash bits do not imply free firmware behavior.
 
 ## Future Investigation and Implementation Sequence
 
-1. Decide whether the timeout choices justify the six-key maximum-capacity loss.
-   Keeping the current implementation remains an acceptable decision.
-2. Select candidates to measure: fixed header with per-layer enablement, fixed
-   header with global enablement, and optional storage only if its capacity
-   benefit warrants the added complexity.
+1. Implement and validate the approved nine-byte header using the
+   [firmware plan](header-repacking-plan.md), initially preserving the current
+   sleep behavior. There is no payload-capacity loss from the selected layout.
+2. Define the five sleep-setting bits, defaults and behavior before implementing
+   them. Decide per-layer versus global enablement and any wake/dim controls;
+   the header allocation alone does not choose those semantics.
 3. Record a fresh baseline revision, working-tree state, flash/RAM/stack results
    for both pads, and regression results. Use temporary build outputs.
 4. Prototype the smallest timeout-only candidate first. Measure code and memory
