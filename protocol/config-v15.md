@@ -40,7 +40,7 @@ legacy padding is no longer ignored.
 
 ## Version and Compatibility
 
-Header byte 0 is ASCII `B` (`0x42`, for “board”); byte 1 is `15`. GET_INFO advertises configuration format 15 and transport
+Header byte 0 is ASCII `B` (`0x42`, for "key<u>B</u>oard"); byte 1 is `15`. GET_INFO advertises configuration format 15 and transport
 version 1. Firmware accepts only B-header v15 images. Older DataFlash remains readable and
 unchanged, with physical action bindings inactive until a valid v15 image is
 explicitly uploaded. Firmware updates do not migrate or erase profiles.
@@ -62,25 +62,10 @@ chords retains all bindings and requires explicit **Chord Window** selection
 before saving. No migration silently activates disabled chords. Empty chord
 collections can adopt a supported window without affecting input behavior.
 
-V13 images cannot be relabeled as v15. A converter must decode the source
-format at every binding and macro-step site, then re-encode using this document:
-
-| V13 Action | V15 Record |
-| --- | --- |
-| **Type Text**, full first byte `10` | Full first byte `20`, same pool offset |
-| **Pause**, full first byte `20` | Full first byte `10`, same duration |
-| **Media / System with Modifiers**, type `4` | Type `A`, same modifier mask and usage |
-| **Mouse Toggle / Down / Up / Hold**, type `5` | Type `4`, same mode and button mask |
-| **Scroll**, type `6` | Type `5`, same flags and signed delta |
-| **Consumer Tap**, type `7` | Type `8`, same twelve-bit usage |
-| **Consumer Hold**, type `8` | Type `9`, same twelve-bit usage |
-| **Set Layer**, full first bytes `09` / `19` | Full first bytes `0C` / `1C`, same target |
-| **Momentary Layer**, full first byte `0A` | Full first byte `2C`, same target |
-| **Relative Layer**, full first bytes `0B` / `1B` | Full first bytes `4C` / `5C`, same signed offset |
-| **Single-Axis Mouse Movement**, type `C` | Type `6`, same flags and signed delta |
-| **Combined Mouse Movement**, type `D` | Type `7`, same flags and magnitudes |
-| **LED Control**, type `E` | Type `D`, same auxiliary value and command |
-| **Execute Macro**, type `F` | Type `E`, same repeats and macro address |
+Action Type encodings changed between V13 and V14 and the order/packing of the
+header bytes changed between V14 and V15. This means that V13/V14/V15 profiles
+are very much not backwards compatible, but the configurator is still able to migrate
+the older versions to the newer ones.
 
 **Nothing**, **Keyboard Tap**, **Keyboard Hold** and **Mouse Click** retain their
 v13 encodings. Binary section sizes retain their meanings. The converter must

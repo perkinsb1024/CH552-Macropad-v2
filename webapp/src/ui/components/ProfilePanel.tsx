@@ -88,7 +88,10 @@ export function ProfilePanel() {
               onClick={() => setAutoSleepMode(mode)}
             >{mode}</button>)}
           </div>
-          <span class="hint">On or Off applies to every layer. Per Layer keeps the current settings so you can adjust each layer under Advanced.</span>
+          <span class="hint">
+            When enabled, LEDs will turn off after 30 minutes of inactivity. On or Off applies to all layers.<br />
+            Configuring this setting Per Layer can be done by clicking Advanced under Layer Options.
+          </span>
         </div>
       </div>
     </details>
