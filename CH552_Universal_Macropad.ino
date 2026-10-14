@@ -25,6 +25,7 @@
 #define NUM_LEDS        (PHYSICAL_VARIANT ? 3 : 6)
 #define NUM_BYTES       (NUM_LEDS * 3)
 #define RAINBOW_DRIFT_MASK 3 // Fastest drift: mask+1 frames; each drift slot is half as fast.
+#define RAINBOW_DRIFT_SLOT_MASK(slot) ((RAINBOW_DRIFT_MASK << (slot)) | ((1U << (slot)) - 1))
 #define DEBOUNCE_MS     10
 #define LAYER_INDICATOR_PHASE_TICKS 125 // 250 ms in 2 ms ticks; signed deadline < 128 ticks.
 #define LED_EFFECT_FLAG 2 // Unused by color preview; shares the alternate option byte.
@@ -34,10 +35,15 @@ __code uint8_t KEY_MASK[5] = {0x02, 0x80, 0x40, 0x20, 0x10};
 // Phase order around the six-key perimeter: 1 -> 2 -> 3 -> 6 -> 5 -> 4.
 __code uint8_t rainbowPositions[6] = {0, 1, 2, 5, 4, 3};
 // Alternate fast/slow drift across rows: fast slow fast / slow fast slow.
-__code uint8_t rainbowDriftPositions[6] = {0, 3, 1, 4, 2, 5};
+__code uint8_t rainbowDriftMasks[6] = {
+  RAINBOW_DRIFT_SLOT_MASK(0), RAINBOW_DRIFT_SLOT_MASK(3), RAINBOW_DRIFT_SLOT_MASK(1),
+  RAINBOW_DRIFT_SLOT_MASK(4), RAINBOW_DRIFT_SLOT_MASK(2), RAINBOW_DRIFT_SLOT_MASK(5)
+};
 #else
 __code uint8_t rainbowPositions[3] = {0, 1, 2};
-__code uint8_t rainbowDriftPositions[3] = {0, 2, 1};
+__code uint8_t rainbowDriftMasks[3] = {
+  RAINBOW_DRIFT_SLOT_MASK(0), RAINBOW_DRIFT_SLOT_MASK(2), RAINBOW_DRIFT_SLOT_MASK(1)
+};
 #endif
 // Header bits 4–5 select 0, ~30, ~60, or ~150 degrees between LEDs.
 __code uint8_t rainbowSteps[4] = {0, 21, 42, 109};
@@ -61,9 +67,9 @@ __pdata int8_t encoderMovement;
 __idata uint8_t lastLayer;
 __pdata uint8_t layerIndicatorPhasesLeft;
 __pdata uint8_t layerIndicatorDeadline;
-__idata uint8_t rainbowChanged;
+__data uint8_t rainbowChanged;
 __data uint8_t rainbowHue;
-// Per-LED extra hue steps; staggered rates gently change relative phases.
+// Extra hue steps in physical LED order; staggered rates change relative phases.
 __idata uint8_t rainbowDrift[NUM_LEDS];
 // Current global rainbow presets; saved defaults remain in activeConfig.
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
@@ -134,12 +140,14 @@ void updateLeds() {
     behavior = CONFIG_LAYER_INDICATOR_NONE;
   }
   if (keyLevel == 3) keyLevel = 2;
+  uint8_t phaseStep = rainbowSteps[spacing];
+  ACTION_BIT baseRainbow = palette == 15 &&
+      (colorPreviewActive ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = palette;
     uint8_t level = indicator;
-    uint8_t rainbow = palette == 15 &&
-        (colorPreviewActive ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
+    ACTION_BIT rainbow = baseRainbow;
     uint8_t red;
     uint8_t green;
     uint8_t blue;
@@ -160,22 +168,24 @@ void updateLeds() {
     if (!level) {
       red = green = blue = 0;
     } else if (rainbow) {
-      uint8_t wheel = rainbowHue + rainbowPositions[i] * rainbowSteps[spacing];
-      if (spacing == 3) wheel += rainbowDrift[rainbowDriftPositions[i]];
-      // Three linear ramps cycle red -> blue -> green -> red.
-      if (wheel < 85) {
+      uint8_t wheel = rainbowHue + rainbowPositions[i] * phaseStep;
+      if (spacing == 3) wheel += rainbowDrift[i];
+      // Subtracting 85*3 adds one modulo 256; 170*3 adds two.
+      color = wheel; // Reuse the palette scratch byte to retain the sector.
+      wheel *= 3;
+      if (color < 85) {
         green = 0;
-        blue = wheel * 3;
-        red = (uint8_t)~blue;
-      } else if (wheel < 170) {
-        wheel -= 85;
+        blue = wheel;
+        red = (uint8_t)~wheel;
+      } else if (color < 170) {
+        wheel++;
         red = 0;
-        green = wheel * 3;
-        blue = (uint8_t)~green;
+        green = wheel;
+        blue = (uint8_t)~wheel;
       } else {
-        wheel -= 170;
-        red = wheel * 3;
-        green = (uint8_t)~red;
+        wheel += 2;
+        red = wheel;
+        green = (uint8_t)~wheel;
         blue = 0;
       }
     } else {
@@ -511,19 +521,22 @@ void loop() {
   }
   scanEncoder();
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
-      rainbowFrameMs[previewOptions ? activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]] &&
-      ((previewOptions ? (previewOptions & 8 ? previewOptions : 0) :
-        (activeConfigValid ? configLayerOptions(actionsLayer()) : 0)) & 0xFC) > 0xF0)
+      rainbowFrameMs[previewOptions ? activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
   {
-    rainbowChanged = (uint8_t)now;
-    rainbowHue++;
-    // One extra step every 4, 8, 16, 32, 64, or 128 rainbow frames.
-    uint8_t mask = RAINBOW_DRIFT_MASK;
-    for (uint8_t i = 0; i < NUM_LEDS; i++) {
-      if (!(rainbowHue & mask)) rainbowDrift[i]++;
-      mask = (mask << 1) | 1;
+    uint8_t animationOptions = previewOptions;
+    if (animationOptions) {
+      if (!(animationOptions & 8)) animationOptions = 0;
+    } else if (activeConfigValid) animationOptions = configLayerOptions(actionsLayer());
+    // Equivalent to (animationOptions & 0xFC) > 0xF0 for every byte.
+    if (animationOptions >= 0xF4) {
+      rainbowChanged = (uint8_t)now;
+      rainbowHue++;
+      // Advance each physical LED at its original staggered frame cadence.
+      for (uint8_t i = 0; i < NUM_LEDS; i++) {
+        if (!(rainbowHue & rainbowDriftMasks[i])) rainbowDrift[i]++;
+      }
+      updateLeds();
     }
-    updateLeds();
   }
 errorLed:
   if (startupWaiting || !activeConfigValid) {

@@ -151,10 +151,10 @@ Memory in the current format 15 firmware source, in bytes, with a 14,336-byte ap
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash Used | 14,330 | 14,332 |
-| Flash Remaining | 6 | 4 |
+| Flash Used | 14,208 | 14,210 |
+| Flash Remaining | 128 | 126 |
 | Total External RAM Allocated | 743 | 752 |
-| Stack Available (Linker Reserve) | 88 | 85 |
+| Stack Available (Linker Reserve) | 93 | 90 |
 
 ### Build Release HEX Files for Both Variants
 

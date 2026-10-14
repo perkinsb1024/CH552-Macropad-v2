@@ -111,10 +111,12 @@ offsets. Chords, timers, strings and macros would still need to account for its
 presence. Determine an unambiguous presence encoding before measuring this
 approach; no presence flag or exact layout has been selected.
 
-Firmware size differences are expectations, not measured results. The last
-recorded current-implementation measurements are 14,332/14,330 flash bytes for
-six-/three-key builds against a 14,336-byte limit, leaving only 4/6 bytes free.
-Rebuild the baseline before evaluating candidates. Consult
+Firmware size differences between the proposed extensions are expectations,
+not measured results. The current-implementation measurements are 14,210/14,208
+flash bytes for six-/three-key builds against a 14,336-byte limit, leaving
+126/128 bytes free. Total external RAM allocation remains 752/743 bytes, and
+linker-reserved stack capacity is 90/93 bytes. Rebuild the baseline before
+evaluating candidates. Consult
 `potential_optimizations.md` before choosing optimizations and preserve all
 existing features and stack capacity.
 

@@ -1155,8 +1155,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,332 | 4 | 105 | 365 | 134 | 85 |
-| Three keys | 14,330 | 6 | 105 | 356 | 134 | 88 |
+| Six keys | 14,210 | 126 | 105 | 365 | 134 | 90 |
+| Three keys | 14,208 | 128 | 105 | 356 | 134 | 93 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator

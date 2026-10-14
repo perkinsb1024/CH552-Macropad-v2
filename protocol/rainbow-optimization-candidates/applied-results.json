@@ -1,0 +1,59 @@
+{
+  "revision": "069be2a2c618bf65bdb6eee29c95f6771d15ec4e",
+  "source_state": "uncommitted selected per-LED optimization",
+  "sketch_sha256": "94551da8d50a7fd96f955dc1e8529db61b2b3406572396b2e5a0db4ed3824af6",
+  "reference_sha256": "4abc779824923915ed2ea4280cfdedcb382e5f5dc2c2bc3155ebc4fdcdb837f9",
+  "date": "2026-10-13",
+  "branch": "experiment/v15-auto-sleep",
+  "firmware_uncommitted": true,
+  "hardware_validation": false,
+  "toolchain": "CH55xDuino 0.0.25 / SDCC build.13407_4; model-small, opt-code-size, no-xinit-opt, int-long-reent; 24MHz; 148 USB DMA bytes; preview enabled",
+  "native_measurements": [
+    {
+      "variant": 0,
+      "stack": 90,
+      "flash": 14210,
+      "paged": 105,
+      "external": 365,
+      "headroom": 126
+    },
+    {
+      "variant": 1,
+      "stack": 93,
+      "flash": 14208,
+      "paged": 105,
+      "external": 356,
+      "headroom": 128
+    }
+  ],
+  "compiled_hex_identical_to_selected_investigation_candidate": true,
+  "validation": {
+    "complete_host_suites": {
+      "preview_enabled": "passed",
+      "preview_disabled": "passed",
+      "geometries": [
+        0,
+        1
+      ],
+      "logs": [
+        "/private/tmp/macropad-rainbow-applied/host.log",
+        "/private/tmp/macropad-rainbow-applied/host-no-preview.log"
+      ]
+    },
+    "differential_probe": {
+      "preview_enabled": "passed",
+      "preview_disabled": "passed",
+      "geometries": [
+        0,
+        1
+      ],
+      "logs": [
+        "/private/tmp/macropad-rainbow-applied/six/probe.log",
+        "/private/tmp/macropad-rainbow-applied/six/probe-no-preview.log",
+        "/private/tmp/macropad-rainbow-applied/three/probe.log",
+        "/private/tmp/macropad-rainbow-applied/three/probe-no-preview.log"
+      ]
+    }
+  },
+  "firmware_patch_sha256": "8b762156a58c3875f5c62a0abd4d4555eb22de20bfdd703aa16a5961d834f9e3"
+}
