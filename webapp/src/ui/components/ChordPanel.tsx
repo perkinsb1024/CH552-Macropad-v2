@@ -130,7 +130,7 @@ export function ChordPanel() {
           }}><IconPlus /> Add Chord</button>
         </div>
       ) : <p class="hint">{addUnavailableReasons.join(' ')}</p>}
-      {p.chordWindow === 0 && chords.length > 0 && <p class="hint warn">The chord window is set to off, so these chords will not trigger.</p>}
+      {p.chordWindow === 0 && chords.length > 0 && <p class="hint warn">These imported chords were disabled. Select a Chord Window in Profile Settings before saving to enable them.</p>}
     </details>
   );
 }

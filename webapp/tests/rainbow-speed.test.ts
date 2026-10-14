@@ -18,14 +18,14 @@ describe('rainbow speed', () => {
   it.each([0, 1] as Variant[])('round-trips all header-bit combinations and JSON speeds on variant %s', (variant) => {
     for (let speed = 0; speed < 4; speed++) {
       for (let phase = 0; phase < 4; phase++) {
-        for (let chordWindow = 0; chordWindow < 16; chordWindow++) {
+        for (let chordWindow = 4; chordWindow <= 18; chordWindow += 2) {
           const p = defaultProfile(variant);
           p.rainbowSpeed = speed;
           p.rainbowPhase = phase;
           p.chordWindow = chordWindow;
           const image = encodeProfile(p);
-          expect(image[2]).toBe(15);
-          expect(image[8]).toBe(chordWindow | (phase << 4) | (speed << 6));
+          expect(image[1]).toBe(15);
+          expect(image[5]).toBe((chordWindow - 4) / 2 | (phase << 4) | (speed << 6));
           expect(decodeImage(image)).toEqual({ ok: true, profile: p });
           const text = exportProfile(p);
           expect(JSON.parse(text).rainbowSpeed).toBe(RAINBOW_SPEED_LABELS[speed]!.toLowerCase());

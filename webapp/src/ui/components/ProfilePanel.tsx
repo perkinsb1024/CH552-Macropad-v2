@@ -27,14 +27,15 @@ export function ProfilePanel() {
             {p.startupLayer >= p.layers.length && <option value={p.startupLayer}>Layer {p.startupLayer + 1} (missing)</option>}
           </select>
         </label>
-        {p.chords.length > 0 && <label class="field field-wide">
+        {(p.chords.length > 0 || p.chordWindow === 0) && <label class="field field-wide">
           <span class="field-label">
-            Chord Window <output>{p.chordWindow === 0 ? 'off' : `${p.chordWindow * 5}ms`}</output>
+            Chord Window <output>{p.chordWindow === 0 ? 'Selection Required' : `${p.chordWindow * 5}ms`}</output>
           </span>
-          <input type="range" min={0} max={15} step={1} value={p.chordWindow} onInput={(e) => updateProfile((d) => { d.chordWindow = Number((e.target as HTMLInputElement).value); }, 'chord-window')} />
+          <input type="range" min={4} max={18} step={2} value={p.chordWindow || 8} onInput={(e) => updateProfile((d) => { d.chordWindow = Number((e.target as HTMLInputElement).value); }, 'chord-window')} />
+          {p.chordWindow === 0 && <button type="button" class="btn" onClick={() => updateProfile(d => { d.chordWindow = 8; })}>Use 40ms</button>}
           <span class="hint">
             {p.chordWindow === 0
-              ? 'Chord recognition is disabled. Saved chords are kept but never trigger, and keys act immediately.'
+              ? 'These imported chords were disabled. Their bindings are retained; select a window before saving to enable them.'
               : `A key that belongs to a chord waits up to ${p.chordWindow * 5}ms for its partner before acting alone. Keys without chords are not delayed.`}
           </span>
         </label>}

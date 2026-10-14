@@ -17,7 +17,7 @@ describe('versioned drafts', () => {
     const archivedKey = 'universal-macropad:format-v2:draft:six-key';
     storage.set(archivedKey, 'archived draft');
     expect(loadDraft(0)?.profile).toEqual(legacy);
-    expect(draftKey(0)).toBe('universal-macropad:format-v15:draft:six-key');
+    expect(draftKey(0)).toBe('universal-macropad:format-v15:board:draft:six-key');
     const current = defaultProfile(0);
     current.transparentBlack = true;
     storeDraft(current, {});
@@ -37,7 +37,7 @@ describe('versioned drafts', () => {
     storeDraft(profile, { profileName: 'Test' });
     expect(loadDraft(0)?.profile).toEqual(profile);
     const draft = JSON.parse(storage.get(draftKey(0))!);
-    draft.formatVersion = 2;
+    draft.formatVersion = 2; delete draft.headerMarker;
     delete draft.profile.transparentBlack;
     delete draft.profile.rainbowSpeed;
     draft.profile.layers[0].indicatorBehavior = 1;
@@ -75,7 +75,7 @@ it('recovers a complete v7 draft with timers, text and annotations without rewri
   const raw = JSON.stringify({ formatVersion: 7, profile: p, meta, savedAt: 'old' });
   storage.set(key, raw);
   p.timedActions![0]!.ticks = 2048;
-  expect(loadDraft(0)).toEqual({ formatVersion: 15, profile: p, meta, savedAt: 'old' });
+  expect(loadDraft(0)).toEqual({ formatVersion: 15, headerMarker: 'B', profile: p, meta, savedAt: 'old' });
   expect(storage.get(key)).toBe(raw);
   expect(storage.has(draftKey(0))).toBe(false);
 });

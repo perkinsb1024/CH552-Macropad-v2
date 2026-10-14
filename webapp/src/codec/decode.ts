@@ -1,17 +1,18 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
-  PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
+  PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
+import { migrateChordWindow } from '../model/defaults';
 import { ActionCode } from './legacyActionCodes';
 import { isSupportedUsage } from '../keys/keyboard';
 
 export type DecodeResult =
-  | { ok: true; profile: Profile }
+  | { ok: true; profile: Profile; notices?: string[] }
   | { ok: false; reason: DecodeFailure; detail: string };
 
 export type DecodeFailure = 'no-magic' | 'unsupported-version' | 'malformed' | 'bad-crc';
@@ -169,37 +170,46 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
 
 /** Reads the format version and variant without full validation, for diagnostics. */
 export function peekHeader(image: Uint8Array): { magic: boolean; version: number; variant: Variant } {
-  return { magic: image[0] === 0x4d && image[1] === 0x50, version: image[2] ?? 0, variant: ((image[5] ?? 0) & 1) as Variant };
+  const board = image[0] === HEADER_MARKER;
+  return { magic: board || image[0] === 0x4d && image[1] === 0x50,
+    version: image[board ? 1 : 2] ?? 0, variant: ((image[board ? 2 : 5] ?? 0) & 1) as Variant };
 }
 
 /** Decodes and fully validates a 128-byte image, mirroring the firmware's configValid. */
 export function decodeImage(image: Uint8Array, expectedVariant?: Variant): DecodeResult {
   const fail = (reason: DecodeFailure, detail: string): DecodeResult => ({ ok: false, reason, detail });
   if (image.length !== IMAGE_SIZE) return fail('malformed', `Image is ${image.length} bytes, expected ${IMAGE_SIZE}.`);
-  if (image[0] !== 0x4d || image[1] !== 0x50) return fail('no-magic', 'Missing MP marker; no saved profile.');
-  if (![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, FORMAT_VERSION].includes(image[2]!)) return fail('unsupported-version', `Format version ${image[2]} is not supported (expected 2–${FORMAT_VERSION}).`);
-  if (image[2] === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
-  const extended = image[2]! >= 4;
-  const configurableRainbow = image[2]! >= 5;
-  if (image[2]! < 7 && image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
-  if (!configurableRainbow && (image[8]! & 0xf0)) return fail('malformed', 'Reserved bits set in chord-window byte.');
+  const board = image[0] === HEADER_MARKER;
+  const header = peekHeader(image);
+  if (!header.magic) return fail('no-magic', 'Missing B or legacy MP marker; no saved profile.');
+  const version = header.version;
+  if (board ? version !== FORMAT_VERSION : version < 2 || version > FORMAT_VERSION)
+    return fail('unsupported-version', `Format version ${version} is not supported for this header.`);
+  if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');
+  if (board && ((image[2]! & 0x80) || (image[3]! & 1) || image[6]!))
+    return fail('malformed', 'Reserved header bits or unassigned sleep settings are non-zero.');
+  if (!board && version === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
+  const extended = version >= 4;
+  const configurableRainbow = version >= 5;
+  if (!board && version < 7 && image[3]! & (extended ? 0xc0 : 0xf0)) return fail('malformed', 'Reserved bits set in byte 3.');
+  if (!board && !configurableRainbow && (image[8]! & 0xf0)) return fail('malformed', 'Reserved bits set in chord-window byte.');
 
-  const variant = (image[5]! & 1) as Variant;
+  const variant = header.variant;
   if (expectedVariant !== undefined && variant !== expectedVariant) {
     return fail('malformed', `Image is for the ${variant ? 'three' : 'six'}-key variant but the device has ${expectedVariant ? 'three' : 'six'} keys.`);
   }
-  const layerCount = (image[3]! & (extended ? 7 : 3)) + 1;
-  const startupLayer = (image[3]! >> (extended ? 3 : 2)) & (extended ? 7 : 3);
+  const layerCount = board ? ((image[2]! >> 1) & 7) + 1 : (image[3]! & (extended ? 7 : 3)) + 1;
+  const startupLayer = board ? (image[2]! >> 4) & 7 : (image[3]! >> (extended ? 3 : 2)) & (extended ? 7 : 3);
   if (startupLayer >= layerCount) return fail('malformed', `Startup layer ${startupLayer + 1} exceeds layer count ${layerCount}.`);
   if (layerCount > (extended ? maxLayers(variant) : 4)) return fail('malformed', 'Too many layers.');
 
   const keys = keyCount(variant);
   const size = layerSize(variant);
-  const chordCount = (image[5]! >> 1) & 63;
-  const timerCount = image[2]! >= 7 ? (image[3]! >> 6) | ((image[4]! >> 7) << 2) : 0;
+  const chordCount = board ? image[4]! >> 3 : (image[5]! >> 1) & 63;
+  const timerCount = board ? image[4]! & 7 : version >= 7 ? (image[3]! >> 6) | ((image[4]! >> 7) << 2) : 0;
   if (timerCount > MAX_TIMED_ACTIONS) return fail('malformed', 'Too many timed actions.');
-  const poolUsed = image[2]! >= 7 ? image[4]! & 127 : image[4]!;
-  const timerSize = image[2]! >= 10 ? TIMED_ENTRY_SIZE : 5;
+  const poolUsed = board ? image[3]! >> 1 : version >= 7 ? image[4]! & 127 : image[4]!;
+  const timerSize = version >= 10 ? TIMED_ENTRY_SIZE : 5;
   const poolStart = HEADER_SIZE + size * layerCount + CHORD_ENTRY_SIZE * chordCount + timerSize * timerCount;
   const end = poolStart + poolUsed;
   if (end > IMAGE_SIZE) return fail('malformed', `Declared content ends at byte ${end}, beyond the 128-byte image.`);
@@ -210,7 +220,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const c = image[poolStart + i]!;
     if (c !== 0 && c !== 9 && c !== 10 && (c < 32 || c > 126)) return fail('malformed', `Unsupported string byte 0x${c.toString(16)} in pool.`);
   }
-  for (let i = end; image[2]! < 11 && i < IMAGE_SIZE; i++) {
+  for (let i = end; version < 11 && i < IMAGE_SIZE; i++) {
     if (image[i] !== 0) return fail('malformed', `Non-zero padding at byte ${i}.`);
   }
 
@@ -219,7 +229,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const base = HEADER_SIZE + size * li;
     const actions: Action[] = [];
     for (let i = 0; i < keys + 3; i++) {
-      const decoded = decodeAction(image[base + 2 * i]!, image[base + 2 * i + 1]!, layerCount, i >= keys + 1, pool, image[2]!);
+      const decoded = decodeAction(image[base + 2 * i]!, image[base + 2 * i + 1]!, layerCount, i >= keys + 1, pool, version);
       if (typeof decoded === 'string') return fail('malformed', `Layer ${li + 1}, input ${i + 1}: ${decoded}.`);
       actions.push(decoded);
     }
@@ -241,7 +251,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       indicatorBehavior: (options >> LAYER_OPT_INDICATOR_SHIFT) & 3,
       indicatorColor: options >> 4,
       indicatorFullBrightness: !!(options & LAYER_OPT_FULL_BRIGHTNESS),
-      autoSleep: image[2]! >= 15 && !!(options & LAYER_OPT_AUTO_SLEEP),
+      autoSleep: version >= 15 && !!(options & LAYER_OPT_AUTO_SLEEP),
     };
     layers.push(layer);
   }
@@ -259,7 +269,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     if (pair >= pairCount(variant)) return fail('malformed', `Chord ${i + 1}: pair index ${pair} is invalid.`);
     if (id <= previous) return fail('malformed', `Chord ${i + 1}: identifiers are not strictly ascending.`);
     previous = id;
-    const decoded = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, false, pool, image[2]!);
+    const decoded = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, false, pool, version);
     if (typeof decoded === 'string') return fail('malformed', `Chord ${i + 1}: ${decoded}.`);
     const [keyA, keyB] = pairFromIndex(pair, keys);
     chords.push({ layer, keyA, keyB, global, action: decoded });
@@ -267,11 +277,11 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
 
   const timedActions: TimedAction[] = [];
   for (let i = 0; i < timerCount; i++, offset += timerSize) {
-    const action = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, true, pool, image[2]!);
-    const resumeAction = decodeAction(image[offset + 3]!, image[offset + 4]!, layerCount, true, pool, image[2]!);
+    const action = decodeAction(image[offset + 1]!, image[offset + 2]!, layerCount, true, pool, version);
+    const resumeAction = decodeAction(image[offset + 3]!, image[offset + 4]!, layerCount, true, pool, version);
     if (typeof action === 'string' || typeof resumeAction === 'string')
       return fail('malformed', `Timed action ${i + 1}: ${typeof action === 'string' ? action : resumeAction}.`);
-    const current = image[2]! >= 10;
+    const current = version >= 10;
     const metadata = image[current ? offset + 5 : offset]!;
     const scope = current ? metadata & 7 : 0;
     if (scope > layerCount) return fail('malformed', `Timed action ${i + 1}: assigned layer does not exist.`);
@@ -280,7 +290,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   }
 
   const macros: { actions: Action[] }[] = [];
-  if (image[2]! >= 11) {
+  if (version >= 11) {
     const steps = new Map<number, Action>();
     const starts = new Set<number>();
     let beginning = true;
@@ -292,7 +302,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
         continue;
       }
       if (offset + 1 >= IMAGE_SIZE) return fail('malformed', 'Non-zero unpaired macro byte.');
-      const step = decodeAction(image[offset]!, image[offset + 1]!, layerCount, true, pool, image[2]!);
+      const step = decodeAction(image[offset]!, image[offset + 1]!, layerCount, true, pool, version);
       if (typeof step === 'string' || step.type === 'macro') return fail('malformed', `Macro tail at byte ${offset}: ${typeof step === 'string' ? step : 'Nested macro'}.`);
       steps.set(offset, step);
       if (beginning) { starts.add(offset); beginning = false; }
@@ -316,10 +326,12 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     for (const action of bindings) if (action.type === 'macro') action.macro = addresses.indexOf(action.macro);
   }
 
-  if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');
-
-  return {
-    ok: true,
-    profile: { variant, transparentBlack: !!(image[5]! & 0x80), startupLayer, chordWindow: image[8]! & 15, rainbowPhase: configurableRainbow ? (image[8]! >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE, rainbowSpeed: configurableRainbow ? image[8]! >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED, layers, chords, ...(timedActions.length ? { timedActions } : {}), ...(macros.length ? { macros } : {}) },
-  };
+  const led = image[board ? 5 : 8]!;
+  const profile: Profile = { variant, transparentBlack: !!(image[5]! & (board ? 8 : 128)), startupLayer,
+    chordWindow: board ? 4 + 2 * (led & 7) : led & 15,
+    rainbowPhase: configurableRainbow ? (led >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE,
+    rainbowSpeed: configurableRainbow ? led >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED,
+    layers, chords, ...(timedActions.length ? { timedActions } : {}), ...(macros.length ? { macros } : {}) };
+  const notices = board ? [] : migrateChordWindow(profile);
+  return { ok: true, profile, ...(notices.length ? { notices } : {}) };
 }

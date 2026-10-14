@@ -28,8 +28,8 @@ describe('v10 timed-action images', () => {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[2]).toBe(15);
-      expect((image[3]! >> 6) | ((image[4]! >> 7) << 2)).toBe(count);
+      expect(image[1]).toBe(15);
+      expect(image[4]! & 7).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
       expect(importProfile(exportProfile(p)).profile).toEqual(p);
@@ -49,13 +49,12 @@ describe('v10 timed-action images', () => {
   });
   it('rejects unsupported timer counts and truncated records in both validators', () => {
     const image = encodeProfile(defaultProfile(0));
-    image[3] = image[3]! | 64;
-    image[4] = 128; // count = 5
+    image[4] = 5; // count = 5
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
     expect(firmwareAccepts(image, 0)).toBe(false);
-    image[3] = 4; // five layers
-    image[4] = 128; // four timers exceed the profile capacity
+    image[2] = 8; // five layers
+    image[4] = 4; // four timers exceed the profile capacity
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
     expect(firmwareAccepts(image, 0)).toBe(false);

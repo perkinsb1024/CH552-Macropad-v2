@@ -1,4 +1,4 @@
-import { IMAGE_SIZE } from '../model/constants';
+import { HEADER_MARKER, IMAGE_SIZE } from '../model/constants';
 
 /** CRC16-CCITT-FALSE: poly 0x1021, init 0xFFFF, no reflection, no final XOR. */
 export function crc16(bytes: Uint8Array): number {
@@ -12,20 +12,27 @@ export function crc16(bytes: Uint8Array): number {
   return crc;
 }
 
-/** CRC over image bytes 0–5 followed by 8–127. */
-export function imageCrc(image: Uint8Array): number {
+/** Identify CRC placement from the marker, including retained legacy images. */
+export function crcOffset(image: Uint8Array): number {
+  return image[0] === HEADER_MARKER ? 7 : 6;
+}
+
+/** CRC covers every image byte except its layout's stored two-byte CRC. */
+export function imageCrc(image: Uint8Array, offset = crcOffset(image)): number {
   const covered = new Uint8Array(IMAGE_SIZE - 2);
-  covered.set(image.subarray(0, 6), 0);
-  covered.set(image.subarray(8, IMAGE_SIZE), 6);
+  covered.set(image.subarray(0, offset), 0);
+  covered.set(image.subarray(offset + 2, IMAGE_SIZE), offset);
   return crc16(covered);
 }
 
 export function sealImage(image: Uint8Array): void {
   const crc = imageCrc(image);
-  image[6] = crc & 0xff;
-  image[7] = crc >> 8;
+  const offset = crcOffset(image);
+  image[offset] = crc & 0xff;
+  image[offset + 1] = crc >> 8;
 }
 
 export function storedCrc(image: Uint8Array): number {
-  return image[6]! | (image[7]! << 8);
+  const offset = crcOffset(image);
+  return image[offset]! | (image[offset + 1]! << 8);
 }

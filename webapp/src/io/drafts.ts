@@ -1,14 +1,16 @@
 import type { Profile } from '../model/types';
 import { FORMAT_VERSION } from '../model/constants';
-import { migrateLegacyProfile } from '../model/defaults';
+import { migrateLegacyProfile, migrateChordWindow } from '../model/defaults';
 import { validateProfile } from '../model/validate';
 import { isPreviousLayer } from '../model/actions';
 import type { LocalMetadata } from './json';
 
-const PREFIX = `universal-macropad:format-v${FORMAT_VERSION}:`;
+const PREFIX = `universal-macropad:format-v${FORMAT_VERSION}:board:`;
 
 export interface Draft {
   formatVersion: number;
+  headerMarker?: 'B';
+  notices?: string[];
   profile: Profile;
   meta: LocalMetadata;
   savedAt: string;
@@ -28,7 +30,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
     const key = draftKey(variant);
     const keys = [key];
     if (!localStorage.getItem(`${key}:cleared`)) {
-      for (const version of [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
+      for (const version of [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
       keys.push(legacyDraftKey(variant));
     }
     for (const source of keys) {
@@ -38,6 +40,8 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         const parsed = JSON.parse(raw) as Draft;
         if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
         if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) continue;
+        const board = parsed.formatVersion === FORMAT_VERSION && parsed.headerMarker === 'B';
+        if (parsed.headerMarker !== undefined && !board) continue;
         parsed.profile = migrateLegacyProfile(parsed.profile, parsed.formatVersion ?? 2);
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action),
           ...(parsed.profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(parsed.profile.macros ?? []).flatMap(m => m.actions)];
@@ -50,8 +54,14 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         if ((parsed.formatVersion ?? 2) < 8 && actions.some(a => a.type === 'consumerHold' || (a.type === 'scroll' && a.hold))) continue;
         if ((parsed.formatVersion ?? 2) < 11 && (parsed.profile.macros?.length || actions.some(a => a.type === 'macro' || a.type === 'pause'))) continue;
         if ((parsed.formatVersion ?? 2) < 9 && actions.some(a => a.type === 'scroll' && a.horizontal)) continue;
-        if (validateProfile(parsed.profile).some(i => i.where !== 'Storage')) continue;
+        if (!board) {
+          if (!Number.isInteger(parsed.profile.chordWindow) || parsed.profile.chordWindow < 0 || parsed.profile.chordWindow > 15) continue;
+          const notices = migrateChordWindow(parsed.profile);
+          if (notices.length) parsed.notices = notices;
+        }
+        if (validateProfile(parsed.profile).some(i => i.where !== 'Storage' && !(i.where === 'Chord Window' && parsed.profile.chordWindow === 0 && parsed.profile.chords.length))) continue;
         parsed.formatVersion = FORMAT_VERSION;
+        parsed.headerMarker = 'B';
         return parsed;
       } catch { /* Try the next recoverable draft; keep every original intact. */ }
     }
@@ -61,7 +71,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
 
 export function storeDraft(profile: Profile, meta: LocalMetadata): void {
   try {
-    const draft: Draft = { formatVersion: FORMAT_VERSION, profile, meta, savedAt: new Date().toISOString() };
+    const draft: Draft = { formatVersion: FORMAT_VERSION, headerMarker: 'B', profile, meta, savedAt: new Date().toISOString() };
     localStorage.setItem(draftKey(profile.variant), JSON.stringify(draft));
   } catch {
     /* storage unavailable (private mode, quota) – drafts are optional */

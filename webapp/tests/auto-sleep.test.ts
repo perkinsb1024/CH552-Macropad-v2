@@ -1,3 +1,4 @@
+import { legacyHeader } from './legacy-image';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
 import { encodeProfile } from '../src/codec/encode';
@@ -80,7 +81,7 @@ describe('per-layer auto-sleep', () => {
       layer.indicatorBehavior = (options >> 2) & 3;
       layer.indicatorColor = options >> 4;
       const image = encodeProfile(p);
-      expect(image[2]).toBe(15);
+      expect(image[1]).toBe(15);
       expect(image[optionsOffset]).toBe(options);
       expect(validator.accepts(image, variant)).toBe(true);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
@@ -91,7 +92,7 @@ describe('per-layer auto-sleep', () => {
   it.each([0, 1] as const)('clears the ignored v14 flag during binary migration on variant %s', variant => {
     const p = defaultProfile(variant);
     p.layers[0]!.keys[0] = { type: 'consumerModifiedHold', usage: 0x6f, modifiers: 6 };
-    const image = encodeProfile(p); image[2] = 14;
+    const image = encodeProfile(p); legacyHeader(image); image[2] = 14;
     const size = variant ? 15 : 22;
     p.layers.forEach((_, i) => { image[9 + size * (i + 1) - 1]! |= 2; });
     sealImage(image);

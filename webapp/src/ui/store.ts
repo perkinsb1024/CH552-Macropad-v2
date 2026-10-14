@@ -624,6 +624,7 @@ export function addChord(layer: number, keyA: number, keyB: number): void {
 export function removeChord(chord: Pick<Chord, 'layer' | 'keyA' | 'keyB' | 'global'>): void {
   updateProfile((draft) => {
     draft.chords = draft.chords.filter((c) => !matchesChord(c, chord));
+    if (!draft.chords.length && draft.chordWindow === 0) draft.chordWindow = 8;
   });
   const s = selectedSlot.value;
   if (s?.kind === 'chord' && matchesChord(s, chord)) selectedSlot.value = null;
@@ -704,6 +705,7 @@ export function removeLayer(layer: number): void {
       if (c.layer === layer) return { ...c, layer: Math.min(layer, draft.layers.length - 1) };
       return c;
     });
+    if (!draft.chords.length && draft.chordWindow === 0) draft.chordWindow = 8;
     const shift = (a: Action): Action => {
       if (!isPreviousLayer(a) && (a.type === 'setLayer' || a.type === 'oneShotSetLayer' || a.type === 'momentaryLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
       return a;
@@ -750,7 +752,10 @@ export function startOffline(variant: Variant): void {
   selectedLayer.value = profile.value.startupLayer;
   selectedSlot.value = null;
   saveState.value = { phase: 'idle' };
-  if (draft) notify('info', 'Restored your saved draft from this browser.');
+  if (draft) {
+    notify('info', 'Restored your saved draft from this browser.');
+    draft.notices?.forEach(text => notify('info', text, 15000));
+  }
 }
 
 export function resetToDefaults(): void {
@@ -930,6 +935,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     let fromDevice: Profile;
     if (decoded.ok) {
       fromDevice = decoded.profile;
+      decoded.notices?.forEach(text => notify('info', text, 15000));
       if (peekHeader(flash).version < FORMAT_VERSION && info.formatVersion === FORMAT_VERSION) {
         notify('info', `Version ${peekHeader(flash).version} profile upgraded in the editor. The device is inactive until you save it in format ${FORMAT_VERSION}.`, 12000);
       }
@@ -976,7 +982,7 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
         comparison: { device: cloneProfile(fromDevice), editor: cloneProfile(draft.profile), editorLabel: 'Draft' },
         actions: [
           { label: 'Load from Device', tone: 'neutral', onSelect: () => { apply(); closeDialog(); } },
-          { label: 'Use the Draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); selectedLayer.value = draft.profile.startupLayer; selectedSlot.value = null; closeDialog(); } },
+          { label: 'Use the Draft', tone: 'primary', onSelect: () => { clearHistory(); freshStart.value = null; profile.value = draft.profile; meta.value = draft.meta; baseline.value = cloneProfile(fromDevice); selectedLayer.value = draft.profile.startupLayer; selectedSlot.value = null; draft.notices?.forEach(text => notify('info', text, 15000)); closeDialog(); } },
         ],
       });
     } else {
@@ -1126,7 +1132,7 @@ export function importFromClipboard(): void {
 
 function importProfileText(text: string, source: string): void {
   try {
-    const { profile: imported, meta: importedMeta } = importProfile(text);
+    const { profile: imported, meta: importedMeta, notices } = importProfile(text);
     const c = connection.value;
     if (c.kind === 'connected' && imported.variant !== c.connection.info.variant) {
       notify('error', `That profile is for the ${imported.variant ? 'three' : 'six'}-key variant, but the connected device has ${c.connection.info.keyCount} keys.`);
@@ -1141,6 +1147,7 @@ function importProfileText(text: string, source: string): void {
       selectedSlot.value = null;
       closeDialog();
       notify('success', `Imported ${source}.`);
+      notices?.forEach(text => notify('info', text, 15000));
     };
     if (dirty.value) {
       ask({

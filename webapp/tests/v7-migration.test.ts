@@ -23,7 +23,7 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   const decoded = decodeImage(original); expect(decoded).toEqual({ ok: true, profile: p });
   if (!decoded.ok) throw new Error('decode failed');
   const migrated = encodeProfile(decoded.profile);
-  expect(migrated[2]).toBe(15);
+  expect(migrated[1]).toBe(15);
   const reverted = migrated.slice(); legacyTextCodes(reverted); reverted[2] = 6; sealImage(reverted);
   expect(reverted).toEqual(original);
   expect(validator.accepts(original, variant)).toBe(false);
@@ -53,7 +53,7 @@ it('validates and round-trips every bundled current-format starter profile again
 it('rejects temporary effects masquerading as v6 and malformed consume flags', () => {
   const p = defaultProfile(0);
   p.layers[0]!.keys[0] = { type: 'ledControl', command: 'effectOn', value: 15 };
-  const old = encodeProfile(p); old[2] = 6; sealImage(old);
+  const old = encodeProfile(p); legacyTextCodes(old); old[2] = 6; sealImage(old);
   expect(decodeImage(old).ok).toBe(false);
   const json = JSON.parse(exportProfile(p)); json.version = 6;
   expect(() => importProfile(JSON.stringify(json))).toThrow('version 7');

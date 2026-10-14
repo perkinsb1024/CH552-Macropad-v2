@@ -304,7 +304,7 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 2. In **Chords**, choose a **Key Pair** and click **Add Chord**
 3. Click the chord row and choose its action in the **Action Editor**
 4. Leave it local to that layer, or click its **Globe** button to make it global
-5. Save the profile, then press the two keys together to try it. Make sure you press the two keys nearly simutaneously. By default the **Chord Window** (the time duration you get to press both keys) is just 40 milliseconds
+5. Save the profile, then press the two keys together to try it. Make sure you press the two keys nearly simultaneously. By default the **Chord Window** (the time duration you get to press both keys) is just 40ms
 
 **Local** chords apply only on their layer. **Global** chords appear across layers and use the same action everywhere. A local chord for the same key pair takes priority on its layer. Only one global chord can use a given pair. The editor prevents conflicting choices.
 
@@ -312,12 +312,14 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 
 ### Chord Timing
 
-The **Chord Window** in **Profile** is how long the first key waits for its partner. It ranges from 5–75 milliseconds, in steps of 5; the starter setting is 40ms, or four one-hundredths of a second.
+The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v15 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
 
 - A larger window makes chords easier to press but adds a small delay to individual keys that belong to a chord
 - A smaller window makes those individual keys respond sooner, but requires more nearly simultaneous presses
 - Keys that do not belong to a chord on the selected layer have no delay
-- **Off** disables chord recognition without deleting your saved chords. Keys then act immediately
+- With no saved chords, keys act immediately without waiting for a window
+- Imported windows round to the nearest supported value, with ties upward and a minimum of 20ms; changed values show a migration notice
+- Previously disabled imported chords keep their bindings and require a **Chord Window** selection before saving to enable them
 
 A recognized chord runs its action instead of the two individual actions. For a hold action, releasing either chord key ends the hold. Release both keys before attempting the same chord again. If you miss the timing window, the keys act individually.
 
@@ -737,7 +739,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | Clicking a layer tab does not update the device | Tabs only affect what you're currently edit. Use a saved layer-switch action on the macropad |
 | I cannot get back to my usual layer | Configure a return action or a global layer-cycle chord. Reconnecting starts on the saved startup layer |
 | Save is disabled | Check the connection, key count, storage meter, and **Fix Before Saving** error. Follow any compatibility notice for older firmware |
-| A chord runs two ordinary actions | Increase the chord window slightly, check that it is not **Off**, press the pair nearly simultaneously, and release both keys before trying again. Check the chord's layer or global setting |
+| A chord runs two ordinary actions | Increase the **Chord Window** slightly, resolve any imported-window selection warning, press the pair nearly simultaneously, and release both keys before trying again. Check the chord's layer or global setting |
 | **Copy** or paste acts on text instead of a binding | Select the key, wheel input, chord row, or timer action. Deselect any text editor and clear page-text selection; highlighted input will become the clipboard target |
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type Text** expects US layout. Replace unsupported characters with plain letters and punctuation |

@@ -1,3 +1,4 @@
+import { legacyHeader } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { defaultProfile } from '../src/model/defaults';
@@ -93,6 +94,6 @@ it('rejects malformed brightness, brightness on restore/ordinary commands, and r
   image[9] = 0x0d; image[10] = 0x90; sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
   expect(validator.accepts(image, 0)).toBe(false);
-  image[10] = 0x91; image[2] = 6; sealImage(image);
+  image[10] = 0x91; legacyHeader(image); image[2] = 6; sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
 });

@@ -49,7 +49,7 @@ describe('device profile migration', () => {
     expect(device.flash).toEqual(legacy);
     expect(canSave.value).toBe(true);
     await save();
-    expect(device.flash[2]).toBe(15);
+    expect(device.flash[1]).toBe(15);
     expect(device.flashValid).toBe(true);
   });
 

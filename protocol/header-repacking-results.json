@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-14",
+  "branch": "experiment/v15-updated-header",
+  "firmwareCheckpoint": "a50b2e4bac2a0f5cd4e8a195c5352d7d2306dc6b",
+  "baselineRevision": "0be9ba4",
+  "baselineFirmwareUnchangedSince": "a14798a4450c85d88d96f9e5cad598da552de0b6",
+  "nativeMeasurementState": "Baseline clean; repacked firmware measured as uncommitted changes over 0be9ba4, subsequently committed unchanged as the firmware checkpoint.",
+  "toolchain": {
+    "CH55xDuino": "0.0.25",
+    "SDCC": "build.13407_4",
+    "clockHz": 24000000,
+    "usbDmaBytes": 148,
+    "flashLimitBytes": 14336,
+    "preview": true,
+    "flags": [
+      "model-small",
+      "opt-code-size",
+      "no-xinit-opt",
+      "int-long-reent"
+    ]
+  },
+  "memory": {
+    "sixKey": {
+      "baselineFlash": 14210,
+      "flash": 14136,
+      "saving": 74,
+      "freeFlash": 200,
+      "stackReserve": 90,
+      "pagedRam": 105,
+      "ordinaryXseg": 365,
+      "activeAndRuntime": 134,
+      "totalExternalRam": 752
+    },
+    "threeKey": {
+      "baselineFlash": 14208,
+      "flash": 14132,
+      "saving": 76,
+      "freeFlash": 204,
+      "stackReserve": 93,
+      "pagedRam": 105,
+      "ordinaryXseg": 356,
+      "activeAndRuntime": 134,
+      "totalExternalRam": 743
+    }
+  },
+  "moduleSegments": {
+    "six": {
+      "config": {
+        "baseline": 2124,
+        "repacked": 2090,
+        "saving": 34
+      },
+      "storage": {
+        "baseline": 256,
+        "repacked": 216,
+        "saving": 40
+      },
+      "protocol_firmware": {
+        "baseline": 1286,
+        "repacked": 1286,
+        "saving": 0
+      },
+      "sketch": {
+        "baseline": 2636,
+        "repacked": 2636,
+        "saving": 0
+      }
+    },
+    "three": {
+      "config": {
+        "baseline": 2128,
+        "repacked": 2092,
+        "saving": 36
+      },
+      "storage": {
+        "baseline": 256,
+        "repacked": 216,
+        "saving": 40
+      },
+      "protocol_firmware": {
+        "baseline": 1286,
+        "repacked": 1286,
+        "saving": 0
+      },
+      "sketch": {
+        "baseline": 2630,
+        "repacked": 2630,
+        "saving": 0
+      }
+    }
+  },
+  "moduleMeasurementNote": "Measured padded CSEG/CONST/GSINIT module sizes in the baseline and combined build; not separate timer-count-only candidate builds.",
+  "validation": {
+    "firmwareHostPreview": {
+      "passed": true,
+      "executables": 18,
+      "layoutTests": 8,
+      "bootloaderTests": 19,
+      "log": "/private/tmp/header-verified-host.log"
+    },
+    "firmwareHostNoPreview": {
+      "passed": true,
+      "executables": 18,
+      "layoutTests": 8,
+      "bootloaderTests": 19,
+      "log": "/private/tmp/header-verified-no-preview.log"
+    },
+    "nativeFirmware": {
+      "passed": true,
+      "sixKey": "/private/tmp/header-first-six",
+      "threeKey": "/private/tmp/header-first-three",
+      "layoutStartupAndIrqChecks": true
+    },
+    "nativeErase": {
+      "passed": true,
+      "sixKey": "/private/tmp/header-erase-0",
+      "threeKey": "/private/tmp/header-erase-1",
+      "log": "/private/tmp/header-erase-native.log"
+    },
+    "integrationGate": {
+      "command": "npm run verify:deploy",
+      "passed": true,
+      "configuratorTests": 685,
+      "uploaderTests": 89,
+      "typescriptAndSiteBuild": true,
+      "archiveManifests": 13,
+      "sourceState": "a50b2e4 with uncommitted configurator, test, profile and documentation changes, including the restored slider; committed as the integration checkpoint after validation.",
+      "log": "/private/tmp/header-slider-final-deploy.log"
+    },
+    "browserPreview": {
+      "passed": true,
+      "environment": "Private Chrome window; six-key simulator at localhost:4173",
+      "checks": [
+        "Restored slider present",
+        "40ms to 50ms increment",
+        "Simulated save verifies all 128 readback bytes"
+      ],
+      "hardwareValidation": false
+    }
+  },
+  "sourceSha256": {
+    "CH552_Universal_Macropad.ino": "b4c22848bb6dc691435c6f493d69c2d2ed82974616aa3d393b83d94e4f8dd7dd",
+    "src/config.c": "c99b92bf4ad07d60adb7ba869c1aa3fdec4deb222858068338fa397c72423ceb",
+    "src/config.h": "bb930d152250811e7f85aa4b6262bdb00321c9ad3a0c659ce77ef2e4abe05aba",
+    "src/storage.c": "0a253b8248693afd559eb00630df536707d76e574f50901cd03e74b6478c2407",
+    "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b",
+    "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+    "pio-platform/erase_config.c": "9ecc207a4f12b3718370a6dda1026a26f64cc95af99b3e26c95f1b1c6beae733"
+  },
+  "artifactSha256": {
+    "/private/tmp/header-baseline-six/firmware.mem": "127b30b08f92fa3b9ee0436059667868af5e0cadbfc5b64c588ea5f26f0acb63",
+    "/private/tmp/header-baseline-three/firmware.mem": "92476c02d3fa6357da68bbf8b8f476251299b30e0e39838c2cd1ccbc5ed49455",
+    "/private/tmp/header-first-six/firmware.mem": "746b08586937f6444a8b92883b564cffa5d2fc880f299f014d7f655e49ff741d",
+    "/private/tmp/header-first-three/firmware.mem": "d234ffe20768d2ee9eca6c33dc0e6415aa17a3da7c546f6c7522d37d2469dd30",
+    "/private/tmp/header-verified-host.log": "3e9429bf588e7f1b68a34a75c3bf8b33a34b9b1858f2349f96dbc07ccc6055cc",
+    "/private/tmp/header-verified-no-preview.log": "3e9429bf588e7f1b68a34a75c3bf8b33a34b9b1858f2349f96dbc07ccc6055cc",
+    "/private/tmp/header-slider-final-deploy.log": "d191ae71d582801b499c7bc6a4020b6af81300310f550d797b461fc01e7df71d"
+  },
+  "featureCuts": false,
+  "newSleepSettingsImplemented": false,
+  "releaseGeneration": false,
+  "deviceFlashing": false,
+  "published": false
+}

@@ -29,6 +29,13 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
+Format 15 retains transport version 1 and the GET_INFO layout, with action mask
+`0x7FFF`. Its stored image uses marker `B`, version byte 1 and CRC bytes 7–8;
+BEGIN_WRITE still carries a separate full 16-bit expected CRC. Legacy images
+remain readable but inactive until explicitly converted and uploaded. Its chord
+windows are 20ms–90ms, with zero chord count bypassing recognition. See the
+standalone [configuration format 15 reference](config-v15.md).
+
 Format 12 retains transport version 1, GET_INFO layout and action mask `0xFFFF`.
 Its configuration version identifies mouse buttons 1–8 and type-5 auxiliary modes
 0 toggle, 1 down and 2 up. Mouse report ID 2 is five bytes: ID, eight button bits,
@@ -103,8 +110,10 @@ may be retried after a lost reply; a repeated successful commit does not write
 flash again. After commit, the host should independently read all 128 flash
 bytes and compare them with the image it sent.
 
-For a changed image, firmware invalidates the two-byte magic, writes and checks
-the body, restores the magic last, and compares the stored image byte for byte.
+For a changed v15 image, firmware clears and verifies marker byte 0, writes and
+verifies changed bytes 1–127, restores `B` last, and compares all 128 stored
+bytes with the intended image. Earlier MP formats invalidate both marker bytes.
+The stored checksum follows the image layout; request and reply layouts are unchanged.
 If a write fails, the previous active RAM configuration remains in use so the
 host can retry. An interrupted save may leave invalid flash; at startup, the
 device leaves keys and encoder actions inactive and blinks one red LED at 1 Hz
@@ -124,9 +133,10 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 Format 7 adds timer records and temporary LED-control commands without changing
 transport v1. See [config-v7.md](config-v7.md). V7 firmware accepts format 6 images, which its editor can migrate before saving
-v7. Current v12 firmware accepts only format 12; the current editor migrates older
-profiles before explicitly saving v12. Firmware updates leave older DataFlash
-profiles unchanged, with inputs inactive until a valid v12 profile is saved.
+v7. V12 firmware accepts only format 12; its frozen editor migrates older profiles
+before explicitly saving v12. Current v15 firmware accepts only B-header v15;
+firmware updates leave older DataFlash unchanged, with inputs inactive until
+a valid B/v15 profile is saved.
 Format 10 changes timer records without changing the HID transport or action
 mask. Format 11 adds macros and pauses and remaps action types without changing
 the transport version or GET_INFO layout.

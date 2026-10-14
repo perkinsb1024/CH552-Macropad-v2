@@ -122,8 +122,11 @@ export function validateProfile(profile: Profile): Issue[] {
   if (!Number.isInteger(profile.startupLayer) || profile.startupLayer < 0 || profile.startupLayer >= layerCount) {
     issues.push({ where: 'Profile', message: `Startup layer ${profile.startupLayer + 1} does not exist.` });
   }
-  if (!Number.isInteger(profile.chordWindow) || profile.chordWindow < 0 || profile.chordWindow > MAX_CHORD_WINDOW_UNITS) {
-    issues.push({ where: 'Profile', message: 'Chord window must be 0–75ms in 5ms steps.' });
+  if (profile.chordWindow === 0 && profile.chords.length) {
+    issues.push({ where: 'Chord Window', message: 'Previously disabled chords need a window selected before saving. Bindings have been retained.' });
+  } else if (!Number.isInteger(profile.chordWindow) || profile.chordWindow < 4 ||
+      profile.chordWindow > MAX_CHORD_WINDOW_UNITS || profile.chordWindow % 2) {
+    issues.push({ where: 'Chord Window', message: 'Chord window must be 20ms–90ms in 10ms steps.' });
   }
 
   if (!Number.isInteger(profile.rainbowPhase) || profile.rainbowPhase < 0 || profile.rainbowPhase > 3) {

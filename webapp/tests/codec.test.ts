@@ -13,7 +13,7 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
-  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes version 14', (variant) => {
+  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes the B/v15 header', (variant) => {
     const profile = defaultProfile(variant);
     profile.layers[0]!.indicatorBehavior = 1;
     profile.layers[0]!.indicatorColor = 8;
@@ -28,29 +28,30 @@ describe('default profile image headers', () => {
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[2]).toBe(15);
-    expect(upgraded[8]).toBe(legacy[8]! | 0x60);
+    expect(upgraded[1]).toBe(15);
+    expect(upgraded[5]).toBe(0x62);
     expect([...upgraded.subarray(9)]).toEqual([...encodeProfile(profile).subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
     expect(decodeImage(legacy)).toMatchObject({ ok: false, reason: 'bad-crc' });
   });
-  it('round-trips transparency in header bit 7 without changing chord count', () => {
+  it('round-trips transparency in header bit 3 without changing chord count', () => {
     const profile = defaultProfile(VARIANT_THREE_KEYS);
     profile.transparentBlack = true;
     profile.chords = [{ layer: 0, keyA: 0, keyB: 1, global: false, action: { type: 'setLayer', layer: 1 } }];
     const image = encodeProfile(profile);
-    expect(image[5]).toBe(0x83);
+    expect(image[4]).toBe(8);
+    expect(image[5]).toBe(0x6a);
     const decoded = decodeImage(image);
     expect(decoded.ok && decoded.profile).toEqual(profile);
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 0F 01 00 00');
+    expect(hex(image.subarray(0, 6))).toBe('42 0F 02 00 00 62');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('4D 50 0F 01 00 01');
+    expect(hex(image.subarray(0, 6))).toBe('42 0F 03 00 00 62');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -151,7 +152,7 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x16, 0xff]);
-    expect(image[2]).toBe(15);
+    expect(image[1]).toBe(15);
     image[9] = 0x46;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
@@ -258,7 +259,7 @@ describe('capacity', () => {
     profile.layers[0]!.keys[3] = { type: 'string', text: '' };
     expect(computeCapacity(profile).strings).toBe(5);
     const image = encodeProfile(profile);
-    expect(image[4]).toBe(5);
+    expect(image[3]).toBe(10);
     expect(image[10]).toBe(0); // first string offset
     expect(image[12]).toBe(0);
     expect(image[14]).toBe(4); // empty string offset
@@ -322,7 +323,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[2] = 16;
+    image[1] = 16;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });
@@ -364,8 +365,8 @@ describe('decoder rejections', () => {
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
   });
-  it('chord window values 0–15 map to 0–75ms', () => {
-    for (let w = 0; w <= 15; w++) {
+  it('all eight selectors map to 20ms–90ms', () => {
+    for (let w = 4; w <= 18; w += 2) {
       const profile = defaultProfile(VARIANT_SIX_KEYS);
       profile.chordWindow = w;
       const decoded = decodeImage(encodeProfile(profile));
@@ -374,8 +375,8 @@ describe('decoder rejections', () => {
   });
   it('storedCrc reads little-endian', () => {
     const image = base();
-    image[6] = 0xba;
-    image[7] = 0xd3;
+    image[7] = 0xba;
+    image[8] = 0xd3;
     expect(storedCrc(image)).toBe(0xd3ba);
   });
 });
@@ -413,7 +414,7 @@ describe('expanded layers', () => {
     for (let startup = 0; startup < count; startup++) {
       profile.startupLayer = startup;
       const image = encodeProfile(profile);
-      expect(image[3]).toBe((count - 1) | (startup << 3));
+      expect(image[2]).toBe(variant | ((count - 1) << 1) | (startup << 4));
       const chordBase = 9 + (variant ? 15 : 22) * count;
       expect(image[chordBase]).toBe((count - 1) << 4);
       expect(image[chordBase + 3]).toBe(0x81 | ((count - 1) << 4));

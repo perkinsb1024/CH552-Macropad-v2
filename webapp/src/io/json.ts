@@ -4,7 +4,7 @@ import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS, isPreviousLayer } from '../model/actions';
 import { PALETTE } from '../model/palette';
 import { normalizeText } from '../model/strings';
-import { migrateLegacyProfile } from '../model/defaults';
+import { migrateLegacyProfile, migrateChordWindow } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
 export const JSON_VERSION = 15;
@@ -19,6 +19,7 @@ export interface LocalMetadata {
 export interface ExportedProfile {
   format: typeof JSON_FORMAT;
   version: typeof JSON_VERSION;
+  headerMarker: 'B';
   variant: 'six-key' | 'three-key';
   startupLayer: number;
   transparentBlack: boolean;
@@ -46,6 +47,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
   const out: ExportedProfile = {
     format: JSON_FORMAT,
     version: JSON_VERSION,
+    headerMarker: 'B',
     variant: profile.variant === VARIANT_THREE_KEYS ? 'three-key' : 'six-key',
     startupLayer: profile.startupLayer,
     transparentBlack: profile.transparentBlack,
@@ -159,7 +161,7 @@ function led(v: unknown, what: string): number {
 }
 
 /** Parses exported JSON and validates it with the same rules as interactive edits. */
-export function importProfile(text: string): { profile: Profile; meta: LocalMetadata } {
+export function importProfile(text: string): { profile: Profile; meta: LocalMetadata; notices?: string[] } {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
@@ -197,7 +199,12 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     return { layer: int(c.layer, `Chord ${i + 1} layer`), keyA: Math.min(a, b), keyB: Math.max(a, b), global: bool(c.global, `Chord ${i + 1} global`), action: action(c.action, `Chord ${i + 1}`) };
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
-  if (chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75) throw new ImportError('chordWindowMs must be 0–75 in steps of 5.');
+  const board = Number(raw.version) === 15 && raw.headerMarker === 'B';
+  if (Number(raw.version) === 15 && raw.headerMarker !== undefined && !board)
+    throw new ImportError('Unknown profile header marker.');
+  if (board ? chordWindowMs !== 0 && (chordWindowMs < 20 || chordWindowMs > 90 || chordWindowMs % 10 !== 0)
+    : chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75)
+    throw new ImportError(board ? 'chordWindowMs must be 20–90 in steps of 10.' : 'Legacy chordWindowMs must be 0–75 in steps of 5.');
   let rainbowPhase = DEFAULT_RAINBOW_PHASE;
   if (Number(raw.version) >= 5) {
     const degrees = int(raw.rainbowPhaseDegrees, 'rainbowPhaseDegrees');
@@ -242,14 +249,16 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   if (Number(raw.version) < 8 && allActions.some(a => a.type === 'consumerHold' || (a.type === 'scroll' && a.hold))) throw new ImportError('Consumer Hold and held scrolling require profile version 8.');
   migrateLegacyProfile(profile, Number(raw.version));
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
+  const notices = board ? (profile.chordWindow === 0 && profile.chords.length ? migrateChordWindow(profile) : []) : migrateChordWindow(profile);
+  if (board && profile.chordWindow === 0 && !profile.chords.length) profile.chordWindow = 8;
   const issues = validateProfile(profile);
   // Oversized imports remain editable and exportable; encoding/saving stays blocked.
-  const invalid = issues.filter(i => i.where !== 'Storage');
+  const invalid = issues.filter(i => i.where !== 'Storage' && !(i.where === 'Chord Window' && profile.chordWindow === 0 && profile.chords.length));
   if (invalid.length) throw new ImportError(invalid.map((i) => `${i.where}: ${i.message}`).join('\n'));
   const meta: LocalMetadata = {};
   if (isRecord(raw.localMetadata)) {
     if (Array.isArray(raw.localMetadata.layerNames)) meta.layerNames = raw.localMetadata.layerNames.map((n) => (typeof n === 'string' ? n : ''));
     if (typeof raw.localMetadata.profileName === 'string') meta.profileName = raw.localMetadata.profileName;
   }
-  return { profile, meta };
+  return { profile, meta, ...(notices.length ? { notices } : {}) };
 }

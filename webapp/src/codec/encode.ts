@@ -1,6 +1,6 @@
 import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
-  TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
+  TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_INDICATOR_SHIFT,
   LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, keyCount, layerSize,
 } from '../model/constants';
@@ -94,16 +94,16 @@ export function encodeProfile(profile: Profile): Uint8Array {
     macroEnd += 2 * macro.actions.length + 1;
     return start;
   });
-  image[0] = 0x4d; // M
-  image[1] = 0x50; // P
-  image[2] = FORMAT_VERSION;
+  image[0] = HEADER_MARKER;
+  image[1] = FORMAT_VERSION;
   const timers = profile.timedActions ?? [];
-  image[3] = (profile.layers.length - 1) | (profile.startupLayer << 3) | ((timers.length & 3) << 6);
-  image[4] = poolLength | ((timers.length >> 2) << 7);
-  image[5] = profile.variant | (chords.length << 1) | (profile.transparentBlack ? 0x80 : 0);
-  image[8] = (profile.chordWindow & 15) |
+  image[2] = profile.variant | ((profile.layers.length - 1) << 1) | (profile.startupLayer << 4);
+  image[3] = poolLength << 1;
+  image[4] = timers.length | (chords.length << 3);
+  image[5] = ((profile.chordWindow - 4) / 2) | (profile.transparentBlack ? 0x08 : 0) |
     (profile.rainbowPhase << HEADER_RAINBOW_PHASE_SHIFT) |
     (profile.rainbowSpeed << HEADER_RAINBOW_SPEED_SHIFT);
+  // Byte 6 is allocated for future sleep settings; this implementation requires zero.
 
   profile.layers.forEach((layer, li) => {
     const base = HEADER_SIZE + size * li;

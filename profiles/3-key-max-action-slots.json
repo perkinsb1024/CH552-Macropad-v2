@@ -1,6 +1,7 @@
 {
   "format": "universal-macropad-profile",
   "version": 15,
+  "headerMarker": "B",
   "variant": "three-key",
   "startupLayer": 0,
   "transparentBlack": false,

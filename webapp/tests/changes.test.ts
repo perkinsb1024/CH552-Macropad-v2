@@ -52,7 +52,7 @@ describe('unsaved profile changes', () => {
     edited.chordWindow = 0;
     expect(profileChanges(saved, edited)).toEqual(expect.arrayContaining([
       { where: 'Startup Layer', before: 'Layer 1', after: 'Layer 2' },
-      { where: 'Chord Window', before: `${saved.chordWindow * 5}ms`, after: 'Disabled' },
+      { where: 'Chord Window', before: `${saved.chordWindow * 5}ms`, after: 'Selection Required' },
       { where: 'Layer 2', after: 'Added' },
     ]));
     expect(profileChanges(edited, saved)).toContainEqual({ where: 'Layer 2', before: 'Removed' });

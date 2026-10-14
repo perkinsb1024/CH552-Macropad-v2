@@ -392,7 +392,8 @@ by regression tests. USB product names are **3-Key Macropad** and **6-Key Macrop
 ## Action Ordering and Holds (V14)
 
 The active editor exports JSON v15, writes binary format 15 and stores local
-profiles under `format-v15:`. Its codec uses the reordered types in
+profiles under `format-v15:board:`. JSON and drafts use `headerMarker: "B"`,
+while binary images use marker `0x42`, version byte 1 and CRC bytes 7–8. Its codec uses the reordered types in
 [the complete format reference](../protocol/config-v15.md), including swapped
 **Pause**/**Type Text** records and the shared layer action modes. Migration
 decodes every binding, both timer fields and every macro step using the source
@@ -433,3 +434,27 @@ The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
 outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
 and file checksums. Published v14 firmware routes there; the shared uploader
 continues to bundle the published v14 release.
+
+
+## Header and Chord Window
+
+The active v15 editor keeps the nine-byte header and 119-byte payload. It packs
+the saved timer count into byte 4 bits 0–2, chords into bits 3–7, the shifted
+pool length into byte 3, and window/transparency/rainbow settings into byte 5.
+Byte 6 is allocated for future sleep options and currently remains zero.
+All existing record sizes, four user timers and per-layer **Auto-Sleep** remain.
+
+**Chord Window** offers 20ms–90ms in 10ms steps, defaulting to 40ms. With no
+chords, input is immediate. Importers recognize legacy `MP` before reading its
+version at byte 2 and verify its source CRC at bytes 6–7 before conversion.
+Legacy windows round to the nearest supported 10ms value, with ties upward
+and clamping to the supported range; changed values show a migration notice.
+Saved chords with an old zero window retain their bindings and require an
+explicit window selection before encoding or saving. They remain exportable
+as JSON and recoverable as drafts while awaiting that selection.
+
+Earlier v15 draft keys remain unchanged; recovered profiles use the new
+`universal-macropad:format-v15:board:draft:six-key` or corresponding three-key
+key on subsequent persistence. The editor retains 5ms units internally for
+profile comparisons and old-draft interpretation; only even values 4–18 are
+valid device settings. Zero is an editor-only unresolved migration state.

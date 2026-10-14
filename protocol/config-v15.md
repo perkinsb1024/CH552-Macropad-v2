@@ -40,15 +40,27 @@ legacy padding is no longer ignored.
 
 ## Version and Compatibility
 
-Header byte 2 is `15`. GET_INFO advertises configuration format 15 and transport
-version 1. Firmware accepts only v15. Older DataFlash remains readable and
+Header byte 0 is ASCII `B` (`0x42`, for “board”); byte 1 is `15`. GET_INFO advertises configuration format 15 and transport
+version 1. Firmware accepts only B-header v15 images. Older DataFlash remains readable and
 unchanged, with physical action bindings inactive until a valid v15 image is
 explicitly uploaded. Firmware updates do not migrate or erase profiles.
 
 V14 action encodings, section sizes and palette entries are unchanged in v15.
-A v14 converter must clear bit 1 of every layer-option byte, set header byte 2
-to `15`, and recompute CRC. V14 accepted this bit as an ignored legacy permission;
-its old value must never enable **Auto-Sleep** during migration.
+A converter must validate the source CRC using its marker-specific layout,
+decode semantic fields, clear bit 1 of every v14 layer-option byte, and encode
+the B/v15 header and its CRC. V14 accepted this layer bit as an ignored legacy
+permission; its old value must never enable **Auto-Sleep** during migration.
+Legacy `MP` uses version byte 2 and CRC bytes 6–7; `B` uses version byte 1 and
+CRC bytes 7–8. Earlier MP/v15 image imports retain their per-layer sleep flags.
+The marker must be checked before interpreting the version or checksum.
+Reordering bytes or relabeling a legacy version without decoding is insufficient.
+
+Legacy windows use 0–75ms in 5ms steps. For saved chords, the editor chooses
+the nearest supported 10ms value, rounds ties upward and clamps to 20ms–90ms.
+Changed windows produce a migration notice. An old zero window with saved
+chords retains all bindings and requires explicit **Chord Window** selection
+before saving. No migration silently activates disabled chords. Empty chord
+collections can adopt a supported window without affecting input behavior.
 
 V13 images cannot be relabeled as v15. A converter must decode the source
 format at every binding and macro-step site, then re-encode using this document:
@@ -81,7 +93,11 @@ this map; the version byte alone does not distinguish unpublished allocations.
 
 ## Configurator Profiles and Migration
 
-The active editor exports `universal-macropad-profile` JSON with `version: 15`.
+The active editor exports `universal-macropad-profile` JSON with `version: 15`
+and `headerMarker: "B"`. `chordWindowMs` stores 20–90 in 10ms steps; zero
+is an editor-only unresolved value for imported disabled chords and cannot
+be encoded for the device. V15 JSON without `headerMarker` uses the legacy
+window policy above. Unsupported v15 header markers are rejected.
 Actions use named types rather than numeric wire codes, so existing v13 action
 objects retain their meanings when imported. The new action objects are:
 
@@ -101,8 +117,10 @@ Each JSON layer also has `autoSleep: boolean`, exposed as **Auto-Sleep** in
 source bytes, files and draft namespaces remain unchanged. Current v15 JSON and
 drafts preserve the option, including layer copy/paste, comparisons and undo.
 
-Local drafts use `universal-macropad:format-v15:draft:six-key` or
-`universal-macropad:format-v15:draft:three-key`. The editor recovers older drafts
+Local drafts use `universal-macropad:format-v15:board:draft:six-key` or
+`universal-macropad:format-v15:board:draft:three-key`. Draft records identify
+the layout with `headerMarker: "B"`; earlier v15 draft keys remain recoverable
+and unchanged. The editor recovers older drafts
 without overwriting their namespaces or metadata. Imported profiles and older
 DataFlash remain unchanged until the user clicks **Save to Device**. Oversized
 older imports remain editable and exportable, with saving blocked until repaired.
@@ -117,21 +135,42 @@ The nine-byte header is:
 
 | Byte | Field | Encoding |
 | --- | --- | --- |
-| 0–1 | Marker | ASCII `MP` |
-| 2 | Format version | `15` |
-| 3 | Layers, startup layer, number of timed actions | Bits 0–2: layer count minus one<br>Bits 3–5: startup layer<br>Bits 6–7: low two bits of the number of timed actions |
-| 4 | **String**-pool length and number of timed actions | Bits 0–6: used pool bytes<br>Bit 7: high bit of the number of timed actions |
-| 5 | Hardware and chords | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–6: chord count<br>Bit 7: transparent black key LEDs (`0` = opaque, `1` = transparent) |
-| 6–7 | CRC | CRC16-CCITT-FALSE, low byte first |
-| 8 | **Chord Window** and rainbow settings | Bits 0–3: chord duration in 5ms units<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra Fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra Slow**) |
+| 0 | Marker | ASCII `B` (`0x42`) |
+| 1 | Format version | `15`, full eight-bit version |
+| 2 | Hardware and layers | Bit 0: physical variant (`0` = six keys, `1` = three keys)<br>Bits 1–3: layer count minus one<br>Bits 4–6: startup layer<br>Bit 7: reserved, zero |
+| 3 | **String**-pool length | Bit 0: reserved, zero<br>Bits 1–7: used pool bytes, 0–127 |
+| 4 | Number of **Timed Actions** and chord count | Bits 0–2: saved timed-action count, 0–4<br>Bits 3–7: chord count, 0–31 |
+| 5 | **Chord Window** and LED settings | Bits 0–2: window selector<br>Bit 3: transparent black key LEDs (`0` = opaque, `1` = transparent)<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra Fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra Slow**) |
+| 6 | **Auto-Sleep** settings allocation | Bits 0–4: allocated, meanings not assigned<br>Bits 5–7: reserved, zero<br>The entire byte must currently be zero |
+| 7–8 | CRC | CRC16-CCITT-FALSE, low byte first |
 
-The number of configured timed actions is `(byte3 >> 6) | ((byte4 >> 7) << 2)`
-and must be 0–4. This is a saved configuration value; elapsed timer state is
-maintained in RAM and does not update DataFlash.
-Layer and startup-layer indices are zero-based. The startup layer must exist.
-The chord window is 0–75ms in 5ms units; zero disables chord recognition.
-A second press must arrive strictly before the window expires to activate a
-mapped chord.
+Decode physical variant as `byte2 & 1`, layer count as `((byte2 >> 1) & 7) + 1`,
+startup layer as `(byte2 >> 4) & 7`, pool length as `byte3 >> 1`, timed-action
+count as `byte4 & 7`, and chord count as `byte4 >> 3`. Layer limits are 1–5 on
+six-key hardware and 1–7 on three-key hardware. The startup layer must exist.
+Timer counts 5–7, nonzero reserved bits and nonzero byte 6 are rejected.
+The saved timer count excludes the runtime-only **Auto-Sleep** timer; elapsed
+runtime state does not update DataFlash. Existing per-layer sleep enablement,
+fixed timeout and wake behavior remain in effect.
+
+| Selector | **Chord Window** |
+| --- | --- |
+| `000` | 20ms |
+| `001` | 30ms |
+| `010` | 40ms |
+| `011` | 50ms |
+| `100` | 60ms |
+| `101` | 70ms |
+| `110` | 80ms |
+| `111` | 90ms |
+
+With saved chords, duration is `20 + 10 * (byte5 & 7)` milliseconds. No selector
+means **Off**; a chord count of zero disables recognition and bypasses the window.
+The second press must arrive strictly before expiry. At expiry the pending
+single-key action resolves; early release still resolves its press and release,
+and uint16 timestamp wrap preserves the same boundary. The default is 40ms.
+Transparency is `(byte5 & 8) != 0`, rainbow phase is `(byte5 >> 4) & 3`, and
+rainbow speed is `byte5 >> 6`. Phase and speed retain their existing meanings.
 
 **Rainbow** phase settings use hue increments `0`, `21`, `42`, and `109` in a
 256-step cycle. Three-key positions are `0, 1, 2`; six-key positions are
@@ -160,7 +199,7 @@ The frame interval is independent of phase spacing:
 Spacing applies to every layer's rainbow indication, including timed and blinking
 indications. Solid colors and pressed-key overrides retain their existing behavior.
 Hardware color previews use the saved profile's phase spacing and speed; save an edited
-setting before previewing it. Bits 0–3 still control chords independently.
+setting before previewing it. Bits 0–2 control the window independently; bit 3 controls transparency.
 
 ## CRC
 
@@ -170,7 +209,7 @@ setting before previewing it. Bits 0–3 still control chords independently.
 | Initial value | `0xFFFF` |
 | Input/output reflection | None |
 | Final XOR | `0x0000` |
-| Covered bytes, in order | 0–5, then 8–127 (skip the stored CRC at 6–7) |
+| Covered bytes, in order | 0–6, then 9–127 (skip the stored CRC at 7–8) |
 
 ## Layers and LED Behavior
 
@@ -255,7 +294,7 @@ the bootloader, even with an invalid profile or layer-option bit 1 set. The
 **Enter Bootloader** button in the firmware installer uses the HID command below.
 In **Always On** mode, idle keys use the
 indicator color at the brightness selected by bit 0. Pressed keys normally use
-their per-key color at full brightness. With header byte 5 bit 7 set, a pressed
+their per-key color at full brightness. With header byte 5 bit 3 set, a pressed
 key whose color is index 15 (**Off**) instead displays its idle background,
 including dimming and animated **Rainbow**. Without an always-on background it is dark.
 
@@ -293,7 +332,7 @@ strictly ascending. Multiple actions may share one string.
 | **String**-Pool Property | Encoding |
 | --- | --- |
 | Location | Immediately after the last timed action (or last chord when no timers exist) |
-| Used length | Header byte 4 bits 0–6 |
+| Used length | Header byte 3 bits 1–7 |
 | **String** encoding | Zero-terminated printable US ASCII (`0x20`–`0x7E`), tab (`0x09`), or LF (`0x0A`) |
 | Action offset | Zero-based byte offset from the start of the pool; must point to a string start |
 
@@ -988,8 +1027,12 @@ The complete image must satisfy:
 
 `9 + layerCount * layerSize + chordCount * 3 + timerCount * 6 + poolBytes + macroBytes <= 128`.
 
-Chord count is encoded in six bits (0–63), but the capacity formula limits the
-number that can actually fit. Pair indices must be valid for the hardware
+Chord count is encoded in five bits (0–31), but capacity and unique valid
+identifiers limit the number that can actually fit. One six-key layer permits
+30 identifiers including global chords. With two or more layers, space permits
+at most 25 six-key or 29 three-key chords, even before identifier limits.
+One three-key layer permits six identifiers. Thus all valid profiles fit the
+five-bit count; 31 does not bypass structural validation. Pair indices must be valid for the hardware
 variant: 0–14 for six keys, 0–2 for three keys. Pool length is encoded in seven
 bits (0–127) and must fit the remaining image space. A nonempty pool must end in
 NULL. **String** sharing includes keys, encoder actions, chords, expiry and next-input
@@ -1127,8 +1170,14 @@ may be retried after a lost reply; a repeated successful commit does not write
 flash again. After commit, the host should independently read all 128 flash
 bytes and compare them with the image it sent.
 
-For a changed image, firmware invalidates the two-byte magic, writes and checks
-the body, restores the magic last, and compares the stored image byte for byte.
+For a changed image, firmware clears and verifies marker byte 0, writes and
+individually verifies changed bytes 1–127 (including version and CRC), restores
+`B` last, and compares all 128 stored bytes with the intended image. Identical
+images require no writes. Configuration erasure clears and verifies only byte 0,
+invalidating both B and legacy MP images while leaving byte 1 intact.
+Interrupted saves after verified invalidation normally leave an invalid marker;
+this does not provide rollback or protection against arbitrary hardware faults.
+The final full-image comparison and CRC validation remain required.
 If a write fails, the previous active RAM configuration remains in use so the
 host can retry. An interrupted save may leave invalid flash; at startup, the
 device leaves keys and encoder actions inactive and blinks one red LED at 1 Hz
@@ -1157,8 +1206,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,210 | 126 | 105 | 365 | 134 | 90 |
-| Three keys | 14,208 | 128 | 105 | 356 | 134 | 93 |
+| Six keys | 14,136 | 200 | 105 | 365 | 134 | 90 |
+| Three keys | 14,132 | 204 | 105 | 356 | 134 | 93 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator

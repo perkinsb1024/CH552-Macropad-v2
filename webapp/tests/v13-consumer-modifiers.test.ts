@@ -64,7 +64,7 @@ it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting 
   const read = decodeImage(image); expect(read).toEqual({ ok: true, profile: p });
   if (!read.ok) throw new Error(read.detail);
   const migrated = encodeProfile(read.profile);
-  expect(migrated[2]).toBe(15);
+  expect(migrated[1]).toBe(15);
   for (const offset of offsets) expect(migrated[offset]).toBe(0x34);
   expect(validator.accepts(migrated, variant)).toBe(true);
   const json = JSON.parse(exportProfile(p)); json.version = 12;

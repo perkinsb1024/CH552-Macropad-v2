@@ -107,3 +107,15 @@ export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VE
   }
   return profile;
 }
+
+/** Convert legacy 5ms units after source validation, retaining disabled bindings. */
+export function migrateChordWindow(profile: Profile): string[] {
+  const old = profile.chordWindow * 5;
+  if (old === 0 && profile.chords.length) {
+    return ['Chords were disabled in the imported profile. Their bindings are retained; select a Chord Window before saving to enable them.'];
+  }
+  profile.chordWindow = Math.max(4, Math.min(18, Math.round(profile.chordWindow / 2) * 2));
+  return profile.chords.length && old !== profile.chordWindow * 5
+    ? [`Chord Window changed from ${old}ms to ${profile.chordWindow * 5}ms using the nearest supported value (ties upward). Review it before saving.`]
+    : [];
+}

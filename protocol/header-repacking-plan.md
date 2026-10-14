@@ -1,7 +1,9 @@
 # Header Repacking Target and Firmware Plan
 
 Recorded October 13, 2026, on `experiment/v15-updated-header`.
-Status: user-approved header target; firmware implementation has not started.
+Status: implemented. Firmware checkpoint: `a50b2e4`; configurator, migration
+and documentation follow in the integration checkpoint. New sleep behaviors
+remain deferred until their five-bit meanings are defined.
 The user finalized marker ASCII `B` (`0x42`, for “board”) and retained format
 version 15 because it remains under active development and unpublished.
 Only one device runs the earlier provisional v15 firmware. The user will erase
@@ -232,7 +234,8 @@ encoder, decoder, CRC helpers, simulator, JSON/drafts, device comparison/routing
 window controls and migration. Produce a complete standalone target-format
 v15 reference; preserve the earlier header specification as development history. Run `npm run build`
 after web changes and the final `npm run verify:deploy` gate after integration.
-These follow-ups are outside this documentation-only task.
+The user subsequently authorized these integration follow-ups on October 14,
+2026; the active editor now implements the target and the approved migration.
 
 ## Required Firmware Validation
 
@@ -267,10 +270,54 @@ These follow-ups are outside this documentation-only task.
   outstanding until actual hardware results are provided; no per-build stack
   high-water requirement is added.
 
+## Implemented Checkpoints and Measurements
+
+The firmware checkpoint is `a50b2e4`, after format-identification decisions at
+`0be9ba4`. Baseline source `be181a3` retains firmware from `a14798a`.
+Both geometries fit the real 14,336-byte limit without feature cuts:
+
+| Measurement | Six Keys | Three Keys |
+| --- | ---: | ---: |
+| Baseline flash | 14,210 | 14,208 |
+| Repacked flash | 14,136 | 14,132 |
+| Flash savings | 74 | 76 |
+| Free flash | 200 | 204 |
+| Stack reserve | 90 | 93 |
+| Total external RAM | 752 | 743 |
+
+Object CSEG/CONST/GSINIT sums, including builder padding, attribute 34/36 bytes
+of saving to config validation/accessors and 40/40 to the marker-last save
+sequence. Protocol and sketch modules each have zero net change. These are
+measured module deltas, not isolated timer-count-only costs or predictions for
+another firmware source. No additional fitting optimization was necessary.
+The local optimization notebook records dependencies and independent application
+requirements; durable measurements are in [Header Results](header-repacking-results.json).
+
+Complete host suites pass with and without preview, including all geometries,
+every window boundary and timestamp wrap, zero-chord input, independent CRC
+references and all image bits, geometry/count bounds, full-capacity strings,
+four user timers, saved/preview LED settings, every write position, failed
+final comparison after marker restoration and marker-only erase behavior.
+Native normal and erase builds pass on both geometries; native firmware retains
+layout/startup/IRQ-parameter checks and the original stack/RAM allocation.
+
+The configurator preserves the slider, offering 20ms–90ms in 10ms steps. Pending
+disabled-chord imports keep their bindings and block saving until slider input
+or explicit **Use 40ms** confirmation. Removing every pending chord restores
+the default window; undo restores the pending state. Binary, JSON, draft,
+simulator and comparison paths use the new layout, with earlier drafts retained
+under their original keys. V14 and all other frozen archives remain unchanged.
+The complete standalone [Format v15 Reference](config-v15.md) describes the
+implemented format; the earlier header is preserved in
+[Earlier V15 MP Header](v15-mp-header-history.md).
+
 ## Scope of This Task
 
-This task records the target and implementation plan only. It does not implement
-firmware, assign the five sleep-setting bits, create a release, flash hardware,
-change the active configurator or publish a deployment. Marker `B` and version 15
-are finalized; legacy window migration is defined above, while the five sleep-setting meanings
-remain undecided.
+The initial request recorded the target and plan only. The October 14 follow-up
+authorized implementation, checkpoint commits, configurator integration and
+documentation after firmware fit. Marker `B`, version 15 and legacy window
+migration are finalized. The five sleep-setting meanings and new sleep behavior
+remain deferred; byte 6 is zero and existing sleep behavior is preserved.
+No release generation, device erase/flash, push or publication occurred.
+Hardware validation remains outstanding; the user will erase the sole earlier
+v15 device after this firmware work is complete.

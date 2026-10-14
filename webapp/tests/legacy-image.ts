@@ -1,6 +1,24 @@
 import { keyCount, layerSize } from '../src/model/constants';
+/** Reconstruct the earlier MP/v15 header; record offsets and actions stay intact. */
+export function legacyHeader(image: Uint8Array): Uint8Array {
+  if (image[0] !== 0x42) return image;
+  const layers = image[2]!;
+  const pool = image[3]! >> 1;
+  const counts = image[4]!;
+  const led = image[5]!;
+  const version = image[1]!;
+  const window = 4 + 2 * (led & 7);
+  if (window > 15) throw new Error('Window cannot be represented in a legacy header');
+  image.fill(0, 0, 9);
+  image.set([0x4d, 0x50, version,
+    ((layers >> 1) & 7) | (((layers >> 4) & 7) << 3) | ((counts & 3) << 6),
+    pool | ((counts & 4) << 5), (layers & 1) | ((counts >> 3) << 1) | ((led & 8) << 4),
+    0, 0, window | (led & 0xf0)]);
+  return image;
+}
 /** Reconstruct published v13 bytes without changing parameters or offsets. */
 export function legacyV13Codes(image: Uint8Array): void {
+  legacyHeader(image);
   if (image[2]! < 14) return;
   const variant = (image[5]! & 1) as 0 | 1;
   const layers = (image[3]! & 7) + 1;

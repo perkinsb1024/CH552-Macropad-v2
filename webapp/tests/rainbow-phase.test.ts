@@ -14,12 +14,12 @@ import { baseline, profile, toasts, undo, updateProfile } from '../src/ui/store'
 describe('rainbow phase spacing', () => {
   it.each([0, 1] as Variant[])('round-trips every choice on variant %s without disturbing the chord window', (variant) => {
     for (let phase = 0; phase < 4; phase++) {
-      for (const chordWindow of [0, 8, 15]) {
+      for (const chordWindow of [4, 8, 18]) {
         const p = defaultProfile(variant);
         p.rainbowPhase = phase;
         p.chordWindow = chordWindow;
         const image = encodeProfile(p);
-        expect(image[8]).toBe(chordWindow | (phase << 4) | 0x40);
+        expect(image[5]).toBe((chordWindow - 4) / 2 | (phase << 4) | 0x40);
         expect(decodeImage(image)).toEqual({ ok: true, profile: p });
         const json = exportProfile(p);
         expect(JSON.parse(json).rainbowPhaseDegrees).toBe(RAINBOW_PHASE_DEGREES[phase]);

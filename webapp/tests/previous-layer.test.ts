@@ -1,3 +1,4 @@
+import { legacyHeader } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { defaultProfile } from '../src/model/defaults';
@@ -68,7 +69,7 @@ it('accepts only configured layer indices or 255 and rejects previous in v6 and 
     }
   }
   const p = defaultProfile(0); p.layers[0]!.keys[0] = previous;
-  const image = encodeProfile(p); image[2] = 6; sealImage(image);
+  const image = encodeProfile(p); legacyHeader(image); image[2] = 6; sealImage(image);
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);
   image[2] = 7; image[9] = 0x2a; sealImage(image);
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);

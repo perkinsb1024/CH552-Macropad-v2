@@ -22,7 +22,7 @@ export function ViewerChords() {
         {c.global && <span class="tab-badge">All Layers</span>}
       </li>)}
     </ul> : <p class="muted">No chords on this layer.</p>}
-    {chords.length > 0 && p.chordWindow === 0 && <p class="hint warn">Chords are disabled in this profile.</p>}
+    {chords.length > 0 && p.chordWindow === 0 && <p class="hint warn">These imported chords need a Chord Window selected before saving.</p>}
   </section>;
 }
 

@@ -83,11 +83,11 @@ it('keeps manual browsing through polls, warns persistently, then follows the ne
   expect(selectedLayer.value).toBe(1);
   expect(text(ProfileViewer())).toContain('Your macropad is on Layer 1');
   const device = conn.transport as SimulatedDevice;
-  device.active[3] = (device.active[3]! & ~56) | (1 << 3);
+  device.active[2] = (device.active[2]! & ~112) | (1 << 4);
   await vi.advanceTimersByTimeAsync(510);
   expect(selectedLayer.value).toBe(1);
   expect(text(ProfileViewer())).not.toContain('Your macropad is on');
-  device.active[3] &= ~56;
+  device.active[2] &= ~112;
   await vi.advanceTimersByTimeAsync(510);
   expect(selectedLayer.value).toBe(0);
   expect(profile.value).toBe(loaded);
@@ -97,7 +97,7 @@ it('keeps manual browsing through polls, warns persistently, then follows the ne
 it('follows the current runtime layer rather than the startup layer on initial load and reconnect', async () => {
   const conn = await connect();
   const device = conn.transport as SimulatedDevice;
-  device.active[3] = (device.active[3]! & ~56) | (1 << 3);
+  device.active[2] = (device.active[2]! & ~112) | (1 << 4);
   await vi.advanceTimersByTimeAsync(510);
   dispose = followDeviceLayer();
   expect(selectedLayer.value).toBe(1);
