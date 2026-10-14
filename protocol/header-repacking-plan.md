@@ -2,6 +2,11 @@
 
 Recorded October 13, 2026, on `experiment/v15-updated-header`.
 Status: user-approved header target; firmware implementation has not started.
+The user finalized marker ASCII `B` (`0x42`, for “board”) and retained format
+version 15 because it remains under active development and unpublished.
+Only one device runs the earlier provisional v15 firmware. The user will erase
+it after this firmware work is complete; no deployed devices will require
+compatibility with that firmware.
 The user selected the three-bit **Chord Window**, five-bit chord count and
 single-byte marker, and then selected windows from 20ms through 90ms.
 The subsequent LED packing refinement puts transparency before the rainbow
@@ -28,8 +33,8 @@ rejects nonzero reserved bits.
 
 | Byte | Field | Encoding and Validation |
 | --- | --- | --- |
-| 0 | Marker | One fixed nonzero byte, distinct from legacy `M` (`0x4D`). Exact value remains to be finalized. Zero is invalid. |
-| 1 | Format version | Full eight-bit version; no borrowed setting bits. Exact version remains to be finalized. |
+| 0 | Marker | ASCII `B` (`0x42`, for “board”), distinct from legacy `M` (`0x4D`). Zero is invalid. |
+| 1 | Format version | `15`, a full eight-bit version with no borrowed setting bits. |
 | 2 | Hardware and layers | Bit 0: physical variant (`0` = six keys, `1` = three keys). Bits 1–3: layer count minus one. Bits 4–6: startup layer. Bit 7: reserved. |
 | 3 | **String**-pool length | Bit 0: reserved. Bits 1–7: used string-pool bytes, 0–127; section bounds still limit actual capacity. |
 | 4 | Number of **Timed Actions** and chord count | Bits 0–2: number of saved timed-action records, 0–4. Bits 3–7: chord count, 0–31; bounds and unique chord identifiers still apply. |
@@ -123,13 +128,13 @@ records where geometry, uniqueness or capacity checks reject them.
    These are historical measurements to confirm, not promised new results.
    Use temporary outputs and preserve checked-in releases.
 
-2. Finalize format identification. Proposed implementation defaults are marker
-   `0xA5` and configuration format 16, distinguishing this target from existing
-   unpublished v15 images as well as published legacy formats. These values are
-   recommendations, not additional user-approved wire assignments. Define marker,
-   header offsets, masks and shifts in `src/config.h`; retain the full version
-   byte and transport version 1. Do not overwrite the current format reference
-   or silently reinterpret an existing version's images.
+2. Use the finalized format identification: marker ASCII `B` (`0x42`) and
+   configuration format 15. The distinct marker identifies this repacking of
+   the unpublished, actively developed v15 format; earlier `MP`/v15 images keep
+   their original interpretation when imported. Define marker, header offsets,
+   masks and shifts in `src/config.h`; retain the full version byte and transport
+   version 1. Preserve the earlier header specification as development history
+   when updating the complete v15 reference to the implemented target.
 
 3. Repack validation and accessors in `src/config.c`. Check the new marker,
    version, hardware, reserved bits and layer/startup bounds. Decode the contiguous
@@ -191,10 +196,18 @@ This retains the current update model and avoids adding a legacy decoder to tigh
 firmware flash. No automatic DataFlash rewrite occurs on boot or firmware update.
 
 The later configurator should identify layout from the marker first: legacy `MP`
-uses version byte 2; the new marker uses version byte 1. Validate the source CRC
+uses version byte 2; `B` uses version byte 1. This includes earlier `MP`/v15
+development images; both layouts carry version 15, so the version alone is
+insufficient. Validate the source CRC
 with the source layout, decode to semantic settings/actions, and then encode and
 seal the target layout. Reordering header bytes without source decoding and CRC
 validation is insufficient.
+
+GET_INFO continues advertising format 15 and transport 1. Supporting earlier
+provisional v15 firmware or detecting it in the editor is unnecessary: the user
+will erase the sole device running it after this firmware work is complete.
+Marker-based source decoding remains relevant to any retained earlier image
+files and to published legacy formats.
 
 Legacy windows are 0–75ms in 5ms steps; the target is 20–90ms in 10ms steps.
 Matching 20ms–70ms values can migrate exactly. Smaller values, intermediate values
@@ -206,12 +219,18 @@ bindings. The old window policy is an open migration decision, not a firmware
 implementation prerequisite. Empty chord collections need no window conversion
 to preserve recognition behavior.
 
-Before active configurator changes, freeze the outgoing format from its finalized
-source with tests, provenance and checksums as required by
-[Frozen Configurators](../webapp/archives/README.md). Later work must update the
+The outgoing published v14 format is already frozen from finalized source
+`0fb61321d64343b78ebacfb892c456101b15bac8` in
+`webapp/public/versions/format-v14/`, with recorded source validation, provenance
+and checksums as required by [Frozen Configurators](../webapp/archives/README.md).
+The archive index and active editor routing include it; `npm run verify:archives`
+passed on October 13, 2026. Preserve that archive unchanged. The current v15
+editor already supports per-layer **Auto-Sleep**; this task continues its
+development rather than advancing to v16 or freezing the provisional v15 layout.
+Later work must update the
 encoder, decoder, CRC helpers, simulator, JSON/drafts, device comparison/routing,
 window controls and migration. Produce a complete standalone target-format
-reference; retain the existing v15 reference as historical. Run `npm run build`
+v15 reference; preserve the earlier header specification as development history. Run `npm run build`
 after web changes and the final `npm run verify:deploy` gate after integration.
 These follow-ups are outside this documentation-only task.
 
@@ -252,5 +271,6 @@ These follow-ups are outside this documentation-only task.
 
 This task records the target and implementation plan only. It does not implement
 firmware, assign the five sleep-setting bits, create a release, flash hardware,
-change the active configurator or publish a deployment. Marker/version and legacy
-window-migration choices are explicitly separated from the approved bit layout.
+change the active configurator or publish a deployment. Marker `B` and version 15
+are finalized; legacy window-migration choices and the five sleep-setting meanings
+remain undecided.
