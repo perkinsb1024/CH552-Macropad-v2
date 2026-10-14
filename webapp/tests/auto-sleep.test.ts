@@ -11,7 +11,7 @@ import { exportProfile, importProfile } from '../src/io/json';
 import { draftKey, loadDraft, storeDraft } from '../src/io/drafts';
 import { LayerOptions } from '../src/ui/components/LayerOptions';
 import { ProfilePanel } from '../src/ui/components/ProfilePanel';
-import { profile, selectedLayer, updateProfile, undo, redo, disconnect } from '../src/ui/store';
+import { autoSleepMode, baseline, profile, selectedLayer, setAutoSleepMode, swapLayers, removeLayer, addLayer, updateProfile, undo, redo, disconnect } from '../src/ui/store';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 
 let validator: ReturnType<typeof createFirmwareValidator>;
@@ -67,6 +67,79 @@ describe('per-layer auto-sleep', () => {
     profile.value.layers[0]!.autoSleep = true;
     profile.value = structuredClone(profile.value);
     expect(selected()).toBe('Per Layer');
+  });
+
+  it.each([0, 1] as const)('restores modified layer choices after global toggles on variant %s', variant => {
+    profile.value = defaultProfile(variant);
+    profile.value.layers.push(emptyLayer(variant));
+    selectedLayer.value = 0;
+    setAutoSleepMode('Per Layer');
+    // Exercise actual layer controls to establish a custom mixed pattern.
+    const checkbox = elements(LayerOptions()).find(node => node.props.type === 'checkbox')!;
+    (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: true } });
+    const choices = () => profile.value!.layers.map(layer => layer.autoSleep);
+    expect(choices()).toEqual([true, false, false]);
+    const custom = encodeProfile(profile.value!);
+    for (const global of ['On', 'Off', 'On', 'Off'] as const) {
+      setAutoSleepMode(global);
+      expect(choices()).toEqual([global === 'On', global === 'On', global === 'On']);
+      // Other profile edits and a save baseline must not lose the memory.
+      updateProfile(p => { p.sleepTimeoutMinutes = p.sleepTimeoutMinutes === 30 ? 60 : 30; });
+      baseline.value = structuredClone(profile.value!);
+      setAutoSleepMode('Per Layer');
+      expect(choices()).toEqual([true, false, false]);
+      expect(autoSleepMode.value).toBe('Per Layer');
+    }
+    setAutoSleepMode('On'); setAutoSleepMode('Off'); setAutoSleepMode('Per Layer');
+    expect(choices()).toEqual([true, false, false]);
+    updateProfile(p => { p.sleepTimeoutMinutes = 30; });
+    expect(encodeProfile(profile.value!)).toEqual(custom);
+  });
+
+  it('restores both the mode and remembered choices through undo and redo', () => {
+    profile.value = defaultProfile(0);
+    profile.value.layers[0]!.autoSleep = true;
+    profile.value = structuredClone(profile.value);
+    const choices = () => profile.value!.layers.map(layer => layer.autoSleep);
+    setAutoSleepMode('On');
+    setAutoSleepMode('Off');
+    setAutoSleepMode('Per Layer');
+    expect(choices()).toEqual([true, false]);
+    undo(); expect(choices()).toEqual([false, false]); expect(autoSleepMode.value).toBe('Off');
+    undo(); expect(choices()).toEqual([true, true]); expect(autoSleepMode.value).toBe('On');
+    redo(); expect(choices()).toEqual([false, false]);
+    redo(); expect(choices()).toEqual([true, false]); expect(autoSleepMode.value).toBe('Per Layer');
+    // Revising a choice replaces the remembered value, including uniform choices.
+    updateProfile(p => { p.layers[0]!.autoSleep = false; });
+    setAutoSleepMode('On'); setAutoSleepMode('Per Layer');
+    expect(choices()).toEqual([false, false]); expect(autoSleepMode.value).toBe('Per Layer');
+    undo(); expect(autoSleepMode.value).toBe('On');
+    redo(); expect(autoSleepMode.value).toBe('Per Layer');
+  });
+
+  it('keeps remembered choices with layers through reordering, deletion and insertion', () => {
+    profile.value = defaultProfile(0);
+    profile.value.layers.push(emptyLayer(0));
+    updateProfile(p => { p.layers[0]!.autoSleep = true; });
+    setAutoSleepMode('On');
+    swapLayers(0, 2);
+    removeLayer(1);
+    setAutoSleepMode('Per Layer');
+    expect(profile.value!.layers.map(layer => layer.autoSleep)).toEqual([false, true]);
+    setAutoSleepMode('Off');
+    addLayer();
+    setAutoSleepMode('Per Layer');
+    expect(profile.value!.layers.map(layer => layer.autoSleep)).toEqual([false, true, false]);
+  });
+
+  it('starts fresh memory when another profile is loaded', () => {
+    profile.value = defaultProfile(0);
+    updateProfile(p => { p.layers[0]!.autoSleep = true; });
+    setAutoSleepMode('On');
+    profile.value = defaultProfile(1);
+    setAutoSleepMode('On'); setAutoSleepMode('Per Layer');
+    expect(profile.value!.layers.map(layer => layer.autoSleep)).toEqual([false, false]);
+    expect(autoSleepMode.value).toBe('Per Layer');
   });
 
   it.each([0, 1] as const)('round-trips every layer-option byte against firmware on variant %s', variant => {
@@ -158,6 +231,38 @@ describe('per-layer auto-sleep', () => {
 
 
 describe('profile sleep settings', () => {
+  it.each([0, 1] as const)('defaults both wake options on for every pre-v15 import on variant %s', variant => {
+    const expected = defaultProfile(variant);
+    expected.layers = [emptyLayer(variant)];
+    expect(expected.consumeWakeInput).toBe(true);
+    expect(expected.showLayerIndicatorOnWake).toBe(true);
+    for (let version = 1; version < 15; version++) {
+      // Older formats never assigned these fields, even if a draft/file has
+      // stray false values. Source records must remain unchanged on recovery.
+      const old = structuredClone(expected);
+      old.consumeWakeInput = old.showLayerIndicatorOnWake = false;
+      const json = JSON.parse(exportProfile(old)); json.version = version;
+      expect(importProfile(JSON.stringify(json)).profile).toEqual(expected);
+      const key = `universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`;
+      const saved = JSON.stringify({ formatVersion: version, profile: old, meta: {}, savedAt: 'old' });
+      const storage = new Map([[key, saved]]);
+      vi.stubGlobal('localStorage', {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+      });
+      // Draft recovery starts at v2; JSON additionally accepts v1.
+      if (version >= 2) {
+        expect(loadDraft(variant)?.profile).toEqual(expected);
+        expect(storage.get(key)).toBe(saved);
+        const image = legacyHeader(encodeProfile(old)); image[2] = version;
+        if (version < 5) image[8]! &= 15; // Rainbow header settings began in v5.
+        sealImage(image);
+        expect(decodeImage(image)).toEqual({ ok: true, profile: expected });
+      }
+    }
+  });
+
+
   it.each([0, 1] as const)('round-trips all 32 combinations without losing capacity on variant %s', variant => {
     const p = defaultProfile(variant);
     p.layers[0]!.autoSleep = true;
@@ -213,17 +318,20 @@ describe('profile sleep settings', () => {
   it('connects all four controls to comparisons and undo/redo', () => {
     const before = defaultProfile(0); before.layers[0]!.autoSleep = true;
     profile.value = structuredClone(before);
-    const select = elements(ProfilePanel()).find(n => n.props['aria-label'] === 'Sleep Timeout')!;
+    const select = elements(ProfilePanel()).find(n => n.props['aria-label'] === 'Auto-Sleep Timeout')!;
     (select.props.onChange as (event: unknown) => void)({ target: { value: '120' } });
-    for (const label of ['Consume Wake Input', 'Show Layer Indicator', 'Dim Instead of Off']) {
-      const checkbox = elements(ProfilePanel()).find(n => n.props['aria-label'] === label)!;
-      (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: label === 'Dim Instead of Off' } });
+    for (const field of ['consumeWakeInput', 'showLayerIndicatorOnWake', 'dimInsteadOfOff']) {
+      const group = elements(ProfilePanel()).find(n => n.props['aria-labelledby'] === `sleep-${field}`)!;
+      const buttons = elements(group).filter(n => n.props.type === 'button');
+      expect(buttons.find(n => n.props['aria-pressed'])!.props.children).toBe(field === 'dimInsteadOfOff' ? 'Off' : 'On');
+      const toggle = buttons.find(n => n.props.children === (field === 'dimInsteadOfOff' ? 'Dim' : 'Off'))!;
+      (toggle.props.onClick as () => void)();
     }
     const expected = { ...before, sleepTimeoutMinutes: 120, consumeWakeInput: false,
       showLayerIndicatorOnWake: false, dimInsteadOfOff: true };
     expect(profile.value).toEqual(expected);
     const changes = profileChanges(before, profile.value!);
-    expect(changes.map(change => change.where)).toEqual(['Sleep Timeout', 'Consume Wake Input', 'Show Layer Indicator', 'Dim Instead of Off']);
+    expect(changes.map(change => change.where)).toEqual(['Sleep Timeout', 'Consume Wake Input', 'Show Layer Indicator', 'Sleep Behavior']);
     expect(changes[0]).toMatchObject({ before: '30 Minutes', after: '2 Hours' });
     for (const change of changes) change.undo!(expected);
     expect(expected).toEqual(before);

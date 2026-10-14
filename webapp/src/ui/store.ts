@@ -1,5 +1,5 @@
 import { reorderMacros, untriggeredMacros } from '../model/macros';
-import { computed, effect, signal } from '@preact/signals';
+import { batch, computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
 import { actionFamilyType } from './actionFamilies';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
@@ -57,30 +57,34 @@ export const changesBaseline = computed(() => freshStart.value?.profile ?? basel
 export const meta = signal<LocalMetadata>({});
 export const selectedLayer = signal(0);
 export type AutoSleepMode = 'On' | 'Per Layer' | 'Off';
-const perLayerAutoSleep = signal(false);
-const layerAutoSleepStates = computed(() => profile.value?.layers.map(layer => Number(layer.autoSleep)).join(',') ?? null);
-// Choosing Per Layer is only an editor preference; reset it when sleep settings
-// change or a profile is loaded, imported, or reset.
+interface AutoSleepEditorState { perLayer: boolean; layers: readonly boolean[] | null }
+const autoSleepEditor = signal<AutoSleepEditorState>({ perLayer: false, layers: null });
+let editedProfile: Profile | null = null;
+// Device reads, imports and resets start a new set of editor-only choices.
+// Normal edits and history restoration explicitly carry their choices forward.
 effect(() => {
-  layerAutoSleepStates.value;
-  baseline.value;
-  freshStart.value;
-  perLayerAutoSleep.value = false;
+  const current = profile.value;
+  if (current !== editedProfile) {
+    editedProfile = current;
+    autoSleepEditor.value = { perLayer: false, layers: null };
+  }
 });
 export const autoSleepMode = computed<AutoSleepMode>(() => {
   const layers = profile.value?.layers ?? [];
-  if (perLayerAutoSleep.value) return 'Per Layer';
+  if (autoSleepEditor.value.perLayer) return 'Per Layer';
   if (layers.every(layer => layer.autoSleep)) return 'On';
   if (layers.every(layer => !layer.autoSleep)) return 'Off';
   return 'Per Layer';
 });
 export function setAutoSleepMode(mode: AutoSleepMode): void {
-  perLayerAutoSleep.value = mode === 'Per Layer';
-  if (mode !== 'Per Layer') {
-    updateProfile(draft => {
-      draft.layers.forEach(layer => { layer.autoSleep = mode === 'On'; });
-    });
-  }
+  const current = profile.value;
+  if (!current || mode === autoSleepMode.peek()) return;
+  const remembered = autoSleepEditor.value.layers ?? current.layers.map(layer => layer.autoSleep);
+  const draft = cloneProfile(current);
+  draft.layers.forEach((layer, i) => {
+    layer.autoSleep = mode === 'Per Layer' ? remembered[i] ?? layer.autoSleep : mode === 'On';
+  });
+  applyProfileEdit(draft, { perLayer: mode === 'Per Layer', layers: remembered });
 }
 export const selectedSlot = signal<Slot | null>(null);
 /** The binding currently being moved with native drag and drop. */
@@ -95,7 +99,7 @@ export type DropPosition = 'before' | 'after' | 'swap';
 export const slotDrop = signal<{ slot: Slot; position: DropPosition } | null>(null);
 export const layerDrop = signal<{ index: number; position: DropPosition } | null>(null);
 
-interface EditorSnapshot { profile: Profile; meta: LocalMetadata; freshStart: typeof freshStart.value }
+interface EditorSnapshot { profile: Profile; meta: LocalMetadata; freshStart: typeof freshStart.value; autoSleep: AutoSleepEditorState }
 interface HistoryEntry extends EditorSnapshot { key?: string; at: number }
 const undoHistory = signal<HistoryEntry[]>([]);
 const redoHistory = signal<EditorSnapshot[]>([]);
@@ -106,7 +110,7 @@ function copyMeta(value: LocalMetadata): LocalMetadata {
   return { ...value, layerNames: value.layerNames ? [...value.layerNames] : undefined };
 }
 function editorSnapshot(): EditorSnapshot | null {
-  return profile.value ? { profile: cloneProfile(profile.value), meta: copyMeta(meta.value), freshStart: freshStart.value } : null;
+  return profile.value ? { profile: cloneProfile(profile.value), meta: copyMeta(meta.value), freshStart: freshStart.value, autoSleep: autoSleepEditor.value } : null;
 }
 function clearHistory(): void {
   undoHistory.value = [];
@@ -126,10 +130,14 @@ function recordHistory(key?: string): void {
   redoHistory.value = [];
 }
 function restoreEditor(snapshot: EditorSnapshot): void {
-  profile.value = cloneProfile(snapshot.profile);
-  meta.value = copyMeta(snapshot.meta);
-  freshStart.value = snapshot.freshStart;
-  selectedLayer.value = Math.min(selectedLayer.value, snapshot.profile.layers.length - 1);
+  batch(() => {
+    editedProfile = cloneProfile(snapshot.profile);
+    profile.value = editedProfile;
+    meta.value = copyMeta(snapshot.meta);
+    freshStart.value = snapshot.freshStart;
+    autoSleepEditor.value = snapshot.autoSleep;
+    selectedLayer.value = Math.min(selectedLayer.value, snapshot.profile.layers.length - 1);
+  });
 }
 export function undo(): void {
   const history = undoHistory.value;
@@ -229,14 +237,37 @@ export function showInputMonitoringHelp(): void {
 // ---------------------------------------------------------------------------
 // Profile editing helpers
 
+function applyProfileEdit(draft: Profile, autoSleep: AutoSleepEditorState, historyKey?: string): void {
+  const profileChanged = JSON.stringify(draft) !== JSON.stringify(profile.value);
+  if (!profileChanged && JSON.stringify(autoSleep) === JSON.stringify(autoSleepEditor.value)) return;
+  recordHistory(historyKey);
+  batch(() => {
+    editedProfile = draft;
+    profile.value = draft;
+    autoSleepEditor.value = autoSleep;
+  });
+  if (profileChanged && (saveState.value.phase === 'saved' || saveState.value.phase === 'error')) saveState.value = { phase: 'idle' };
+}
+
 export function updateProfile(mutate: (draft: Profile) => void, historyKey?: string): void {
   if (!profile.value) return;
   const draft = cloneProfile(profile.value);
+  const oldLayers = [...draft.layers];
+  const oldChoices = oldLayers.map(layer => layer.autoSleep);
+  const saved = autoSleepEditor.value;
   mutate(draft);
-  if (JSON.stringify(draft) === JSON.stringify(profile.value)) return;
-  recordHistory(historyKey);
-  profile.value = draft;
-  if (saveState.value.phase === 'saved' || saveState.value.phase === 'error') saveState.value = { phase: 'idle' };
+  const choices = draft.layers.map(layer => layer.autoSleep);
+  // Follow layer identities through moves/deletions; new or directly edited
+  // layers contribute their own choice rather than inheriting a stale index.
+  const remembered = saved.layers ? draft.layers.map(layer => {
+    const index = oldLayers.indexOf(layer);
+    return index < 0 || layer.autoSleep !== oldChoices[index]
+      ? layer.autoSleep : saved.layers![index] ?? layer.autoSleep;
+  }) : null;
+  applyProfileEdit(draft, {
+    perLayer: saved.perLayer && choices.join(',') === oldChoices.join(','),
+    layers: remembered,
+  }, historyKey);
 }
 
 export function getAction(p: Profile, slot: Slot): Action | undefined {

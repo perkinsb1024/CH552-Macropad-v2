@@ -42,8 +42,8 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
     minutes => SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(value => value === minutes)] ?? 'Unknown',
     draft => { draft.sleepTimeoutMinutes = before.sleepTimeoutMinutes; });
   for (const [field, label] of [['consumeWakeInput', 'Consume Wake Input'],
-    ['showLayerIndicatorOnWake', 'Show Layer Indicator'], ['dimInsteadOfOff', 'Dim Instead of Off']] as const) {
-    change(label, before[field], after[field], value => value ? 'On' : 'Off', draft => { draft[field] = before[field]; });
+    ['showLayerIndicatorOnWake', 'Show Layer Indicator'], ['dimInsteadOfOff', 'Sleep Behavior']] as const) {
+    change(label, before[field], after[field], value => value ? (field === 'dimInsteadOfOff' ? 'Dim' : 'On') : 'Off', draft => { draft[field] = before[field]; });
   }
   change('Startup Layer', before.startupLayer, after.startupLayer, (n) => `Layer ${n + 1}`, (draft) => { draft.startupLayer = before.startupLayer; });
   change('Chord Window', before.chordWindow, after.chordWindow, (n) => n ? `${n * 5}ms` : 'Selection Required', (draft) => { draft.chordWindow = before.chordWindow; });

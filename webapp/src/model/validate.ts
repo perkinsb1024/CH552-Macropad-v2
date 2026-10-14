@@ -115,7 +115,7 @@ export function validateProfile(profile: Profile): Issue[] {
     issues.push({ where: 'Sleep Timeout', message: 'Sleep timeout must be 15, 30, 60 or 120 minutes.' });
   }
   for (const [field, label] of [['consumeWakeInput', 'Consume Wake Input'],
-    ['showLayerIndicatorOnWake', 'Show Layer Indicator'], ['dimInsteadOfOff', 'Dim Instead of Off']] as const) {
+    ['showLayerIndicatorOnWake', 'Show Layer Indicator'], ['dimInsteadOfOff', 'Sleep Behavior']] as const) {
     if (typeof profile[field] !== 'boolean') issues.push({ where: label, message: `${label} must be true or false.` });
   }
   const keys = keyCount(profile.variant);

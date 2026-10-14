@@ -401,8 +401,12 @@ Choose the **Layer Indicator Color** and **Full Brightness** or **Dim**. The tim
 
 With format 15 firmware, enable **Auto-Sleep** in **Layer Options**, or choose
 **On** in **Profile Settings** to enable every layer. **Per Layer** keeps
-individual layer choices; **Off** disables every layer. Sleep adds no profile
-bytes and leaves all four **Timed Actions** available.
+individual layer choices; **Off** disables every layer. During editing, choosing
+**On** or **Off** remembers your per-layer choices; choose **Per Layer** again
+to restore them. Undo and redo restore both the mode and those choices.
+The remembered choices belong to the current editing session; saving writes
+the active choices to the device. Sleep adds no profile bytes and leaves all
+four **Timed Actions** available.
 
 The profile-wide settings apply to every enabled layer:
 

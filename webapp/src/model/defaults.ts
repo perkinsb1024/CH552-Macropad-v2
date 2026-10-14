@@ -74,8 +74,14 @@ export function cloneProfile(profile: Profile): Profile {
  */
 export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VERSION): Profile {
   profile.sleepTimeoutMinutes ??= 30;
-  profile.consumeWakeInput ??= true;
-  profile.showLayerIndicatorOnWake ??= true;
+  // Pre-v15 drafts never assigned these settings; ignore stray saved values.
+  if (sourceVersion < 15) {
+    profile.consumeWakeInput = true;
+    profile.showLayerIndicatorOnWake = true;
+  } else {
+    profile.consumeWakeInput ??= true;
+    profile.showLayerIndicatorOnWake ??= true;
+  }
   profile.dimInsteadOfOff ??= false;
   profile.transparentBlack ??= false;
   profile.rainbowPhase ??= DEFAULT_RAINBOW_PHASE;

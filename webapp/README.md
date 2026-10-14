@@ -417,8 +417,13 @@ that editor; the shared uploader offers v13 as a previous release and v14 as the
 ## Auto-Sleep (v15)
 
 **Layer Options** includes **Auto-Sleep**, disabled by default. **Profile Settings**
-provides **On**, **Per Layer** and **Off**, plus four settings shared by enabled
-layers: **Sleep Timeout** (**15 Minutes**, **30 Minutes**, **1 Hour**, **2 Hours**),
+provides **On**, **Per Layer** and **Off**. Switching to **On** or **Off** retains
+the current session's per-layer choices; **Per Layer** restores them. Undo/redo
+includes the remembered choices, which follow layers through moves and removals.
+Loading, importing or resetting a profile starts fresh editor memory. Saving
+writes the active flags, with no extra device storage.
+
+Four settings are shared by enabled layers: **Sleep Timeout** (**15 Minutes**, **30 Minutes**, **1 Hour**, **2 Hours**),
 **Consume Wake Input**, **Show Layer Indicator**, and **Dim Instead of Off**.
 Defaults are 30 minutes, consume enabled, reminder enabled and dim disabled.
 Sleep selects **Both Off** or **Layers and Keys Dim**, using existing dim

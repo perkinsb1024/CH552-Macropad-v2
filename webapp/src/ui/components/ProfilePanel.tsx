@@ -89,30 +89,38 @@ export function ProfilePanel() {
             >{mode}</button>)}
           </div>
           <span class="hint">
-            When enabled, LEDs turn off or dim after the selected period of inactivity. On or Off applies to all layers.<br />
-            Configuring this setting Per Layer can be done by clicking Advanced under Layer Options.
+            On or Off applies to all layers. Choose Per Layer to configure Auto-Sleep under Layer Options → Advanced.<br />
+            The below settings will apply to all layers that have Auto-Sleep enabled.
           </span>
         </div>
-        {p.layers.some(layer => layer.autoSleep) && <>
-          <label class="field field-wide">
-            <span class="field-label">Sleep Timeout</span>
-            <select aria-label="Sleep Timeout" value={p.sleepTimeoutMinutes} onChange={e => updateProfile(d => {
+        {p.layers.some(layer => layer.autoSleep) && <div class="sleep-settings field-wide" role="group" aria-label="Auto-Sleep Settings">
+          <label class="field">
+            <span class="field-label">Auto-Sleep Timeout</span>
+            <select aria-label="Auto-Sleep Timeout" value={p.sleepTimeoutMinutes} onChange={e => updateProfile(d => {
               d.sleepTimeoutMinutes = Number((e.target as HTMLSelectElement).value);
             })}>
               {SLEEP_TIMEOUT_MINUTES.map((minutes, i) => <option key={minutes} value={minutes}>{SLEEP_TIMEOUT_LABELS[i]}</option>)}
             </select>
+            <span class="hint">The macropad will sleep after {SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]?.toLowerCase()} of inactivity.</span>
           </label>
           {([
-            ['consumeWakeInput', 'Consume Wake Input', 'The first press or complete encoder turn wakes the pad without executing its binding. Turn off to wake and execute the binding.'],
-            ['showLayerIndicatorOnWake', 'Show Layer Indicator', 'Restart the current layer’s timed or blink indication on wake. Always On and Do Not Indicate keep their configured behavior.'],
-            ['dimInsteadOfOff', 'Dim Instead of Off', 'Use the existing dim brightness for layer indicators and pressed-key feedback during sleep. This keeps configured lighting behavior; it does not turn an inactive indicator on.'],
-          ] as const).map(([field, label, hint]) => <label key={field} class="field field-wide">
-            <span class="check"><input type="checkbox" aria-label={label} checked={p[field]} onChange={e => updateProfile(d => {
-              d[field] = (e.target as HTMLInputElement).checked;
-            })} />{label}</span>
+            ['consumeWakeInput', 'Consume Wake Input', 'When enabled, the first input after sleep will only wake the device, it will not run the assigned action.'],
+            ['showLayerIndicatorOnWake', 'Show Layer Indicator on Wake', 'Repeat the current layer’s timed or blink indication on wake.'],
+            ['dimInsteadOfOff', 'Sleep Behavior', 'How layer indicators should behave during sleep. Choosing "Dim" will not turn on LEDs that are already off.'],
+          ] as const).map(([field, label, hint]) => <div key={field} class="field">
+            <span class="field-label" id={`sleep-${field}`}>{label}</span>
+            <div class="segmented" role="group" aria-labelledby={`sleep-${field}`}>
+              {([true, false] as const).map(enabled => <button
+                key={String(enabled)}
+                type="button"
+                class={p[field] === enabled ? 'is-selected' : ''}
+                aria-pressed={p[field] === enabled}
+                onClick={() => updateProfile(d => { d[field] = enabled; })}
+              >{enabled ? (field === 'dimInsteadOfOff' ? 'Dim' : 'On') : 'Off'}</button>)}
+            </div>
             <span class="hint">{hint}</span>
-          </label>)}
-        </>}
+          </div>)}
+        </div>}
       </div>
     </details>
   );
