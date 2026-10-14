@@ -37,7 +37,7 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
     ledCalls++; ledCommand = command; ledValue = value;
 }
 static void seal(void) {
-    uint16_t crc = configCrc(activeConfig); activeConfig[6] = crc; activeConfig[7] = crc >> 8;
+    uint16_t crc = configCrc(activeConfig); activeConfig[CONFIG_HEADER_CRC] = crc; activeConfig[CONFIG_HEADER_CRC + 1] = crc >> 8;
 }
 static uint8_t start;
 static void reset(void) {
@@ -67,7 +67,7 @@ static unsigned keyPresses(uint8_t usage) {
 static void testValidation(void) {
     reset(); const uint8_t pair[] = {1, 4, 1, 5};
     uint8_t second = define(start, pair, 2); define(second, pair, 2);
-    activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+    activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
     for (unsigned ref = 0; ref < 256; ref++) {
         for (uint8_t aux = 0; aux < 16; aux++) {
             activeConfig[9] = CONFIG_ACTION_MACRO | (aux << 4); activeConfig[10] = ref; seal();
@@ -92,9 +92,9 @@ static void testValidation(void) {
     }
     activeConfig[start] = 1; activeConfig[start + 1] = 4;
     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
-    activeConfig[6] ^= 1; assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+    activeConfig[CONFIG_HEADER_CRC] ^= 1; assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     // Align the start at 124: the last pair must remain inside the image.
-    reset(); activeConfig[4] = 124 - start; start = 124;
+    reset(); testSetStringLength(124 - start); start = 124;
     activeConfig[124] = 1; activeConfig[125] = 4;
     activeConfig[126] = 1; activeConfig[127] = 5;
     bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
@@ -149,7 +149,7 @@ static void testRepeatsAndOrdering(void) {
 }
 static void testLongAndStrings(void) {
     reset();
-    memcpy(activeConfig + start, "chrome", 7); activeConfig[4] = 7; start += 7;
+    memcpy(activeConfig + start, "chrome", 7); testSetStringLength(7); start += 7;
     const uint8_t launch[] = {0x81, 0x2C, CONFIG_ACTION_STRING, 0, 1, 0x28};
     define(start, launch, 3); bind(0, start, 1); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     press(0, 0); pump(0, 400); assert(count == 16);
@@ -168,7 +168,7 @@ static void testTextCharacterPause(void) {
     for (unsigned wrap = 0; wrap < 2; wrap++) {
         reset();
         memcpy(activeConfig + start, text, sizeof text);
-        activeConfig[4] = sizeof text;
+        testSetStringLength(sizeof text);
         activeConfig[9] = CONFIG_ACTION_STRING; activeConfig[10] = 0;
         seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
         uint16_t origin = wrap ? 65520 : 0;
@@ -195,7 +195,7 @@ static void testTriggersAndCancellation(void) {
     assert(keyPresses(4) == 1 && keyPresses(5) == 1);
     reset();
     // Timer data precedes strings/macros. A timer can invoke the same sequence.
-    uint8_t timer = start; activeConfig[3] = 1 << 6; start += CONFIG_TIMED_SIZE;
+    uint8_t timer = start; testSetLayout(1, 0, 1); start += CONFIG_TIMED_SIZE;
     memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
     activeConfig[timer + 1] = CONFIG_ACTION_MACRO; activeConfig[timer + 2] = start;
     define(start, pair, 2); seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
@@ -205,7 +205,7 @@ static void testTriggersAndCancellation(void) {
     press(0, 0); pump(0, 2); actionsClear(); count = 0; pump(2, 100); assert(!keyPresses(5));
     reset();
     // Actual layer transitions abort playback and queued macro invocations.
-    activeConfig[3] = 1; start = configTimedOffset();
+    testSetLayout(2, 0, 0); start = configTimedOffset();
     memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0, PHYSICAL_VARIANT ? 15 : 22);
     define(start, pair, 2); bind(0, start, 1);
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
@@ -220,7 +220,7 @@ static void testQueueAndChords(void) {
     assert(keyPresses(4) == 8 && keyPresses(5) == 8);
     reset();
     // A chord's macro reference is resolved at the physical trigger, like taps.
-    uint8_t chord = start; activeConfig[5] |= 2; start += 3;
+    uint8_t chord = start; testSetChordCount(1); start += 3;
     activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MACRO;
     activeConfig[chord + 2] = start; define(start, pair, 2);
     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
@@ -297,7 +297,7 @@ static void testGlobalToggle(void) {
     press(0, 500); pump(500, 550); assert(latestMouse() == 1);
     actionsClear(); pump(550, 600); assert(latestMouse() == 0);
     // Effective layer changes remove toggles.
-    reset(); activeConfig[3] = 1; start = configTimedOffset();
+    reset(); testSetLayout(2, 0, 0); start = configTimedOffset();
     memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0,
            PHYSICAL_VARIANT ? 15 : 22);
     define(start, toggle, 1); bind(0, start, 1);
@@ -326,7 +326,7 @@ static void testGlobalToggleSources(void) {
     actionsRotate(1); pump(50, 100); assert(latestMouse() == 0);
     // A chord can undo a key toggle.
     reset();
-    uint8_t chord = start; activeConfig[5] |= 2;
+    uint8_t chord = start; testSetChordCount(1);
     activeConfig[chord] = 0;
     activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_TOGGLE;
     activeConfig[chord + 2] = 1;
@@ -337,7 +337,7 @@ static void testGlobalToggleSources(void) {
     pump(55, 100); assert(latestMouse() == 0);
     // Timer expiry and its follow-up share the macro's toggle state.
     reset();
-    uint8_t timer = start; activeConfig[3] = 1 << 6;
+    uint8_t timer = start; testSetLayout(1, 0, 1);
     start += CONFIG_TIMED_SIZE;
     memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
     activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_TOGGLE;
@@ -387,7 +387,7 @@ static void testPersistentMouse(void) {
     press(2, 10); pump(10, 30); assert(latestMouse() == 0xAA);
     assert(reports[count - 2][1] == 0xFF);
     // Effective-layer transition clears all eight bits.
-    activeConfig[3] = 1;
+    testSetLayout(2, 0, 0);
     activeConfig[13] = CONFIG_ACTION_SET_LAYER; activeConfig[14] = 1;
     press(2, 30); pump(30, 40); assert(latestMouse() == 0);
 }
@@ -433,7 +433,7 @@ static void testMouseDragAndScroll(void) {
 static void testCombinedPointerSources(void) {
     // A chord hold stops when either chord member is released.
     for (uint8_t released = 0; released < 2; released++) {
-        reset(); activeConfig[5] |= 2;
+        reset(); testSetChordCount(1);
         activeConfig[start] = 0;
         activeConfig[start + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_Y_NEGATIVE;
         activeConfig[start + 2] = 0xF1;
@@ -442,7 +442,7 @@ static void testCombinedPointerSources(void) {
         actionsRelease(released); pump(10, 30); assert(count == 2);
     }
     // Resolved pointer holds retain their axes and signs across layer changes.
-    reset(); activeConfig[3] = 1;
+    reset(); testSetLayout(2, 0, 0);
     activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_X_NEGATIVE;
     activeConfig[10] = 0xF1;
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
@@ -452,7 +452,7 @@ static void testCombinedPointerSources(void) {
     actionsRelease(0); pump(10, 30); assert(count == 2);
 
     // Both timer slots use the same dispatcher and preserve blocked tap reports.
-    reset(); uint8_t timer = start; activeConfig[3] = 1 << 6;
+    reset(); uint8_t timer = start; testSetLayout(1, 0, 1);
     activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_Y_NEGATIVE;
     activeConfig[timer + 2] = 0xF1;
     activeConfig[timer + 3] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y;
@@ -478,11 +478,11 @@ static void testMouseSources(void) {
     uint8_t cw = 9 + 2 * (configKeyCount() + 1);
     activeConfig[cw] = CONFIG_ACTION_MOUSE_UP; activeConfig[cw + 1] = 0x80;
     press(0, 0); pump(0, 10); actionsRotate(1); pump(10, 20); assert(latestMouse() == 0);
-    reset(); uint8_t chord = start; activeConfig[5] |= 2;
+    reset(); uint8_t chord = start; testSetChordCount(1);
     activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[chord + 2] = 0xF8;
     actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
     pump(5, 20); assert(latestMouse() == 0xF8);
-    reset(); uint8_t timer = start; activeConfig[3] = 1 << 6;
+    reset(); uint8_t timer = start; testSetLayout(1, 0, 1);
     memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
     activeConfig[timer + 1] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[timer + 2] = 0xFF;
     activeConfig[timer + 3] = CONFIG_ACTION_MOUSE_UP; activeConfig[timer + 4] = 0xFF;
@@ -611,12 +611,12 @@ static void testModifiedConsumerMacrosAndSources(void) {
     reset(); uint8_t cw = 9 + 2 * (configKeyCount() + 1);
     activeConfig[cw] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[cw + 1] = 0x70;
     actionsRotate(1); pump(0, 20); assert(count == 4 && !latestModifiers());
-    reset(); activeConfig[5] |= 2;
+    reset(); testSetChordCount(1);
     uint8_t chord = configTimedOffset() - 3;
     activeConfig[chord] = 0; activeConfig[chord + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[chord + 2] = 0x6f;
     actionsPress(0, 0); actionsPress(1, 5); pump(5, 20);
     assert(count == 4 && !latestModifiers());
-    reset(); uint8_t timer = configTimedOffset(); activeConfig[3] |= 1 << 6;
+    reset(); uint8_t timer = configTimedOffset(); testSetTimedCount(1);
     activeConfig[timer] = 0; activeConfig[timer + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[timer + 2] = 0x6f;
     activeConfig[timer + 3] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[timer + 4] = 0x70;
     actionsTimedReset(0); actionsTimedPoll(128); actionsTimedPoll(0); pump(0, 10);

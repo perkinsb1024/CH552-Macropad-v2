@@ -59,11 +59,11 @@ static void setFlags(uint8_t index, uint8_t flags) {
 
 static void probeInit(uint8_t timers) {
     memset(activeConfig, 0, CONFIG_SIZE);
-    activeConfig[0] = 'M'; activeConfig[1] = 'P';
-    activeConfig[2] = CONFIG_VERSION;
-    activeConfig[3] = 2 | ((timers & 3) << 6); // Three layers.
-    activeConfig[4] = (timers >> 2) << 7;
-    activeConfig[5] = PHYSICAL_VARIANT;
+    activeConfig[0] = CONFIG_MARKER;
+    activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+    testSetLayout(3, 0, timers); // Three layers.
+    testSetStringLength(0);
+    testSetVariant(PHYSICAL_VARIANT);
     for (uint8_t i = 0; i < timers; i++) {
         uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
         activeConfig[offset + 1] = CONFIG_ACTION_LED_CONTROL;
@@ -76,7 +76,7 @@ static void probeInit(uint8_t timers) {
 
 static void probeSeal(void) {
     uint16_t crc = configCrc(activeConfig);
-    activeConfig[6] = crc; activeConfig[7] = crc >> 8;
+    activeConfig[CONFIG_HEADER_CRC] = crc; activeConfig[CONFIG_HEADER_CRC + 1] = crc >> 8;
 }
 
 static void crcReference(void) {
@@ -90,13 +90,13 @@ static void crcReference(void) {
         }
         uint16_t expected = 0xFFFF;
         for (uint8_t i = 0; i < CONFIG_SIZE; i++) {
-            if (i == 6 || i == 7) continue;
+            if (i == CONFIG_HEADER_CRC || i == CONFIG_HEADER_CRC + 1) continue;
             expected ^= (uint16_t)activeConfig[i] << 8;
             for (uint8_t bit = 0; bit < 8; bit++)
                 expected = (expected & 0x8000) ? (expected << 1) ^ 0x1021 : expected << 1;
         }
         assert(configCrc(activeConfig) == expected);
-        activeConfig[6] ^= 0xFF; activeConfig[7] ^= 0xFF;
+        activeConfig[CONFIG_HEADER_CRC] ^= 0xFF; activeConfig[CONFIG_HEADER_CRC + 1] ^= 0xFF;
         assert(configCrc(activeConfig) == expected);
     }
 }
@@ -105,7 +105,7 @@ static void validation(void) {
     for (uint8_t layers = 1; layers <= (PHYSICAL_VARIANT ? 7 : 5); layers++) {
         for (uint8_t scope = 0; scope < 8; scope++) {
             probeInit(1);
-            activeConfig[3] = (layers - 1) | 64;
+            testSetLayout(layers, 0, 1);
             memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
             setScope(0, scope); probeSeal();
             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) ==
@@ -116,18 +116,18 @@ static void validation(void) {
     for (uint8_t i = 0; i < 4; i++) setScope(i, i % 4);
     probeSeal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     // String addressing must account for shared metadata and record growth.
-    activeConfig[4] |= 2;
+    testSetStringLength(2);
     uint8_t pool = configTimedOffset() + 4 * CONFIG_TIMED_SIZE;
     activeConfig[pool] = 'A'; activeConfig[pool + 1] = 0;
     probeSeal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     assert(configStringChar(0, 0) == 'A' && configStringChar(0, 1) == 0);
     // A full string pool fits exactly, then one extra byte is rejected.
-    probeInit(1); activeConfig[3] = 64;
+    probeInit(1); testSetLayout(1, 0, 1);
     memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
     pool = configTimedOffset() + CONFIG_TIMED_SIZE;
-    activeConfig[4] = CONFIG_SIZE - pool;
+    testSetStringLength(CONFIG_SIZE - pool);
     probeSeal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
-    activeConfig[4]++; probeSeal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+    activeConfig[CONFIG_HEADER_POOL] += 2; probeSeal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     // Every interval byte/flag combination is accepted for a valid scope.
     probeInit(1);
     for (uint16_t value = 0; value < 256; value++) {

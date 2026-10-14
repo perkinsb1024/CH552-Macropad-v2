@@ -166,8 +166,8 @@ static void assertUsbWarning(uint8_t lit) {
 
 static void saveStartupProfile(void) {
     uint16_t crc = configCrc(activeConfig);
-    activeConfig[6] = crc;
-    activeConfig[7] = crc >> 8;
+    activeConfig[CONFIG_HEADER_CRC] = crc;
+    activeConfig[CONFIG_HEADER_CRC + 1] = crc >> 8;
     memcpy(flash, activeConfig, CONFIG_SIZE);
     P1 = P3 = 0xFF;
     previewOptions = 0;
@@ -187,7 +187,7 @@ static void testStartupIndicatorEnumeration(void) {
                 for (uint8_t i = 1; i < CONFIG_MAX_LAYERS; i++) {
                     memcpy(activeConfig + 9 + size * i, activeConfig + 9, size);
                 }
-                activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3);
+                testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
                 activeConfig[9 + size * (layer + 1) - 1] =
                     (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
                     (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
@@ -241,7 +241,7 @@ static void testStartupWarningDismissal(void) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
         memcpy(activeConfig + 9 + size, activeConfig + 9, size);
-        activeConfig[3] = 1; // Two layers; key 1 selects the second layer.
+        testSetLayout(2, 0, 0); // Two layers; key 1 selects the second layer.
         activeConfig[9] = CONFIG_ACTION_SET_LAYER;
         activeConfig[10] = 1;
         saveStartupProfile();
@@ -334,7 +334,7 @@ static void testIndicatorBrightness(void) {
     P1 = P3 = 0xFF;
     P1 &= ~0x02; // Hold key zero throughout the animation.
     for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
-        activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3); // Select each startup layer.
+        testSetLayout(CONFIG_MAX_LAYERS, layer, 0); // Select each startup layer.
         for (uint8_t behavior = CONFIG_LAYER_INDICATOR_NONE;
              behavior <= CONFIG_LAYER_INDICATOR_ALWAYS_ON; behavior++) {
             for (uint8_t full = 0; full < 2; full++) {
@@ -376,15 +376,45 @@ static void testIndicatorBrightness(void) {
     P1 = P3 = 0xFF;
 }
 
+static void testHeaderLedSettings(void) {
+    for (uint8_t phase = 0; phase < 4; phase++)
+        for (uint8_t speed = 0; speed < 4; speed++)
+            for (uint8_t transparent = 0; transparent < 2; transparent++) {
+                testLoadStarterProfile(PHYSICAL_VARIANT);
+                activeConfig[CONFIG_HEADER_LED] = 7 | (transparent << 3) | (phase << 4) | (speed << 6);
+                activeConfigValid = 1; P1 = P3 = 0xFF;
+#if ENABLE_COLOR_PREVIEW
+                previewOptions = 0;
+#endif
+                firmwareApplyConfig(1);
+                assert(ledSettings[0] == phase && ledSettings[1] == speed);
+                firmwareLedAction(CONFIG_LED_PHASE_SET, (phase + 1) & 3);
+                firmwareLedAction(CONFIG_LED_SPEED_SET, (speed + 1) & 3);
+                firmwareLedAction(CONFIG_LED_PHASE_SET, 15);
+                firmwareLedAction(CONFIG_LED_SPEED_SET, 15);
+                assert(ledSettings[0] == phase && ledSettings[1] == speed);
+                firmwareLedAction(CONFIG_LED_RESTORE, 0);
+                assert(ledSettings[0] == phase && ledSettings[1] == speed);
+#if ENABLE_COLOR_PREVIEW
+                firmwareLedAction(CONFIG_LED_PHASE_SET, (phase + 1) & 3);
+                firmwarePreviewColor(0xFD);
+                assert(previewOptions == 0xFD && colorPreviewActive);
+                firmwarePreviewColor(0);
+                assert(!colorPreviewActive);
+#endif
+            }
+}
+
 static void testRainbowSpeed(void) {
     const uint8_t intervals[4] = {4, 6, 10, 18};
     for (uint8_t speed = 0; speed < 4; speed++) {
         for (uint8_t phase = 0; phase < 4; phase++) {
             for (uint8_t preview = 0; preview <= ENABLE_COLOR_PREVIEW; preview++) {
                 testLoadStarterProfile(PHYSICAL_VARIANT);
-                activeConfig[8] = 15 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
+                activeConfig[CONFIG_HEADER_LED] = 7 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
                     (speed << CONFIG_HEADER_RAINBOW_SPEED_SHIFT);
-                assert(configChordWindowMs() == 75);
+                testSetChordCount(1);
+                assert(configChordWindowMs() == 90);
                 activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
                 activeConfigValid = 1;
                 P1 = P3 = 0xFF;
@@ -432,9 +462,10 @@ static void testRainbowPhaseSpacing(void) {
         activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | full;
         for (uint8_t phase = 0; phase < 4; phase++) {
             // All chord-window bits set: they must not affect phase extraction.
-            activeConfig[8] = 15 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT);
+            activeConfig[CONFIG_HEADER_LED] = 7 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT);
             ledSettings[0] = phase;
-            assert(configChordWindowMs() == 75);
+            testSetChordCount(1);
+                assert(configChordWindowMs() == 90);
             for (uint16_t hue = 0; hue < 256; hue++) {
                 rainbowHue = hue;
                 updateLeds();
@@ -468,7 +499,7 @@ static void testRainbowPhaseSpacing(void) {
 static void testRainbowDrift(void) {
     for (uint8_t phase = 0; phase < 4; phase++) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
-        activeConfig[8] = (phase << 4) | 0x40; // Fast.
+        activeConfig[CONFIG_HEADER_LED] = (phase << 4) | 0x40; // Fast.
         activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
         activeConfigValid = 1;
         P1 = P3 = 0xFF;
@@ -537,10 +568,10 @@ static void testTransparencyAndRainbow(void) {
     P1 &= ~0x02;
     for (uint8_t full = 0; full < 2; full++) {
         activeConfig[optionsOffset] = 0x3C | full; // Always-on amber.
-        activeConfig[5] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
+        activeConfig[CONFIG_HEADER_LED] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
         firmwareApplyConfig(1);
         assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
-        activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+        activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         updateLeds();
         assertIndicatorLeds(full, 1, 0);
         activeConfig[colorOffset] &= 0xF0; // A nonblack pressed color remains full brightness.
@@ -559,7 +590,7 @@ static void testTransparencyAndRainbow(void) {
         updateLeds();
         assert(memcmp(before, ledData, NUM_BYTES) == 0);
         stableState[0] = 1;
-        activeConfig[5] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
+        activeConfig[CONFIG_HEADER_LED] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
         updateLeds();
         assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
         // Timed Rainbow overrides an opaque black pressed key, then expires.
@@ -584,7 +615,7 @@ static void testTransparencyAndRainbow(void) {
         tick(7506); // Rainbow service must not relight an expired indication.
         for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
         // Rainbow numbered blinks animate while lit and stay dark while off.
-        activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+        activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         activeConfig[optionsOffset] = 0xF8 | full;
         currentMs = 8000;
         firmwareApplyConfig(1);
@@ -614,7 +645,7 @@ static void testMomentaryIndicatorCancellation(void) {
     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
     testLoadStarterProfile(PHYSICAL_VARIANT);
     memcpy(activeConfig + 9 + size, activeConfig + 9, size);
-    activeConfig[3] = 1; // Two layers, starting on zero.
+    testSetLayout(2, 0, 0); // Two layers, starting on zero.
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
     activeConfig[10] = 1;
     activeConfig[9 + size - 1] = 0x3C; // Always-on amber beneath the momentary layer.
@@ -680,9 +711,9 @@ static void testOneShotChordIndicator(void) {
     uint8_t second = first + 1;
     testLoadStarterProfile(PHYSICAL_VARIANT);
     memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-    activeConfig[3] = 1;
-    activeConfig[5] |= 2;
-    activeConfig[8] = 10;
+    testSetLayout(2, 0, 0);
+    testSetChordCount(1);
+    activeConfig[CONFIG_HEADER_LED] = 3;
     activeConfig[9] = activeConfig[9 + size] = 0x10 | CONFIG_ACTION_SET_LAYER;
     activeConfig[10] = 1;
     activeConfig[9 + size - 1] = 0x87; // Timed cyan.
@@ -726,10 +757,10 @@ static void testRuntimeHoldDoesNotEnterBootloader(void) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
         activeConfig[optionsOffset] = (activeConfig[optionsOffset] & ~2) | (mode == 4 ? 2 : 0);
         uint16_t crc = configCrc(activeConfig);
-        activeConfig[6] = crc;
-        activeConfig[7] = crc >> 8;
+        activeConfig[CONFIG_HEADER_CRC] = crc;
+        activeConfig[CONFIG_HEADER_CRC + 1] = crc >> 8;
         if (mode == 0) memset(activeConfig, 0xFF, CONFIG_SIZE);
-        if (mode == 1) activeConfig[2] = 11;
+        if (mode == 1) activeConfig[CONFIG_HEADER_VERSION] = 11;
         if (mode == 2) activeConfig[0] = 0;
         activeConfigValid = configValid(activeConfig, PHYSICAL_VARIANT);
         assert(activeConfigValid == (mode >= 3));
@@ -906,8 +937,8 @@ static void testAutoSleepWakeIndicator(void) {
                 for (uint8_t input = 0; input < 4; input++) {
                     initAutoSleep();
                     memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-                    activeConfig[3] = (CONFIG_MAX_LAYERS - 1) | (layer << 3);
-                    activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+                    testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
+                    activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
                     memset(activeConfig + 9 + size * layer + 2 * (NUM_LEDS + 3),
                            0xFF, (NUM_LEDS + 1) / 2); // Suppress held-key feedback.
                     activeConfig[9 + size * (layer + 1) - 1] =
@@ -978,6 +1009,7 @@ int main(void) {
     testSameLayerIndicator();
     testOneShotChordIndicator();
     testIndicatorBrightness();
+    testHeaderLedSettings();
     testRainbowSpeed();
     testRainbowPhaseSpacing();
     testRainbowDrift();

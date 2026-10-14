@@ -213,10 +213,10 @@ Legacy windows are 0–75ms in 5ms steps; the target is 20–90ms in 10ms steps.
 Matching 20ms–70ms values can migrate exactly. Smaller values, intermediate values
 and 75ms require a rounding/clamping policy. A zero window with saved chords
 previously disabled them and cannot preserve that behavior merely by choosing a
-new selector. Record a deliberate migration/review policy before implementing
-conversion; do not silently activate previously disabled chords or discard their
-bindings. The old window policy is an open migration decision, not a firmware
-implementation prerequisite. Empty chord collections need no window conversion
+new selector. The user approved nearest-10ms rounding with ties upward and clamping to
+20ms–90ms, with a migration notice whenever a saved chord window changes.
+An old zero window with saved chords retains all bindings and requires explicit
+window selection before saving; migration must not silently activate them. Empty chord collections need no window conversion
 to preserve recognition behavior.
 
 The outgoing published v14 format is already frozen from finalized source
@@ -272,5 +272,5 @@ These follow-ups are outside this documentation-only task.
 This task records the target and implementation plan only. It does not implement
 firmware, assign the five sleep-setting bits, create a release, flash hardware,
 change the active configurator or publish a deployment. Marker `B` and version 15
-are finalized; legacy window-migration choices and the five sleep-setting meanings
+are finalized; legacy window migration is defined above, while the five sleep-setting meanings
 remain undecided.

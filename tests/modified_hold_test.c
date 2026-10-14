@@ -18,7 +18,7 @@ static void testHoldEncoding(void) {
     assert(configValid(activeConfig, PHYSICAL_VARIANT)); // Encoder press.
     reset(); holdBinding(configKeyCount() + 1, 6, 0x6f); seal();
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
-    reset(); activeConfig[3] = 1 << 6;
+    reset(); testSetLayout(1, 0, 1);
     activeConfig[start + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD); activeConfig[start + 2] = 0x6f; seal();
     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
     activeConfig[start + 1] = activeConfig[start + 2] = 0;
@@ -56,13 +56,13 @@ static void testHoldLifecycle(void) {
     actionsRelease(1); pump(2, 10); assertConsumer(3, 0);
     assertModifiers(4, 1); assert(reports[4][3] == 4);
     // Holds retain their original binding across a layer change.
-    reset(); activeConfig[3] = 1; holdBinding(0, 6, 0x6f);
+    reset(); testSetLayout(2, 0, 0); holdBinding(0, 6, 0x6f);
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
     actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
     assert(count == 2 && latestModifiers() == 6);
     actionsRelease(0); pump(10, 20); assert(count == 4 && !latestModifiers());
     // Either chord member releases the composite output.
-    reset(); activeConfig[5] |= 2;
+    reset(); testSetChordCount(1);
     activeConfig[start] = 0; activeConfig[start + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD); activeConfig[start + 2] = 0x6f;
     actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
     assert(count == 2); actionsRelease(1); pump(10, 20);

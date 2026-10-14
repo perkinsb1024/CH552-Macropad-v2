@@ -8,8 +8,7 @@ void setup(void) {
   __bit interruptsEnabled = EA;
   EA = 0;
   if (eeprom_read_byte(0) != 0) eeprom_write_byte(0, 0);
-  if (eeprom_read_byte(1) != 0) eeprom_write_byte(1, 0);
-  if (eeprom_read_byte(0) != 0 || eeprom_read_byte(1) != 0) {
+  if (eeprom_read_byte(0) != 0) {
     while (1) {}
   }
   EA = interruptsEnabled;

@@ -4,6 +4,25 @@
 #include <stdint.h>
 #include "../src/config.h"
 
+/* Canonical target-header setters; unrelated fields are retained. */
+static inline void testSetVariant(uint8_t variant) {
+    activeConfig[CONFIG_HEADER_LAYERS] = (activeConfig[CONFIG_HEADER_LAYERS] & ~1) | variant;
+}
+static inline void testSetTimedCount(uint8_t count) {
+    activeConfig[CONFIG_HEADER_COUNTS] = (activeConfig[CONFIG_HEADER_COUNTS] & ~7) | count;
+}
+static inline void testSetLayout(uint8_t layers, uint8_t startup, uint8_t timers) {
+    activeConfig[CONFIG_HEADER_LAYERS] = (activeConfig[CONFIG_HEADER_LAYERS] & 1) |
+        ((layers - 1) << 1) | (startup << 4);
+    testSetTimedCount(timers);
+}
+static inline void testSetChordCount(uint8_t count) {
+    activeConfig[CONFIG_HEADER_COUNTS] = (activeConfig[CONFIG_HEADER_COUNTS] & 7) | (count << 3);
+}
+static inline void testSetStringLength(uint8_t length) {
+    activeConfig[CONFIG_HEADER_POOL] = length << 1;
+}
+
 /* Test-only profile fixture; firmware has no built-in profile fallback. */
 static void testLoadStarterProfile(uint8_t variant) {
     uint8_t keys = variant ? 3 : 6;
@@ -15,11 +34,11 @@ static void testLoadStarterProfile(uint8_t variant) {
     uint16_t crc;
 
     for (i = 0; i < CONFIG_SIZE; i++) activeConfig[i] = 0;
-    activeConfig[0] = 'M';
-    activeConfig[1] = 'P';
-    activeConfig[2] = CONFIG_VERSION;
-    activeConfig[5] = variant;
-    activeConfig[8] = 8 | (2 << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
+    activeConfig[0] = CONFIG_MARKER;
+
+    activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+    testSetVariant(variant);
+    activeConfig[CONFIG_HEADER_LED] = 2 | (2 << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
         (1 << CONFIG_HEADER_RAINBOW_SPEED_SHIFT);
     for (i = 0; i < keys; i++) {
         activeConfig[offset + 2 * i] = (modifiers[i] << 4) | CONFIG_ACTION_KEY_TAP;
@@ -35,8 +54,8 @@ static void testLoadStarterProfile(uint8_t variant) {
     activeConfig[offset + 2 * (keys + 2) + 1] = 1;
     activeConfig[offset + size - 1] = 0;
     crc = configCrc(activeConfig);
-    activeConfig[6] = (uint8_t)crc;
-    activeConfig[7] = (uint8_t)(crc >> 8);
+    activeConfig[CONFIG_HEADER_CRC] = (uint8_t)crc;
+    activeConfig[CONFIG_HEADER_CRC + 1] = (uint8_t)(crc >> 8);
 }
 
 #endif

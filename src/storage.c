@@ -39,16 +39,16 @@ FW_BIT storageSave(const __xdata uint8_t *image) {
   if (matches(image)) {
     return 1; // A retry of an unchanged save does not consume flash writes.
   }
-  if (!writeByte(0, 0) || !writeByte(1, 0)) {
+  if (!writeByte(CONFIG_HEADER_MARKER, 0)) {
     return 0;
   }
-  for (i = 2; i < CONFIG_SIZE; i++) {
+  for (i = 1; i < CONFIG_SIZE; i++) {
     if (!writeByte(i, image[i])) {
       return 0;
     }
   }
   // Restore validity last, only after the complete body has been verified.
-  if (!writeByte(1, 'P') || !writeByte(0, 'M')) {
+  if (!writeByte(CONFIG_HEADER_MARKER, CONFIG_MARKER)) {
     return 0;
   }
   // The caller validated the image and its CRC before this byte-for-byte check.

@@ -172,8 +172,8 @@ static uint8_t processRequest(void) {
         return PROTOCOL_INCOMPLETE;
       }
       crc = configCrc(stagedConfig);
-      if (crc != uploadCrc || stagedConfig[6] != (uint8_t)crc ||
-          stagedConfig[7] != (uint8_t)(crc >> 8)) {
+      if (crc != uploadCrc || stagedConfig[CONFIG_HEADER_CRC] != (uint8_t)crc ||
+          stagedConfig[CONFIG_HEADER_CRC + 1] != (uint8_t)(crc >> 8)) {
         return PROTOCOL_BAD_CRC;
       }
       if (!configValid(stagedConfig, PHYSICAL_VARIANT)) {

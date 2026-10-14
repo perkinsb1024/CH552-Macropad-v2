@@ -19,6 +19,7 @@ static uint8_t preview;
 static uint16_t now;
 static uint8_t busy;
 static uint8_t resetOnWrite;
+static uint8_t corruptOnMarkerRestore;
 
 uint8_t eeprom_read_byte(uint8_t offset) {
     assert(offset < CONFIG_SIZE);
@@ -40,6 +41,10 @@ void eeprom_write_byte(uint8_t offset, uint8_t value) {
         failAfter--;
     }
     flash[offset] = value;
+    if (corruptOnMarkerRestore && offset == 0 && value == CONFIG_MARKER) {
+        corruptOnMarkerRestore = 0;
+        flash[127] ^= 1;
+    }
 }
 
 uint8_t USB_EP1_sendConfig(const uint8_t *reply) {
@@ -58,8 +63,8 @@ void firmwarePreviewColor(uint8_t options) { preview = options; }
 
 static void seal(uint8_t *image) {
     uint16_t crc = configCrc(image);
-    image[6] = crc;
-    image[7] = crc >> 8;
+    image[CONFIG_HEADER_CRC] = crc;
+    image[CONFIG_HEADER_CRC + 1] = crc >> 8;
 }
 
 static void reset(void) {
@@ -67,13 +72,13 @@ static void reset(void) {
     memcpy(original, activeConfig, CONFIG_SIZE);
     memcpy(flash, original, CONFIG_SIZE);
     memcpy(upload, original, CONFIG_SIZE);
-    upload[3] = 9; // Two layers, starting on layer 1.
+    upload[CONFIG_HEADER_LAYERS] = PHYSICAL_VARIANT | (1 << 1) | (1 << 4); // Two layers, starting on layer 1.
     seal(upload);
     assert(configValid(upload, PHYSICAL_VARIANT));
     failAfter = -1;
     writes = applies = 0;
     now = 0;
-    busy = resetOnWrite = 0;
+    busy = resetOnWrite = corruptOnMarkerRestore = 0;
     protocolInit();
 }
 
@@ -111,7 +116,7 @@ static void request(uint8_t opcode, uint8_t offset, uint8_t length, const uint8_
 }
 
 static void begin(void) {
-    uint8_t data[3] = {128, upload[6], upload[7]};
+    uint8_t data[3] = {128, upload[CONFIG_HEADER_CRC], upload[CONFIG_HEADER_CRC + 1]};
     request(5, 0, 3, data);
     assert(sent[8] == 0);
 }
@@ -145,14 +150,14 @@ static void testReads(void) {
     assert(sent[8] == 3);
     request(99, 0, 0, 0);
     assert(sent[8] == 2);
-    flash[6] ^= 1;
+    flash[CONFIG_HEADER_CRC] ^= 1;
     protocolInit();
     request(2, 0, 0, 0);
     assert(sent[9] == 0 && writes == 0);
-    request(3, 6, 1, 0);
-    assert(sent[9] == flash[6]);
-    request(4, 6, 1, 0);
-    assert(sent[9] == flash[6]); // Boot copies even invalid flash into the inactive RAM image.
+    request(3, CONFIG_HEADER_CRC, 1, 0);
+    assert(sent[9] == flash[CONFIG_HEADER_CRC]);
+    request(4, CONFIG_HEADER_CRC, 1, 0);
+    assert(sent[9] == flash[CONFIG_HEADER_CRC]); // Boot copies even invalid flash into the inactive RAM image.
 }
 
 static void testSaveAndRetry(void) {
@@ -166,9 +171,7 @@ static void testSaveAndRetry(void) {
     assert(memcmp(flash, upload, CONFIG_SIZE) == 0);
     assert(memcmp(activeConfig, upload, CONFIG_SIZE) == 0);
     assert(writeOffsets[0] == 0 && writeValues[0] == 0);
-    assert(writeOffsets[1] == 1 && writeValues[1] == 0);
-    assert(writeOffsets[writes - 2] == 1 && writeValues[writes - 2] == 'P');
-    assert(writeOffsets[writes - 1] == 0 && writeValues[writes - 1] == 'M');
+    assert(writeOffsets[writes - 1] == 0 && writeValues[writes - 1] == CONFIG_MARKER);
     programmed = writes;
     request(7, 0, 0, 0); // Lost commit acknowledgement.
     assert(sent[8] == 0 && writes == programmed && applies == 1);
@@ -240,12 +243,12 @@ static void testMalformed(void) {
 static void testValidation(void) {
     reset();
     begin();
-    upload[6] ^= 1;
+    upload[CONFIG_HEADER_CRC] ^= 1;
     chunks();
     request(7, 0, 0, 0);
     assert(sent[8] == 7 && !writes);
     reset();
-    upload[3] = 0x19; // Two layers with an out-of-range startup layer (3).
+    upload[CONFIG_HEADER_LAYERS] = PHYSICAL_VARIANT | (1 << 1) | (3 << 4); // Two layers with an out-of-range startup layer (3).
     seal(upload);
     begin();
     chunks();
@@ -339,6 +342,13 @@ static void testFailedWrites(void) {
         request(2, 0, 0, 0);
         assert(sent[9] == (cut == 0));
     }
+    reset(); begin(); chunks();
+    corruptOnMarkerRestore = 1;
+    request(7, 0, 0, 0);
+    assert(sent[8] == 9 && !applies);
+    assert(memcmp(activeConfig, original, CONFIG_SIZE) == 0);
+    assert(flash[0] == CONFIG_MARKER); // Marker alone cannot prove a correct save.
+    protocolInit(); assert(!activeConfigValid);
 }
 
 static void testPreview(void) {

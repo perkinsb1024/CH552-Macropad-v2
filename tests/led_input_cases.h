@@ -13,7 +13,7 @@ static void advanceTimedTo(uint32_t target) {
 static void testTimedLighting(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     uint8_t offset = configTimedOffset();
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); // The waking key explicitly selects dim key feedback.
     activeConfig[10] = CONFIG_LED_KEY_SET;
     activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
@@ -92,7 +92,7 @@ static void testTimedLighting(void) {
 
 static void testConsumedPhysicalInput(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     uint8_t offset = configTimedOffset();
     activeConfig[offset] = 0; activeConfig[offset + 5] = 128;
     activeConfig[offset + 5] |= CONFIG_TIMED_CONSUME;
@@ -265,7 +265,7 @@ static void testTemporaryEffects(void) {
     // Same-layer selection leaves the alert; actual switching clears it.
     testLoadStarterProfile(PHYSICAL_VARIANT);
     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
-    activeConfig[3] = 1;
+    testSetLayout(2, 0, 0);
     activeConfig[9] = CONFIG_ACTION_SET_LAYER; activeConfig[10] = 0;
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
     activeConfig[9 + 2 * size - 1] = 0xAD; // Bright blue, always-on.
@@ -278,7 +278,7 @@ static void testTemporaryEffects(void) {
     actionsRelease(1);
     // A timer may start an alert; its resume restores the same layer, consuming wake.
     testLoadStarterProfile(PHYSICAL_VARIANT);
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     uint8_t timer = configTimedOffset();
     activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
@@ -412,7 +412,7 @@ static void testLedControls(void) {
 static void testSynchronizedBrightness(void) {
     testLoadStarterProfile(PHYSICAL_VARIANT);
     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
-    activeConfig[3] = 1; // Two layers with opposite configured brightnesses.
+    testSetLayout(2, 0, 0); // Two layers with opposite configured brightnesses.
     memcpy(activeConfig + 9 + size, activeConfig + 9, size);
     activeConfig[9 + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
     activeConfig[10 + 2 * (NUM_LEDS + 2)] = 1;

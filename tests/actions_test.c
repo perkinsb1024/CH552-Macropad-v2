@@ -91,7 +91,7 @@ static void pollCoarse(uint8_t tick) {
 static void testTimedPrecision(void) {
     reset();
     uint8_t timer = configTimedOffset();
-    activeConfig[3] = 2 << 6;
+    testSetLayout(1, 0, 2);
     activeConfig[timer] = 0; // Periodic, independent of physical input.
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
@@ -172,7 +172,7 @@ static void testConsumerHolds(void) {
     blocked = 0; actionsPoll(3); assert(lastConsumer() == 0);
 
     // Binding remains owned across a layer change, like keyboard holds.
-    reset(); activeConfig[3] = 1;
+    reset(); testSetLayout(2, 0, 0);
     activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
     actionsPress(0, 0); actionsPoll(0);
@@ -185,7 +185,7 @@ static void testConsumerHolds(void) {
     actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
 
     // Either chord member releases the hold; reset clears all output.
-    reset(); activeConfig[5] = 2;
+    reset(); testSetChordCount(1);
     activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_CONSUMER_HOLD;
     activeConfig[33] = 0xE9;
     actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
@@ -256,7 +256,7 @@ static void testScrollAcceleration(void) {
     // Timed scroll output is isolated from the physical stream.
     reset(); activeConfig[9] = 0x20 | CONFIG_ACTION_SCROLL; activeConfig[10] = 2;
     assert(scrollTap(0) == 2);
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     uint8_t timer = configTimedOffset(); activeConfig[timer] = 0;
     activeConfig[timer + 1] = 0x20 | CONFIG_ACTION_SCROLL;
     activeConfig[timer + 2] = 2;
@@ -286,7 +286,7 @@ static void testScrollHold(void) {
     assert(count == 6); actionsPoll(330); assert(count == 6);
 
     // A chord scroll holds until either member releases.
-    reset(); activeConfig[5] = 2;
+    reset(); testSetChordCount(1);
     activeConfig[31] = 0; activeConfig[32] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
     activeConfig[33] = 1;
     actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
@@ -316,7 +316,7 @@ static void testScrollHold(void) {
     // Pointer movement still repeats on its original 8 ms clock.
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
     activeConfig[10] = 1; activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
-    activeConfig[12] = 1; activeConfig[8] &= 0xF0; // No chord window.
+    activeConfig[12] = 1; testSetChordCount(0); // No chord window.
     actionsPress(0, 0); actionsPress(1, 0);
     for (uint16_t now = 0; now <= 9; now++) actionsPoll(now);
     assert(count == 3 && reports[0][4] == 1 && reports[1][2] == 1 && reports[2][2] == 1);
@@ -376,7 +376,7 @@ static void selectLayer(uint8_t target, uint8_t oneShot) {
 }
 static void previous(void) { selectLayer(CONFIG_LAYER_PREVIOUS, 0); }
 static void testPreviousLayer(void) {
-    reset(); activeConfig[3] = 1;
+    reset(); testSetLayout(2, 0, 0);
     previous(); assert(actionsLayer() == 0); // No history after initialization.
     selectLayer(1, 0); selectLayer(1, 0); // Same-layer selection preserves history.
     previous(); assert(actionsLayer() == 0);
@@ -387,16 +387,16 @@ static void testPreviousLayer(void) {
     actionsRotate(0); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     // Initialization/config application resets history to startup layer.
-    activeConfig[3] = 1 | (1 << 3); actionsInit();
+    testSetLayout(2, 1, 0); actionsInit();
     previous(); assert(actionsLayer() == 1);
-    reset(); activeConfig[3] = 1;
+    reset(); testSetLayout(2, 0, 0);
     selectLayer(1, 0);
     selectLayer(CONFIG_LAYER_PREVIOUS, 1); assert(actionsLayer() == 0);
     actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     previous(); assert(actionsLayer() == 1);
     // Momentary layers overlay the base; visiting/releasing them is not history.
-    reset(); activeConfig[3] = 1; activeConfig[3] = 2; // Three layers.
+    reset(); testSetLayout(2, 0, 0); testSetLayout(3, 0, 0); // Three layers.
     selectLayer(1, 0); selectLayer(0, 0); // Previous persistent layer is 1.
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[10] = 2;
     actionsPress(0, 0); assert(actionsLayer() == 2);
@@ -404,18 +404,18 @@ static void testPreviousLayer(void) {
     actionsRelease(0); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     // History is one entry, not a stack of every visited layer.
-    reset(); activeConfig[3] = 2;
+    reset(); testSetLayout(3, 0, 0);
     selectLayer(1, 0); selectLayer(2, 0);
     previous(); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 2);
     // Ordinary one-shot visits and their automatic return do not enter history.
-    reset(); activeConfig[3] = 2;
+    reset(); testSetLayout(3, 0, 0);
     selectLayer(1, 0); selectLayer(2, 1); assert(actionsLayer() == 2);
     actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     // A timed reminder can revert to wherever the persistent user selection was.
-    reset(); activeConfig[3] = 1;
-    activeConfig[3] |= 1 << 6;
+    reset(); testSetLayout(2, 0, 0);
+    testSetTimedCount(1);
     uint8_t timer = configTimedOffset();
     activeConfig[timer + 5] = 128 | CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 2] = 1;
@@ -426,7 +426,7 @@ static void testPreviousLayer(void) {
     previous(); assert(actionsLayer() == 1);
     // Persistent timer actions during a one-shot visit remember the underlying
     // base, and retain the existing pending one-shot return behavior.
-    reset(); activeConfig[3] = 1; activeConfig[3] = 2 | (1 << 6);
+    reset(); testSetLayout(2, 0, 0); testSetLayout(3, 0, 1);
     selectLayer(1, 0); selectLayer(0, 1);
     timer = configTimedOffset();
     activeConfig[timer] = 0;
@@ -460,7 +460,7 @@ static void testDefaults(void) {
 
 static void testLayerAndOwnership(void) {
     reset();
-    activeConfig[3] = 1; // Two layers
+    testSetLayout(2, 0, 0); // Two layers
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
     activeConfig[10] = 1;
     activeConfig[31 + 2] = CONFIG_ACTION_KEY_HOLD;
@@ -491,7 +491,7 @@ static void testRelativeLayer(void) {
     int8_t offset;
     int8_t target;
     reset();
-    activeConfig[3] = 3; // Four layers, starting at layer 1.
+    testSetLayout(4, 0, 0); // Four layers, starting at layer 1.
     activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
     activeConfig[10] = 2;
     activeConfig[9 + 22 * 2 + 2] = CONFIG_ACTION_RELATIVE_LAYER;
@@ -505,7 +505,7 @@ static void testRelativeLayer(void) {
     actionsRelease(1);
 
     reset();
-    activeConfig[3] = 3;
+    testSetLayout(4, 0, 0);
     activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
     activeConfig[10] = 0xFF;
     actionsInit();
@@ -514,7 +514,7 @@ static void testRelativeLayer(void) {
     actionsRelease(0);
 
     reset();
-    activeConfig[3] = 0; // One layer still accepts the full offset range.
+    testSetLayout(1, 0, 0); // One layer still accepts the full offset range.
     activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
     activeConfig[10] = 0xFD;
     actionsInit();
@@ -530,8 +530,8 @@ static void testRelativeLayer(void) {
             for (offset = -6; offset <= 6; offset++) {
                 reset();
                 memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-                activeConfig[5] = CONFIG_THREE_KEYS;
-                activeConfig[3] = (layers - 1) | (start << 3);
+                testSetVariant(CONFIG_THREE_KEYS);
+                testSetLayout(layers, start, 0);
                 activeConfig[9 + 15 * start] = CONFIG_ACTION_RELATIVE_LAYER;
                 activeConfig[10 + 15 * start] = (uint8_t)offset;
                 actionsInit();
@@ -552,7 +552,7 @@ static void testOneShot(void) {
     for (uint8_t index = 0; index < 2; index++) {
         type = layerTypes[index];
         reset();
-        activeConfig[3] = 1;
+        testSetLayout(2, 0, 0);
         activeConfig[9] = 0x10 | type;
         activeConfig[10] = 1;
         activeConfig[31 + 2] = CONFIG_ACTION_KEY_TAP;
@@ -569,7 +569,7 @@ static void testOneShot(void) {
         assert(count == 2 && reports[1][3] == 0);
 
         reset();
-        activeConfig[3] = 1;
+        testSetLayout(2, 0, 0);
         activeConfig[9] = 0x10 | type;
         activeConfig[10] = 1;
         activeConfig[31 + 14] = CONFIG_ACTION_SCROLL;
@@ -585,9 +585,9 @@ static void testOneShot(void) {
     }
 
     reset();
-    activeConfig[3] = 1;
-    activeConfig[5] = 2; // One chord on layer 1: keys 1 and 2.
-    activeConfig[8] = 8; // 40 ms chord window.
+    testSetLayout(2, 0, 0);
+    testSetChordCount(1); // One chord on layer 1: keys 1 and 2.
+    activeConfig[CONFIG_HEADER_LED] = 2; // 40 ms chord window.
     activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER;
     activeConfig[10] = 1;
     activeConfig[31 + 2] = CONFIG_ACTION_KEY_HOLD;
@@ -643,9 +643,9 @@ static void testOneShotGlobalLayerChord(void) {
         for (first = 3; first <= 4; first++) {
             reset();
             memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-            activeConfig[3] = 1 | (start << 3);
-            activeConfig[5] = 2;
-            activeConfig[8] = 10; // 50 ms.
+            testSetLayout(2, start, 0);
+            testSetChordCount(1);
+            activeConfig[CONFIG_HEADER_LED] = 3; // 50 ms.
             activeConfig[9] = activeConfig[31] = 0x10 | CONFIG_ACTION_SET_LAYER;
             activeConfig[10] = 1;
             activeConfig[53] = 0x8C; // Global keys 3+4.
@@ -705,7 +705,7 @@ static void testRolloverAndSequence(void) {
     reset();
     activeConfig[9] = CONFIG_ACTION_STRING;
     activeConfig[10] = 0;
-    activeConfig[4] = 2;
+    testSetStringLength(2);
     activeConfig[31] = 'A';
     activeConfig[32] = 0;
     actionsPress(0, 0);
@@ -896,7 +896,7 @@ static void testPointerHold(void) {
     // Either chord key ending its hold must stop repetition.
     for (released = 0; released < 2; released++) {
         reset();
-        activeConfig[5] = 2;
+        testSetChordCount(1);
         activeConfig[31] = 0;
         activeConfig[32] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
         activeConfig[33] = 3;
@@ -913,7 +913,7 @@ static void testPointerHold(void) {
 
 static void testLayerCancelsConsumer(void) {
     reset();
-    activeConfig[3] = 1;
+    testSetLayout(2, 0, 0);
     activeConfig[9] = CONFIG_ACTION_CONSUMER;
     activeConfig[10] = 0xE9;
     activeConfig[11] = CONFIG_ACTION_SET_LAYER;
@@ -981,7 +981,7 @@ static void testMouseAndLayerOrder(void) {
     assert(reports[2][1] == 1 && reports[3][1] == 0);
 
     reset();
-    activeConfig[3] = 2; // Three layers
+    testSetLayout(3, 0, 0); // Three layers
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
     activeConfig[10] = 1;
     activeConfig[31 + 2] = CONFIG_ACTION_MOMENTARY_LAYER;
@@ -1001,13 +1001,13 @@ static void chordProfile(uint8_t variant, uint8_t action) {
     uint16_t crc;
     reset();
     testLoadStarterProfile(variant);
-    activeConfig[5] |= 2; // One chord: keys 0 and 1 on layer 0.
+    testSetChordCount(1); // One chord: keys 0 and 1 on layer 0.
     activeConfig[offset] = 0;
     activeConfig[offset + 1] = action;
     activeConfig[offset + 2] = action == CONFIG_ACTION_MOUSE_HOLD ? 1 : 0x04;
     crc = configCrc(activeConfig);
-    activeConfig[6] = crc;
-    activeConfig[7] = crc >> 8;
+    activeConfig[CONFIG_HEADER_CRC] = crc;
+    activeConfig[CONFIG_HEADER_CRC + 1] = crc >> 8;
     assert(configValid(activeConfig, variant));
     actionsInit();
 }
@@ -1083,7 +1083,7 @@ static void testChordWindow(void) {
     assert(count == 1 && reports[0][3] == 4);
 
     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
-    activeConfig[8] = 0;
+    testSetChordCount(0); // No configured chords: immediate input.
     actionsPress(0, 100);
     actionsPoll(100);
     assert(count == 1 && reports[0][3] == 0x29);
@@ -1102,6 +1102,41 @@ static void testChordWindow(void) {
     actionsPress(1, 102);
     actionsPoll(102);
     assert(reports[count - 1][0] == 1 && reports[count - 1][3] == 4);
+}
+
+static void testChordWindowPresets(void) {
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        for (uint8_t selector = 0; selector < 8; selector++) {
+            uint16_t window = 20 + selector * 10;
+            for (uint8_t wrap = 0; wrap < 2; wrap++) {
+                uint16_t start = wrap ? 65520 : 100;
+                for (uint8_t edge = 0; edge < 3; edge++) {
+                    chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
+                    activeConfig[CONFIG_HEADER_LED] = selector;
+                    actionsPress(0, start);
+                    actionsPoll((uint16_t)(start + window - 1));
+                    assert(count == 0);
+                    actionsPress(1, (uint16_t)(start + window - 1 + edge));
+                    actionsPoll((uint16_t)(start + window - 1 + edge));
+                    assert(count == 1 && reports[0][3] == (edge ? 0x29 : 4));
+                }
+                chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
+                activeConfig[CONFIG_HEADER_LED] = selector;
+                actionsPress(0, start); actionsRelease(0);
+                actionsPoll(start);
+                assert(count == 1 && reports[0][3] == 0x29);
+                chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
+                activeConfig[CONFIG_HEADER_LED] = selector;
+                actionsPress(0, start); actionsPress(1, start); actionsPoll(start);
+                assert(count == 1 && reports[0][3] == 4);
+                chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
+                testSetChordCount(0);
+                activeConfig[CONFIG_HEADER_LED] = selector;
+                actionsPress(0, start); actionsPoll(start);
+                assert(count == 1 && reports[0][3] == 0x29);
+            }
+        }
+    }
 }
 
 static void testBriefHolds(void) {
@@ -1147,7 +1182,7 @@ static void testBriefHolds(void) {
 static void testChordLayers(void) {
     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
     // Move the chord table past a second layer.
-    activeConfig[3] = 1;
+    testSetLayout(2, 0, 0);
     activeConfig[31] = 0;
     activeConfig[32] = 0;
     activeConfig[33] = 0;
@@ -1177,7 +1212,7 @@ static void testChordLayers(void) {
 
 static void testMultipleChords(void) {
     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
-    activeConfig[5] = 4;
+    testSetChordCount(2);
     activeConfig[34] = 9; // Pair 2+3 follows pair 0+1.
     activeConfig[35] = CONFIG_ACTION_KEY_HOLD;
     activeConfig[36] = 5;
@@ -1213,7 +1248,7 @@ static void testRotationPressure(void) {
 static void testLongLivedMomentary(void) {
     uint32_t i;
     reset();
-    activeConfig[3] = 2;
+    testSetLayout(3, 0, 0);
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
     activeConfig[10] = 1;
     activeConfig[33] = CONFIG_ACTION_MOMENTARY_LAYER;
@@ -1298,8 +1333,8 @@ static void testHighLayerActions(void) {
         for (uint8_t mode = 0; mode < 3; mode++) {
             reset();
             memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-            activeConfig[5] = variant;
-            activeConfig[3] = count - 1;
+            testSetVariant(variant);
+            testSetLayout(count, 0, 0);
             activeConfig[9] = mode == 2 ? CONFIG_ACTION_MOMENTARY_LAYER :
                 CONFIG_ACTION_SET_LAYER | (mode ? 0x10 : 0);
             activeConfig[10] = count - 1;
@@ -1338,7 +1373,7 @@ static void testLedDispatch(void) {
     // A chord on the selected one-shot layer consumes it before applying policy.
     reset();
     memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-    activeConfig[3] = 1; activeConfig[5] = 2; activeConfig[8] = 8;
+    testSetLayout(2, 0, 0); testSetChordCount(1); activeConfig[CONFIG_HEADER_LED] = 2;
     activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
     activeConfig[53] = 0x15; // Keys 1+2, layer 1.
     activeConfig[54] = 0xF0 | CONFIG_ACTION_LED_CONTROL; activeConfig[55] = CONFIG_LED_BOTH_SET;
@@ -1356,7 +1391,7 @@ static void testLedDispatch(void) {
 
 static void testConsumeWake(void) {
     reset();
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     uint8_t timer = configTimedOffset();
     activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
@@ -1386,10 +1421,10 @@ static void testConsumeWake(void) {
     assert(count > before && reports[count - 1][0] == 2);
     // A consumed chord partner does not complete the pending chord.
     reset();
-    activeConfig[5] = 2;
+    testSetChordCount(1);
     timer = configTimedOffset();
     activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_KEY_TAP; activeConfig[33] = 6;
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
@@ -1404,7 +1439,7 @@ static void testConsumeWake(void) {
     actionsRelease(1);
     // All armed timers resume once; any one may request consuming the event.
     reset();
-    activeConfig[3] = 2 << 6;
+    testSetLayout(1, 0, 2);
     timer = configTimedOffset();
     for (uint8_t i = 0; i < 2; i++) {
         activeConfig[timer + CONFIG_TIMED_SIZE * i + 3] = CONFIG_ACTION_LED_CONTROL;
@@ -1416,7 +1451,7 @@ static void testConsumeWake(void) {
     assert(!actionsTimedInput() && ledCalls == 2);
     // Consuming the wake binding must not consume an already-armed one-shot layer.
     reset();
-    activeConfig[3] = 1 | (1 << 6);
+    testSetLayout(2, 0, 1);
     activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
     activeConfig[33] = CONFIG_ACTION_KEY_TAP; activeConfig[34] = 4;
     timer = configTimedOffset();
@@ -1446,7 +1481,7 @@ int main(void) {
     testConsumeWake();
     reset();
     uint8_t timer = configTimedOffset();
-    activeConfig[3] = 2 << 6;
+    testSetLayout(1, 0, 2);
     activeConfig[timer] = 0; // Every tick, no reset on physical input.
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
@@ -1475,7 +1510,7 @@ int main(void) {
     // Endpoint 64, and resume does not disturb a non-reset periodic phase.
     reset();
     timer = configTimedOffset();
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     activeConfig[timer] = CONFIG_TIMED_INTERVAL_MASK;
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
@@ -1491,7 +1526,7 @@ int main(void) {
     assert(ledCalls == 1);
     // Timer execution must not consume an armed one-shot layer.
     reset();
-    activeConfig[3] = 1 | (1 << 6); // Two layers, one timer.
+    testSetLayout(2, 0, 1); // Two layers, one timer.
     memset(activeConfig + 31, 0, 22);
     activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER;
     activeConfig[10] = 1;
@@ -1513,7 +1548,7 @@ int main(void) {
     // Repeated timer HID actions use the existing bounded queue/drop accounting.
     reset();
     timer = configTimedOffset();
-    activeConfig[3] = 1 << 6;
+    testSetLayout(1, 0, 1);
     activeConfig[timer] = 0;
     activeConfig[timer + 1] = CONFIG_ACTION_KEY_TAP;
     activeConfig[timer + 2] = 4;
@@ -1524,7 +1559,7 @@ int main(void) {
     // Independent reset flags retain periodic phase while restarting inactivity.
     reset();
     timer = configTimedOffset();
-    activeConfig[3] = 2 << 6;
+    testSetLayout(1, 0, 2);
     activeConfig[timer] = 2;
     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
     activeConfig[timer + 2] = CONFIG_LED_INDICATOR_SET;
@@ -1557,6 +1592,7 @@ int main(void) {
     testChords(0);
     testChords(1);
     testChordWindow();
+    testChordWindowPresets();
     testBriefHolds();
     testChordLayers();
     testDefaults();

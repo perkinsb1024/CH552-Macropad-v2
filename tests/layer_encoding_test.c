@@ -5,7 +5,7 @@
 
 static void setupLayers(uint8_t layers, uint8_t initial) {
     reset(); memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
-    activeConfig[3] = (layers - 1) | (initial << 3);
+    testSetLayout(layers, initial, 0);
     actionsInit();
 }
 static void layerBinding(uint8_t layer, uint8_t input, uint8_t aux, uint8_t param) {
@@ -34,7 +34,7 @@ static void testUnifiedLayerValidation(void) {
         const uint8_t held[] = {CONFIG_ACTION_SET_LAYER | (aux << 4), 1};
         define(tail, held, 1); bind(0, tail, 1); seal();
         assert(!configValid(activeConfig, PHYSICAL_VARIANT));
-        setupLayers(2, 0); tail = configTimedOffset(); activeConfig[3] |= 1 << 6;
+        setupLayers(2, 0); tail = configTimedOffset(); testSetTimedCount(1);
         activeConfig[tail + 1] = held[0]; activeConfig[tail + 2] = 1;
         seal(); assert(!configValid(activeConfig, PHYSICAL_VARIANT));
         activeConfig[tail + 1] = activeConfig[tail + 2] = 0;
@@ -83,7 +83,7 @@ static void testRelativeHoldRetention(void) {
     actionsPress(1, 1); assert(actionsLayer() == 2);
     actionsRelease(1); assert(actionsLayer() == 0);
     // Either chord key releases the resolved hold.
-    setupLayers(3, 0); uint8_t tail = configTimedOffset(); activeConfig[5] |= 2;
+    setupLayers(3, 0); uint8_t tail = configTimedOffset(); testSetChordCount(1);
     activeConfig[tail] = 0; activeConfig[tail + 1] = (0x60 | CONFIG_ACTION_SET_LAYER); activeConfig[tail + 2] = 2;
     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     actionsPress(0, 0); actionsPress(1, 1); assert(actionsLayer() == 2);

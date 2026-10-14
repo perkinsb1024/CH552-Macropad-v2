@@ -51,7 +51,7 @@ uint16_t configCrc(const __xdata uint8_t *image) {
     uint8_t i;
     uint8_t bit;
     for (i = 0; i < CONFIG_SIZE; i++) {
-        if (i == 6 || i == 7) {
+        if (i == CONFIG_HEADER_CRC || i == CONFIG_HEADER_CRC + 1) {
             continue;
         }
         crc ^= (uint16_t)image[i] << 8;
@@ -182,24 +182,27 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
 #ifdef __SDCC
     if (variant != PHYSICAL_VARIANT) return 0;
 #endif
-    if (variant > CONFIG_THREE_KEYS || validationImage[0] != 'M' || validationImage[1] != 'P' ||
-        validationImage[2] != CONFIG_VERSION ||
-        ((validationImage[5] & 1) != variant)) {
+    if (variant > CONFIG_THREE_KEYS || validationImage[CONFIG_HEADER_MARKER] != CONFIG_MARKER ||
+        validationImage[CONFIG_HEADER_VERSION] != CONFIG_VERSION ||
+        (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_VARIANT_MASK) != variant ||
+        (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_LAYERS_RESERVED) ||
+        (validationImage[CONFIG_HEADER_POOL] & CONFIG_HEADER_POOL_RESERVED) ||
+        validationImage[CONFIG_HEADER_SLEEP] != 0) {
         return 0;
     }
-    validationLayers = (validationImage[3] & 7) + 1;
-    if (((validationImage[3] >> 3) & 7) >= validationLayers) {
+    validationLayers = ((validationImage[CONFIG_HEADER_LAYERS] >> CONFIG_HEADER_LAYER_SHIFT) & CONFIG_HEADER_LAYER_MASK) + 1;
+    if (((validationImage[CONFIG_HEADER_LAYERS] >> CONFIG_HEADER_STARTUP_SHIFT) & CONFIG_HEADER_LAYER_MASK) >= validationLayers) {
         return 0;
     }
     keys = keyCount(variant);
     size = layerSize(variant);
     if (validationLayers > maxLayers(variant)) return 0;
-    chords = (validationImage[5] >> 1) & 63;
+    chords = validationImage[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
     // Each product fits a byte after the layer/chord count checks; the sum
     // remains 16-bit so malformed images cannot wrap past the capacity check.
-    timers = (validationImage[3] >> 6) | ((validationImage[4] >> 7) << 2);
+    timers = validationImage[CONFIG_HEADER_COUNTS] & CONFIG_HEADER_TIMED_MASK;
     if (timers > CONFIG_TIMED_MAX) return 0;
-    validationUsed = validationImage[4] & 127;
+    validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed;
     if (end > CONFIG_SIZE) {
@@ -249,19 +252,23 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         offset++;
     }
     crc = configCrc(validationImage);
-    return validationImage[6] == (uint8_t)crc && validationImage[7] == (uint8_t)(crc >> 8);
+    return validationImage[CONFIG_HEADER_CRC] == (uint8_t)crc &&
+           validationImage[CONFIG_HEADER_CRC + 1] == (uint8_t)(crc >> 8);
 }
 
-uint8_t configLayerCount(void) { return (activeConfig[3] & 7) + 1; }
-uint8_t configStartupLayer(void) { return (activeConfig[3] >> 3) & 7; }
+uint8_t configLayerCount(void) { return ((activeConfig[CONFIG_HEADER_LAYERS] >> CONFIG_HEADER_LAYER_SHIFT) & CONFIG_HEADER_LAYER_MASK) + 1; }
+uint8_t configStartupLayer(void) { return (activeConfig[CONFIG_HEADER_LAYERS] >> CONFIG_HEADER_STARTUP_SHIFT) & CONFIG_HEADER_LAYER_MASK; }
 #ifndef __SDCC
-uint8_t configKeyCount(void) { return keyCount(activeConfig[5] & 1); }
+uint8_t configKeyCount(void) { return keyCount(activeConfig[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_VARIANT_MASK); }
 #endif
-uint8_t configChordWindowMs(void) { return (activeConfig[8] & 15) * 5; }
+uint8_t configChordWindowMs(void) {
+    if (!(activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT)) return 0;
+    return 20 + (activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_WINDOW_MASK) * 10;
+}
 
 // Share the active-image layer address calculation across all accessors.
 static uint8_t layerOffset(uint8_t layer) {
-    return 9 + layerSize(activeConfig[5] & 1) * layer;
+    return 9 + layerSize(activeConfig[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_VARIANT_MASK) * layer;
 }
 
 uint8_t configLayerOptions(uint8_t layer) {
@@ -293,7 +300,7 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
                     __data uint8_t *first, __data uint8_t *second) {
     uint8_t keys = configKeyCount();
     uint8_t id;
-    uint8_t count = (activeConfig[5] >> 1) & 63;
+    uint8_t count = activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
     uint8_t layers = configLayerCount();
     uint8_t offset = layerOffset(layers);
     uint8_t i;
@@ -320,17 +327,17 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
 }
 
 uint8_t configTimedCount(void) {
-    return (activeConfig[3] >> 6) | ((activeConfig[4] >> 7) << 2);
+    return activeConfig[CONFIG_HEADER_COUNTS] & CONFIG_HEADER_TIMED_MASK;
 }
 
 uint8_t configTimedOffset(void) {
-    return layerOffset(configLayerCount()) + 3 * ((activeConfig[5] >> 1) & 63);
+    return layerOffset(configLayerCount()) + 3 * (activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT);
 }
 
 uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
     uint8_t position = offset + index;
     uint8_t start;
-    if (position < offset || position >= (activeConfig[4] & 127)) {
+    if (position < offset || position >= (activeConfig[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT)) {
         return 0;
     }
     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();

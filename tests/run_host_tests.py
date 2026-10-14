@@ -13,6 +13,8 @@ flags += ["-D" + arg.removeprefix("--define=") for arg in sys.argv[1:]
 with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
     suites = [("config", ["src/config.c"]), ("actions", ["src/config.c", "src/actions.c"]), ("protocol", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"])]
     suites += [("usb", [], variant) for variant in (0, 1)]
+    suites += [("header_repacking", ["src/config.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+    suites += [("erase_config", [])]
     suites += [("modified_hold", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("layer_encoding", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("macros", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]

@@ -6,8 +6,8 @@
 
 static void seal(void) {
     uint16_t crc = configCrc(activeConfig);
-    activeConfig[6] = (uint8_t)crc;
-    activeConfig[7] = (uint8_t)(crc >> 8);
+    activeConfig[CONFIG_HEADER_CRC] = (uint8_t)crc;
+    activeConfig[CONFIG_HEADER_CRC + 1] = (uint8_t)(crc >> 8);
 }
 
 static void testStarterFixture(uint8_t variant) {
@@ -27,7 +27,7 @@ static void testStarterFixture(uint8_t variant) {
     assert(configLayerCount() == 1);
     assert(configStartupLayer() == 0);
     assert(configKeyCount() == (variant ? 3 : 6));
-    assert(configChordWindowMs() == 40);
+    assert(configChordWindowMs() == 0);
     assert(configLayerOptions(0) == 0);
     activeConfig[9 + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
     seal();
@@ -53,7 +53,7 @@ static void testCachedColorOffsets(uint8_t variant) {
     testLoadStarterProfile(variant);
     uint8_t keys = configKeyCount();
     uint8_t layerSize = variant ? 15 : 22;
-    activeConfig[3] = 1; // Two layers, starting on layer zero.
+    testSetLayout(2, 0, 0); // Two layers, starting on layer zero.
     for (uint8_t layer = 0; layer < 2; layer++) {
         uint8_t expected = 9 + layer * layerSize + 2 * (keys + 3);
         uint8_t offset = configLedColorOffset(layer);
@@ -70,10 +70,10 @@ static void testCachedColorOffsets(uint8_t variant) {
 
 static void testInvalid(void) {
     testLoadStarterProfile(CONFIG_SIX_KEYS);
-    activeConfig[8] = 0x18;
+    activeConfig[CONFIG_HEADER_LED] = 0x12;
     seal();
     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
-    activeConfig[8] = 8;
+    activeConfig[CONFIG_HEADER_LED] = 2;
     activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
     activeConfig[10] = 0xE0;
     seal();
@@ -87,26 +87,26 @@ static void testInvalid(void) {
     seal();
     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
     testLoadStarterProfile(CONFIG_SIX_KEYS);
-    activeConfig[6] ^= 1;
+    activeConfig[CONFIG_HEADER_CRC] ^= 1;
     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
 }
 
 static void testHeaderAndIgnoredFields(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         testLoadStarterProfile(variant);
-        activeConfig[5] |= CONFIG_HEADER_TRANSPARENT_BLACK;
-        activeConfig[3] |= 0xC0;
-        activeConfig[8] |= 0xC0;
+        activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+        testSetTimedCount(3);
+        activeConfig[CONFIG_HEADER_LED] |= 0xC0;
         activeConfig[127] = 0;
         seal();
         assert(configValid(activeConfig, variant));
         assert(configLayerCount() == 1 && configStartupLayer() == 0);
         assert(configKeyCount() == (variant ? 3 : 6));
-        assert(configChordWindowMs() == 40);
+        assert(configChordWindowMs() == 0);
         // Header and tail bytes remain covered by CRC.
         activeConfig[127] ^= 1;
         assert(!configValid(activeConfig, variant));
-        activeConfig[2] = 2;
+        activeConfig[CONFIG_HEADER_VERSION] = 2;
         seal();
         assert(!configValid(activeConfig, variant));
     }
@@ -119,22 +119,22 @@ static void testCapacityAndStrings(uint8_t variant) {
     uint8_t remaining;
     for (layers = 1; layers <= (variant ? 7 : 5); layers++) {
         testLoadStarterProfile(variant);
-        activeConfig[3] = layers - 1;
+        testSetLayout(layers, 0, 0);
         pool = 9 + size * layers;
         remaining = CONFIG_SIZE - pool;
         assert(remaining == (variant ? 119 - 15 * layers : 119 - 22 * layers));
         // Extra layers contain canonical empty actions and LED colors.
-        activeConfig[4] = remaining;
+        testSetStringLength(remaining);
         activeConfig[pool + remaining - 1] = 0;
         seal();
         assert(configValid(activeConfig, variant));
-        activeConfig[4]++;
+        activeConfig[CONFIG_HEADER_POOL] += 2;
         seal();
         assert(!configValid(activeConfig, variant));
     }
     testLoadStarterProfile(variant);
     pool = 9 + size;
-    activeConfig[4] = 4;
+    testSetStringLength(4);
     activeConfig[9] = CONFIG_ACTION_STRING;
     activeConfig[10] = 0;
     activeConfig[pool] = 'A';
@@ -159,7 +159,7 @@ static void testStringBoundaries(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         testLoadStarterProfile(variant);
         uint8_t pool = 9 + (variant ? 15 : 22);
-        activeConfig[4] = 8;
+        testSetStringLength(8);
         activeConfig[9] = CONFIG_ACTION_STRING;
         for (uint8_t mask = 0; mask < 128; mask++) {
             for (uint8_t i = 0; i < 7; i++)
@@ -180,7 +180,7 @@ static void testChords(void) {
     uint8_t first;
     uint8_t second;
     testLoadStarterProfile(CONFIG_THREE_KEYS);
-    activeConfig[5] = 1 | (2 << 1);
+    testSetVariant(1); testSetChordCount(2);
     activeConfig[24] = 0;
     activeConfig[25] = CONFIG_ACTION_KEY_TAP;
     activeConfig[26] = 0x04;
@@ -223,7 +223,7 @@ static void testEveryChordPair(void) {
         for (uint8_t selected = 0; selected < pairs; selected++) {
             testLoadStarterProfile(variant);
             uint8_t offset = configTimedOffset();
-            activeConfig[5] |= 2;
+            testSetChordCount(1);
             activeConfig[offset] = selected;
             activeConfig[offset + 1] = CONFIG_ACTION_KEY_TAP;
             activeConfig[offset + 2] = 4 + selected;
@@ -250,12 +250,12 @@ static void testPersistentMouseModes(void) {
                 uint8_t offset = 9;
                 if (slot == 1) offset = 9 + (variant ? 8 : 14);
                 if (slot == 2) {
-                    activeConfig[5] |= 2;
+                    testSetChordCount(1);
                     offset = configTimedOffset() - 2;
                     activeConfig[offset - 1] = 0;
                 }
                 if (slot == 3 || slot == 4) {
-                    activeConfig[3] |= 1 << 6;
+                    testSetTimedCount(1);
                     offset = configTimedOffset() + (slot == 3 ? 1 : 3);
                 }
                 if (slot == 5) offset = configTimedOffset(); // Unreferenced macro step.
@@ -274,7 +274,7 @@ static void testPersistentMouseModes(void) {
             }
         }
         testLoadStarterProfile(variant);
-        activeConfig[2] = 12; seal(); assert(!configValid(activeConfig, variant));
+        activeConfig[CONFIG_HEADER_VERSION] = 12; seal(); assert(!configValid(activeConfig, variant));
     }
 }
 
@@ -289,12 +289,12 @@ static void testMultiClick(void) {
                     uint8_t offset = 9;
                     if (slot == 1) offset = rotation;
                     if (slot == 2) {
-                        activeConfig[5] |= 2;
+                        testSetChordCount(1);
                         offset = configTimedOffset() - 2;
                         activeConfig[offset - 1] = 0;
                     }
                     if (slot >= 3) {
-                        activeConfig[3] |= 1 << 6;
+                        testSetTimedCount(1);
                         offset = configTimedOffset() + (slot == 3 ? 1 : 3);
                     }
                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_MOUSE_CLICK;
@@ -350,7 +350,7 @@ static void testActions(void) {
             param = 0xE9;
             activeConfig[9] = 0x08; // Volume up
         } else if (type == CONFIG_ACTION_STRING) {
-            activeConfig[4] = 1;
+            testSetStringLength(1);
         }
         if (type == CONFIG_ACTION_LED_CONTROL) { activeConfig[9] = 0; param = CONFIG_LED_PHASE_SET; }
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
@@ -402,8 +402,8 @@ static void testExpandedLayers(uint8_t variant) {
     uint8_t chord = 9 + size * count;
     for (uint8_t startup = 0; startup < count; startup++) {
         testLoadStarterProfile(variant);
-        activeConfig[3] = (count - 1) | (startup << 3);
-        activeConfig[5] |= 4; // Two chords: local then global, on the highest layer.
+        testSetLayout(count, startup, 0);
+        testSetChordCount(2); // Two chords: local then global, on the highest layer.
         activeConfig[chord] = (count - 1) << 4;
         activeConfig[chord + 1] = CONFIG_ACTION_SET_LAYER;
         activeConfig[chord + 2] = count - 1;
@@ -423,10 +423,10 @@ static void testExpandedLayers(uint8_t variant) {
         assert(configChord(count - 1, 0, 1, &first, &second));
         assert(second == count - 1); // Local wins over global.
         assert(configChord(0, 0, 1, &first, &second) && second == 0);
-        activeConfig[3] = (count - 1) | (count << 3);
+        testSetLayout(count, count, 0);
         seal();
         assert(!configValid(activeConfig, variant));
-        activeConfig[3] = count; // One more complete layer exceeds the image capacity.
+        testSetLayout(count + 1, 0, 0); // One more complete layer exceeds the image capacity.
         seal();
         assert(!configValid(activeConfig, variant));
     }
@@ -471,7 +471,7 @@ static void testLedPayloads(void) {
 static void testPreviousLayerSentinel(void) {
     for (uint8_t variant = 0; variant <= 1; variant++) {
         for (uint8_t version = 6; version <= CONFIG_VERSION; version++) {
-            testLoadStarterProfile(variant); activeConfig[2] = version;
+            testLoadStarterProfile(variant); activeConfig[CONFIG_HEADER_VERSION] = version;
             for (uint8_t aux = 0; aux < 3; aux++) {
                 activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4);
                 for (uint16_t target = 0; target < 256; target++) {
@@ -508,21 +508,21 @@ static void testConsumerHoldEncoding(void) {
             }
         }
         testLoadStarterProfile(variant);
-        activeConfig[4] = 2;
+        testSetStringLength(2);
         uint8_t pool = configTimedOffset();
         activeConfig[pool] = 'A'; activeConfig[pool + 1] = 0;
         for (uint8_t aux = 0; aux < 16; aux++) {
             activeConfig[9] = aux << 4; activeConfig[10] = 0;
             seal(); assert(!!configValid(activeConfig, variant) == (aux <= (CONFIG_MACRO_PAUSE ? 2 : 1)));
         }
-        activeConfig[3] = 1 << 6;
+        testSetLayout(1, 0, 1);
         uint8_t timer = configTimedOffset();
-        activeConfig[4] = 0;
+        testSetStringLength(0);
         activeConfig[timer + 1] = CONFIG_ACTION_CONSUMER_HOLD;
         activeConfig[timer + 2] = 0xE9;
         seal(); assert(!configValid(activeConfig, variant));
         // Legacy bytes must never be interpreted using the v8 type allocation.
-        testLoadStarterProfile(variant); activeConfig[2] = 7;
+        testLoadStarterProfile(variant); activeConfig[CONFIG_HEADER_VERSION] = 7;
         activeConfig[9] = 9; activeConfig[10] = 0xE9;
         seal(); assert(!configValid(activeConfig, variant));
     }
@@ -539,12 +539,12 @@ static void testScrollHoldValidation(void) {
         activeConfig[rotation] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
         activeConfig[rotation + 1] = 1;
         seal(); assert(!configValid(activeConfig, variant));
-        testLoadStarterProfile(variant); activeConfig[3] = 1 << 6;
+        testLoadStarterProfile(variant); testSetLayout(1, 0, 1);
         uint8_t timer = configTimedOffset();
         activeConfig[timer + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
         activeConfig[timer + 2] = 1;
         seal(); assert(!configValid(activeConfig, variant));
-        testLoadStarterProfile(variant); activeConfig[5] = variant | 2;
+        testLoadStarterProfile(variant); testSetVariant(variant); testSetChordCount(1);
         uint8_t chord = configTimedOffset() - 3;
         activeConfig[chord] = 0;
         activeConfig[chord + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
@@ -579,14 +579,14 @@ static void testScrollAxisValidation(void) {
             }
         }
         testLoadStarterProfile(variant);
-        activeConfig[3] |= 0x40;
+        testSetTimedCount(1);
         uint8_t timer = configTimedOffset();
         activeConfig[timer + 1] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HORIZONTAL;
         activeConfig[timer + 2] = -127;
         seal(); assert(configValid(activeConfig, variant));
         activeConfig[timer + 1] |= CONFIG_SCROLL_HOLD;
         seal(); assert(!configValid(activeConfig, variant));
-        testLoadStarterProfile(variant); activeConfig[2] = 8;
+        testLoadStarterProfile(variant); activeConfig[CONFIG_HEADER_VERSION] = 8;
         seal(); assert(!configValid(activeConfig, variant));
     }
 }
@@ -602,14 +602,14 @@ static void testTypeZeroAndReserved(void) {
                     if (slot == 1) offset += 2 * (configKeyCount() + 1);
                     if (slot == 2) {
                         offset = configTimedOffset() + 1;
-                        activeConfig[5] |= 2;
+                        testSetChordCount(1);
                     }
                     if (slot == 3 || slot == 4) {
                         offset = configTimedOffset() + (slot == 3 ? 1 : 3);
-                        activeConfig[3] |= 1 << 6;
+                        testSetTimedCount(1);
                     }
                     uint8_t pool = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
-                    activeConfig[4] = 4;
+                    testSetStringLength(4);
                     memcpy(activeConfig + pool, "A\0B", 4);
                     if (slot == 5) offset = pool + 4;
                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_RESERVED;
@@ -635,19 +635,19 @@ int main(void) {
     for (uint8_t variant = 0; variant < 2; variant++) {
         for (uint8_t timers = 0; timers < 8; timers++) {
             testLoadStarterProfile(variant);
-            activeConfig[3] = (timers & 3) << 6;
-            activeConfig[4] = (timers >> 2) << 7;
+            testSetLayout(1, 0, timers);
+            testSetStringLength(0);
             seal();
             assert(configValid(activeConfig, variant) == (timers <= CONFIG_TIMED_MAX));
             if (timers <= CONFIG_TIMED_MAX) assert(configTimedCount() == timers);
         }
         testLoadStarterProfile(variant);
         uint8_t offset = configTimedOffset();
-        activeConfig[3] = 1 << 6;
+        testSetLayout(1, 0, 1);
         activeConfig[offset] = 255; // Longest interval, reset on input.
         activeConfig[offset + 1] = CONFIG_ACTION_STRING;
         activeConfig[offset + 2] = 0;
-        activeConfig[4] = 2;
+        testSetStringLength(2);
         activeConfig[offset + CONFIG_TIMED_SIZE] = 'A';
         activeConfig[offset + CONFIG_TIMED_SIZE + 1] = 0;
         seal();
@@ -666,23 +666,23 @@ int main(void) {
             }
         }
         testLoadStarterProfile(variant);
-        activeConfig[2] = 6;
-        activeConfig[3] |= 0xC0; // Old reserved bits are not timer counts.
+        activeConfig[CONFIG_HEADER_VERSION] = 6;
+        testSetTimedCount(3); // Old reserved bits are not timer counts.
         seal();
         assert(!configValid(activeConfig, variant)); // Legacy requires host migration.
         testLoadStarterProfile(variant);
-        activeConfig[2] = CONFIG_VERSION;
-        activeConfig[3] = 1 << 6;
+        activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+        testSetLayout(1, 0, 1);
         activeConfig[configTimedOffset()] = 255;
         seal();
         assert(configValid(activeConfig, variant) && configTimedCount() == 1);
         testLoadStarterProfile(variant);
-        activeConfig[2] = CONFIG_VERSION;
-        activeConfig[4] = CONFIG_SIZE - (9 + (variant ? 15 : 22));
+        activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+        testSetStringLength(CONFIG_SIZE - (9 + (variant ? 15 : 22)));
         seal();
         assert(configValid(activeConfig, variant)); // Full string-pool budget.
         for (uint8_t version = CONFIG_VERSION + 1; version <= CONFIG_VERSION + 2; version++) {
-            activeConfig[2] = version;
+            activeConfig[CONFIG_HEADER_VERSION] = version;
             seal();
             assert(!configValid(activeConfig, variant)); // Superseded local experiments.
         }

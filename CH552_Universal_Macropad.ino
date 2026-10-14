@@ -132,7 +132,7 @@ void updateLeds() {
   uint8_t spacing = ledSettings[0];
   if (previewOptions) {
     indicator = 1 + (options & CONFIG_LAYER_OPT_FULL_BRIGHTNESS);
-    if (colorPreviewActive) spacing = (activeConfig[8] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
+    if (colorPreviewActive) spacing = (activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_PHASE_SHIFT) & 3;
   } else
   if (!indicator) {
     // Suppressed indications must not obscure key feedback.
@@ -158,7 +158,7 @@ void updateLeds() {
       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
     } else if (keyLevel && stableState[i] &&
                ((color = configLedColorAt(colors, i)) != 15 ||
-                !(activeConfig[5] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
+                !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
       level = keyLevel;
       rainbow = 0; // Key palette 15 is Off, never Rainbow.
     } else {
@@ -293,8 +293,8 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
         next = ledStep(next, delta, count);
       } else if (value == 15) {
         next = 3;
-        if (current == 0) next = (activeConfig[8] >> 4) & 3;
-        if (current == 1) next = activeConfig[8] >> 6;
+        if (current == 0) next = (activeConfig[CONFIG_HEADER_LED] >> 4) & 3;
+        if (current == 1) next = activeConfig[CONFIG_HEADER_LED] >> 6;
       }
       ledSettings[current] = next;
     }
@@ -443,8 +443,8 @@ void firmwareApplyConfig(ACTION_BIT restartIndicator) {
   uint16_t now = clock;
   // Bits 4-11 form the 16 ms fine clock; the low word is sufficient.
   actionsTimedReset(now >> 4);
-  ledSettings[0] = (activeConfig[8] >> 4) & 3;
-  ledSettings[1] = activeConfig[8] >> 6;
+  ledSettings[0] = (activeConfig[CONFIG_HEADER_LED] >> 4) & 3;
+  ledSettings[1] = activeConfig[CONFIG_HEADER_LED] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
@@ -521,7 +521,7 @@ void loop() {
   }
   scanEncoder();
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
-      rainbowFrameMs[previewOptions ? activeConfig[8] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
+      rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
   {
     uint8_t animationOptions = previewOptions;
     if (animationOptions) {
