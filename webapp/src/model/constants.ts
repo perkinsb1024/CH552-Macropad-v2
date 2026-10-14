@@ -107,3 +107,6 @@ export const enum LayerIndicatorBehavior {
   BlinkByLayer = 2,
   AlwaysOn = 3,
 }
+
+export const SLEEP_TIMEOUT_MINUTES = [15, 30, 60, 120] as const;
+export const SLEEP_TIMEOUT_LABELS = ['15 Minutes', '30 Minutes', '1 Hour', '2 Hours'] as const;

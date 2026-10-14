@@ -2,8 +2,8 @@
 
 Recorded October 13, 2026, on `experiment/v15-updated-header`.
 Status: implemented. Firmware checkpoint: `a50b2e4`; configurator, migration
-and documentation follow in the integration checkpoint. New sleep behaviors
-remain deferred until their five-bit meanings are defined.
+and documentation follow in the integration checkpoint. Sleep settings were subsequently defined and implemented; see
+[Auto-Sleep Extension Results](auto-sleep-extension-results.md).
 The user finalized marker ASCII `B` (`0x42`, for “board”) and retained format
 version 15 because it remains under active development and unpublished.
 Only one device runs the earlier provisional v15 firmware. The user will erase
@@ -20,7 +20,7 @@ Keep the image at 128 bytes and the header at nine bytes, with a 119-byte
 payload and layers beginning at byte 9. Preserve existing action, layer, chord,
 timed-action, string and macro record layouts. Repack only the header and retain
 CRC16-CCITT-FALSE. Allocate five bits for new **Auto-Sleep** settings, leaving
-three reserved bits in that byte; the five settings' meanings remain undecided.
+three reserved bits in that byte; their meanings are now assigned in the complete [v15 reference](config-v15.md).
 
 This supersedes the earlier two-bit-window and CRC-reduction alternatives.
 The [CRC Investigation](dataflash-header-crc-investigation.md) preserves their
@@ -41,7 +41,7 @@ rejects nonzero reserved bits.
 | 3 | **String**-pool length | Bit 0: reserved. Bits 1–7: used string-pool bytes, 0–127; section bounds still limit actual capacity. |
 | 4 | Number of **Timed Actions** and chord count | Bits 0–2: number of saved timed-action records, 0–4. Bits 3–7: chord count, 0–31; bounds and unique chord identifiers still apply. |
 | 5 | **Chord Window** and LED settings | Bits 0–2: window selector. Bit 3: transparent black key LEDs (`0` = opaque, `1` = transparent). Bits 4–5: rainbow phase spacing. Bits 6–7: rainbow speed. |
-| 6 | **Auto-Sleep** settings | Bits 0–4: allocated for the future settings, meanings pending. Bits 5–7: reserved. |
+| 6 | **Auto-Sleep** settings | Bits 0–1: **Sleep Timeout**; bit 2: **Consume Wake Input**; bit 3: **Show Layer Indicator**; bit 4: **Dim Instead of Off**. Bits 5–7: reserved. |
 | 7–8 | CRC | CRC16-CCITT-FALSE, low byte first; polynomial `0x1021`, initial value `0xFFFF`, no reflection, final XOR `0`. |
 
 CRC covers bytes 0–6 followed by 9–127, excluding only stored CRC bytes 7–8.

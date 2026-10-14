@@ -15,7 +15,7 @@
 | HID transport version | 1 |
 
 This standalone reference specifies the version 15 firmware binary image and
-transport. Action numbering retains the finalized v14 allocation. **Auto-Sleep** uses layer-option bit 1.
+transport. Action numbering retains the finalized v14 allocation. **Auto-Sleep** uses layer-option bit 1 for enablement and header byte 6 for profile-wide settings.
 It supports eight-bit consumer taps and physical holds with optional modifiers,
 twelve-bit unmodified consumer actions, and absolute/relative layer selection
 in persistent, one-shot and hold modes. All action records remain two bytes.
@@ -52,7 +52,9 @@ the B/v15 header and its CRC. V14 accepted this layer bit as an ignored legacy
 permission; its old value must never enable **Auto-Sleep** during migration.
 Legacy `MP` uses version byte 2 and CRC bytes 6–7; `B` uses version byte 1 and
 CRC bytes 7–8. Earlier MP/v15 image imports retain their per-layer sleep flags.
-The marker must be checked before interpreting the version or checksum.
+Legacy imports use a 30-minute timeout, consume the wake input, show the layer
+indicator on wake and turn LEDs off during sleep. The marker must be checked
+before interpreting the version or checksum.
 Reordering bytes or relabeling a legacy version without decoding is insufficient.
 
 Legacy windows use 0–75ms in 5ms steps. For saved chords, the editor chooses
@@ -102,6 +104,14 @@ Each JSON layer also has `autoSleep: boolean`, exposed as **Auto-Sleep** in
 source bytes, files and draft namespaces remain unchanged. Current v15 JSON and
 drafts preserve the option, including layer copy/paste, comparisons and undo.
 
+Profile JSON also stores `sleepTimeoutMinutes` (15, 30, 60 or 120),
+`consumeWakeInput`, `showLayerIndicatorOnWake` and `dimInsteadOfOff` (booleans).
+Defaults for missing fields in older JSON and drafts are 30, `true`, `true`
+and `false`, respectively. Current B-header JSON validates all four fields,
+including when every layer disables sleep. Legacy JSON uses the defaults.
+Comparisons, undo/redo, device reads and saves, exports and local drafts retain
+the settings. All four apply to every layer with **Auto-Sleep** enabled.
+
 Local drafts use `universal-macropad:format-v15:board:draft:six-key` or
 `universal-macropad:format-v15:board:draft:three-key`. Draft records identify
 the layout with `headerMarker: "B"`; earlier v15 draft keys remain recoverable
@@ -126,14 +136,15 @@ The nine-byte header is:
 | 3 | **String**-pool length | Bit 0: reserved, zero<br>Bits 1–7: used pool bytes, 0–127 |
 | 4 | Number of **Timed Actions** and chord count | Bits 0–2: saved timed-action count, 0–4<br>Bits 3–7: chord count, 0–31 |
 | 5 | **Chord Window** and LED settings | Bits 0–2: window selector<br>Bit 3: transparent black key LEDs (`0` = opaque, `1` = transparent)<br>Bits 4–5: rainbow phase spacing (`00` = **0°**, `01` = **30°**, `10` = **60°**, `11` = 150°)<br>Bits 6–7: rainbow speed (`00` = **Extra Fast**, `01` = **Fast**, `10` = **Slow**, `11` = **Extra Slow**) |
-| 6 | **Auto-Sleep** settings allocation | Bits 0–4: allocated, meanings not assigned<br>Bits 5–7: reserved, zero<br>The entire byte must currently be zero |
+| 6 | **Auto-Sleep** settings | Bits 0–1: **Sleep Timeout**<br>Bit 2: **Consume Wake Input**<br>Bit 3: **Show Layer Indicator**<br>Bit 4: **Dim Instead of Off**<br>Bits 5–7: reserved, zero |
 | 7–8 | CRC | CRC16-CCITT-FALSE, low byte first |
 
 Decode physical variant as `byte2 & 1`, layer count as `((byte2 >> 1) & 7) + 1`,
 startup layer as `(byte2 >> 4) & 7`, pool length as `byte3 >> 1`, timed-action
 count as `byte4 & 7`, and chord count as `byte4 >> 3`. Layer limits are 1–5 on
 six-key hardware and 1–7 on three-key hardware. The startup layer must exist.
-Timer counts 5–7, nonzero reserved bits and nonzero byte 6 are rejected.
+Timer counts 5–7 and nonzero reserved bits are rejected. All 32 combinations
+of byte 6 bits 0–4 are valid, even when sleep is disabled on every layer.
 The saved timer count excludes the runtime-only **Auto-Sleep** timer; elapsed
 runtime state does not update DataFlash. Existing per-layer sleep enablement,
 fixed timeout and wake behavior remain in effect.
@@ -220,36 +231,67 @@ layer. Each binding uses the two-byte action encoding below.
 
 ### Auto-Sleep
 
-**Auto-Sleep** is an optional LED inactivity timer on each layer. It consumes no
-additional configuration bytes and does not occupy any of the four user-defined
-**Timed Actions**. Its fixed interval is 440 × 4.096 seconds: 30 minutes 2.240
-seconds, with less than 16ms early quantization and ordinary foreground delay.
-It behaves like a layer-scoped timer with **Reset Timer on Input**, **Both Off**
-on expiry, **Both as Configured** on the next input, and **Consume This Input**.
+**Auto-Sleep** is an optional LED inactivity timer enabled separately on each
+layer. It consumes no additional configuration bytes and does not occupy any
+of the four user-defined **Timed Actions**. Header byte 6 supplies these
+profile-wide settings, from low to high bits:
 
-Debounced key presses, encoder-button presses and completed encoder detents in
-either direction restart the interval, including bindings set to **Nothing**.
-Releases, held inputs, partial detents and USB traffic do not restart it.
+| Bits | Setting | Encoding |
+| --- | --- | --- |
+| 0–1 | **Sleep Timeout** | `0` = **15 Minutes**, `1` = **30 Minutes**, `2` = **1 Hour**, `3` = **2 Hours** |
+| 2 | **Consume Wake Input** | `0` = wake and execute the binding, `1` = wake only and consume its release |
+| 3 | **Show Layer Indicator** | `0` = no wake reminder, `1` = request the current layer's configured indication on wake |
+| 4 | **Dim Instead of Off** | `0` = **Both Off**, `1` = **Layers and Keys Dim** on expiry |
+| 5–7 | Reserved | Must be zero |
+
+New profiles default to byte `0x0D`: **30 Minutes**, **Consume Wake Input** and
+**Show Layer Indicator** enabled, **Dim Instead of Off** disabled. Per-layer
+sleep enablement defaults to disabled. Timeout selectors use the following
+4.096-second tick counts:
+
+| Selector | Ticks | Nominal Interval |
+| --- | ---: | --- |
+| `0` | 220 | 15 minutes 1.120 seconds |
+| `1` | 440 | 30 minutes 2.240 seconds |
+| `2` | 879 | 1 hour 0.384 seconds |
+| `3` | 1,758 | 2 hours 0.768 seconds |
+
+Each interval has less than 16ms early quantization, ordinary foreground delay
+and oscillator error. Debounced key presses, encoder-button presses and completed
+encoder detents in either direction restart it, including bindings set to
+**Nothing**. Releases, held inputs, partial detents and USB traffic do not.
 An effective layer transition starts a fresh interval; it advances only while
 the effective layer has **Auto-Sleep** enabled. A pending wake survives leaving
-that layer. The first subsequent physical input restores configured brightness
-and is consumed, including its release. The next normal input executes its
-binding. A consumed wake does not use an armed one-shot layer.
-Wake requests the current effective layer's indicator again: **On for 1.5 Seconds** starts
-a fresh 1500ms indication and **Blink by Layer Number** starts a fresh sequence of
-layer-number blinks. **Always On** and **Do Not Indicate** retain their configured behavior.
-This request does not select a layer or change the previous or one-shot layer.
-User-defined timer resume actions do not automatically request an indication.
+that layer.
 
-While idle, successive expiries repeat **Both Off** and coalesce the pending
-wake, matching the standard timer recipe. The preset affects both indicator
-and pressed-key brightness policies. Other LED commands, temporary effects and
-color preview keep their existing interactions with these policies. Wake sets
-**Both as Configured**, rather than restoring a previously chosen runtime preset;
-rainbow phase and speed are retained. USB reset/reconfiguration or profile
-application clears the pending wake and starts new timer state. This is LED
-sleep: scanning, USB service, held output and animation clocks continue; the
-processor does not enter a low-power mode.
+The first subsequent physical input applies **Both as Configured** before its
+binding can execute. With **Consume Wake Input** enabled, the press/detent and
+its release are consumed, preserving an armed one-shot layer. With it disabled,
+the same input executes normally, including physical holds, chords and one-shot
+layer consumption. A consuming user timer can still consume this input.
+User timers run first in their saved order; the built-in sleep resume follows,
+then an unconsumed physical binding runs.
+
+With **Show Layer Indicator** enabled, wake requests the current effective
+layer's configured indication again: **On for 1.5 Seconds** starts a fresh
+1500ms indication and **Blink by Layer Number** starts a fresh sequence of
+layer-number blinks. **Always On** and **Do Not Indicate** retain their configured
+behavior. Disabling the reminder skips only this wake request; explicit layer
+selections still indicate normally. The request itself does not select a layer
+or change the previous or one-shot layer. An executed wake binding can change
+layers through its normal behavior. User-defined timer resume actions do not
+automatically request an indication.
+
+While idle, successive expiries repeat the selected sleep preset and coalesce
+the pending wake. **Dim Instead of Off** uses the existing fixed dim brightness
+for both indicator and pressed-key policies. It preserves configured indicator
+behavior and does not force an inactive indicator on or illuminate an unpressed
+key. Other LED commands, temporary effects and color preview retain their
+existing interactions with these policies. Wake restores **Both as Configured**,
+rather than a previously chosen runtime preset; rainbow phase and speed remain.
+USB reset/reconfiguration or profile application clears pending wake and starts
+new timer state. Scanning, USB service, held output and animation clocks continue;
+the processor does not enter a low-power mode.
 
 At power-up with a valid profile, all LEDs remain dark while waiting for USB
 configuration (`SET_CONFIGURATION` with value 1). The initial wait lasts up to 500ms
@@ -1191,8 +1233,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,136 | 200 | 105 | 365 | 134 | 90 |
-| Three keys | 14,132 | 204 | 105 | 356 | 134 | 93 |
+| Six keys | 14,198 | 138 | 105 | 365 | 134 | 90 |
+| Three keys | 14,194 | 142 | 105 | 356 | 134 | 93 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator

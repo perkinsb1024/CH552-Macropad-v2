@@ -155,3 +155,79 @@ describe('per-layer auto-sleep', () => {
     expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   });
 });
+
+
+describe('profile sleep settings', () => {
+  it.each([0, 1] as const)('round-trips all 32 combinations without losing capacity on variant %s', variant => {
+    const p = defaultProfile(variant);
+    p.layers[0]!.autoSleep = true;
+    p.timedActions = Array.from({ length: 4 }, () => ({ ticks: 1, resetOnInput: true, consumeInput: true,
+      action: { type: 'none' as const }, resumeAction: { type: 'none' as const } }));
+    const capacity = computeCapacity(p);
+    for (let settings = 0; settings < 32; settings++) {
+      p.sleepTimeoutMinutes = [15, 30, 60, 120][settings & 3]!;
+      p.consumeWakeInput = !!(settings & 4);
+      p.showLayerIndicatorOnWake = !!(settings & 8);
+      p.dimInsteadOfOff = !!(settings & 16);
+      const image = encodeProfile(p);
+      expect(image[6]).toBe(settings);
+      expect(validator.accepts(image, variant)).toBe(true);
+      expect(decodeImage(image)).toEqual({ ok: true, profile: p });
+      expect(importProfile(exportProfile(p)).profile).toEqual(p);
+      expect(computeCapacity(p)).toEqual(capacity);
+    }
+  });
+
+  it('defaults missing JSON and draft fields to the former sleep behavior', () => {
+    const p = defaultProfile(0);
+    p.layers[0]!.autoSleep = true;
+    const old = JSON.parse(exportProfile(p));
+    const oldDraft = structuredClone(p) as Partial<typeof p>;
+    const fields = ['sleepTimeoutMinutes', 'consumeWakeInput', 'showLayerIndicatorOnWake', 'dimInsteadOfOff'] as const;
+    for (const field of fields) { delete old[field]; delete oldDraft[field]; }
+    expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
+    const saved = JSON.stringify({ formatVersion: 15, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
+    const storage = new Map([[draftKey(0), saved]]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+    expect(loadDraft(0)?.profile).toEqual(p);
+    expect(storage.get(draftKey(0))).toBe(saved);
+    p.sleepTimeoutMinutes = 120; p.consumeWakeInput = false;
+    p.showLayerIndicatorOnWake = false; p.dimInsteadOfOff = true;
+    storeDraft(p, {}); expect(loadDraft(0)?.profile).toEqual(p);
+  });
+
+  it('validates all settings even when sleep is disabled', () => {
+    for (const [field, value] of [['sleepTimeoutMinutes', 45], ['sleepTimeoutMinutes', null],
+      ['consumeWakeInput', 1], ['showLayerIndicatorOnWake', null], ['dimInsteadOfOff', 'yes']] as const) {
+      const p = defaultProfile(0);
+      Object.assign(p, { [field]: value });
+      expect(validateProfile(p).length).toBeGreaterThan(0);
+      const json = JSON.parse(exportProfile(defaultProfile(0))); json[field] = value;
+      expect(() => importProfile(JSON.stringify(json))).toThrow();
+    }
+  });
+
+  it('connects all four controls to comparisons and undo/redo', () => {
+    const before = defaultProfile(0); before.layers[0]!.autoSleep = true;
+    profile.value = structuredClone(before);
+    const select = elements(ProfilePanel()).find(n => n.props['aria-label'] === 'Sleep Timeout')!;
+    (select.props.onChange as (event: unknown) => void)({ target: { value: '120' } });
+    for (const label of ['Consume Wake Input', 'Show Layer Indicator', 'Dim Instead of Off']) {
+      const checkbox = elements(ProfilePanel()).find(n => n.props['aria-label'] === label)!;
+      (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: label === 'Dim Instead of Off' } });
+    }
+    const expected = { ...before, sleepTimeoutMinutes: 120, consumeWakeInput: false,
+      showLayerIndicatorOnWake: false, dimInsteadOfOff: true };
+    expect(profile.value).toEqual(expected);
+    const changes = profileChanges(before, profile.value!);
+    expect(changes.map(change => change.where)).toEqual(['Sleep Timeout', 'Consume Wake Input', 'Show Layer Indicator', 'Dim Instead of Off']);
+    expect(changes[0]).toMatchObject({ before: '30 Minutes', after: '2 Hours' });
+    for (const change of changes) change.undo!(expected);
+    expect(expected).toEqual(before);
+    undo(); expect(profile.value!.dimInsteadOfOff).toBe(false);
+    redo(); expect(profile.value!.dimInsteadOfOff).toBe(true);
+  });
+});

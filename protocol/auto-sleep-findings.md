@@ -1,5 +1,9 @@
 # Auto-Sleep Investigation
 
+This records the original fixed-timeout implementation. The later selectable
+timeouts and wake/dim controls are documented in
+[Auto-Sleep Extension Results](auto-sleep-extension-results.md).
+
 Baseline: `0fb6132`, branch `experiment/v15-auto-sleep`.
 The requested per-layer **Auto-Sleep** uses option bit 1, replacing the ignored
 legacy encoder-hold flag. Physical presses and complete detents reset the timer;

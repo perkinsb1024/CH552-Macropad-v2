@@ -1,8 +1,22 @@
 # Auto-Sleep Extension Investigation Plan
 
-Recorded October 13, 2026. Status: header storage/layout selected; new sleep
-behavior and five-bit setting meanings remain deferred. The approved target and
-firmware sequence are in [Header Repacking Target and Firmware Plan](header-repacking-plan.md).
+Recorded October 13, 2026. Updated October 14, 2026: the four selected settings
+are implemented in development format v15. Firmware checkpoint: `478e2cf`.
+See [Implementation Results](auto-sleep-extension-results.md) for measured costs
+and validation. The earlier alternatives below remain investigation history.
+
+## Selected Settings
+
+Preserve per-layer enablement, one profile-wide timeout and interval resets on
+effective layer changes. Retain format v15 and the current experiment branch.
+Header byte 6 uses bits 0–1 for **Sleep Timeout** (15, 30, 60, 120 minutes), bit 2
+for **Consume Wake Input**, bit 3 for **Show Layer Indicator** and bit 4 for
+**Dim Instead of Off**. Bits 5–7 remain reserved. New profiles default to `0x0D`,
+preserving former behavior. Configurable **Dim Brightness** was declined;
+dimming reuses **Layers and Keys Dim** and its existing fixed brightness.
+
+The header plan is [Header Repacking Target and Firmware Plan](header-repacking-plan.md).
+The historical fixed-timeout baseline and feasibility analysis follow.
 
 ## Goal
 
@@ -15,9 +29,9 @@ The selected target allocates five sleep-setting bits within a repacked nine-byt
 header, retaining the current payload capacity. It uses a single-byte marker,
 CRC-16 at bytes 7–8, a five-bit chord count and eight **Chord Window** choices
 from 20ms through 90ms. Three bits remain reserved within the sleep-settings byte.
-The existing fixed-timeout behavior remains the baseline for measuring extensions.
+The existing fixed-timeout behavior was retained as the baseline for measuring extensions.
 
-## Current Behavior
+## Original Fixed-Timeout Baseline
 
 - The saved image is 128 bytes, with a nine-byte header.
 - Each layer enables **Auto-Sleep** through layer-option bit 1.
@@ -186,7 +200,7 @@ These are candidates, not a commitment to fill the new byte.
 Prefer implementing only settings with demonstrated value and leaving other bits
 reserved. Spare DataFlash bits do not imply free firmware behavior.
 
-## Future Investigation and Implementation Sequence
+## Original Investigation and Implementation Sequence
 
 1. Implement and validate the approved nine-byte header using the
    [firmware plan](header-repacking-plan.md), initially preserving the current
@@ -211,6 +225,7 @@ reserved. Spare DataFlash bits do not imply free firmware behavior.
    implementation. Follow project approval requirements if fitting requires
    any feature cuts or degradations.
 
-This plan authorizes no implementation, release generation, flashing, commit,
-push or deployment. Apply the user's instructions for the later task when it
-is resumed.
+The original investigation did not authorize implementation. The October 14
+request subsequently authorized implementing the selected settings under the
+experiment guidelines, including firmware and configurator checkpoints. It did
+not request release generation, flashing, push or deployment.

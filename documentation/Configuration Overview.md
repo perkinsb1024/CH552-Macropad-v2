@@ -399,20 +399,29 @@ Choose the **Layer Indicator Color** and **Full Brightness** or **Dim**. The tim
 
 ### Auto-Sleep
 
-With format 15 firmware, enable **Auto-Sleep** in **Layer Options** to turn off
-indicator and key lighting after about 30 minutes without input. It adds no
-profile bytes and leaves all four **Timed Actions** available. The next press
-or complete encoder turn restores **Both as Configured** and is consumed; the
-following input runs normally. Unbound inputs count as activity too.
-Wake also restarts the current layer's **On for 1.5 Seconds** or **Blink by Layer Number** indicator
-to remind you which layer is active. **Always On** and **Do Not Indicate** retain their
-configured behavior.
+With format 15 firmware, enable **Auto-Sleep** in **Layer Options**, or choose
+**On** in **Profile Settings** to enable every layer. **Per Layer** keeps
+individual layer choices; **Off** disables every layer. Sleep adds no profile
+bytes and leaves all four **Timed Actions** available.
 
-Presses and completed encoder turns restart the timer. Releases, held inputs,
-partial turns and USB traffic do not. Entering a layer starts a fresh interval;
-only layers with **Auto-Sleep** enabled advance it. A pending wake remains armed
-after leaving that layer. This changes LED brightness, while USB and scanning
-continue. Use **Timed Actions** for a custom timeout or different sleep/wake actions.
+The profile-wide settings apply to every enabled layer:
+
+| Setting | Behavior |
+| --- | --- |
+| **Sleep Timeout** | **15 Minutes**, **30 Minutes** (default), **1 Hour** or **2 Hours** of inactivity |
+| **Consume Wake Input** | Enabled by default. The first press or complete encoder turn restores **Both as Configured** and is consumed, including its release. Disable to wake and execute the same binding. |
+| **Show Layer Indicator** | Enabled by default. Restart **On for 1.5 Seconds** or **Blink by Layer Number** on wake; **Always On** and **Do Not Indicate** keep their configured behavior. |
+| **Dim Instead of Off** | Disabled by default. Use **Layers and Keys Dim** during sleep instead of **Both Off**, retaining configured indicator behavior at the existing fixed dim brightness. |
+
+Presses and completed encoder turns restart the timer, even when unbound.
+Releases, held inputs, partial turns and USB traffic do not. Entering a layer
+starts a fresh interval; only enabled layers advance it. A pending wake survives
+leaving that layer. A consumed wake preserves an armed one-shot layer; an
+executed wake uses it normally. A consuming user timer can still consume the
+input. Wake restores configured brightness before an executed binding runs.
+Dimming does not turn an inactive indicator on. USB, scanning and held output
+continue during sleep. Use **Timed Actions** for other intervals or custom
+sleep/wake actions.
 
 ### Rainbow Settings and an Off Key
 

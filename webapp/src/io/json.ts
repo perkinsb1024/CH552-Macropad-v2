@@ -20,6 +20,10 @@ export interface ExportedProfile {
   format: typeof JSON_FORMAT;
   version: typeof JSON_VERSION;
   headerMarker: 'B';
+  sleepTimeoutMinutes: number;
+  consumeWakeInput: boolean;
+  showLayerIndicatorOnWake: boolean;
+  dimInsteadOfOff: boolean;
   variant: 'six-key' | 'three-key';
   startupLayer: number;
   transparentBlack: boolean;
@@ -48,6 +52,10 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
     format: JSON_FORMAT,
     version: JSON_VERSION,
     headerMarker: 'B',
+    sleepTimeoutMinutes: profile.sleepTimeoutMinutes,
+    consumeWakeInput: profile.consumeWakeInput,
+    showLayerIndicatorOnWake: profile.showLayerIndicatorOnWake,
+    dimInsteadOfOff: profile.dimInsteadOfOff,
     variant: profile.variant === VARIANT_THREE_KEYS ? 'three-key' : 'six-key',
     startupLayer: profile.startupLayer,
     transparentBlack: profile.transparentBlack,
@@ -217,7 +225,12 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     : typeof raw.rainbowSpeed === 'string' ? RAINBOW_SPEED_LABELS.findIndex((label, i) =>
       label.toLowerCase() === raw.rainbowSpeed || LEGACY_RAINBOW_SPEED_NAMES[i] === raw.rainbowSpeed) : -1;
   if (rainbowSpeed < 0) throw new ImportError('rainbowSpeed must be extra fast, fast, slow or extra slow.');
-  const profile: Profile = { rainbowSpeed, rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
+  const profile: Profile = {
+    sleepTimeoutMinutes: board && raw.sleepTimeoutMinutes !== undefined ? int(raw.sleepTimeoutMinutes, 'Sleep Timeout') : 30,
+    consumeWakeInput: board && raw.consumeWakeInput !== undefined ? bool(raw.consumeWakeInput, 'Consume Wake Input') : true,
+    showLayerIndicatorOnWake: board && raw.showLayerIndicatorOnWake !== undefined ? bool(raw.showLayerIndicatorOnWake, 'Show Layer Indicator') : true,
+    dimInsteadOfOff: board ? bool(raw.dimInsteadOfOff, 'Dim Instead of Off') : false,
+    rainbowSpeed, rainbowPhase, variant, transparentBlack: bool(raw.transparentBlack, 'transparentBlack'), startupLayer: int(raw.startupLayer ?? 0, 'startupLayer'), chordWindow: chordWindowMs / 5, layers, chords };
   if (raw.macros !== undefined) {
     if (Number(raw.version) < 11 || !Array.isArray(raw.macros)) throw new ImportError('Macros require a version 11 list.');
     profile.macros = raw.macros.map((macro, index) => {

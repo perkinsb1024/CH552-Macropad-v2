@@ -1,6 +1,6 @@
 import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
-  TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
+  SLEEP_TIMEOUT_MINUTES,   TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_INDICATOR_SHIFT,
   LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, keyCount, layerSize,
 } from '../model/constants';
@@ -103,7 +103,9 @@ export function encodeProfile(profile: Profile): Uint8Array {
   image[5] = ((profile.chordWindow - 4) / 2) | (profile.transparentBlack ? 0x08 : 0) |
     (profile.rainbowPhase << HEADER_RAINBOW_PHASE_SHIFT) |
     (profile.rainbowSpeed << HEADER_RAINBOW_SPEED_SHIFT);
-  // Byte 6 is allocated for future sleep settings; this implementation requires zero.
+  image[6] = SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === profile.sleepTimeoutMinutes) |
+    (profile.consumeWakeInput ? 4 : 0) | (profile.showLayerIndicatorOnWake ? 8 : 0) |
+    (profile.dimInsteadOfOff ? 16 : 0);
 
   profile.layers.forEach((layer, li) => {
     const base = HEADER_SIZE + size * li;

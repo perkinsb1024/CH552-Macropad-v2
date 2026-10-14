@@ -416,19 +416,32 @@ that editor; the shared uploader offers v13 as a previous release and v14 as the
 
 ## Auto-Sleep (v15)
 
-**Layer Options** includes **Auto-Sleep**, disabled by default. The fixed timer
-selects **Both Off** after 30 minutes 2.240 seconds without physical input on an
-enabled layer. The next press or complete encoder detent selects **Both as
-Configured** and is consumed, including its release. Effective layer changes
-restart the interval and preserve an already pending wake. Unbound presses and
-complete turns count; releases, holds, partial turns and USB traffic do not.
-Wake restarts the current layer's **On for 1.5 Seconds** or **Blink by Layer Number** indicator;
-**Always On** and **Do Not Indicate** retain their configured behavior.
+**Layer Options** includes **Auto-Sleep**, disabled by default. **Profile Settings**
+provides **On**, **Per Layer** and **Off**, plus four settings shared by enabled
+layers: **Sleep Timeout** (**15 Minutes**, **30 Minutes**, **1 Hour**, **2 Hours**),
+**Consume Wake Input**, **Show Layer Indicator**, and **Dim Instead of Off**.
+Defaults are 30 minutes, consume enabled, reminder enabled and dim disabled.
+Sleep selects **Both Off** or **Layers and Keys Dim**, using existing dim
+brightness. Wake restores **Both as Configured** before any unconsumed binding.
+Dimming preserves configured indicator behavior; it does not force lighting on.
 
-The option uses existing layer bit 1, adding no profile bytes and reserving no
-user timer slot. JSON v15 and local drafts preserve `autoSleep` per layer, with
-validation, comparisons and undo. Binary v2–v14, JSON v1–v14 and older drafts
+Effective layer changes restart the interval and preserve a pending wake.
+Unbound presses and complete encoder turns count as activity; releases, holds,
+partial turns and USB traffic do not. A consumed wake and its release preserve
+an armed one-shot layer. With consumption disabled, the same input executes
+normally. A consuming user timer can still consume it. The optional reminder
+restarts **On for 1.5 Seconds** or **Blink by Layer Number**; **Always On** and
+**Do Not Indicate** retain their behavior. Explicit layer selections still
+indicate when the wake reminder is disabled.
+
+Enablement uses layer bit 1; profile settings use header byte 6 bits 0–4.
+No profile bytes or user timer slots are added. JSON v15 and drafts preserve
+`sleepTimeoutMinutes`, `consumeWakeInput`, `showLayerIndicatorOnWake` and
+`dimInsteadOfOff`, as well as `autoSleep` per layer. Missing fields in older
+JSON/drafts use the defaults above. Binary v2–v14, JSON v1–v14 and older drafts
 migrate with **Auto-Sleep** disabled, clearing the ignored legacy layer bit.
+The editor validates all settings, supports comparisons and undo/redo, and shows
+the saved timeout and wake policies in live view.
 
 The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
 outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
@@ -441,7 +454,9 @@ continues to bundle the published v14 release.
 The active v15 editor keeps the nine-byte header and 119-byte payload. It packs
 the saved timer count into byte 4 bits 0–2, chords into bits 3–7, the shifted
 pool length into byte 3, and window/transparency/rainbow settings into byte 5.
-Byte 6 is allocated for future sleep options and currently remains zero.
+Byte 6 stores **Sleep Timeout** in bits 0–1, **Consume Wake Input** in bit 2,
+**Show Layer Indicator** in bit 3 and **Dim Instead of Off** in bit 4; bits 5–7
+remain reserved and must be zero.
 All existing record sizes, four user timers and per-layer **Auto-Sleep** remain.
 
 **Chord Window** offers 20ms–90ms in 10ms steps, defaulting to 40ms. With no

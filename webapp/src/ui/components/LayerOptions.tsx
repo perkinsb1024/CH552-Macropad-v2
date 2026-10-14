@@ -106,7 +106,7 @@ export function LayerOptions() {
             onChange={(e) => updateProfile((d) => { d.layers[li]!.autoSleep = (e.target as HTMLInputElement).checked; })} />
           Auto-Sleep
         </label>
-        <p class="hint">Turn LEDs off after about 30 minutes without input on this layer. The next press or complete encoder turn restores configured lighting and is consumed.</p>
+        <p class="hint">Use the Sleep Timeout and wake settings in Profile Settings for this layer. The next press or complete encoder turn restores configured lighting.</p>
       </details>
     </details>
   );

@@ -65,7 +65,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
-| [v15](protocol/config-v15.md) | - Per-layer **Auto-Sleep** turns LEDs off after about 30 minutes of inactivity, then restores configured lighting and consumes the wake input<br> - No extra profile bytes or **Timed Action** slot required |
+| [v15](protocol/config-v15.md) | - Per-layer **Auto-Sleep** with **15 Minutes**, **30 Minutes**, **1 Hour** or **2 Hours**, optional wake-input consumption and layer reminder, and dimmed or off lighting during sleep<br> - No extra profile bytes or **Timed Action** slot required |
 | [v14](protocol/config-v14.md) | - **Media / System with Modifiers** now supports **Hold**<br> - Added support for **Relative Layer While Held**<br> *This version also reorganized action types to keep logical groups together* |
 | [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier key support for 8-bit **Media / System** taps<br> - USB device names identify three-key and six-key macropads |
 | [v12](protocol/config-v12.md) | - Added mouse buttons 4–8<br> - Persistent **Mouse Down** / **Mouse Up** actions for separate inputs and macro drags<br> - **Enter Bootloader** from the browser firmware installer<br> - Warning indication when USB enumeration fails |
@@ -151,8 +151,8 @@ Memory in the current format 15 firmware source, in bytes, with a 14,336-byte ap
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash Used | 14,132 | 14,136 |
-| Flash Remaining | 204 | 200 |
+| Flash Used | 14,194 | 14,198 |
+| Flash Remaining | 142 | 138 |
 | Total External RAM Allocated | 743 | 752 |
 | Stack Available (Linker Reserve) | 93 | 90 |
 
@@ -279,7 +279,7 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Auto-Sleep** in **Layer Options** provides the common LED inactivity recipe without extra storage or a timer slot: after about 30 minutes, select **Both Off**; the next press or complete encoder turn selects **Both as Configured** and is consumed. Wake restarts the current layer's **On for 1.5 Seconds** or **Blink by Layer Number** indicator; **Always On** and **Do Not Indicate** retain their configured behavior. Input and effective layer transitions restart its interval. The active editor targets format 15; published v14 firmware uses the frozen v14 editor linked above.
+**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Input and effective layer transitions restart the interval. The active editor targets format 15; published v14 firmware uses the frozen v14 editor linked above.
 
 **Media / System** set to **Hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous

@@ -51,6 +51,10 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
 export function defaultProfile(variant: Variant): Profile {
   return {
     variant,
+    sleepTimeoutMinutes: 30,
+    consumeWakeInput: true,
+    showLayerIndicatorOnWake: true,
+    dimInsteadOfOff: false,
     transparentBlack: false,
     startupLayer: 0,
     chordWindow: 8,
@@ -69,6 +73,10 @@ export function cloneProfile(profile: Profile): Profile {
  * Indicator value 1 now means timed-on; transparency defaults to disabled.
  */
 export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VERSION): Profile {
+  profile.sleepTimeoutMinutes ??= 30;
+  profile.consumeWakeInput ??= true;
+  profile.showLayerIndicatorOnWake ??= true;
+  profile.dimInsteadOfOff ??= false;
   profile.transparentBlack ??= false;
   profile.rainbowPhase ??= DEFAULT_RAINBOW_PHASE;
   profile.rainbowSpeed ??= DEFAULT_RAINBOW_SPEED;

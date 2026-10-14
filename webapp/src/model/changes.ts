@@ -1,5 +1,5 @@
 import { actionsEqual, summarize, isPreviousLayer } from './actions';
-import { RAINBOW_SPEED_LABELS, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior, variantName } from './constants';
+import { SLEEP_TIMEOUT_MINUTES, SLEEP_TIMEOUT_LABELS, RAINBOW_SPEED_LABELS, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior, variantName } from './constants';
 import { PALETTE } from './palette';
 import type { Action, Chord, Profile } from './types';
 
@@ -38,6 +38,13 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
     }
     draft.chords = draft.chords.filter((chord) => chord.keyB < draft.layers[0]!.keys.length);
   });
+  change('Sleep Timeout', before.sleepTimeoutMinutes, after.sleepTimeoutMinutes,
+    minutes => SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(value => value === minutes)] ?? 'Unknown',
+    draft => { draft.sleepTimeoutMinutes = before.sleepTimeoutMinutes; });
+  for (const [field, label] of [['consumeWakeInput', 'Consume Wake Input'],
+    ['showLayerIndicatorOnWake', 'Show Layer Indicator'], ['dimInsteadOfOff', 'Dim Instead of Off']] as const) {
+    change(label, before[field], after[field], value => value ? 'On' : 'Off', draft => { draft[field] = before[field]; });
+  }
   change('Startup Layer', before.startupLayer, after.startupLayer, (n) => `Layer ${n + 1}`, (draft) => { draft.startupLayer = before.startupLayer; });
   change('Chord Window', before.chordWindow, after.chordWindow, (n) => n ? `${n * 5}ms` : 'Selection Required', (draft) => { draft.chordWindow = before.chordWindow; });
   change('Rainbow Phase Spacing', before.rainbowPhase, after.rainbowPhase, (v) => RAINBOW_PHASE_LABELS[v]!, (draft) => { draft.rainbowPhase = before.rainbowPhase; });

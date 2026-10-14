@@ -44,7 +44,7 @@ it.each([0, 1] as const)('matches firmware for every window and LED combination 
           p.chordWindow = 4 + 2 * window; p.rainbowPhase = phase; p.rainbowSpeed = speed; p.transparentBlack = transparent;
           const image = encodeProfile(p);
           expect([...image.subarray(0, 7)]).toEqual([0x42, 15, variant | 2, 6, 12,
-            window | (Number(transparent) << 3) | (phase << 4) | (speed << 6), 0]);
+            window | (Number(transparent) << 3) | (phase << 4) | (speed << 6), 13]);
           expect(peekHeader(image)).toEqual({ magic: true, version: 15, variant });
           expect(storedCrc(image)).toBe(reference(image, 7));
           expect(decodeImage(image)).toEqual({ ok: true, profile: p });
@@ -59,7 +59,7 @@ it.each([0, 1] as const)('rejects every corrupt image bit and reserved field on 
     expect(decodeImage(corrupt).ok, `Bit ${bit}`).toBe(false);
     expect(firmware.accepts(corrupt, variant), `Bit ${bit}`).toBe(false);
   }
-  for (const [offset, mask] of [[2, 128], [3, 1], ...Array.from({ length: 8 }, (_, i) => [6, 1 << i])]) {
+  for (const [offset, mask] of [[2, 128], [3, 1], ...Array.from({ length: 3 }, (_, i) => [6, 1 << (i + 5)])]) {
     const invalid = image.slice(); invalid[offset!]! |= mask!; sealImage(invalid);
     expect(decodeImage(invalid).ok).toBe(false);
     expect(firmware.accepts(invalid, variant)).toBe(false);

@@ -6,7 +6,7 @@ import { ArchivedFirmwareNotice } from './ArchivedFirmwareNotice';
 import { DeviceView } from './DeviceView';
 import { TopBar } from './TopBar';
 import { Toasts } from './Toasts';
-import { MAX_TIMED_ACTIONS, TIMED_TICK_SECONDS } from '../../model/constants';
+import { SLEEP_TIMEOUT_LABELS, SLEEP_TIMEOUT_MINUTES, MAX_TIMED_ACTIONS, TIMED_TICK_SECONDS } from '../../model/constants';
 import { duration } from './TimedActionsPanel';
 
 export function ViewerChords() {
@@ -103,7 +103,7 @@ export function ProfileViewer() {
           </div>}
           <DeviceView readOnly />
           <p class="muted viewer-indicator"><strong>Layer Indicator</strong>: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
-          <p class="muted viewer-indicator"><strong>Auto-Sleep</strong>: {viewedLayer?.autoSleep ? '30 minutes' : 'Disabled'}</p>
+          <p class="muted viewer-indicator"><strong>Auto-Sleep</strong>: {viewedLayer?.autoSleep ? `${SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]} · ${p.dimInsteadOfOff ? 'Dim' : 'Off'} · ${p.consumeWakeInput ? 'Wake Input Consumed' : 'Wake and Execute'} · Layer Reminder ${p.showLayerIndicatorOnWake ? 'On' : 'Off'}` : 'Disabled'}</p>
         </section>
         <div class="viewer-extras"><ViewerChords /><ViewerTimers /><ViewerMacros /></div>
       </>}

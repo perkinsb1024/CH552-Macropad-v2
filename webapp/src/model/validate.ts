@@ -1,4 +1,4 @@
-import { MAX_TIMED_ACTIONS, MAX_TIMED_TICKS } from './constants';
+import { SLEEP_TIMEOUT_MINUTES, MAX_TIMED_ACTIONS, MAX_TIMED_TICKS } from './constants';
 import { ledProblem } from './ledControl';
 import { MAX_CHORD_WINDOW_UNITS, maxLayers, keyCount } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
@@ -111,6 +111,13 @@ export function slotLabel(slot: Slot): string {
 /** All problems that would prevent encoding a valid image. Empty means the profile is encodable. */
 export function validateProfile(profile: Profile): Issue[] {
   const issues: Issue[] = [];
+  if (!SLEEP_TIMEOUT_MINUTES.some(minutes => minutes === profile.sleepTimeoutMinutes)) {
+    issues.push({ where: 'Sleep Timeout', message: 'Sleep timeout must be 15, 30, 60 or 120 minutes.' });
+  }
+  for (const [field, label] of [['consumeWakeInput', 'Consume Wake Input'],
+    ['showLayerIndicatorOnWake', 'Show Layer Indicator'], ['dimInsteadOfOff', 'Dim Instead of Off']] as const) {
+    if (typeof profile[field] !== 'boolean') issues.push({ where: label, message: `${label} must be true or false.` });
+  }
   const keys = keyCount(profile.variant);
   const layerCount = profile.layers.length;
 

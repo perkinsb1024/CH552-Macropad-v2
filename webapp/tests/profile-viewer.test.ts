@@ -151,3 +151,16 @@ it('shows macro definitions and their ordered steps in Live View without editing
   expect(nodes(ViewerMacros()).filter(n => n.type === 'li')).toHaveLength(2);
   expect(nodes(ViewerMacros()).some(n => ['input', 'button', 'select'].includes(String(n.type)))).toBe(false);
 });
+
+it('shows the saved sleep timeout and wake policies for enabled layers', async () => {
+  await connect();
+  profile.value = defaultProfile(0);
+  profile.value.layers[0]!.autoSleep = true;
+  profile.value.sleepTimeoutMinutes = 120;
+  profile.value.consumeWakeInput = false;
+  profile.value.showLayerIndicatorOnWake = false;
+  profile.value.dimInsteadOfOff = true;
+  expect(text(ProfileViewer())).toContain('Auto-Sleep: 2 Hours · Dim · Wake and Execute · Layer Reminder Off');
+  profile.value.layers[0]!.autoSleep = false;
+  expect(text(ProfileViewer())).toContain('Auto-Sleep: Disabled');
+});

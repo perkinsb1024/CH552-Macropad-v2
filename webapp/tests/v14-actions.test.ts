@@ -22,7 +22,7 @@ const fixtures = v13Fixtures as {
 };
 it.each(fixtures.fixtures)('migrates authentic finalized v13 bytes, JSON and drafts for variant $profile.variant', ({ profile: p, hex }) => {
   const original = Uint8Array.from(hex.match(/../g)!, byte => parseInt(byte, 16));
-  p = structuredClone(p);
+  p = { ...defaultProfile(p.variant), ...structuredClone(p) };
   for (const layer of p.layers) layer.autoSleep = false;
   expect(original[2]).toBe(13);
   const result = decodeImage(original);

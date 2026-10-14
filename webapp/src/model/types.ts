@@ -67,6 +67,10 @@ export interface TimedAction {
 }
 
 export interface Profile {
+  sleepTimeoutMinutes: number;
+  consumeWakeInput: boolean;
+  showLayerIndicatorOnWake: boolean;
+  dimInsteadOfOff: boolean;
   variant: Variant;
   transparentBlack: boolean;
   startupLayer: number;

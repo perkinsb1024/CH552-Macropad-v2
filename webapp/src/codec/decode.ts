@@ -1,6 +1,6 @@
 import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
-  PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
+  SLEEP_TIMEOUT_MINUTES,   PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, pairCount, type Variant,
 } from '../model/constants';
@@ -186,8 +186,8 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   if (board ? version !== FORMAT_VERSION : version < 2 || version > FORMAT_VERSION)
     return fail('unsupported-version', `Format version ${version} is not supported for this header.`);
   if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');
-  if (board && ((image[2]! & 0x80) || (image[3]! & 1) || image[6]!))
-    return fail('malformed', 'Reserved header bits or unassigned sleep settings are non-zero.');
+  if (board && ((image[2]! & 0x80) || (image[3]! & 1) || (image[6]! & 0xe0)))
+    return fail('malformed', 'Reserved header bits are non-zero.');
   if (!board && version === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = version >= 4;
   const configurableRainbow = version >= 5;
@@ -327,7 +327,12 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   }
 
   const led = image[board ? 5 : 8]!;
-  const profile: Profile = { variant, transparentBlack: !!(image[5]! & (board ? 8 : 128)), startupLayer,
+  const profile: Profile = {
+    sleepTimeoutMinutes: board ? SLEEP_TIMEOUT_MINUTES[image[6]! & 3]! : 30,
+    consumeWakeInput: board ? !!(image[6]! & 4) : true,
+    showLayerIndicatorOnWake: board ? !!(image[6]! & 8) : true,
+    dimInsteadOfOff: board && !!(image[6]! & 16),
+    variant, transparentBlack: !!(image[5]! & (board ? 8 : 128)), startupLayer,
     chordWindow: board ? 4 + 2 * (led & 7) : led & 15,
     rainbowPhase: configurableRainbow ? (led >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE,
     rainbowSpeed: configurableRainbow ? led >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED,

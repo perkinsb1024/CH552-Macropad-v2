@@ -1,4 +1,4 @@
-import { DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior } from '../../model/constants';
+import { SLEEP_TIMEOUT_MINUTES, SLEEP_TIMEOUT_LABELS, DEFAULT_RAINBOW_SPEED, RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_PHASE, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior } from '../../model/constants';
 import { autoSleepMode, baseline, layerName, profile, setAutoSleepMode, updateProfile } from '../store';
 import { IconChevron } from './Icons';
 
@@ -89,10 +89,30 @@ export function ProfilePanel() {
             >{mode}</button>)}
           </div>
           <span class="hint">
-            When enabled, LEDs will turn off after 30 minutes of inactivity. On or Off applies to all layers.<br />
+            When enabled, LEDs turn off or dim after the selected period of inactivity. On or Off applies to all layers.<br />
             Configuring this setting Per Layer can be done by clicking Advanced under Layer Options.
           </span>
         </div>
+        {p.layers.some(layer => layer.autoSleep) && <>
+          <label class="field field-wide">
+            <span class="field-label">Sleep Timeout</span>
+            <select aria-label="Sleep Timeout" value={p.sleepTimeoutMinutes} onChange={e => updateProfile(d => {
+              d.sleepTimeoutMinutes = Number((e.target as HTMLSelectElement).value);
+            })}>
+              {SLEEP_TIMEOUT_MINUTES.map((minutes, i) => <option key={minutes} value={minutes}>{SLEEP_TIMEOUT_LABELS[i]}</option>)}
+            </select>
+          </label>
+          {([
+            ['consumeWakeInput', 'Consume Wake Input', 'The first press or complete encoder turn wakes the pad without executing its binding. Turn off to wake and execute the binding.'],
+            ['showLayerIndicatorOnWake', 'Show Layer Indicator', 'Restart the current layer’s timed or blink indication on wake. Always On and Do Not Indicate keep their configured behavior.'],
+            ['dimInsteadOfOff', 'Dim Instead of Off', 'Use the existing dim brightness for layer indicators and pressed-key feedback during sleep. This keeps configured lighting behavior; it does not turn an inactive indicator on.'],
+          ] as const).map(([field, label, hint]) => <label key={field} class="field field-wide">
+            <span class="check"><input type="checkbox" aria-label={label} checked={p[field]} onChange={e => updateProfile(d => {
+              d[field] = (e.target as HTMLInputElement).checked;
+            })} />{label}</span>
+            <span class="hint">{hint}</span>
+          </label>)}
+        </>}
       </div>
     </details>
   );
