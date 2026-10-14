@@ -935,6 +935,7 @@ static void testAutoSleepWakeIndicator(void) {
         for (uint8_t behavior = 0; behavior < 4; behavior++) {
             for (uint8_t full = 0; full < 2; full++) {
                 for (uint8_t input = 0; input < 4; input++) {
+                  for (uint8_t show = 0; show < 2; show++) {
                     initAutoSleep();
                     memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
                     testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
@@ -945,6 +946,7 @@ static void testAutoSleepWakeIndicator(void) {
                         CONFIG_LAYER_OPT_AUTO_SLEEP | full |
                         (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
                         (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+                    if (!show) activeConfig[CONFIG_HEADER_SLEEP] &= ~CONFIG_SLEEP_INDICATOR;
                     firmwareApplyConfig(1);
                     // Finish the startup indication before sleeping.
                     for (uint16_t now = 0; now <= 4000; now++) tick(now);
@@ -967,8 +969,8 @@ static void testAutoSleepWakeIndicator(void) {
                         }
                     }
                     uint16_t wake = currentMs;
-                    uint8_t timed = behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
-                    uint8_t blink = behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER;
+                    uint8_t timed = show && behavior == CONFIG_LAYER_INDICATOR_TIMED_ON;
+                    uint8_t blink = show && behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER;
                     uint8_t always = behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON;
                     uint8_t phases = timed ? 6 : blink ? 2 * (layer + 1) : 0;
                     assert(actionsLayer() == layer && frameCount == 0);
@@ -988,14 +990,88 @@ static void testAutoSleepWakeIndicator(void) {
                     assert(indicatorRisingEdges == (timed || always ? 1 : blink ? layer + 1 : 0));
                     assert(!actionsTimedInput());
                     assert(!actionsTakeLayerSelection());
+                  }
                 }
             }
         }
     }
 }
 
+static void wakeSleepInput(uint8_t input) {
+    if (input < 2) {
+        uint8_t index = input ? NUM_LEDS : 0;
+        if (input) P3 &= ~8; else P1 &= ~2;
+        scanButton(index, currentMs);
+        currentMs += DEBOUNCE_MS;
+        scanButton(index, currentMs);
+    } else {
+        const uint8_t forward[] = {2, 0, 1, 3};
+        const uint8_t backward[] = {1, 0, 2, 3};
+        for (uint8_t step = 0; step < 4; step++) {
+            P3 = (P3 & ~3) | (input == 2 ? forward[step] : backward[step]);
+            scanEncoder();
+        }
+    }
+    actionsPoll(currentMs);
+}
+
+static void testSleepSettingsInput(void) {
+    static const uint16_t intervals[] = {220, 440, 879, 1758};
+    for (uint8_t settings = 0; settings < 32; settings++) {
+        for (uint8_t input = 0; input < 4; input++) {
+            initAutoSleep();
+            activeConfig[CONFIG_HEADER_SLEEP] = settings;
+            // Every physical wake binding sets key feedback to Dim, proving
+            // wake restores configured policies before executing the binding.
+            uint8_t slot = input ? NUM_LEDS + input - 1 : 0;
+            activeConfig[9 + 2 * slot] = 0x10 | CONFIG_ACTION_LED_CONTROL;
+            activeConfig[10 + 2 * slot] = CONFIG_LED_KEY_SET;
+            firmwareApplyConfig(1);
+            advanceSleep((uint32_t)intervals[settings & 3] * 256);
+            assert(ledSettings[2] == ((settings & CONFIG_SLEEP_DIM) ? 1 : 0));
+            assert(ledSettings[3] == ledSettings[2]);
+            if (settings & CONFIG_SLEEP_DIM) assertIndicatorLeds(0, 1, 0);
+            else assertBlack();
+            wakeSleepInput(input);
+            assert(ledSettings[2] == 3);
+            assert(ledSettings[3] == ((settings & CONFIG_SLEEP_CONSUME) ? 3 : 1));
+            if (input < 2) {
+                P1 = P3 = 0xFF;
+                scanButton(input ? NUM_LEDS : 0, currentMs);
+                currentMs += DEBOUNCE_MS;
+                scanButton(input ? NUM_LEDS : 0, currentMs);
+                actionsPoll(currentMs);
+                // A consumed press and release leave the next binding intact.
+                wakeSleepInput(input); assert(ledSettings[3] == 1);
+            }
+        }
+    }
+    // Executing a wake key uses and returns from the armed one-shot layer;
+    // consuming it leaves the one-shot ready for the next ordinary input.
+    for (uint8_t consume = 0; consume < 2; consume++) {
+        initAutoSleep();
+        uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+        testSetLayout(2, 0, 0);
+        activeConfig[CONFIG_HEADER_SLEEP] = consume ? CONFIG_SLEEP_CONSUME : 0;
+        activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
+        activeConfig[9 + size] = CONFIG_ACTION_KEY_HOLD; activeConfig[10 + size] = 4;
+        activeConfig[9 + 2 * size - 1] = CONFIG_LAYER_OPT_AUTO_SLEEP;
+        firmwareApplyConfig(1);
+        actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
+        advanceSleep(220UL * 256); frameCount = 0;
+        wakeSleepInput(0);
+        assert(actionsLayer() == (consume ? 1 : 0));
+        assert(!!frameCount == !consume);
+        if (!consume) assert(frames[frameCount - 1][3] == 4);
+        P1 = P3 = 0xFF; scanButton(0, currentMs);
+        currentMs += DEBOUNCE_MS; scanButton(0, currentMs); actionsPoll(currentMs);
+        if (!consume) assert(frames[frameCount - 1][3] == 0);
+    }
+}
+
 int main(void) {
     testAutoSleepInput();
+    testSleepSettingsInput();
     testAutoSleepWakeIndicator();
     testStartupDebounce();
     testStartupIndicatorEnumeration();

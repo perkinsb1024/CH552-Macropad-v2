@@ -7,14 +7,20 @@
 // The last runtime slot uses a synthesized record after the saved image.
 // User timers retain their original order and all four configuration slots.
 // Bit 0 of timedHigh latches the pending next-input action; bits 3-5 are age.
+// Low interval-1 byte and pre-positioned high bits for 220/440/879/1758 ticks.
+static const __code uint8_t sleepLow[] = {219, 183, 110, 221};
+static const __code uint8_t sleepHigh[] = {0, 8, 24, 48};
+
 void actionsTimedReset(uint8_t tick) {
+  uint8_t settings = activeConfig[CONFIG_HEADER_SLEEP];
+  uint8_t timeout = settings & CONFIG_SLEEP_TIMEOUT_MASK;
   timedClock = tick;
-  activeConfig[CONFIG_SIZE + 0] = 183; // 440 ticks minus one, low byte.
-  activeConfig[CONFIG_SIZE + 1] = 0x4D;
+  activeConfig[CONFIG_SIZE + 0] = sleepLow[timeout];
+  activeConfig[CONFIG_SIZE + 1] = (settings & CONFIG_SLEEP_DIM) ? 0x2D : 0x4D;
   activeConfig[CONFIG_SIZE + 2] = CONFIG_LED_PRESET_SET;
   activeConfig[CONFIG_SIZE + 3] = CONFIG_ACTION_LED_CONTROL;
   activeConfig[CONFIG_SIZE + 4] = CONFIG_LED_PRESET_SET;
-  activeConfig[CONFIG_SIZE + 5] = 200; // Consume, reset, interval high=1.
+  activeConfig[CONFIG_SIZE + 5] = 128 | sleepHigh[timeout] | ((settings & CONFIG_SLEEP_CONSUME) << 4);
   for (uint8_t i = 0; i <= CONFIG_TIMED_MAX; i++) {
     timedAge[i] = 0;
     timedHigh[i] = 0;
@@ -49,7 +55,8 @@ static ACTION_BIT timedEvent(uint8_t tick) {
         action = 3;
         if (flags & CONFIG_TIMED_CONSUME) consume = 1;
         // Reuse the normal indication without changing or consuming the layer.
-        if (i == count) layerSelectionPending = 1;
+        if (i == count && (activeConfig[CONFIG_HEADER_SLEEP] & CONFIG_SLEEP_INDICATOR))
+          layerSelectionPending = 1;
       }
       timedHigh[i] &= ~1;
       if (CONFIG_TIMED_ALL_RESET || (flags & 128)) {

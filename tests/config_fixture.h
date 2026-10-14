@@ -37,6 +37,7 @@ static void testLoadStarterProfile(uint8_t variant) {
     activeConfig[0] = CONFIG_MARKER;
 
     activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_DEFAULT;
     testSetVariant(variant);
     activeConfig[CONFIG_HEADER_LED] = 2 | (2 << CONFIG_HEADER_RAINBOW_PHASE_SHIFT) |
         (1 << CONFIG_HEADER_RAINBOW_SPEED_SHIFT);

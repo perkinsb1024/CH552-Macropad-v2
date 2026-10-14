@@ -187,7 +187,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_VARIANT_MASK) != variant ||
         (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_LAYERS_RESERVED) ||
         (validationImage[CONFIG_HEADER_POOL] & CONFIG_HEADER_POOL_RESERVED) ||
-        validationImage[CONFIG_HEADER_SLEEP] != 0) {
+        (validationImage[CONFIG_HEADER_SLEEP] & CONFIG_HEADER_SLEEP_RESERVED)) {
         return 0;
     }
     validationLayers = ((validationImage[CONFIG_HEADER_LAYERS] >> CONFIG_HEADER_LAYER_SHIFT) & CONFIG_HEADER_LAYER_MASK) + 1;

@@ -63,6 +63,7 @@ static void probeInit(uint8_t timers) {
     activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
     testSetLayout(3, 0, timers); // Three layers.
     testSetStringLength(0);
+    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_DEFAULT;
     testSetVariant(PHYSICAL_VARIANT);
     for (uint8_t i = 0; i < timers; i++) {
         uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
@@ -328,7 +329,49 @@ static void autoSleep(void) {
     assert(!actionsTakeLayerSelection());
 }
 
+static void sleepSettings(void) {
+    static const uint16_t ticks[] = {220, 440, 879, 1758};
+    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+    for (uint8_t settings = 0; settings < 32; settings++) {
+        probeInit(0);
+        activeConfig[CONFIG_HEADER_SLEEP] = settings;
+        activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+        actionsTimedReset(fine);
+        uint32_t interval = (uint32_t)ticks[settings & 3] * 256;
+        advanceFine(interval - 1); assert(ledCalls == 0);
+        advanceFine(1); assert(ledCalls == 1);
+        assert(ledCommand == CONFIG_LED_PRESET_SET);
+        assert(ledValue == ((settings & CONFIG_SLEEP_DIM) ? 2 : 4));
+        assert(!actionsTakeLayerSelection());
+        assert(!!actionsTimedInput() == !!(settings & CONFIG_SLEEP_CONSUME));
+        assert(ledCalls == 2 && ledValue == 0);
+        assert(!!actionsTakeLayerSelection() == !!(settings & CONFIG_SLEEP_INDICATOR));
+        assert(!actionsTimedInput() && !actionsTakeLayerSelection());
+        advanceFine(interval - 1); assert(ledCalls == 2);
+        actionsTimedInput(); // Each preset resets its fractional phase on input.
+        advanceFine(interval - 1); assert(ledCalls == 2);
+        advanceFine(1); assert(ledCalls == 3);
+        probeLayer(1); assert(actionsTakeLayerSelection());
+        assert(!!actionsTimedInput() == !!(settings & CONFIG_SLEEP_CONSUME));
+        assert(!!actionsTakeLayerSelection() == !!(settings & CONFIG_SLEEP_INDICATOR));
+        assert(ledCalls == 4); // Pending wake survives leaving enabled layer.
+        advanceFine(interval); assert(ledCalls == 4); // Opt-out remains awake.
+        probeLayer(0); assert(actionsTakeLayerSelection());
+        advanceFine(interval); assert(ledCalls == 5);
+        actionsTimedReset(fine); assert(!actionsTimedInput()); // Apply cancels pending wake.
+    }
+    // A consuming user timer still consumes input when sleep itself passes it.
+    probeInit(4);
+    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_INDICATOR;
+    activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+    setFlags(3, CONFIG_TIMED_CONSUME);
+    actionsTimedReset(fine);
+    advanceFine(220UL * 256);
+    assert(actionsTimedInput());
+    assert(actionsTakeLayerSelection());
+}
+
 int main(void) {
-    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers(); autoSleep();
+    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers(); autoSleep(); sleepSettings();
     return 0;
 }
