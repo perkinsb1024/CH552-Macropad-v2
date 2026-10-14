@@ -1,0 +1,97 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -46,19 +46,17 @@
+     return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
+ }
+ 
+-uint16_t configCrc(const __xdata uint8_t *image) {
+-    uint16_t crc = 0xFFFF;
++uint8_t configCrc(const __xdata uint8_t *image) {
++    uint8_t crc = 0;
+     uint8_t i;
+     uint8_t bit;
+     for (i = 0; i < CONFIG_SIZE; i++) {
+-        if (i == 6 || i == 7) {
+-            continue;
+-        }
+-        crc ^= (uint16_t)image[i] << 8;
++        if (i == 6) continue;
++        crc ^= image[i];
+         for (bit = 0; bit < 8; bit++) {
+-            uint8_t high = (uint8_t)(crc >> 8) & 0x80;
++            uint8_t high = crc & 0x80;
+             crc <<= 1;
+-            if (high) crc ^= 0x1021;
++            if (high) crc ^= 0x07;
+         }
+     }
+     return crc;
+@@ -177,7 +175,7 @@
+     __idata uint8_t previous = 0;
+     __idata uint8_t id;
+     uint16_t end;
+-    uint16_t crc;
++    uint8_t crc;
+     validationImage = image;
+ #ifdef __SDCC
+     if (variant != PHYSICAL_VARIANT) return 0;
+@@ -249,7 +247,7 @@
+         offset++;
+     }
+     crc = configCrc(validationImage);
+-    return validationImage[6] == (uint8_t)crc && validationImage[7] == (uint8_t)(crc >> 8);
++    return validationImage[6] == crc;
+ }
+ 
+ uint8_t configLayerCount(void) { return (activeConfig[3] & 7) + 1; }
+--- a/src/config.h
++++ b/src/config.h
+@@ -149,7 +149,7 @@
+ 
+ uint8_t configTimedCount(void);
+ uint8_t configTimedOffset(void);
+-uint16_t configCrc(const __xdata uint8_t *image);
++uint8_t configCrc(const __xdata uint8_t *image);
+ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant);
+ uint8_t configLayerCount(void);
+ uint8_t configStartupLayer(void);
+--- a/src/protocol_firmware.c
++++ b/src/protocol_firmware.c
+@@ -49,7 +49,7 @@
+ PROTOCOL_BIT activeConfigValid;
+ __xdata uint8_t uploadState; // 0 idle, 1 receiving, 2 committed (retry acknowledgement).
+ __xdata uint8_t uploadNext;
+-__xdata uint16_t uploadCrc;
++__xdata uint8_t uploadCrc;
+ __xdata uint16_t uploadTime;
+ 
+ void protocolInit(void) {
+@@ -85,7 +85,7 @@
+   uint8_t offset = protocolInbox[6];
+   uint8_t length = protocolInbox[7];
+   uint8_t i;
+-  uint16_t crc;
++  uint8_t crc;
+   if (protocolInbox[0] != 3 || protocolInbox[1] != 'U' ||
+       protocolInbox[2] != 'M' || protocolInbox[8]) {
+     return PROTOCOL_BAD_PACKET;
+@@ -140,7 +140,8 @@
+       if (protocolInbox[9] != CONFIG_SIZE) {
+         return PROTOCOL_BAD_RANGE;
+       }
+-      uploadCrc = protocolInbox[10] | ((uint16_t)protocolInbox[11] << 8);
++      if (protocolInbox[11]) return PROTOCOL_BAD_CRC;
++      uploadCrc = protocolInbox[10];
+       uploadNext = 0;
+       uploadState = 1;
+       break;
+@@ -172,8 +173,7 @@
+         return PROTOCOL_INCOMPLETE;
+       }
+       crc = configCrc(stagedConfig);
+-      if (crc != uploadCrc || stagedConfig[6] != (uint8_t)crc ||
+-          stagedConfig[7] != (uint8_t)(crc >> 8)) {
++      if (crc != uploadCrc || stagedConfig[6] != crc) {
+         return PROTOCOL_BAD_CRC;
+       }
+       if (!configValid(stagedConfig, PHYSICAL_VARIANT)) {

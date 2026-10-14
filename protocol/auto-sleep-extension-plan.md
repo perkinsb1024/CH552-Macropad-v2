@@ -97,6 +97,11 @@ totals do not change.
 
 ## Storage Options to Compare
 
+The [DataFlash Header and CRC Investigation](dataflash-header-crc-investigation.md)
+records additional ways to reclaim existing header storage, marker/version layout
+identification, corruption mechanisms and measured CRC-8/CRC-10 implementations.
+It leaves the active firmware and configuration format unchanged.
+
 | Option | Saved Storage Cost | Assessment |
 | --- | --- | --- |
 | Retain current behavior | No additional bytes | Already supports profile-wide enablement; simplest outcome if timeout choices are not valuable enough. |

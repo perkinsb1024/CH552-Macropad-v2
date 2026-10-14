@@ -1,0 +1,555 @@
+{
+  "revision": "a14798a4450c85d88d96f9e5cad598da552de0b6",
+  "branch": "experiment/v15-updated-header",
+  "initial_tree": "clean",
+  "active_firmware_modified": false,
+  "temporary_artifacts": "/private/tmp/macropad-crc-investigation",
+  "toolchain": "CH55xDuino 0.0.25, SDCC build.13407_4",
+  "clock_hz": 24000000,
+  "usb_dma_bytes": 148,
+  "flash_limit": 14336,
+  "builds": [
+    {
+      "case": "baseline",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14210,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 126,
+      "flash_saving": 0
+    },
+    {
+      "case": "baseline",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14208,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 128,
+      "flash_saving": 0
+    },
+    {
+      "case": "crc10-core",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14232,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 104,
+      "flash_saving": -22
+    },
+    {
+      "case": "crc10-core",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14228,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 108,
+      "flash_saving": -20
+    },
+    {
+      "case": "crc10-packed",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14274,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 62,
+      "flash_saving": -64
+    },
+    {
+      "case": "crc10-packed",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14272,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 64,
+      "flash_saving": -64
+    },
+    {
+      "case": "crc10-right-core",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14226,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 110,
+      "flash_saving": -16
+    },
+    {
+      "case": "crc10-right-core",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14224,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 112,
+      "flash_saving": -16
+    },
+    {
+      "case": "crc10-right-packed",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14266,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 70,
+      "flash_saving": -56
+    },
+    {
+      "case": "crc10-right-packed",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14262,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 74,
+      "flash_saving": -54
+    },
+    {
+      "case": "crc10-aligned-core",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14210,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 126,
+      "flash_saving": 0
+    },
+    {
+      "case": "crc10-aligned-core",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14208,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 128,
+      "flash_saving": 0
+    },
+    {
+      "case": "crc10-aligned-packed",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14254,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 82,
+      "flash_saving": -44
+    },
+    {
+      "case": "crc10-aligned-packed",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14250,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 86,
+      "flash_saving": -42
+    },
+    {
+      "case": "crc8-core",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14192,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 365,
+      "sseg": 90,
+      "external_allocated": 752,
+      "free_flash": 144,
+      "flash_saving": 18
+    },
+    {
+      "case": "crc8-core",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14188,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 356,
+      "sseg": 93,
+      "external_allocated": 743,
+      "free_flash": 148,
+      "flash_saving": 20
+    },
+    {
+      "case": "crc8-byte",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14154,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 364,
+      "sseg": 90,
+      "external_allocated": 751,
+      "free_flash": 182,
+      "flash_saving": 56
+    },
+    {
+      "case": "crc8-byte",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14152,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 355,
+      "sseg": 93,
+      "external_allocated": 742,
+      "free_flash": 184,
+      "flash_saving": 56
+    },
+    {
+      "case": "crc8-packed",
+      "variant": 0,
+      "exit": 0,
+      "flash": 14124,
+      "stack": 90,
+      "pseg": 105,
+      "xseg": 364,
+      "sseg": 90,
+      "external_allocated": 751,
+      "free_flash": 212,
+      "flash_saving": 86
+    },
+    {
+      "case": "crc8-packed",
+      "variant": 1,
+      "exit": 0,
+      "flash": 14122,
+      "stack": 93,
+      "pseg": 105,
+      "xseg": 355,
+      "sseg": 93,
+      "external_allocated": 742,
+      "free_flash": 214,
+      "flash_saving": 86
+    }
+  ],
+  "validation": [
+    {
+      "case": "baseline",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "baseline-integrity-0.log"
+    },
+    {
+      "case": "baseline",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "baseline-integrity-1.log"
+    },
+    {
+      "case": "baseline",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "baseline-host.log"
+    },
+    {
+      "case": "baseline",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "baseline-host-no-preview.log"
+    },
+    {
+      "case": "crc10-core",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc10-core-integrity-0.log"
+    },
+    {
+      "case": "crc10-core",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc10-core-integrity-1.log"
+    },
+    {
+      "case": "crc10-core",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc10-core-host.log"
+    },
+    {
+      "case": "crc10-core",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc10-core-host-no-preview.log"
+    },
+    {
+      "case": "crc10-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc10-packed-integrity-0.log"
+    },
+    {
+      "case": "crc10-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc10-packed-integrity-1.log"
+    },
+    {
+      "case": "crc10-packed",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc10-packed-host.log"
+    },
+    {
+      "case": "crc10-packed",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc10-packed-host-no-preview.log"
+    },
+    {
+      "case": "crc10-right-core",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc10-right-core-integrity-0.log"
+    },
+    {
+      "case": "crc10-right-core",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc10-right-core-integrity-1.log"
+    },
+    {
+      "case": "crc10-right-core",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc10-right-core-host.log"
+    },
+    {
+      "case": "crc10-right-core",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc10-right-core-host-no-preview.log"
+    },
+    {
+      "case": "crc10-right-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc10-right-packed-integrity-0.log"
+    },
+    {
+      "case": "crc10-right-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc10-right-packed-integrity-1.log"
+    },
+    {
+      "case": "crc10-right-packed",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc10-right-packed-host.log"
+    },
+    {
+      "case": "crc10-right-packed",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc10-right-packed-host-no-preview.log"
+    },
+    {
+      "case": "crc10-aligned-core",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc10-aligned-core-integrity-0.log"
+    },
+    {
+      "case": "crc10-aligned-core",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc10-aligned-core-integrity-1.log"
+    },
+    {
+      "case": "crc10-aligned-core",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc10-aligned-core-host.log"
+    },
+    {
+      "case": "crc10-aligned-core",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc10-aligned-core-host-no-preview.log"
+    },
+    {
+      "case": "crc10-aligned-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc10-aligned-packed-integrity-0.log"
+    },
+    {
+      "case": "crc10-aligned-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc10-aligned-packed-integrity-1.log"
+    },
+    {
+      "case": "crc10-aligned-packed",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc10-aligned-packed-host.log"
+    },
+    {
+      "case": "crc10-aligned-packed",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc10-aligned-packed-host-no-preview.log"
+    },
+    {
+      "case": "crc8-core",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc8-core-integrity-0.log"
+    },
+    {
+      "case": "crc8-core",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc8-core-integrity-1.log"
+    },
+    {
+      "case": "crc8-core",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc8-core-host.log"
+    },
+    {
+      "case": "crc8-core",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc8-core-host-no-preview.log"
+    },
+    {
+      "case": "crc8-byte",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc8-byte-integrity-0.log"
+    },
+    {
+      "case": "crc8-byte",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc8-byte-integrity-1.log"
+    },
+    {
+      "case": "crc8-byte",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc8-byte-host.log"
+    },
+    {
+      "case": "crc8-byte",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc8-byte-host-no-preview.log"
+    },
+    {
+      "case": "crc8-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 0,
+      "exit": 0,
+      "log": "crc8-packed-integrity-0.log"
+    },
+    {
+      "case": "crc8-packed",
+      "suite": "integrity-and-protocol",
+      "variant": 1,
+      "exit": 0,
+      "log": "crc8-packed-integrity-1.log"
+    },
+    {
+      "case": "crc8-packed",
+      "suite": "complete-host",
+      "preview": true,
+      "exit": 0,
+      "log": "crc8-packed-host.log"
+    },
+    {
+      "case": "crc8-packed",
+      "suite": "complete-host",
+      "preview": false,
+      "exit": 0,
+      "log": "crc8-packed-host-no-preview.log"
+    }
+  ]
+}
