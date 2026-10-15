@@ -305,9 +305,30 @@ static void autoSleep(void) {
     advanceFine(interval * 2); assert(ledCalls == 4);
     probeLayer(0); advanceFine(interval / 2);
     probeLayer(1); probeLayer(0);
-    advanceFine(interval - 1); assert(ledCalls == 4);
+    // Disabled layers pause sleep; transitions preserve its elapsed phase.
+    advanceFine(interval / 2 - 1); assert(ledCalls == 4);
     advanceFine(1); assert(ledCalls == 5);
     actionsTimedReset(fine); assert(!actionsTimedInput());
+    // A global timer switching layers every 4.096 seconds must not prevent
+    // sleep. The same-layer case must preserve the phase too.
+    for (uint8_t target = 0; target < 2; target++) {
+        probeInit(1);
+        for (uint8_t layer = 0; layer < 3; layer++)
+            activeConfig[options + layer * (PHYSICAL_VARIANT ? 15 : 22)] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+        uint8_t offset = configTimedOffset();
+        activeConfig[offset + 1] = CONFIG_ACTION_SET_LAYER | CONFIG_LAYER_RELATIVE;
+        activeConfig[offset + 2] = target;
+        activeConfig[offset + 3] = CONFIG_ACTION_NONE;
+        activeConfig[offset + 4] = 0;
+        advanceFine(interval - 1); assert(ledCalls == 0);
+        advanceFine(1); assert(ledCalls == 1);
+        assert(ledValue == 4);
+        assert(actionsTimedInput()); assert(ledCalls == 2);
+        advanceFine(interval / 2);
+        assert(!actionsTimedInput()); // Physical input restarts sleep.
+        advanceFine(interval - 1); assert(ledCalls == 2);
+        advanceFine(1); assert(ledCalls == 3);
+    }
     // All four user timers remain available alongside auto-sleep.
     probeInit(4); activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
     for (uint8_t i = 0; i < 4; i++) {

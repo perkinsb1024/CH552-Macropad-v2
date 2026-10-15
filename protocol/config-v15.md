@@ -260,9 +260,11 @@ Each interval has less than 16ms early quantization, ordinary foreground delay
 and oscillator error. Debounced key presses, encoder-button presses and completed
 encoder detents in either direction restart it, including bindings set to
 **Nothing**. Releases, held inputs, partial detents and USB traffic do not.
-An effective layer transition starts a fresh interval; it advances only while
-the effective layer has **Auto-Sleep** enabled. A pending wake survives leaving
-that layer.
+Layer changes preserve the elapsed interval; only physical input restarts it.
+The interval advances only while the effective layer has **Auto-Sleep** enabled
+and pauses on disabled layers. Timed actions and macro output do not count as
+physical input, including when they change layers. A pending wake survives
+leaving an enabled layer.
 
 The first subsequent physical input applies **Both as Configured** before its
 binding can execute. With **Consume Wake Input** enabled, the press/detent and
@@ -1233,8 +1235,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,198 | 138 | 105 | 365 | 134 | 90 |
-| Three keys | 14,194 | 142 | 105 | 356 | 134 | 93 |
+| Six keys | 14,192 | 144 | 105 | 365 | 134 | 90 |
+| Three keys | 14,188 | 148 | 105 | 356 | 134 | 93 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator

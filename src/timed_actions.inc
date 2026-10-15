@@ -94,9 +94,10 @@ ACTION_BIT actionsTimedInput(void) {
 static void resetLayerTimers(void) {
   uint8_t offset = configTimedOffset();
   uint8_t count = configTimedCount();
-  for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
+  // Reset only layer-scoped user timers; sleep follows physical inactivity.
+  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
     uint8_t scope = activeConfig[offset + 5] & 7;
-    if (scope || i == count) {
+    if (scope) {
       timedAge[i] = 0;
       timedHigh[i] &= 1;
       timedFraction[i] = 0;
