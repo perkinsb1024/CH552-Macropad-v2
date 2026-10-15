@@ -297,16 +297,17 @@ static void autoSleep(void) {
     actionsTimedInput(); // Restart independent phase immediately before expiry.
     advanceFine(interval - 1); assert(ledCalls == 2);
     advanceFine(1); assert(ledCalls == 3);
-    probeLayer(1); // Pending wake survives leaving the opted-in layer.
+    probeLayer(1); // A disabled layer restores lighting without physical input.
     assert(actionsTakeLayerSelection());
-    assert(actionsTimedInput()); assert(ledCalls == 4);
-    assert(actionsTakeLayerSelection()); // Remind the current layer on wake.
+    assert(ledCalls == 4 && ledValue == 0);
+    assert(!actionsTimedInput()); // No pending sleep input remains to consume.
+    assert(!actionsTakeLayerSelection());
     assert(actionsLayer() == 1);
     advanceFine(interval * 2); assert(ledCalls == 4);
     probeLayer(0); advanceFine(interval / 2);
     probeLayer(1); probeLayer(0);
-    // Disabled layers pause sleep; transitions preserve its elapsed phase.
-    advanceFine(interval / 2 - 1); assert(ledCalls == 4);
+    // Visiting a disabled layer clears elapsed sleep time.
+    advanceFine(interval - 1); assert(ledCalls == 4);
     advanceFine(1); assert(ledCalls == 5);
     actionsTimedReset(fine); assert(!actionsTimedInput());
     // A global timer switching layers every 4.096 seconds must not prevent
@@ -350,6 +351,27 @@ static void autoSleep(void) {
     assert(!actionsTakeLayerSelection());
 }
 
+static void disabledLayerUserResumes(void) {
+    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+    for (uint8_t count = 0; count <= CONFIG_TIMED_MAX; count++) {
+        probeInit(count);
+        activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+        for (uint8_t i = 0; i < count; i++) {
+            uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
+            activeConfig[offset + 1] = CONFIG_ACTION_NONE;
+            activeConfig[offset + 2] = 0;
+            setFlags(i, CONFIG_TIMED_CONSUME);
+        }
+        advanceFine(440UL * 256); assert(ledCalls == 1);
+        probeLayer(1); // Wakes sleep but preserves every armed user follow-up.
+        assert(ledCalls == 2 && ledValue == 0);
+        assert(actionsTakeLayerSelection());
+        assert(!!actionsTimedInput() == !!count);
+        assert(ledCalls == 2 + count);
+        assert(!actionsTakeLayerSelection()); // No built-in physical wake remains.
+    }
+}
+
 static void sleepSettings(void) {
     static const uint16_t ticks[] = {220, 440, 879, 1758};
     uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
@@ -373,9 +395,9 @@ static void sleepSettings(void) {
         advanceFine(interval - 1); assert(ledCalls == 2);
         advanceFine(1); assert(ledCalls == 3);
         probeLayer(1); assert(actionsTakeLayerSelection());
-        assert(!!actionsTimedInput() == !!(settings & CONFIG_SLEEP_CONSUME));
-        assert(!!actionsTakeLayerSelection() == !!(settings & CONFIG_SLEEP_INDICATOR));
-        assert(ledCalls == 4); // Pending wake survives leaving enabled layer.
+        assert(ledCalls == 4 && ledValue == 0); // Disabled layer wakes immediately.
+        assert(!actionsTimedInput());
+        assert(!actionsTakeLayerSelection());
         advanceFine(interval); assert(ledCalls == 4); // Opt-out remains awake.
         probeLayer(0); assert(actionsTakeLayerSelection());
         advanceFine(interval); assert(ledCalls == 5);
@@ -393,6 +415,6 @@ static void sleepSettings(void) {
 }
 
 int main(void) {
-    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers(); autoSleep(); sleepSettings();
+    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers(); autoSleep(); disabledLayerUserResumes(); sleepSettings();
     return 0;
 }

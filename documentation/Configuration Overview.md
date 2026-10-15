@@ -418,10 +418,14 @@ The profile-wide settings apply to every enabled layer:
 | **Dim Instead of Off** | Disabled by default. Use **Layers and Keys Dim** during sleep instead of **Both Off**, retaining configured indicator behavior at the existing fixed dim brightness. |
 
 Presses and completed encoder turns restart the timer, even when unbound.
-Releases, held inputs, partial turns and USB traffic do not. Layer changes
-preserve the elapsed interval; only enabled layers advance it, and disabled
-layers pause it. **Timed Actions** and macro output do not restart it, including
-when they change layers. A pending wake survives leaving an enabled layer. A consumed wake preserves an armed one-shot layer; an
+Releases, held inputs, partial turns and USB traffic do not. Switching between
+enabled layers preserves elapsed sleep time. Entering a disabled layer clears
+the timer and, if asleep, restores **Both as Configured** immediately without
+consuming the next input. That layer stays awake; returning to an enabled layer
+starts a full timeout. This applies even to switches made by **Timed Actions**
+or macros. Other timed actions and macro output do not restart the timer.
+Explicit LED commands still work on disabled layers. A consumed wake preserves
+an armed one-shot layer; an
 executed wake uses it normally. A consuming user timer can still consume the
 input. Wake restores configured brightness before an executed binding runs.
 Dimming does not turn an inactive indicator on. USB, scanning and held output

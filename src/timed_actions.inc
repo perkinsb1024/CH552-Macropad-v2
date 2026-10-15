@@ -39,7 +39,7 @@ static ACTION_BIT timedEvent(uint8_t tick) {
     }
     uint8_t age = timedAge[i];
     uint8_t action = 0;
-    uint8_t flags = activeConfig[offset + 5];
+    uint8_t flags = activeConfig[(uint8_t)(offset + 5)];
     if (tick) {
       if ((flags & 7) && (uint8_t)((flags & 7) - 1) != effectiveLayer) continue;
       // Each carry of the 16 ms fine clock advances age by 4.096 seconds.
@@ -92,15 +92,22 @@ ACTION_BIT actionsTimedInput(void) {
 }
 
 static void resetLayerTimers(void) {
-  uint8_t offset = configTimedOffset();
+  // Point directly at each user timer's scope byte (inside the saved image).
+  uint8_t offset = configTimedOffset() + 5;
   uint8_t count = configTimedCount();
-  // Reset only layer-scoped user timers; sleep follows physical inactivity.
-  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
-    uint8_t scope = activeConfig[offset + 5] & 7;
-    if (scope) {
-      timedAge[i] = 0;
-      timedHigh[i] &= 1;
-      timedFraction[i] = 0;
-    }
+  for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
+    if (i == count) {
+      // Enabled layers preserve sleep time and any pending physical wake.
+      if (configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP) return;
+    } else if (!(activeConfig[offset] & 7)) continue;
+    timedAge[i] = 0;
+    timedHigh[i] &= 1;
+    timedFraction[i] = 0;
+  }
+  // The shared reset retained only the pending bit; clear it before restoring
+  // lighting so this transition cannot consume the next physical input.
+  if (timedHigh[count]) {
+    timedHigh[count] = 0;
+    firmwareLedAction(CONFIG_LED_PRESET_SET, 0);
   }
 }

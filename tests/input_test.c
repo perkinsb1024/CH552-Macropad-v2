@@ -929,6 +929,52 @@ static void testAutoSleepInput(void) {
     assert(!actionsTimedInput());
 }
 
+static void testAutoSleepDisabledLayer(void) {
+    const uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    const uint32_t interval = 220UL * 256;
+    for (uint8_t dim = 0; dim < 2; dim++) {
+        for (uint8_t afterSleep = 0; afterSleep < 2; afterSleep++) {
+            initAutoSleep();
+            testSetLayout(2, 0, 1);
+            activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME |
+                CONFIG_SLEEP_INDICATOR | (dim ? CONFIG_SLEEP_DIM : 0);
+            activeConfig[9 + 2 * size - 1] =
+                activeConfig[9 + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP;
+            uint8_t timer = configTimedOffset();
+            // Switch just before or just after the 15-minute sleep timeout.
+            activeConfig[timer] = afterSleep ? 220 : 218;
+            activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER;
+            activeConfig[timer + 2] = 1;
+            activeConfig[timer + 3] = activeConfig[timer + 4] = activeConfig[timer + 5] = 0;
+            firmwareApplyConfig(1);
+            if (afterSleep) {
+                advanceSleep(interval);
+                assert(ledSettings[2] == (dim ? 1 : 0));
+                if (!dim) assertBlack();
+                advanceSleep(256);
+            } else advanceSleep(interval - 256);
+            actionsPoll(currentMs);
+            assert(actionsLayer() == 1);
+            assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+            uint8_t lit = 0;
+            for (uint8_t i = 0; i < NUM_BYTES; i++) lit |= ledData[i];
+            assert(lit); // Always On indicator is visible in both cases.
+            assert(!actionsTimedInput()); // Wake no longer consumes physical input.
+            advanceSleep(interval * 2);
+            assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+            // Return without physical input; a full fresh timeout must elapse.
+            activeConfig[9 + size + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
+            activeConfig[10 + size + 2 * (NUM_LEDS + 2)] = 0;
+            actionsRotate(0);
+            assert(actionsLayer() == 0);
+            activeConfig[timer + 1] = CONFIG_ACTION_NONE;
+            activeConfig[timer + 2] = 0; // Stop selecting layer 2 again.
+            advanceSleep(interval - 1); assert(ledSettings[2] == 3);
+            advanceSleep(1); assert(ledSettings[2] == (dim ? 1 : 0));
+        }
+    }
+}
+
 static void testAutoSleepWakeIndicator(void) {
     const uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
     for (uint8_t layer = 0; layer < CONFIG_MAX_LAYERS; layer++) {
@@ -1071,6 +1117,7 @@ static void testSleepSettingsInput(void) {
 
 int main(void) {
     testAutoSleepInput();
+    testAutoSleepDisabledLayer();
     testSleepSettingsInput();
     testAutoSleepWakeIndicator();
     testStartupDebounce();

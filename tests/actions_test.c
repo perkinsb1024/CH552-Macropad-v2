@@ -1377,7 +1377,7 @@ static void testLedDispatch(void) {
     activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
     activeConfig[53] = 0x15; // Keys 1+2, layer 1.
     activeConfig[54] = 0xF0 | CONFIG_ACTION_LED_CONTROL; activeConfig[55] = CONFIG_LED_BOTH_SET;
-    actionsInit();
+    actionsInit(); actionsTimedReset(0);
     blocked = 1;
     actionsPress(0, 0); actionsRelease(0);
     assert(actionsLayer() == 1);

@@ -260,11 +260,14 @@ Each interval has less than 16ms early quantization, ordinary foreground delay
 and oscillator error. Debounced key presses, encoder-button presses and completed
 encoder detents in either direction restart it, including bindings set to
 **Nothing**. Releases, held inputs, partial detents and USB traffic do not.
-Layer changes preserve the elapsed interval; only physical input restarts it.
-The interval advances only while the effective layer has **Auto-Sleep** enabled
-and pauses on disabled layers. Timed actions and macro output do not count as
-physical input, including when they change layers. A pending wake survives
-leaving an enabled layer.
+Transitions between enabled layers preserve elapsed sleep time and pending
+wake state. Entering a layer with **Auto-Sleep** disabled clears elapsed sleep
+time and pending wake state; if asleep, it applies **Both as Configured**
+immediately without consuming the next physical input. The disabled layer
+stays awake, and returning to an enabled layer starts a full timeout. This
+also applies to layer changes made by **Timed Actions** or macros. Other timed
+actions and macro output do not restart the sleep timer. Explicit LED commands
+retain their normal behavior on disabled layers.
 
 The first subsequent physical input applies **Both as Configured** before its
 binding can execute. With **Consume Wake Input** enabled, the press/detent and
@@ -1235,8 +1238,8 @@ The current native builds use the following allocations, in bytes:
 
 | Hardware | Flash | Spare | Paged RAM | Ordinary XSEG | Absolute Active Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six keys | 14,192 | 144 | 105 | 365 | 134 | 90 |
-| Three keys | 14,188 | 148 | 105 | 356 | 134 | 93 |
+| Six keys | 14,222 | 114 | 105 | 365 | 134 | 90 |
+| Three keys | 14,218 | 118 | 105 | 356 | 134 | 93 |
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator
