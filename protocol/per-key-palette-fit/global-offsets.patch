@@ -1,0 +1,280 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -77,6 +77,10 @@
+ __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
+ __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
+ static ACTION_BIT colorPreviewActive;
++// Cached during rendering; custom rainbow sources must also drive the clock.
++static ACTION_BIT perKeyRainbowActive;
++static __pdata uint8_t frameLayerColors;
++static __pdata uint8_t framePressColors;
+ static ACTION_BIT startupWaiting;
+ static ACTION_BIT startupWarning;
+ __xdata uint16_t errorLedChanged;
+@@ -119,13 +123,17 @@
+ }
+ 
+ void updateLeds() {
++  perKeyRainbowActive = 0;
+   if (startupWaiting) return;
+   if (!activeConfigValid && !previewOptions) return;
+   uint8_t layer = actionsLayer();
+-  __idata uint8_t colors = configLedColorOffset(layer);
++  framePressColors = configLedColorOffset(layer);
+   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
+   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
+   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
++  frameLayerColors = 0;
++  if (!previewOptions && !palette) frameLayerColors = configLayerPaletteOffset(layer);
++  perKeyRainbowActive = options >= 0xF4 && (!previewOptions || (options & 8));
+   uint8_t phases = layerIndicatorPhasesLeft;
+   uint8_t indicator = indicatorBrightness(options);
+   uint8_t keyLevel = ledSettings[3];
+@@ -141,13 +149,11 @@
+   }
+   if (keyLevel == 3) keyLevel = 2;
+   uint8_t phaseStep = rainbowSteps[spacing];
+-  ACTION_BIT baseRainbow = palette == 15 &&
+-      (colorPreviewActive ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
+   __xdata uint8_t *ledPtr = ledData;
+   for (uint8_t i = 0; i < NUM_LEDS; i++) {
+-    uint8_t color = palette;
++    uint8_t color = frameLayerColors ? configLedColorAt(frameLayerColors, i) : palette;
+     uint8_t level = indicator;
+-    ACTION_BIT rainbow = baseRainbow;
++    if (frameLayerColors && color == 15) perKeyRainbowActive = 1;
+     uint8_t red;
+     uint8_t green;
+     uint8_t blue;
+@@ -156,18 +162,20 @@
+     } else
+     if (phases) {
+       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
+-    } else if (keyLevel && stableState[i] &&
+-               ((color = configLedColorAt(colors, i)) != 15 ||
+-                !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
+-      level = keyLevel;
+-      rainbow = 0; // Key palette 15 is Off, never Rainbow.
+     } else {
+-      color = palette;
+       if (behavior != CONFIG_LAYER_INDICATOR_ALWAYS_ON) level = 0;
++      if (keyLevel && stableState[i]) {
++        uint8_t pressed = configLedColorAt(framePressColors, i);
++        if (pressed || !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK)) {
++          color = pressed;
++          level = keyLevel;
++          if (color == 15) perKeyRainbowActive = 1;
++        }
++      }
+     }
+     if (!level) {
+       red = green = blue = 0;
+-    } else if (rainbow) {
++    } else if (color == 15 && (!colorPreviewActive || behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON)) {
+       uint8_t wheel = rainbowHue + rainbowPositions[i] * phaseStep;
+       if (spacing == 3) wheel += rainbowDrift[i];
+       // Subtracting 85*3 adds one modulo 256; 170*3 adds two.
+@@ -523,12 +531,7 @@
+   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
+       rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
+   {
+-    uint8_t animationOptions = previewOptions;
+-    if (animationOptions) {
+-      if (!(animationOptions & 8)) animationOptions = 0;
+-    } else if (activeConfigValid) animationOptions = configLayerOptions(actionsLayer());
+-    // Equivalent to (animationOptions & 0xFC) > 0xF0 for every byte.
+-    if (animationOptions >= 0xF4) {
++    if (perKeyRainbowActive) {
+       rainbowChanged = (uint8_t)now;
+       rainbowHue++;
+       // Advance each physical LED at its original staggered frame cadence.
+--- a/src/config.c
++++ b/src/config.c
+@@ -9,6 +9,7 @@
+ #endif
+ 
+ __code uint8_t configPalette[16][3] = {
++  { 0, 0, 0 }, // Off; zero is a source sentinel only in the layer options.
+   { 255, 0, 0 }, // Red
+   { 255, 22, 7 }, // Coral
+   { 255, 16, 0 }, // Orange
+@@ -16,7 +17,6 @@
+   { 255, 124, 0 }, // Yellow
+   { 60, 255, 0 }, // Green
+   { 100, 200, 20 }, // Leaf
+-  { 29, 123, 67 }, // Teal
+   { 0, 255, 200 }, // Cyan
+   { 0, 91, 255 }, // Azure
+   { 0, 0, 255 }, // Blue
+@@ -24,7 +24,7 @@
+   { 255, 0, 194 }, // Magenta
+   { 255, 0, 72 }, // Rose
+   { 255, 255, 255 }, // White
+-  { 0, 0, 0 }, // Off
++  { 0, 0, 0 }, // Rainbow is rendered procedurally.
+ };
+ 
+ // Each firmware binary has fixed geometry; do not emit runtime variant branches
+@@ -99,13 +99,13 @@
+             return macros == param;
+         case CONFIG_ACTION_LED_CONTROL:
+             if (param >= CONFIG_LED_EFFECT_RESTORE) {
+-                if (param == CONFIG_LED_EFFECT_RESTORE) return aux == 0;
++                if (param == CONFIG_LED_EFFECT_RESTORE) return 1; // Value is ignored by restore.
+                 param &= ~CONFIG_LED_EFFECT_DIM;
+                 return (uint8_t)(param - CONFIG_LED_EFFECT_ON) <=
+                        CONFIG_LED_EFFECT_BLINK_8 - CONFIG_LED_EFFECT_ON;
+             }
+             if (param > CONFIG_LED_PRESET_TOGGLE) return 0;
+-            if (param == CONFIG_LED_RESTORE) return aux == 0;
++            if (param == CONFIG_LED_RESTORE) return 1; // Value is ignored by restore.
+             if (param == CONFIG_LED_PRESET_TOGGLE) {
+                 --aux; // uint8_t wrap rejects preset zero.
+                 return aux < 4;
+@@ -145,19 +145,19 @@
+             return !aux && param != 0x80;
+ #endif
+         case CONFIG_ACTION_MOUSE_AXIS:
+-            if (param == 0x80 || (aux & 4)) return 0;
++            if (param == 0x80) return 0;
+             // Fall through: both pointer actions share hold and reserved-bit checks.
+         case CONFIG_ACTION_MOUSE_XY:
+-            return !(aux & (uint8_t)(8 | rotation));
++            return !(aux & rotation); // Other unused pointer bits are ignored at runtime.
+         case CONFIG_ACTION_NONE:
+-            if (!aux) return param == 0;
++            if (!aux) return 1; // A None parameter is never read.
+ #if CONFIG_MACRO_PAUSE
+             if (aux == (CONFIG_ACTION_PAUSE >> 4)) return 1;
+ #endif
+             if (aux != (CONFIG_ACTION_STRING >> 4) || param >= validationUsed) return 0;
+             return param == 0 || validationImage[validationPool + param - 1] == 0;
+         case CONFIG_ACTION_SET_LAYER:
+-            if ((aux & (uint8_t)(8 | (rotation << 1))) || (aux & 3) == 3) return 0;
++            if ((aux & (rotation << 1)) || (aux & 3) == 3) return 0;
+             if (aux & 4) return (uint8_t)(param + 6) <= 12;
+             return param < validationLayers || (!(aux & 2) && param == CONFIG_LAYER_PREVIOUS);
+         default:
+@@ -169,6 +169,7 @@
+     uint8_t keys;
+     uint8_t size;
+     uint8_t chords;
++    __idata uint8_t paletteBytes;
+     __xdata uint8_t timers;
+     __idata uint8_t layer;
+     uint8_t offset;
+@@ -184,10 +185,7 @@
+ #endif
+     if (variant > CONFIG_THREE_KEYS || validationImage[CONFIG_HEADER_MARKER] != CONFIG_MARKER ||
+         validationImage[CONFIG_HEADER_VERSION] != CONFIG_VERSION ||
+-        (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_VARIANT_MASK) != variant ||
+-        (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_LAYERS_RESERVED) ||
+-        (validationImage[CONFIG_HEADER_POOL] & CONFIG_HEADER_POOL_RESERVED) ||
+-        (validationImage[CONFIG_HEADER_SLEEP] & CONFIG_HEADER_SLEEP_RESERVED)) {
++        (validationImage[CONFIG_HEADER_LAYERS] & CONFIG_HEADER_VARIANT_MASK) != variant) {
+         return 0;
+     }
+     validationLayers = ((validationImage[CONFIG_HEADER_LAYERS] >> CONFIG_HEADER_LAYER_SHIFT) & CONFIG_HEADER_LAYER_MASK) + 1;
+@@ -202,9 +200,17 @@
+     // remains 16-bit so malformed images cannot wrap past the capacity check.
+     timers = validationImage[CONFIG_HEADER_COUNTS] & CONFIG_HEADER_TIMED_MASK;
+     if (timers > CONFIG_TIMED_MAX) return 0;
++    // Layer records keep their original stride; palettes follow all layers.
++    paletteBytes = 0;
++    offset = CONFIG_HEADER_SIZE + size - 1;
++    for (layer = 0; layer < validationLayers; layer++) {
++        if (!(validationImage[offset] & CONFIG_LAYER_OPT_COLOR_MASK))
++            paletteBytes += (keys + 1) >> 1;
++        offset += size;
++    }
+     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
+     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+-          (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed;
++          (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed + paletteBytes;
+     if (end > CONFIG_SIZE) {
+         return 0;
+     }
+@@ -218,6 +224,8 @@
+         }
+         offset += size - 2 * (keys + 3);
+     }
++    // Writers zero unused palette nibbles; readers ignore them. CRC covers all bytes.
++    offset += paletteBytes;
+     for (i = 0; i < chords; i++) {
+         id = validationImage[offset];
+         if (((id >> 4) & 7) >= validationLayers ||
+@@ -279,9 +287,22 @@
+     return layerOffset(layer) + 2 * (configKeyCount() + 3);
+ }
+ 
++uint8_t configLayerPaletteOffset(uint8_t layer) {
++    uint8_t offset = layerOffset(configLayerCount());
++    uint8_t size = layerSize(activeConfig[CONFIG_HEADER_LAYERS] & 1);
++    uint8_t options = CONFIG_HEADER_SIZE + size - 1;
++    while (layer--) {
++        if (!(activeConfig[options] & CONFIG_LAYER_OPT_COLOR_MASK))
++            offset += (configKeyCount() + 1) >> 1;
++        options += size;
++    }
++    return offset;
++}
++
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
+-    uint8_t colors = activeConfig[offset + (key >> 1)];
+-    return key & 1 ? colors >> 4 : colors & 15;
++    uint8_t colors = activeConfig[(uint8_t)(offset + (key >> 1))];
++    if (key & 1) colors >>= 4;
++    return colors & 15;
+ }
+ 
+ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second) {
+@@ -302,7 +323,7 @@
+     uint8_t id;
+     uint8_t count = activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
+     uint8_t layers = configLayerCount();
+-    uint8_t offset = layerOffset(layers);
++    uint8_t offset = configLayerPaletteOffset(layers);
+     uint8_t i;
+     uint8_t swap;
+     if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
+@@ -331,7 +352,7 @@
+ }
+ 
+ uint8_t configTimedOffset(void) {
+-    return layerOffset(configLayerCount()) + 3 * (activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT);
++    return configLayerPaletteOffset(configLayerCount()) + 3 * (activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT);
+ }
+ 
+ uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
+--- a/src/config.h
++++ b/src/config.h
+@@ -5,8 +5,8 @@
+ #include "firmware_types.h"
+ 
+ #define CONFIG_SIZE 128
+-// Format 15 uses the B header and per-layer built-in LED auto-sleep.
+-#define CONFIG_VERSION 15
++// Experimental sentinel palette layout; not a published format.
++#define CONFIG_VERSION 16
+ #define CONFIG_MARKER 'B'
+ #define CONFIG_HEADER_SIZE 9
+ #define CONFIG_HEADER_MARKER 0
+@@ -56,7 +56,8 @@
+ #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
+ #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
+ #define CONFIG_HEADER_TRANSPARENT_BLACK 0x08
+-#define CONFIG_PALETTE_VERSION 3
++#define CONFIG_PALETTE_VERSION 4
++#define CONFIG_PER_KEY_RAINBOW 1
+ #define CONFIG_MAX_LAYERS (PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 7 : 5)
+ #define CONFIG_SIX_KEYS 0
+ #define CONFIG_THREE_KEYS 1
+@@ -189,6 +190,8 @@
+ uint8_t configLayerOptions(uint8_t layer);
+ // Call once per frame with a valid layer, then read packed colors by key.
+ uint8_t configLedColorOffset(uint8_t layer);
++// Offset of this layer's optional palette, or the section end for layerCount.
++uint8_t configLayerPaletteOffset(uint8_t layer);
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key);
+ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
+ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);

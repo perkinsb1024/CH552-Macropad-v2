@@ -79,6 +79,7 @@ __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED e
 static ACTION_BIT colorPreviewActive;
 // Cached during rendering; custom rainbow sources must also drive the clock.
 static ACTION_BIT perKeyRainbowActive;
+static __pdata uint8_t frameLayerColors;
 static ACTION_BIT startupWaiting;
 static ACTION_BIT startupWarning;
 __xdata uint16_t errorLedChanged;
@@ -129,8 +130,9 @@ void updateLeds() {
   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
-  __idata uint8_t layerColors = 0;
-  if (!previewOptions && !palette) layerColors = configLayerPaletteOffset(layer);
+  frameLayerColors = 0;
+  if (!previewOptions && !palette) frameLayerColors = configLayerPaletteOffset(layer);
+  perKeyRainbowActive = options >= 0xF4 && (!previewOptions || (options & 8));
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t indicator = indicatorBrightness(options);
   uint8_t keyLevel = ledSettings[3];
@@ -146,18 +148,11 @@ void updateLeds() {
   }
   if (keyLevel == 3) keyLevel = 2;
   uint8_t phaseStep = rainbowSteps[spacing];
-  ACTION_BIT baseRainbow = palette == 15 &&
-      (colorPreviewActive ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    uint8_t background = layerColors ? configLedColorAt(layerColors, i) : palette;
-    uint8_t color = background;
+    uint8_t color = frameLayerColors ? configLedColorAt(frameLayerColors, i) : palette;
     uint8_t level = indicator;
-    ACTION_BIT rainbow = baseRainbow;
-    if (layerColors && color == 15) {
-      rainbow = 1;
-      perKeyRainbowActive = 1;
-    }
+    if (frameLayerColors && color == 15) perKeyRainbowActive = 1;
     uint8_t red;
     uint8_t green;
     uint8_t blue;
@@ -166,19 +161,20 @@ void updateLeds() {
     } else
     if (phases) {
       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
-    } else if (keyLevel && stableState[i] &&
-               ((color = configLedColorAt(colors, i)) != 0 ||
-                !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
-      level = keyLevel;
-      rainbow = color == 15;
-      if (rainbow) perKeyRainbowActive = 1;
     } else {
-      color = background;
       if (behavior != CONFIG_LAYER_INDICATOR_ALWAYS_ON) level = 0;
+      if (keyLevel && stableState[i]) {
+        uint8_t pressed = configLedColorAt(colors, i);
+        if (pressed || !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK)) {
+          color = pressed;
+          level = keyLevel;
+          if (color == 15) perKeyRainbowActive = 1;
+        }
+      }
     }
     if (!level) {
       red = green = blue = 0;
-    } else if (rainbow) {
+    } else if (color == 15 && (!colorPreviewActive || behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON)) {
       uint8_t wheel = rainbowHue + rainbowPositions[i] * phaseStep;
       if (spacing == 3) wheel += rainbowDrift[i];
       // Subtracting 85*3 adds one modulo 256; 170*3 adds two.
@@ -534,12 +530,7 @@ void loop() {
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
       rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
   {
-    uint8_t animationOptions = previewOptions;
-    if (animationOptions) {
-      if (!(animationOptions & 8)) animationOptions = 0;
-    } else if (activeConfigValid) animationOptions = configLayerOptions(actionsLayer());
-    // Equivalent to (animationOptions & 0xFC) > 0xF0 for every byte.
-    if (animationOptions >= 0xF4 || perKeyRainbowActive) {
+    if (perKeyRainbowActive) {
       rainbowChanged = (uint8_t)now;
       rainbowHue++;
       // Advance each physical LED at its original staggered frame cadence.

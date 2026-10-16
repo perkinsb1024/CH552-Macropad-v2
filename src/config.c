@@ -202,9 +202,11 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     if (timers > CONFIG_TIMED_MAX) return 0;
     // Layer records keep their original stride; palettes follow all layers.
     paletteBytes = 0;
+    offset = CONFIG_HEADER_SIZE + size - 1;
     for (layer = 0; layer < validationLayers; layer++) {
-        if (!(validationImage[9 + (uint8_t)(size * (layer + 1)) - 1] & CONFIG_LAYER_OPT_COLOR_MASK))
+        if (!(validationImage[offset] & CONFIG_LAYER_OPT_COLOR_MASK))
             paletteBytes += (keys + 1) >> 1;
+        offset += size;
     }
     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
@@ -287,17 +289,20 @@ uint8_t configLedColorOffset(uint8_t layer) {
 
 uint8_t configLayerPaletteOffset(uint8_t layer) {
     uint8_t offset = layerOffset(configLayerCount());
-    uint8_t i;
-    for (i = 0; i < layer; i++) {
-        if (!(configLayerOptions(i) & CONFIG_LAYER_OPT_COLOR_MASK))
+    uint8_t size = layerSize(activeConfig[CONFIG_HEADER_LAYERS] & 1);
+    uint8_t options = CONFIG_HEADER_SIZE + size - 1;
+    while (layer--) {
+        if (!(activeConfig[options] & CONFIG_LAYER_OPT_COLOR_MASK))
             offset += (configKeyCount() + 1) >> 1;
+        options += size;
     }
     return offset;
 }
 
 uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
-    uint8_t colors = activeConfig[offset + (key >> 1)];
-    return key & 1 ? colors >> 4 : colors & 15;
+    uint8_t colors = activeConfig[(uint8_t)(offset + (key >> 1))];
+    if (key & 1) colors >>= 4;
+    return colors & 15;
 }
 
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second) {

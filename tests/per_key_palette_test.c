@@ -368,6 +368,87 @@ static void testRainbowBoundaries(void) {
     }
 }
 
+static void testIgnoredFields(void) {
+    fresh(2, 3); activate();
+    uint8_t image[CONFIG_SIZE], expected[NUM_BYTES];
+    memcpy(image, activeConfig, CONFIG_SIZE);
+    memcpy(expected, ledData, NUM_BYTES);
+    for (uint8_t bits = 0; bits < 32; bits++) {
+        memcpy(activeConfig, image, CONFIG_SIZE);
+        activeConfig[2] |= (bits & 1) << 7;
+        activeConfig[3] |= (bits >> 1) & 1;
+        activeConfig[6] |= (bits >> 2) << 5;
+        if (bits) assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+        sealImage();
+        assert(configValid(activeConfig, PHYSICAL_VARIANT));
+        firmwareApplyConfig(1);
+        assert(memcmp(ledData, expected, NUM_BYTES) == 0);
+        assert(configLayerCount() == 2 && configStartupLayer() == 0);
+        assert(configStringChar(0, 0) == 0);
+    }
+    if (NUM_LEDS == 3) {
+        fresh(1, 1); activate();
+        memcpy(expected, ledData, NUM_BYTES);
+        for (uint8_t nibble = 0; nibble < 16; nibble++) {
+            uint8_t offset = configLayerPaletteOffset(0)+1;
+            activeConfig[offset] = (activeConfig[offset] & 15) | (nibble << 4);
+            activeConfig[configLedColorOffset(0)+1] |= nibble << 4;
+            sealImage(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+            updateLeds(); assert(memcmp(ledData, expected, NUM_BYTES) == 0);
+        }
+    }
+    // Pointer bits proven ignored must preserve tap/hold movement reports.
+    const uint8_t firsts[] = {0x06,0x16,0x26,0x36,0x07,0x17,0x67,0x77};
+    for (uint8_t f = 0; f < sizeof firsts; f++) {
+        uint8_t original[32][9], originalCount = 0;
+        for (uint8_t dirty = 0; dirty < 2; dirty++) {
+            fresh(1, 0);
+            activeConfig[9] = firsts[f] | (dirty ? ((firsts[f] & 1) ? 0x80 : 0xC0) : 0);
+            activeConfig[10] = 3;
+            sealImage(); activate();
+            actionsPress(0, currentMs);
+            for (uint8_t elapsed = 0; elapsed < 24; elapsed++) actionsPoll(currentMs+elapsed);
+            actionsRelease(0);
+            actionsPoll(currentMs+24);
+            if (!dirty) { originalCount = frameCount; memcpy(original, frames, sizeof original); }
+            else {
+                assert(frameCount == originalCount);
+                assert(memcmp(frames, original, frameCount*sizeof frames[0]) == 0);
+            }
+        }
+    }
+    for (uint8_t aux = 0; aux < 7; aux++) {
+        if ((aux & 3) == 3) continue;
+        for (uint8_t dirty = 0; dirty < 2; dirty++) {
+            fresh(2, 0);
+            activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4) | (dirty ? 0x80 : 0);
+            activeConfig[10] = 1;
+            sealImage(); activate();
+            actionsPress(0, currentMs); assert(actionsLayer() == 1);
+            actionsRelease(0); assert(actionsLayer() == ((aux & 2) ? 0 : 1));
+        }
+    }
+    for (uint16_t value = 0; value < 256; value++) {
+        fresh(1, 0); activeConfig[9] = CONFIG_ACTION_NONE; activeConfig[10] = value;
+        sealImage(); activate();
+        actionsPress(0, currentMs); actionsRelease(0); assert(actionsLayer() == 0);
+    }
+    for (uint8_t value = 0; value < 16; value++) {
+        fresh(1, 0);
+        activeConfig[9] = CONFIG_ACTION_LED_CONTROL | (value << 4);
+        activeConfig[10] = CONFIG_LED_RESTORE;
+        sealImage(); activate();
+        firmwareLedAction(CONFIG_LED_BOTH_SET, 0);
+        actionsPress(0, currentMs);
+        assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+        activeConfig[10] = CONFIG_LED_EFFECT_RESTORE;
+        sealImage(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+        firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
+        actionsRelease(0); actionsPress(0, currentMs);
+        assert(!previewOptions && !layerIndicatorPhasesLeft);
+    }
+}
+
 int main(void) {
     testLayoutAndValidation();
     testMovedSections();
@@ -375,6 +456,7 @@ int main(void) {
     testSchedulerAndOverrides();
     testIndependentColorsAndLayerChanges();
     testRainbowBoundaries();
+    testIgnoredFields();
     printf("Passed palette probe: variant=%u rainbow=%u preview=%u compared_frames=%lu\n",
         PHYSICAL_VARIANT, CONFIG_PER_KEY_RAINBOW, ENABLE_COLOR_PREVIEW, comparedFrames);
     return 0;
