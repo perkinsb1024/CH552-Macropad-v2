@@ -9,9 +9,13 @@ export function ProfilePanel() {
   const phaseUnsaved = p.rainbowPhase !== (baseline.value?.rainbowPhase ?? DEFAULT_RAINBOW_PHASE);
   const speedUnsaved = p.rainbowSpeed !== (baseline.value?.rainbowSpeed ?? DEFAULT_RAINBOW_SPEED);
   const showRainbowSettings = p.layers.some((layer) =>
-    layer.indicatorBehavior !== LayerIndicatorBehavior.None && layer.indicatorColor === 15);
+    layer.leds.includes(15) || (layer.indicatorBehavior !== LayerIndicatorBehavior.None &&
+      (layer.indicatorColor === 15 || (layer.indicatorColor === 0 && layer.idleLeds?.includes(15))))) ||
+    [...p.layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...p.chords.map(c => c.action),
+      ...(p.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(p.macros ?? []).flatMap(m => m.actions)]
+      .some(a => a.type === 'ledControl' && /^effect(On|Blink[1-8])$/.test(a.command) && a.value === 15);
   const showOffBehavior = p.layers.some((layer) => layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn) &&
-    p.layers.some((layer) => layer.leds.includes(15));
+    p.layers.some((layer) => layer.leds.includes(0));
   return (
     <details class="card profile-settings">
       <summary class="card-head">

@@ -88,7 +88,7 @@ Below are the primary firmware features added with each version
 >
 > Pre-built v15 firmware files are available for [three-key](releases/ch552-macropad-3-key-a91cb995.hex) and [six-key](releases/ch552-macropad-6-key-a91cb995.hex) macropads, built from source revision `a91cb995`. This version adds per-layer **Auto-Sleep** with four timeout choices, dimmed or off lighting, optional wake-input consumption and a layer reminder on wake. No extra profile bytes or **Timed Action** slot are required. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v15 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware, including the [frozen v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/). Back up your profile before updating, then import it and click **Save to Device** to activate it in v15. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved. Older imports start with **Auto-Sleep** disabled.
+Use the [frozen v15 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/) with these v15 release files. The active configurator targets format 16, with per-key idle colors and key-press **Rainbow**; no v16 release files have been generated. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware, including the [frozen v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/). Back up your profile before updating, then import it and click **Save to Device** to activate it in v15. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved. Older imports start with **Auto-Sleep** disabled.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -147,7 +147,7 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current format 15 firmware source, in bytes, with a 14,336-byte application flash limit:
+Memory in the published format 15 firmware release, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
@@ -279,7 +279,7 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores configured lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. The active editor and bundled firmware use format 15; older firmware uses its matching archived editor.
+**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores configured lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. The active editor targets format 16, while bundled firmware remains v15 and uses the frozen v15 editor.
 
 **Media / System** set to **Hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous
@@ -322,7 +322,7 @@ shows the existing blinking red error LED instead.
 
 **Switch to Layer** and its one-shot variant include **Previous Layer**, encoded as target `0xFF`. Persistent selections remember the base layer being left; repeating **Previous Layer** swaps between the current and remembered layers. Momentary and one-shot visits do not replace that history. The one-shot **Previous Layer** option visits the remembered layer for one action, then returns. **Timed Actions** can use either variant.
 
-The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to Device** to apply it. See [configuration format 15](protocol/config-v15.md) for the complete format reference.
+The editor can import older profiles while preserving bindings and metadata. Back up your profile before updating firmware, then import it and click **Save to Device** to apply it. See [configuration format 16](protocol/config-v16.md) for the active editor's complete format reference. Older **Teal** colors migrate to **Cyan** with brightness unchanged.
 
 Use **Export JSON** and **Import Profile** in **Backup & Restore** to back up and share profiles. Importing loads a profile into the editor; click **Save to Device** to apply it to the macropad.
 

@@ -14,7 +14,7 @@ describe('unsaved profile changes', () => {
     saved.layers[0]!.leds[0] = 0;
     const edited = cloneProfile(saved);
     edited.layers[0]!.leds[0] = 1;
-    expect(profileChanges(saved, edited)).toContainEqual({ where: 'Layer 1 · Key 1 Color', before: 'Red', after: 'Coral' });
+    expect(profileChanges(saved, edited)).toContainEqual({ where: 'Layer 1 · Key 1 Color', before: 'Off', after: 'Red' });
     edited.layers[0]!.leds[0] = saved.layers[0]!.leds[0]!;
     expect(profileChanges(saved, edited)).toEqual([]);
     expect(profileChanges(edited, cloneProfile(edited))).toEqual([]);

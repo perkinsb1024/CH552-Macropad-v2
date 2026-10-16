@@ -2,11 +2,12 @@ import { ledCommandFromCode, ledProblem } from '../model/ledControl';
 import {
   SLEEP_TIMEOUT_MINUTES,   PREVIOUS_LAYER, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, DEFAULT_RAINBOW_SPEED, HEADER_RAINBOW_SPEED_SHIFT, DEFAULT_RAINBOW_PHASE, HEADER_RAINBOW_PHASE_SHIFT, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE, maxLayers,
   LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, LAYER_OPT_INDICATOR_SHIFT,
-  keyCount, layerSize, pairCount, type Variant,
+  keyCount, layerSize, layerPaletteSize, pairCount, type Variant,
 } from '../model/constants';
 import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
+import { migrateProfileColors } from '../model/palette';
 import { migrateChordWindow } from '../model/defaults';
 import { ActionCode } from './legacyActionCodes';
 import { isSupportedUsage } from '../keys/keyboard';
@@ -54,7 +55,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     }
     if (type === 0xc) {
       const mode = aux & 3;
-      if (aux > 6 || mode === 3) return 'Invalid layer mode';
+      if ((version >= 16 ? (aux & 7) > 6 : aux > 6) || mode === 3) return 'Invalid layer mode';
       if (rotation && mode === 2) return 'Layer hold bound to rotation';
       if (aux & 4) {
         const offset = toSigned(b1);
@@ -91,7 +92,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     case ActionCode.LedControl: {
       const spec = ledCommandFromCode(b1);
       if (!spec || (version < 7 && b1 >= 0x80)) return 'Unknown LED command';
-      const value = b1 >= 0x80 ? aux : spec.relative ? (aux < 8 ? aux : aux - 16) : aux === 15 ? 'asConfigured' : aux;
+      const value = version >= 16 && b1 === 0x80 ? 0 : b1 >= 0x80 ? aux : version >= 16 && b1 === 10 ? 0 : spec.relative ? (aux < 8 ? aux : aux - 16) : aux === 15 ? 'asConfigured' : aux;
       const problem = ledProblem(spec.command, value);
       return problem ?? { type: 'ledControl', command: spec.command, value,
         ...(b1 >= 0x91 && b1 <= 0x99 ? { brightness: 'dim' as const } : {}) };
@@ -99,7 +100,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
     case ActionCode.None:
       if (version >= 11 && aux === 2) return { type: 'pause', ticks: b1 };
       if (version >= 8 && aux === 1) return decodeText(pool, b1);
-      return nonZeroAux || b1 ? 'None action has non-zero data' : { type: 'none' };
+      return nonZeroAux || (version < 16 && b1) ? 'None action has non-zero data' : { type: 'none' };
     case ActionCode.RelativeLayer: {
       const offset = toSigned(b1);
       return aux > 1 || offset < -6 || offset > 6 ? 'Invalid relative-layer offset' : aux ? { type: 'oneShotRelativeLayer', offset } : { type: 'relativeLayer', offset };
@@ -141,10 +142,10 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (rotation && (aux & 1)) return 'Pointer hold bound to rotation';
       const hold = aux & 1 ? { hold: true } : {};
       if (type === ActionCode.MouseAxis) {
-        if (aux > 3 || b1 === 0x80) return 'Invalid single-axis movement';
+        if ((version < 16 && aux > 3) || b1 === 0x80) return 'Invalid single-axis movement';
         return { type: aux & 2 ? 'mouseY' : 'mouseX', delta: toSigned(b1), ...hold };
       }
-      if (aux > 7) return 'Invalid combined movement';
+      if (version < 16 && aux > 7) return 'Invalid combined movement';
       return { type: 'mouseXY', x: ((b1 & 15) + 1) * 4 * (aux & 2 ? -1 : 1), y: ((b1 >> 4) + 1) * 4 * (aux & 4 ? -1 : 1), ...hold };
     }
     case ActionCode.Consumer:
@@ -183,10 +184,10 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const header = peekHeader(image);
   if (!header.magic) return fail('no-magic', 'Missing B or legacy MP marker; no saved profile.');
   const version = header.version;
-  if (board ? version !== FORMAT_VERSION : version < 2 || version > FORMAT_VERSION)
+  if (board ? version < 15 || version > FORMAT_VERSION : version < 2 || version > 15)
     return fail('unsupported-version', `Format version ${version} is not supported for this header.`);
   if (imageCrc(image) !== storedCrc(image)) return fail('bad-crc', 'Stored CRC does not match image contents.');
-  if (board && ((image[2]! & 0x80) || (image[3]! & 1) || (image[6]! & 0xe0)))
+  if (board && version < 16 && ((image[2]! & 0x80) || (image[3]! & 1) || (image[6]! & 0xe0)))
     return fail('malformed', 'Reserved header bits are non-zero.');
   if (!board && version === 2 && (image[5]! & 0x80)) return fail('malformed', 'Reserved bit set in version 2 byte 5.');
   const extended = version >= 4;
@@ -210,7 +211,13 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   if (timerCount > MAX_TIMED_ACTIONS) return fail('malformed', 'Too many timed actions.');
   const poolUsed = board ? image[3]! >> 1 : version >= 7 ? image[4]! & 127 : image[4]!;
   const timerSize = version >= 10 ? TIMED_ENTRY_SIZE : 5;
-  const poolStart = HEADER_SIZE + size * layerCount + CHORD_ENTRY_SIZE * chordCount + timerSize * timerCount;
+  const fixedEnd = HEADER_SIZE + size * layerCount;
+  if (fixedEnd > IMAGE_SIZE) return fail('malformed', 'Layer records exceed image capacity.');
+  let paletteEnd = fixedEnd;
+  if (version >= 16) for (let li = 0; li < layerCount; li++) {
+    if (image[HEADER_SIZE + size * (li + 1) - 1]! >> 4 === 0) paletteEnd += layerPaletteSize(variant);
+  }
+  const poolStart = paletteEnd + CHORD_ENTRY_SIZE * chordCount + timerSize * timerCount;
   const end = poolStart + poolUsed;
   if (end > IMAGE_SIZE) return fail('malformed', `Declared content ends at byte ${end}, beyond the 128-byte image.`);
   const pool: PoolView = { start: poolStart, used: poolUsed, bytes: image };
@@ -234,7 +241,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       actions.push(decoded);
     }
     const ledBase = base + 2 * (keys + 3);
-    if (keys === 3 && image[ledBase + 1]! & 0xf0) return fail('malformed', `Layer ${li + 1}: unused LED nibble is non-zero.`);
+    if (version < 16 && keys === 3 && image[ledBase + 1]! & 0xf0) return fail('malformed', `Layer ${li + 1}: unused LED nibble is non-zero.`);
     const leds: number[] = [];
     for (let i = 0; i < keys; i++) {
       const byte = image[ledBase + (i >> 1)]!;
@@ -257,7 +264,12 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   }
 
   const chords: Chord[] = [];
-  let offset = HEADER_SIZE + size * layerCount;
+  let offset = fixedEnd;
+  if (version >= 16) for (const layer of layers) {
+    if (layer.indicatorColor !== 0) continue;
+    layer.idleLeds = Array.from({ length: keys }, (_, i) => (image[offset + (i >> 1)]! >> ((i & 1) * 4)) & 15);
+    offset += layerPaletteSize(variant);
+  }
   let previous = -1;
   for (let i = 0; i < chordCount; i++, offset += CHORD_ENTRY_SIZE) {
     const id = image[offset]!;
@@ -337,6 +349,8 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     rainbowPhase: configurableRainbow ? (led >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE,
     rainbowSpeed: configurableRainbow ? led >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED,
     layers, chords, ...(timedActions.length ? { timedActions } : {}), ...(macros.length ? { macros } : {}) };
+  const teal = version < 16 && migrateProfileColors(profile);
   const notices = board ? [] : migrateChordWindow(profile);
+  if (teal) notices.push('Teal was replaced with Cyan. Brightness settings are unchanged.');
   return { ok: true, profile, ...(notices.length ? { notices } : {}) };
 }

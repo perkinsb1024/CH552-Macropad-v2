@@ -39,6 +39,8 @@ export interface Layer {
   counterclockwise: Action;
   /** Palette index per physical key, length 3 or 6. */
   leds: number[];
+  /** Retained in drafts/JSON when uniform mode is active; encoded only when indicatorColor is zero. */
+  idleLeds?: number[];
   indicatorBehavior: LayerIndicatorBehavior;
   indicatorColor: number;
   indicatorFullBrightness: boolean;

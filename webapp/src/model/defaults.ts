@@ -1,4 +1,5 @@
 import { FORMAT_VERSION, DEFAULT_RAINBOW_SPEED, DEFAULT_RAINBOW_PHASE, keyCount, type Variant, MOD_CTRL, MOD_GUI, MOD_SHIFT, LayerIndicatorBehavior } from './constants';
+import { migrateProfileColors } from './palette';
 import type { Action, Layer, Profile } from './types';
 
 const SHORTCUT_USAGES = [0x1d, 0x06, 0x19, 0x1d, 0x1b, 0x04]; // Z, C, V, Z, X, A
@@ -13,9 +14,9 @@ export function emptyLayer(variant: Variant): Layer {
     encoderButton: NONE,
     clockwise: NONE,
     counterclockwise: NONE,
-    leds: Array.from({ length: keys }, () => 15),
+    leds: Array.from({ length: keys }, () => 0),
     indicatorBehavior: 0,
-    indicatorColor: 0,
+    indicatorColor: 1,
     indicatorFullBrightness: false,
     autoSleep: false,
   };
@@ -40,9 +41,9 @@ function defaultLayer(variant: Variant, windows: boolean): Layer {
     encoderButton: { type: 'relativeLayer', offset: 1 },
     clockwise: { type: 'scroll', delta: -2 },
     counterclockwise: { type: 'scroll', delta: 2 },
-    leds: Array.from({ length: keys }, () => windows ? 4 : 14),
+    leds: Array.from({ length: keys }, () => windows ? 5 : 14),
     indicatorBehavior: LayerIndicatorBehavior.AlwaysOn,
-    indicatorColor: windows ? 4 : 14,
+    indicatorColor: windows ? 5 : 14,
     indicatorFullBrightness: false,
     autoSleep: false,
   };
@@ -69,7 +70,7 @@ export function cloneProfile(profile: Profile): Profile {
   return structuredClone(profile);
 }
 
-/** Upgrade older editor profiles without changing bindings or palette indices.
+/** Upgrade older editor profiles, preserving semantic colors and bindings.
  * Indicator value 1 now means timed-on; transparency defaults to disabled.
  */
 export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VERSION): Profile {
@@ -119,6 +120,8 @@ export function migrateLegacyProfile(profile: Profile, sourceVersion = FORMAT_VE
     timer.action = migrateAction(timer.action);
     timer.resumeAction = migrateAction(timer.resumeAction);
   }
+  for (const macro of profile.macros ?? []) macro.actions = macro.actions.map(migrateAction);
+  if (sourceVersion < 16) migrateProfileColors(profile);
   return profile;
 }
 

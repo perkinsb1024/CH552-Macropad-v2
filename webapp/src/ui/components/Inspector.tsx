@@ -5,6 +5,7 @@ import { ACTION_DESCRIPTORS, actionNeedsRelease, blankAction, isPreviousLayer, r
 import { ACTION_FAMILIES, actionFamilyType, isKeyAction, isMediaAction, isLayerAction } from '../actionFamilies';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_BUTTONS, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
+import { IdleColor } from './IdleColor';
 import { PALETTE } from '../../model/palette';
 import { normalizeText, visibleText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
@@ -406,7 +407,7 @@ export function Inspector() {
             <div class="palette" role="radiogroup" aria-label="Temporary LED Effect Color">
               {PALETTE.map(c => <button type="button" role="radio" aria-checked={action.value === c.index}
                 aria-label={c.index === 15 ? 'Rainbow' : c.name} title={c.index === 15 ? 'Rainbow' : c.name}
-                class={`swatch-btn ${action.value === c.index ? 'is-selected' : ''}`}
+                class={`swatch-btn ${action.value === c.index ? 'is-selected' : ''} ${c.index === 0 ? 'swatch-off' : c.index === 15 ? 'swatch-rainbow' : ''}`}
                 style={c.index === 15 ? 'background:linear-gradient(135deg, red, yellow, lime, cyan, blue, magenta)' : `--c:${c.hex}`}
                 onClick={() => update({ ...action, value: c.index })} />)}
             </div>
@@ -595,12 +596,13 @@ export function Inspector() {
 
       {problem && <p class="problem" role="alert">{problem}</p>}
 
+      {keyIndex !== null && <IdleColor layerIndex={slot.layer} keyIndex={keyIndex} />}
       {keyIndex !== null && (
         <div class="field led-color-field">
           <span class="field-label">LED Color on Key Press</span>
           <div class="color-toolbar">
             <span class="color-selection">
-              <span class={`color-selection-dot ${layer.leds[keyIndex] === 15 ? 'swatch-off' : ''}`} style={`--c:${PALETTE[layer.leds[keyIndex]!]?.hex ?? '#000000'}`} aria-hidden="true" />
+              <span class={`color-selection-dot ${layer.leds[keyIndex] === 0 ? 'swatch-off' : layer.leds[keyIndex] === 15 ? 'swatch-rainbow' : ''}`} style={`--c:${PALETTE[layer.leds[keyIndex]!]?.hex ?? '#000000'}`} aria-hidden="true" />
               {PALETTE[layer.leds[keyIndex]!]?.name ?? 'Unknown'}
             </span>
             {keyCount(p.variant) > 1 && (
@@ -609,7 +611,7 @@ export function Inspector() {
               </button>
             )}
           </div>
-          <div class="palette" role="radiogroup" aria-label="LED Color">
+          <div class="palette" role="radiogroup" aria-label="LED Color on Key Press">
             {PALETTE.map((c) => (
               <button
                 key={c.index}
@@ -617,14 +619,14 @@ export function Inspector() {
                 role="radio"
                 aria-label={c.name}
                 aria-checked={layer.leds[keyIndex] === c.index}
-                class={`swatch-btn ${layer.leds[keyIndex] === c.index ? 'is-selected' : ''} ${c.index === 15 ? 'swatch-off' : ''}`}
+                class={`swatch-btn ${layer.leds[keyIndex] === c.index ? 'is-selected' : ''} ${c.index === 0 ? 'swatch-off' : c.index === 15 ? 'swatch-rainbow' : ''}`}
                 style={`--c:${c.hex}`}
                 title={c.name}
                 onClick={() => updateProfile((d) => { d.layers[slot.layer]!.leds[keyIndex] = c.index; }, `led:${slot.layer}:${keyIndex}`)}
               />
             ))}
           </div>
-          <ColorPreview color={layer.leds[keyIndex]!} />
+          <ColorPreview color={layer.leds[keyIndex]!} rainbow={layer.leds[keyIndex] === 15} />
         </div>
       )}
       {showScrollTest && <ScrollTest onClose={() => setShowScrollTest(false)} />}

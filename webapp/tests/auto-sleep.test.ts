@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyHeader } from './legacy-image';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
@@ -153,12 +154,13 @@ describe('per-layer auto-sleep', () => {
       layer.autoSleep = !!(options & 2);
       layer.indicatorBehavior = (options >> 2) & 3;
       layer.indicatorColor = options >> 4;
+      if (!layer.indicatorColor) layer.idleLeds = [...layer.leds]; else delete layer.idleLeds;
       const image = encodeProfile(p);
-      expect(image[1]).toBe(15);
+      expect(image[1]).toBe(16);
       expect(image[optionsOffset]).toBe(options);
       expect(validator.accepts(image, variant)).toBe(true);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
-      expect(computeCapacity(p)).toEqual(capacity);
+      expect(computeCapacity(p).used).toBe(capacity.used + (layer.indicatorColor === 0 ? (variant ? 2 : 3) : 0));
     }
   });
 
@@ -182,9 +184,9 @@ describe('per-layer auto-sleep', () => {
   it('preserves current JSON and drafts while clearing the option in old imports', () => {
     const p = defaultProfile(0); p.layers[0]!.autoSleep = true;
     const current = exportProfile(p, { profileName: 'Sleep' });
-    expect(JSON.parse(current).version).toBe(15);
+    expect(JSON.parse(current).version).toBe(16);
     expect(importProfile(current).profile).toEqual(p);
-    const old = JSON.parse(current); old.version = 14;
+    const old = JSON.parse(current); legacyJson(old); old.version = 14;
     expect(importProfile(JSON.stringify(old)).profile.layers.every(l => !l.autoSleep)).toBe(true);
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
@@ -192,12 +194,12 @@ describe('per-layer auto-sleep', () => {
       setItem: (key: string, value: string) => storage.set(key, value),
     });
     const key = 'universal-macropad:format-v14:draft:six-key';
-    const saved = JSON.stringify({ formatVersion: 14, profile: p, meta: {}, savedAt: 'old' });
+    const saved = JSON.stringify({ formatVersion: 14, profile: legacyProfile(p), meta: {}, savedAt: 'old' });
     storage.set(key, saved);
     expect(loadDraft(0)?.profile.layers[0]!.autoSleep).toBe(false);
     expect(storage.get(key)).toBe(saved);
     storeDraft(p, { profileName: 'Sleep' });
-    expect(draftKey(0)).toContain('format-v15:');
+    expect(draftKey(0)).toContain('format-v16:');
     expect(loadDraft(0)?.profile).toEqual(p);
   });
 
@@ -241,10 +243,10 @@ describe('profile sleep settings', () => {
       // stray false values. Source records must remain unchanged on recovery.
       const old = structuredClone(expected);
       old.consumeWakeInput = old.showLayerIndicatorOnWake = false;
-      const json = JSON.parse(exportProfile(old)); json.version = version;
+      const json = JSON.parse(exportProfile(old)); legacyJson(json); json.version = version;
       expect(importProfile(JSON.stringify(json)).profile).toEqual(expected);
       const key = `universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`;
-      const saved = JSON.stringify({ formatVersion: version, profile: old, meta: {}, savedAt: 'old' });
+      const saved = JSON.stringify({ formatVersion: version, profile: legacyProfile(old), meta: {}, savedAt: 'old' });
       const storage = new Map([[key, saved]]);
       vi.stubGlobal('localStorage', {
         getItem: (key: string) => storage.get(key) ?? null,
@@ -291,7 +293,7 @@ describe('profile sleep settings', () => {
     const fields = ['sleepTimeoutMinutes', 'consumeWakeInput', 'showLayerIndicatorOnWake', 'dimInsteadOfOff'] as const;
     for (const field of fields) { delete old[field]; delete oldDraft[field]; }
     expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
-    const saved = JSON.stringify({ formatVersion: 15, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
+    const saved = JSON.stringify({ formatVersion: 16, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
     const storage = new Map([[draftKey(0), saved]]);
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,

@@ -5,7 +5,7 @@
 The bundled default firmware uses configuration format v15, built from revision
 `a91cb995`: [three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
 [six-key](../releases/ch552-macropad-6-key-a91cb995.hex). Use the
-[current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+[frozen v15 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/)
 with these files. V15 adds per-layer **Auto-Sleep** with configurable timeout,
 lighting and wake behavior. The installer reads each bundled HEX's format and
 links to its matching editor. Back up profiles before updating; older profiles

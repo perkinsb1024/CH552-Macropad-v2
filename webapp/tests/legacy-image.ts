@@ -3,6 +3,32 @@ import { keyCount, layerSize } from '../src/model/constants';
 export function legacyHeader(image: Uint8Array): Uint8Array {
   if (image[0] !== 0x42) return image;
   const layers = image[2]!;
+  if (image[1] === 16) {
+    const variant = (layers & 1) as 0 | 1;
+    const count = ((layers >> 1) & 7) + 1;
+    const color = (c: number, key = false) => c === 0 ? (key ? 15 : 0) : c < 8 ? c - 1 : c;
+    const action = (offset: number) => {
+      if ((image[offset]! & 15) === 13 && ((image[offset + 1]! >= 0x81 && image[offset + 1]! <= 0x89) || (image[offset + 1]! >= 0x91 && image[offset + 1]! <= 0x99))) image[offset] = 13 | color(image[offset]! >> 4) << 4;
+    };
+    for (let l = 0; l < count; l++) {
+      const base = 9 + l * layerSize(variant);
+      for (let k = 0; k < keyCount(variant) + 3; k++) action(base + 2 * k);
+      const start = base + 2 * (keyCount(variant) + 3);
+      for (let k = 0; k < keyCount(variant); k++) {
+        const offset = start + (k >> 1), shift = (k & 1) * 4;
+        image[offset] = (image[offset]! & ~(15 << shift)) | color((image[offset]! >> shift) & 15, true) << shift;
+      }
+      const options = base + layerSize(variant) - 1;
+      if (image[options]! >> 4 === 0) throw new Error('Per-key palettes cannot be represented in legacy fixtures');
+      image[options] = (image[options]! & 15) | color(image[options]! >> 4) << 4;
+    }
+    let offset = 9 + count * layerSize(variant);
+    for (let c = 0; c < image[4]! >> 3; c++, offset += 3) action(offset + 1);
+    for (let t = 0; t < (image[4]! & 7); t++, offset += 6) { action(offset + 1); action(offset + 3); }
+    offset += image[3]! >> 1;
+    while (offset < 128) { if (image[offset]) { action(offset); offset += 2; } else offset++; }
+    image[1] = 15;
+  }
   const pool = image[3]! >> 1;
   const counts = image[4]!;
   const led = image[5]!;
@@ -136,4 +162,35 @@ export function legacyActionCodes(image: Uint8Array): void {
   const remap = (offset: number) => { const code = image[offset]! & 15; if (code >= 12 && code <= 14) image[offset] = (image[offset]! & 0xf0) | (code + 1); };
   for (let l = 0; l < layers; l++) for (let i = 0; i < keyCount(variant) + 3; i++) remap(9 + l * size + 2 * i);
   for (let c = 0; c < ((image[5]! >> 1) & 63); c++) remap(9 + layers * size + c * 3 + 1);
+}
+
+/** Express a current uniform-color profile using the pre-v16 palette. */
+export function legacyProfile<T>(profile: T): T {
+  const p = structuredClone(profile) as T & import('../src/model/types').Profile;
+  const color = (c: number, key = false) => c === 0 ? (key ? 15 : 0) : c < 8 ? c - 1 : c;
+  const action = (a: import('../src/model/types').Action) => {
+    if (a.type === 'ledControl' && /^effect(On|Blink[1-8])$/.test(a.command) && typeof a.value === 'number') a.value = color(a.value);
+  };
+  for (const l of p.layers) {
+    l.indicatorColor = color(l.indicatorColor);
+    l.leds = l.leds.map(c => color(c, true));
+    [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise].forEach(action);
+  }
+  p.chords.forEach(c => action(c.action));
+  p.timedActions?.forEach(t => { action(t.action); action(t.resumeAction); });
+  p.macros?.forEach(m => m.actions.forEach(action));
+  return p;
+}
+
+/** Downgrade only palette semantics before a fabricated historical JSON version is assigned. */
+export function legacyJson(raw: any): void {
+  if (raw.version !== 16) return;
+  for (const l of raw.layers) l.indicatorColor = l.indicatorColor > 0 && l.indicatorColor < 8 ? l.indicatorColor - 1 : l.indicatorColor;
+  const action = (a: any) => {
+    if (a.type === 'ledControl' && /^effect(On|Blink[1-8])$/.test(a.command) && typeof a.value === 'number' && a.value > 0 && a.value < 8) a.value--;
+  };
+  raw.layers.forEach((l: any) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise].forEach(action));
+  raw.chords.forEach((c: any) => action(c.action));
+  raw.timedActions?.forEach((t: any) => { action(t.action); action(t.resumeAction); });
+  raw.macros?.forEach((m: any) => m.actions.forEach(action));
 }

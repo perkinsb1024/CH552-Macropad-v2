@@ -53,7 +53,7 @@ describe('current firmware indicator options', () => {
       p.layers[0]!.indicatorBehavior = 1;
       p.layers[0]!.indicatorColor = 15;
       p.layers[1]!.indicatorBehavior = 3;
-      p.layers[1]!.leds[0] = 15;
+      p.layers[1]!.leds[0] = 0;
     });
     const nodes = elements(LayerOptions());
     const mode = nodes.find((node) => node.type === 'option' && node.props.value === 1)!;

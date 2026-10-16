@@ -1,7 +1,7 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 15;
+export const FORMAT_VERSION = 16;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
@@ -43,6 +43,10 @@ export function keyCount(variant: Variant): number {
 
 export function layerSize(variant: Variant): number {
   return variant === VARIANT_THREE_KEYS ? 15 : 22;
+}
+
+export function layerPaletteSize(variant: Variant): number {
+  return Math.ceil(keyCount(variant) / 2);
 }
 
 export function pairCount(variant: Variant): number {

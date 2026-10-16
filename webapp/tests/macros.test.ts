@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { untriggeredMacros } from '../src/model/macros';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -130,7 +131,7 @@ it('validates pause endpoints and missing macros, and preserves oversize JSON fo
   p.layers[0]!.keys[0] = { type: 'macro', macro: 0, repeats: 1 }; expect(validateProfile(p).length).toBeGreaterThan(0);
   p.macros = [{ actions: Array.from({ length: 60 }, () => tap) }];
   expect(importProfile(exportProfile(p)).profile).toEqual(p); expect(() => encodeProfile(p)).toThrow();
-  const old = JSON.parse(exportProfile(p)); old.version = 10; expect(() => importProfile(JSON.stringify(old))).toThrow('version 11');
+  const old = JSON.parse(exportProfile(p)); legacyJson(old); old.version = 10; expect(() => importProfile(JSON.stringify(old))).toThrow('version 11');
 });
 it.each([0, 1] as const)('migrates every shifted v10 action in layers, chords and timer slots on variant %s', variant => {
   const samples: Action[] = [{ type: 'mouseHold', buttons: 1 }, { type: 'mouseToggle', buttons: 3 }, { type: 'scroll', delta: 1 }, { type: 'consumer', usage: 0xabc }, { type: 'consumerHold', usage: 0x123 }, { type: 'setLayer', layer: 1 }, { type: 'momentaryLayer', layer: 1 }, { type: 'relativeLayer', offset: -1 }, { type: 'mouseX', delta: -1 }, { type: 'mouseY', delta: 1 }, { type: 'ledControl', command: 'effectOn', value: 15 }];
@@ -149,7 +150,7 @@ it.each([0, 1] as const)('migrates every shifted v10 action in layers, chords an
   }
 });
 it('recovers v10 drafts without changing their originals and persists macro drafts', () => {
-  const p = oneLayer(0); const old = JSON.stringify({ formatVersion: 10, profile: p, meta: {}, savedAt: 'old' });
+  const p = oneLayer(0); const old = JSON.stringify({ formatVersion: 10, profile: legacyProfile(p), meta: {}, savedAt: 'old' });
   const storage = new Map([['universal-macropad:format-v10:draft:six-key', old]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
   try {

@@ -28,7 +28,7 @@ describe('default profile image headers', () => {
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[1]).toBe(15);
+    expect(upgraded[1]).toBe(16);
     expect(upgraded[5]).toBe(0x62);
     expect([...upgraded.subarray(9)]).toEqual([...encodeProfile(profile).subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
@@ -46,12 +46,12 @@ describe('default profile image headers', () => {
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('42 0F 02 00 00 62');
+    expect(hex(image.subarray(0, 6))).toBe('42 10 02 00 00 62');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('42 0F 03 00 00 62');
+    expect(hex(image.subarray(0, 6))).toBe('42 10 03 00 00 62');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -144,7 +144,7 @@ describe('every action type round-trips', () => {
 });
 
 describe('pointer hold auxiliary bit', () => {
-  it('uses the hold flag and reserves single-axis bits 6–7', () => {
+  it('uses the hold flag and ignores spare single-axis bits 6–7', () => {
     const profile = defaultProfile(VARIANT_SIX_KEYS);
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1 };
     let image = encodeProfile(profile);
@@ -152,10 +152,10 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x16, 0xff]);
-    expect(image[1]).toBe(15);
+    expect(image[1]).toBe(16);
     image[9] = 0x46;
     sealImage(image);
-    expect(decodeImage(image).ok).toBe(false);
+    expect(decodeImage(image).ok).toBe(true);
   });
 
   it('rejects hold on rotation in both the editor and decoder', () => {
@@ -323,7 +323,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[1] = 16;
+    image[1] = 17;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });
@@ -359,11 +359,11 @@ describe('decoder rejections', () => {
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
   });
-  it('reserved LED nibble on three-key', () => {
+  it('ignores the unused LED nibble on three-key', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
     image[22] = 0xf2;
     sealImage(image);
-    expect(decodeImage(image).ok).toBe(false);
+    expect(decodeImage(image).ok).toBe(true);
   });
   it('all eight selectors map to 20ms–90ms', () => {
     for (let w = 4; w <= 18; w += 2) {

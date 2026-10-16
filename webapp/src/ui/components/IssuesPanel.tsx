@@ -1,16 +1,25 @@
-import { issues, layerChangeWarnings, reachabilityWarnings, timerWarnings, unusedMacros } from '../store';
+import { layerPaletteWarnings } from '../../model/layerPalette';
+import { profile, issues, layerChangeWarnings, reachabilityWarnings, timerWarnings, unusedMacros } from '../store';
 import { navigateToLayer, navigateToMacro, navigateToSlot } from '../navigation';
 import { IconChevron, IconWarning } from './Icons';
 
 export function IssuesPanel() {
+  const palettes = profile.value ? layerPaletteWarnings(profile.value) : [];
   const list = issues.value;
   const warnings = reachabilityWarnings.value;
   const layerWarnings = layerChangeWarnings.value;
   const unused = unusedMacros.value;
   const toggles = timerWarnings.value;
-  if (!list.length && !warnings.length && !layerWarnings.length && !toggles.length && !unused.length) return null;
+  if (!palettes.length && !list.length && !warnings.length && !layerWarnings.length && !toggles.length && !unused.length) return null;
   return (
     <>
+      {palettes.length > 0 && <details class="card issues reachability-warning-card" aria-live="polite" open>
+        <summary class="card-head"><h2><IconWarning /> Uniform Layer Palettes</h2><span class="warn">{palettes.length}</span><IconChevron /></summary>
+        <p class="hint">These warnings do not block saving or upload.</p>
+        <ul>{palettes.map(warning => <li key={warning.layer}>
+          <button class="link" onClick={() => navigateToLayer(warning.layer)}>Layer {warning.layer + 1}</button><span>{warning.message}</span>
+        </li>)}</ul>
+      </details>}
       {list.length > 0 && <details class="card issues issues-error" aria-live="polite" open>
         <summary class="card-head">
           <h2><IconWarning /> Fix Before Saving</h2>

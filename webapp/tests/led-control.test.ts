@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { describe, expect, it } from 'vitest';
 import { encodeAction, encodeProfile } from '../src/codec/encode';
 import { decodeImage } from '../src/codec/decode';
@@ -9,24 +10,24 @@ import { importProfile, exportProfile } from '../src/io/json';
 import { legacyActionCodes } from './legacy-image';
 
 describe('LED control format 7', () => {
-  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 405 accepted', (variant) => {
+  it.each([0, 1] as const)('validates all 4096 payloads on variant %s with exactly 435 accepted', (variant) => {
     const image = encodeProfile(defaultProfile(variant));
     let accepted = 0;
     for (let command = 0; command < 256; command++) for (let nibble = 0; nibble < 16; nibble++) {
       image[9] = nibble << 4 | 13; image[10] = command; sealImage(image);
       const spec = ledCommandFromCode(command);
       const value = command >= 0x80 ? nibble : spec?.relative ? nibble < 8 ? nibble : nibble - 16 : nibble === 15 ? 'asConfigured' : nibble;
-      const valid = !!spec && !ledProblem(spec.command, value);
+      const valid = !!spec && (command === 10 || command === 0x80 || !ledProblem(spec.command, value));
       const result = decodeImage(image);
       expect(result.ok).toBe(valid);
       if (result.ok && spec) {
         accepted++;
         const action = result.profile.layers[0]!.keys[0]!;
-        expect(encodeAction(action, new Map())).toEqual([image[9], command]);
+        expect(encodeAction(action, new Map())).toEqual([command === 10 || command === 0x80 ? 13 : image[9], command]);
         expect(actionProblem(action, { rotation: true, layerCount: 2 })).toBeNull();
       }
     }
-    expect(accepted).toBe(405);
+    expect(accepted).toBe(435);
   });
   it('rejects malformed LED inputs before standalone encoding can truncate them', () => {
     for (const value of [0, -8, 8, 127, 16, NaN]) {
@@ -46,7 +47,7 @@ describe('LED control format 7', () => {
     expect(encodeAction(p.layers[0]!.keys[0]!, new Map())).toEqual([0xfd, 8]);
     expect(importProfile(exportProfile(p)).profile).toEqual(p);
     expect(decodeImage(encodeProfile(p))).toEqual({ ok: true, profile: p });
-    const old = JSON.parse(exportProfile(p)); old.version = 5;
+    const old = JSON.parse(exportProfile(p)); legacyJson(old); old.version = 5;
     expect(() => importProfile(JSON.stringify(old))).toThrow('version 6');
   });
   it.each([2, 3, 4, 5])('migrates old D/E/F action semantics from format %s', (version) => {
@@ -70,7 +71,7 @@ describe('LED control format 7', () => {
       const p = defaultProfile(1); p.rainbowPhase = phase; p.rainbowSpeed = speed;
       const image = encodeProfile(p); legacyActionCodes(image); image[2] = 5; sealImage(image);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
-      const data = JSON.parse(exportProfile(p, { profileName: 'Old', layerNames: ['One', 'Two'] })); data.version = 5;
+      const data = JSON.parse(exportProfile(p, { profileName: 'Old', layerNames: ['One', 'Two'] })); legacyJson(data); data.version = 5;
       expect(importProfile(JSON.stringify(data))).toEqual({ profile: p, meta: data.localMetadata });
     }
   });

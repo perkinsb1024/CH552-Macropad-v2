@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyActionCodes } from './legacy-image';
 import { describe, expect, it } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
@@ -59,7 +60,7 @@ describe('rainbow phase spacing', () => {
   it.each([1, 2, 3, 4])('migrates JSON version %s to the shared default', (version) => {
     const p = defaultProfile(1);
     const old = JSON.parse(exportProfile(p));
-    old.version = version;
+    legacyJson(old); old.version = version;
     delete old.rainbowPhaseDegrees;
     expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
   });
@@ -68,7 +69,7 @@ describe('rainbow phase spacing', () => {
     const p = defaultProfile(0);
     p.rainbowPhase = 3;
     const raw = JSON.parse(exportProfile(p));
-    raw.version = version;
+    legacyJson(raw); raw.version = version;
     raw.rainbowPhaseDegrees = 120;
     const imported = importProfile(JSON.stringify(raw)).profile;
     expect(imported).toEqual(p);

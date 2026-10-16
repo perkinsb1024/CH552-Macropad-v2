@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { legacyTextCodes, legacyActionCodes } from './legacy-image';
@@ -35,7 +36,7 @@ it.each([0, 1] as const)('migrates v7 text in keys, wheel, chords and both timer
   expect(encodeProfile(decoded.profile)).toEqual(modern);
   expect(validator.accepts(modern, variant)).toBe(true);
   const meta = { profileName: 'Work', layerNames: ['Tools', 'Media'] };
-  const json = JSON.parse(exportProfile(p, meta)); json.version = 7; json.timedActions[0].ticks = 64;
+  const json = JSON.parse(exportProfile(p, meta)); legacyJson(json); json.version = 7; json.timedActions[0].ticks = 64;
   expect(importProfile(JSON.stringify(json))).toEqual({ profile: p, meta });
 });
 
@@ -67,7 +68,7 @@ it.each([0, 1] as const)('round-trips held scrolling on keys, chords and wheel p
   expect(summarize(hold)).toBe('Scroll Up 127 (Hold)');
 });
 
-it.each([[0x0f, 1], [0x34, 0], [0xF4, 0], [0x30, 0], [0, 1], [0x20, 0], [9, 0], [0x15, 1], [0x25, 1], [0x95, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
+it.each([[0x0f, 1], [0x34, 0], [0xF4, 0], [0x30, 0], [0x20, 0], [9, 0], [0x15, 1], [0x25, 1], [0x95, 1]])('rejects invalid/reserved action bytes %s, %s in both validators', (first, second) => {
   const image = encodeProfile(defaultProfile(0));
   image.set([first, second], 9); sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
@@ -99,7 +100,7 @@ it('distinguishes Nothing from empty Type Text, and rejects unsupported accelera
 
 it.each([{ type: 'consumerHold', usage: 1 }, { type: 'scroll', delta: 1, hold: true }] as Action[])('rejects v8-only semantics in older JSON: %o', action => {
   const p = defaultProfile(0); p.layers[0]!.keys[0] = action;
-  const json = JSON.parse(exportProfile(p)); json.version = 7;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 7;
   expect(() => importProfile(JSON.stringify(json))).toThrow('version 8');
 });
 

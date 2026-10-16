@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { describe, expect, it } from 'vitest';
 import { exportProfile, importProfile, ImportError } from '../src/io/json';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
@@ -11,11 +12,11 @@ describe('JSON import/export', () => {
     expect(importProfile(text).profile).toEqual(profile);
     for (const version of [1, 2]) {
       const legacy = JSON.parse(text);
-      legacy.version = version;
+      legacyJson(legacy); legacy.version = version;
       delete legacy.transparentBlack;
       expect(importProfile(JSON.stringify(legacy)).profile).toEqual({ ...profile, transparentBlack: false });
     }
-    expect(() => importProfile(text.replace('"version": 15', '"version": 16'))).toThrow(ImportError);
+    expect(() => importProfile(text.replace('"version": 16', '"version": 17'))).toThrow(ImportError);
     expect(() => importProfile(text.replace('"transparentBlack": true', '"transparentBlack": 1'))).toThrow(ImportError);
   });
   it('preserves pointer hold and accepts older pointer actions without the option', () => {
@@ -58,7 +59,7 @@ describe('JSON import/export', () => {
 it.each([7, 8])('migrates legacy mouseDouble JSON in all slots from version %s', version => {
   const p = defaultProfile(0);
   p.timedActions = [{ ticks: 1, resetOnInput: true, consumeInput: false, action: { type: 'none' }, resumeAction: { type: 'none' } }];
-  const raw = JSON.parse(exportProfile(p)); raw.version = version;
+  const raw = JSON.parse(exportProfile(p)); legacyJson(raw); raw.version = version;
   const double = { type: 'mouseDouble', buttons: 3 };
   raw.layers[0].keys[0] = double;
   raw.layers[0].encoderButton = double;

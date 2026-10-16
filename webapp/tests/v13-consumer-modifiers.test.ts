@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyV12Codes } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -64,16 +65,16 @@ it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting 
   const read = decodeImage(image); expect(read).toEqual({ ok: true, profile: p });
   if (!read.ok) throw new Error(read.detail);
   const migrated = encodeProfile(read.profile);
-  expect(migrated[1]).toBe(15);
+  expect(migrated[1]).toBe(16);
   for (const offset of offsets) expect(migrated[offset]).toBe(0x34);
   expect(validator.accepts(migrated, variant)).toBe(true);
-  const json = JSON.parse(exportProfile(p)); json.version = 12;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 12;
   expect(importProfile(JSON.stringify(json)).profile).toEqual(p);
   const oldKey = `universal-macropad:format-v12:draft:${variant ? 'three-key' : 'six-key'}`;
-  const original = JSON.stringify({ formatVersion: 12, profile: p, meta: { profileName: 'Hold' }, savedAt: 'old' });
+  const original = JSON.stringify({ formatVersion: 12, profile: legacyProfile(p), meta: { profileName: 'Hold' }, savedAt: 'old' });
   const storage = new Map([[oldKey, original]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
-  expect(loadDraft(variant)).toMatchObject({ formatVersion: 15, profile: p });
+  expect(loadDraft(variant)).toMatchObject({ formatVersion: 16, profile: p });
   storeDraft(p, { profileName: 'Hold' });
   expect(loadDraft(variant)?.profile).toEqual(p);
   expect(storage.get(oldKey)).toBe(original);
@@ -82,9 +83,9 @@ it.each([0, 1] as const)('migrates genuine v12 mouse holds without interpreting 
 
 it('rejects invalid editor values and pre-v13 JSON/drafts', () => {
   const p = defaultProfile(0); p.layers[0]!.keys[0] = { type, usage: 0x6f, modifiers: 6 };
-  const json = JSON.parse(exportProfile(p)); json.version = 12;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 12;
   expect(() => importProfile(JSON.stringify(json))).toThrow('version 13');
-  vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ formatVersion: 12, profile: p }) });
+  vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ formatVersion: 12, profile: legacyProfile(p) }) });
   expect(loadDraft(0)).toBeNull();
   for (const modifiers of [16, -1, 1.5, NaN]) {
     p.layers[0]!.keys[0] = { type, usage: 0x6f, modifiers };

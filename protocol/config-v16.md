@@ -20,8 +20,9 @@ transport. It includes independent per-key layer palettes, keypress and layer
 **Rainbow**, per-layer **Auto-Sleep**, keyboard and consumer actions with modifiers,
 absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers and runtime LED controls. All action records
-remain two bytes. The active configurator and published releases still use v15;
-configurator integration and profile migration are not implemented for v16.
+remain two bytes. The active configurator supports v16, including binary, JSON and draft migration.
+Published release files and the bundled uploader still use v15; their matching
+configurator is frozen at `webapp/public/versions/format-v15/`.
 
 ## Version and Compatibility
 
@@ -40,10 +41,10 @@ and the color indices have changed. The v15-to-v16 color mappings are:
 | Source Value and Context | V16 Value |
 | --- | --- |
 | Solid color indices 0–6 | 1–7, preserving **Red** through **Leaf** |
+| Index 7, **Teal** | Removed. Converted to **Cyan** in migration |
 | Solid color indices 8–14 | Unchanged, preserving **Cyan** through **White** |
 | Keypress index 15, **Off** | 0 |
 | Uniform layer/effect index 15, **Rainbow** | 15 |
-| Index 7, **Teal** | No exact equivalent; a converter must report/select a replacement |
 
 Color conversions apply at every color-bearing site, including temporary effects
 in physical bindings, chords, both timer fields and macro steps. LED brightness,
@@ -53,10 +54,31 @@ Existing chords, timers, sleep settings and action semantics retain their decode
 meanings. Earlier formats must first be decoded with their own action allocations,
 header layouts, sleep defaults and disabled-chord migration rules.
 
-The current browser editor does not support v16 binary images, v16 JSON or v16
-drafts. No v16 JSON schema or editor control layout is established by this firmware
-reference. Freeze the outgoing v15 editor before changing the active configurator;
-existing published releases and frozen archives remain unchanged.
+The browser editor accepts v16 binary images and exports JSON version 16 with
+`format: "universal-macropad-profile"` and `headerMarker: "B"`. Existing named
+action objects, profile settings and local metadata retain their meanings. Each
+layer has `indicatorColor` (integer 0–15), `leds` (one keypress color per physical
+key), and optional `idleLeds` (one idle color per physical key). `idleLeds` is
+required when `indicatorColor` is zero and must have exactly three or six entries
+for the hardware variant. Actual palette arrays export color names and accept
+names, exact palette hex strings or integer indices 0–15 on import. **Rainbow**
+is name/index 15; black hex `#000000` selects **Off**, index zero.
+
+Inactive `idleLeds` arrays are validated and retained in JSON and browser drafts
+but are omitted from binary storage. Uniform mode therefore incurs no additional
+bytes. Selecting **Per-Key Colors** restores a retained palette or initializes
+all keys from the current uniform color. **Apply to Layer** for a nonzero idle
+color selects uniform mode; for **Off**, it fills the active palette with zeros.
+An all-identical nonzero active palette produces an advisory storage warning;
+it remains valid and may be saved without conversion. All-zero palettes remain
+per-key palettes without that warning.
+
+Drafts use `universal-macropad:format-v16:board:draft:six-key` or `three-key`.
+Source JSON versions 1–15 and previous drafts are decoded using their source
+semantics, including older timer and sleep defaults, before the palette mapping
+above. Binary migration accepts legacy MP formats 2–15 and B/v15 after validating
+the source CRC and section layout. Firmware itself accepts only B/v16. Archived
+v15 drafts and published release files remain unchanged.
 
 ## Writer Canonicalization and Ignored Fields
 
@@ -470,7 +492,7 @@ parameter as a signed 8-bit two's-complement value. `0x01`–`0x7F` mean +1 to
 
 For type `0x6`, auxiliary bit 1 (record byte 0, bit 5) selects the axis:
 clear means X, set means Y. Auxiliary bits 2–3 (record bits 6–7) must be zero.
-The existing v15 configurator exposes this action as **Move Pointer X** and **Move Pointer Y**.
+The configurator exposes this action as **Move Pointer X** and **Move Pointer Y**.
 
 For **Combined Mouse Movement** (type `0x7`), the parameter's low nibble is the
 X magnitude and its high nibble is the Y magnitude. Decode each as an unsigned
@@ -478,7 +500,7 @@ integer 0–15, add 1, then multiply by 4. Auxiliary bit 1 (record bit 5) negate
 auxiliary bit 2 (record bit 6) negates Y. Auxiliary bit 3 (record bit 7) must be
 zero. Each axis therefore supports magnitudes 4–64 in increments of 4,
 with either sign. All 256 parameter bytes are valid, including `0x80`
-(X=4, Y=36). Both axes are sent in one mouse report. The existing v15 configurator calls this action
+(X=4, Y=36). Both axes are sent in one mouse report. The configurator calls this action
 **Move Pointer X/Y**. Positive X moves right; positive Y moves down.
 
 Both pointer actions use auxiliary bit 0 (record bit 4) for **Hold** mode.

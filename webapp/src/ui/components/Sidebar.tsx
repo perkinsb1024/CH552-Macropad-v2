@@ -16,14 +16,14 @@ export function Sidebar({ children }: { children: ComponentChildren }) {
     const update = () => {
       const top = header?.getBoundingClientRect().height ?? 64;
       sidebar.style.setProperty('--sidebar-top', `${top}px`);
-      // Use the full viewport until the footer arrives, then shrink the scroll
-      // region so the sticky sidebar stays below the header at the page end.
+      // Keep the scroll region between the header and footer, including when
+      // the footer stays visible on larger screens.
       const bottomSpace = workspace ? parseFloat(getComputedStyle(workspace).paddingBottom) || 0 : 0;
-      const footerBoundary = footer ? footer.getBoundingClientRect().top - bottomSpace : Infinity;
+      const footerBoundary = footer ? footer.getBoundingClientRect().top : Infinity;
       const bottom = Math.min(window.innerHeight, footerBoundary);
       // Put the bottom gap inside the scrollable content so it is revealed
-      // only at the end, while unfinished content reaches the viewport edge.
-      const restingBottom = Math.min(window.innerHeight - 18, footerBoundary);
+      // only at the end, while unfinished content reaches the footer edge.
+      const restingBottom = Math.min(window.innerHeight - 18, footerBoundary - bottomSpace);
       sidebar.style.setProperty('--sidebar-bottom-padding', `${4 + bottom - restingBottom}px`);
       sidebar.style.setProperty('--sidebar-height', `${Math.max(0, bottom - top)}px`);
       sidebar.dataset.moreAbove = String(scroll.scrollTop > 1);
@@ -36,6 +36,7 @@ export function Sidebar({ children }: { children: ComponentChildren }) {
     observer.observe(scroll);
     observer.observe(content);
     if (header) observer.observe(header);
+    if (footer) observer.observe(footer);
     update();
     return () => {
       scroll.removeEventListener('scroll', update);

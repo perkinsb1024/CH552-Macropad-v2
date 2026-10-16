@@ -4,7 +4,7 @@ Using this macropad gives you quick access to the things you do most often: copy
 
 You configure it in your browser with the configurator tool. Once you click **Save to Device**, the settings stay on the macropad — even when you unplug it or use it on a different computer. You do not need to keep the configurator open for the macropad to work.
 
-This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted.
+This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 16. Published v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/); per-key idle colors and key-press rainbow require v16 firmware.
 
 ## Index
 
@@ -376,17 +376,17 @@ For interactions between multiple timers and layer changes, see [Gotchas and Thi
 
 There are three main ways to use lighting: a color when a key is pressed, a layer indicator, and an **LED Control** action that changes lighting during use.
 
-The fixed color palette offers **Red**, **Coral**, **Orange**, **Amber**, **Yellow**, **Green**, **Leaf**, **Teal**, **Cyan**, **Azure**, **Blue**, **Violet**, **Magenta**, **Rose**, and **White**. The final swatch is **Off** for key-press colors, or **Rainbow** for layer indicators and temporary effects. Custom colors are not available.
+The fixed color palette offers **Red**, **Coral**, **Orange**, **Amber**, **Yellow**, **Green**, **Leaf**, **Cyan**, **Azure**, **Blue**, **Violet**, **Magenta**, **Rose**, and **White**. The first swatch is **Off** for key-press, idle and temporary-effect colors, or **Per-Key Colors** for layer indicators. The final swatch is **Rainbow** in every palette. Older profiles migrate **Teal** to **Cyan** with brightness unchanged. Custom colors are not available.
 
 ### Key-Press Colors
 
-Select a numbered key, then choose **LED Color on Key Press** in the **Action Editor**. **Apply to Layer** copies that color to every numbered key on the current layer; it leaves their actions unchanged. key-press colors always use full brightness (unless altered by an [**LED Control** command](#led-control-actions-during-use)).
+Select a numbered key, then choose **LED Color on Key Press** in the **Action Editor**. **Apply to Layer** copies that color to every numbered key on the current layer; it leaves their actions unchanged. Key-press colors always use full brightness (unless altered by an [**LED Control** command](#led-control-actions-during-use)).
 
 **Preview Color** temporarily shows the selected color on the connected device without saving your profile. **Cancel Preview** returns to its usual lighting. A preview is not a saved setting. If preview is unavailable on your device, use its saved settings to test the result.
 
 ### Layer Indicators
 
-In **Layer Options**, set **Layer Selection LEDs**:
+In **Layer Options**, set **Layer Indicator Mode**:
 
 | Mode | What You See |
 | --- | --- |
@@ -396,6 +396,29 @@ In **Layer Options**, set **Layer Selection LEDs**:
 | **Always On** | Idle keys show the layer color or rainbow; pressed keys show their individual key-press colors |
 
 Choose the **Layer Indicator Color** and **Full Brightness** or **Dim**. The timed and blinking indications temporarily cover key-press colors. The always-on background allows key-press colors to show over it.
+
+### Per-Key Idle Colors
+
+Choose **Per-Key Colors** under **Layer Indicator Color**, then select a numbered
+key and set **LED Idle Color** above **LED Color on Key Press**. The first use
+copies the uniform layer color to every idle key. All idle colors, including
+**Off** and **Rainbow**, follow the layer's indicator mode and shared brightness.
+Timed and blinking indications use this palette too.
+
+For idle colors, **Apply to Layer** selects a uniform layer color and reclaims
+3 bytes on a six-key pad or 2 bytes on a three-key pad. Applying **Off** instead
+turns every idle color off while retaining per-key mode. A sidebar warning
+identifies identical non-black idle colors that could use a uniform color.
+
+Selecting a uniform layer color hides the idle palette and retains its colors
+for later reuse. Drafts and JSON exports preserve these inactive colors; device
+storage contains only active palettes. Reading a profile from the device cannot
+recover inactive colors. Keep a JSON backup when moving between browsers.
+
+The device visualization blends the idle colors around the layer border and
+shows rainbow within each rainbow key's portion. Key-press strips show their
+selected solid color or rainbow. **Device Storage** lists active layer palettes
+separately; hover, focus or tap a bar segment for its byte count.
 
 ### Auto-Sleep
 
@@ -651,6 +674,7 @@ While space is limited, the configuration format is extremely efficient and can 
 | Basic profile settings | 9 bytes, always |
 | Each three-key layer | 15 bytes, including all its regular input assignments, key colors, and layer options |
 | Each six-key layer | 22 bytes, including all its regular input assignments, key colors, and layer options |
+| Each active per-key layer palette | 2 bytes on three-key hardware; 3 bytes on six-key hardware |
 | Each chord | 3 bytes, whether local or global |
 | Each timed action | 6 bytes, including its interval, options, and both action assignments |
 | Each macro | 2 bytes per step plus a 1-byte terminator; the final sequence can use the image boundary instead |
@@ -663,6 +687,7 @@ The starter two-layer profile uses 39 bytes on a three-key pad or 53 bytes on a 
 ### Make the Most of the Space
 
 - Use keyboard and media actions for shortcuts instead of typing a text sequence when either would do the job
+- Use a uniform **Layer Indicator Color** when every idle key has the same non-black color
 - Keep text phrases short. Spaces, tabs, and line breaks count too
 - Reuse identical text. Assigning the exact same phrase to several inputs stores it only once; changing its capitalization or punctuation makes it a different phrase
 - Use a global chord for an action you want on every layer, instead of adding identical local chords to each layer

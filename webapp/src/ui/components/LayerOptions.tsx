@@ -1,6 +1,7 @@
 import { LayerIndicatorBehavior } from '../../model/constants';
+import { usePerKeyColors } from '../../model/layerPalette';
 import { PALETTE } from '../../model/palette';
-import { connection, profile, selectedLayer, updateProfile } from '../store';
+import { profile, selectedLayer, updateProfile } from '../store';
 
 import { ColorPreview } from './ColorPreview';
 import { IconChevron } from './Icons';
@@ -19,8 +20,12 @@ export function LayerOptions() {
   const p = profile.value!;
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
-  const rainbowAvailable = connection.value.kind !== 'connected' || connection.value.connection.info.paletteVersion >= 3;
-  const rainbow = rainbowAvailable && layer.indicatorBehavior !== LayerIndicatorBehavior.None;
+  const rainbow = layer.indicatorBehavior !== LayerIndicatorBehavior.None;
+  const miniKeys = () => (
+    <span class="palette-mini-keys" aria-hidden="true">
+      {layer.leds.map((_, index) => <span key={index} class="palette-mini-key" />)}
+    </span>
+  );
   return (
     <details class="card layer-options" ref={element => {
       if (element && !initializedLayerOptions.has(element)) {
@@ -38,12 +43,17 @@ export function LayerOptions() {
           <select
             id="layer-indicator-behavior"
             value={layer.indicatorBehavior}
-            onChange={(e) => updateProfile((d) => { d.layers[li]!.indicatorBehavior = Number((e.target as HTMLSelectElement).value) as LayerIndicatorBehavior; })}
+            onChange={(e) => updateProfile((d) => {
+              const layer = d.layers[li]!;
+              layer.indicatorBehavior = Number((e.target as HTMLSelectElement).value) as LayerIndicatorBehavior;
+              if (layer.indicatorBehavior === LayerIndicatorBehavior.None && layer.indicatorColor === 0 &&
+                  layer.idleLeds?.every(color => color === 0)) layer.indicatorColor = 1;
+            })}
           >
             {BEHAVIORS.map((behavior) => <option value={behavior.value}>{behavior.label}{behavior.value === LayerIndicatorBehavior.BlinkByLayer ? ` (${BLINK_COUNTS[li]})` : ''}</option>)}
           </select>
-          {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys show the selected color or rainbow; pressed keys show their per-key color. {rainbowAvailable ? '' : 'Rainbow requires palette version 3 firmware; older firmware displays Off.'}</span>}
-          {layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn && <span class="hint">Shows the layer color or Rainbow for 1.5 seconds after switching. Overrides pressed-key colors.</span>}
+          {layer.indicatorBehavior === LayerIndicatorBehavior.AlwaysOn && <span class="hint">Idle keys show the selected uniform or per-key colors; pressed keys show their per-key color.</span>}
+          {layer.indicatorBehavior === LayerIndicatorBehavior.TimedOn && <span class="hint">Shows the uniform or per-key layer colors for 1.5 seconds after switching. Overrides pressed-key colors.</span>}
           {layer.indicatorBehavior === LayerIndicatorBehavior.BlinkByLayer && <span class="hint">Blinks once per layer number: 0.25 seconds on, 0.25 seconds off. Overrides key colors throughout the indication.</span>}
         </label>
         {layer.indicatorBehavior !== LayerIndicatorBehavior.None && (
@@ -52,17 +62,17 @@ export function LayerOptions() {
             <div class="color-toolbar">
               <span class="color-selection">
                 <span
-                  class={`color-selection-dot ${layer.indicatorColor === 15 ? (rainbow ? 'swatch-rainbow' : 'swatch-off') : ''}`}
-                  style={`--c:${PALETTE[layer.indicatorColor]?.hex ?? '#000000'};filter:brightness(${layer.indicatorFullBrightness ? 1 : 0.5})`}
+                  class={`color-selection-dot ${layer.indicatorColor === 0 ? 'swatch-per-key' : layer.indicatorColor === 15 ? (rainbow ? 'swatch-rainbow' : 'swatch-off') : ''}`}
+                  style={`--c:${PALETTE[layer.indicatorColor]?.hex ?? '#000000'};filter:brightness(${layer.indicatorColor === 0 || layer.indicatorFullBrightness ? 1 : 0.5})`}
                   aria-hidden="true"
-                />
-                {rainbow && layer.indicatorColor === 15 ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name ?? 'Unknown'}
+                >{layer.indicatorColor === 0 && miniKeys()}</span>
+                {layer.indicatorColor === 0 ? 'Per-Key Colors' : rainbow && layer.indicatorColor === 15 ? 'Rainbow' : PALETTE[layer.indicatorColor]?.name ?? 'Unknown'}
                 {!layer.indicatorFullBrightness && ' (Dim)'}
               </span>
             </div>
             <div class="palette" role="radiogroup" aria-label="Layer Indicator Color">
               {PALETTE.map((color) => {
-                const name = rainbow && color.index === 15 ? 'Rainbow' : color.name;
+                const name = color.index === 0 ? 'Per-Key Colors' : color.name;
                 return (
                   <button
                     key={color.index}
@@ -71,13 +81,14 @@ export function LayerOptions() {
                     aria-label={name}
                     aria-checked={layer.indicatorColor === color.index}
                     title={name}
-                    class={`swatch-btn ${layer.indicatorColor === color.index ? 'is-selected' : ''} ${color.index === 15 ? (rainbow ? 'swatch-rainbow' : 'swatch-off') : ''}`}
+                    class={`swatch-btn ${layer.indicatorColor === color.index ? 'is-selected' : ''} ${color.index === 0 ? 'swatch-per-key' : color.index === 15 ? (rainbow ? 'swatch-rainbow' : 'swatch-off') : ''}`}
                     style={`--c: ${color.hex}`}
-                    onClick={() => updateProfile((d) => { d.layers[li]!.indicatorColor = color.index; })}
-                  />
+                    onClick={() => updateProfile((d) => { if (color.index === 0) usePerKeyColors(d.layers[li]!); else d.layers[li]!.indicatorColor = color.index; })}
+                  >{color.index === 0 && miniKeys()}</button>
                 );
               })}
             </div>
+            {layer.indicatorColor === 0 && <span class="hint">Select a key to edit its LED Idle Color. Per-key colors are retained when a uniform color is selected.</span>}
             <div class="layer-indicator-controls">
               <div class="segmented" role="group" aria-label="Layer Indicator Brightness">
                 <button
@@ -93,7 +104,7 @@ export function LayerOptions() {
                   onClick={() => updateProfile((d) => { d.layers[li]!.indicatorFullBrightness = false; })}
                 >Dim</button>
               </div>
-              <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={rainbow} />
+              {layer.indicatorColor !== 0 && <ColorPreview color={layer.indicatorColor} fullBrightness={layer.indicatorFullBrightness} rainbow={layer.indicatorColor === 15} />}
             </div>
           </div>
         )}

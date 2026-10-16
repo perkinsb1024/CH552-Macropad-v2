@@ -127,7 +127,7 @@ describe('configuration clipboard event scope', () => {
     fire('click', chord);
     const copy = fire('copy', chord);
     const text = copy.clipboardData.setData.mock.calls[0]![1] as string;
-    expect(text).toBe('{"format":"universal-macropad-action","version":1,"action":{"type":"relativeLayer","offset":1}}');
+    expect(text).toBe('{"format":"universal-macropad-action","version":2,"action":{"type":"relativeLayer","offset":1}}');
     selectedSlot.value = { kind: 'encoderButton', layer: 0 };
     const encoder = new Target(true);
     fire('click', encoder);

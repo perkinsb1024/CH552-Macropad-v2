@@ -1,4 +1,5 @@
 import { keyCount, LayerIndicatorBehavior } from '../../model/constants';
+import { layerIndicatorBackground, RAINBOW_GRADIENT } from '../../model/layerPalette';
 import { paletteHex } from '../../model/palette';
 import { actionTooltip, summarize } from '../../model/actions';
 import { matchesChord } from '../../model/chords';
@@ -18,8 +19,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const li = selectedLayer.value;
   const layer = p.layers[li]!;
   const indicatorOn = layer.indicatorBehavior !== LayerIndicatorBehavior.None;
-  const indicatorRainbow = layer.indicatorColor === 15;
-  const indicatorColor = layer.indicatorColor === 14 ? '#B8BEC8' : paletteHex(layer.indicatorColor);
+  const indicatorColor = layerIndicatorBackground(layer);
   const keys = keyCount(p.variant);
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
@@ -161,7 +161,8 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     const action = layer.keys[index]!;
     const problem = actionProblem(action, { layerCount, rotation: false });
     const color = paletteHex(layer.leds[index]!);
-    const off = layer.leds[index] === 15;
+    const off = layer.leds[index] === 0;
+    const rainbow = layer.leds[index] === 15;
     const dragged = readOnly ? null : draggedSlot.value;
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
     const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
@@ -170,8 +171,8 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         key={index}
         title={actionTooltip(action)}
         data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)}
-        class={`keycap ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
-        style={`--led:${color}; --led-glow:${off ? 'transparent' : color}`}
+        class={`keycap ${rainbow ? 'keycap-rainbow' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
+        style={`--led:${color}; --led-strip:${rainbow ? RAINBOW_GRADIENT : `linear-gradient(${color}, ${color})`}; --led-glow:${off ? 'transparent' : rainbow ? '#8000ff' : color}`}
         onClick={readOnly ? undefined : () => select(slot)}
         draggable={!readOnly}
         tabIndex={readOnly ? -1 : undefined}
@@ -208,7 +209,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
 
   return (
     <div class={`device device-${keys} ${readOnly ? "device-readonly" : ""}`}>
-      <div class={`device-shell ${indicatorOn ? 'indicator-glow' : ''} ${indicatorRainbow ? 'indicator-rainbow' : ''}`}
+      <div class={`device-shell ${indicatorOn ? 'indicator-glow' : ''}`}
         style={`--indicator-color:${indicatorColor}; --indicator-opacity:${layer.indicatorFullBrightness ? 1 : 0.65}`}>
       <div class="device-body">
         <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={readOnly ? undefined : gridDragOver} onDrop={readOnly ? undefined : gridDrop}>

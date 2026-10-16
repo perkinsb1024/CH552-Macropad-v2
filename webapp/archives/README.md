@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v15 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v16 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -89,3 +89,12 @@ TypeScript, Vite, uploader generation and existing archive checks passed.
 HTML entry points add archive banners and latest-editor links; the installer
 redirects to the shared uploader. Its v14 draft namespace and application assets
 are preserved. The manifest records source provenance and SHA-256 hashes.
+
+
+The frozen v15 editor and live view are in `../public/versions/format-v15/`,
+built from finalized v15 release source `8c150a0`. All 698 source tests passed
+against that revision's firmware validator. TypeScript, the complete production
+build, archive checksums and archive serving checks passed. HTML entry points add
+archive banners and latest-editor links; the installer redirects to the shared
+uploader. The existing `format-v15:board:` draft namespace is preserved. The
+manifest records provenance, hosting adjustments and SHA-256 hashes.

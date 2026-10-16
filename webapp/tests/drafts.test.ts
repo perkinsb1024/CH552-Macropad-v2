@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clearDraft, draftKey, loadDraft, storeDraft } from '../src/io/drafts';
 import { defaultProfile } from '../src/model/defaults';
@@ -13,11 +14,11 @@ describe('versioned drafts', () => {
       removeItem: (key: string) => storage.delete(key),
     });
     const legacy = defaultProfile(0);
-    storage.set('universal-macropad:draft:six-key', JSON.stringify({ profile: legacy, meta: {}, savedAt: 'legacy' }));
+    storage.set('universal-macropad:draft:six-key', JSON.stringify({ profile: legacyProfile(legacy), meta: {}, savedAt: 'legacy' }));
     const archivedKey = 'universal-macropad:format-v2:draft:six-key';
     storage.set(archivedKey, 'archived draft');
     expect(loadDraft(0)?.profile).toEqual(legacy);
-    expect(draftKey(0)).toBe('universal-macropad:format-v15:board:draft:six-key');
+    expect(draftKey(0)).toBe('universal-macropad:format-v16:board:draft:six-key');
     const current = defaultProfile(0);
     current.transparentBlack = true;
     storeDraft(current, {});
@@ -37,7 +38,7 @@ describe('versioned drafts', () => {
     storeDraft(profile, { profileName: 'Test' });
     expect(loadDraft(0)?.profile).toEqual(profile);
     const draft = JSON.parse(storage.get(draftKey(0))!);
-    draft.formatVersion = 2; delete draft.headerMarker;
+    draft.formatVersion = 2; draft.profile = legacyProfile(draft.profile); delete draft.headerMarker;
     delete draft.profile.transparentBlack;
     delete draft.profile.rainbowSpeed;
     draft.profile.layers[0].indicatorBehavior = 1;
@@ -45,7 +46,7 @@ describe('versioned drafts', () => {
     draft.profile.layers[0].keys[0] = { type: 'nextLayer' };
     storage.set(draftKey(0), JSON.stringify(draft));
     const migrated = loadDraft(0)!;
-    expect(migrated.formatVersion).toBe(15);
+    expect(migrated.formatVersion).toBe(16);
     expect(migrated.profile.transparentBlack).toBe(false);
     expect(migrated.profile.layers[0]!.indicatorBehavior).toBe(1);
     expect(migrated.profile.layers[0]!.clockwise).toEqual({ type: 'scroll', delta: 2 });
@@ -54,7 +55,7 @@ describe('versioned drafts', () => {
     delete draft.formatVersion;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toEqual(migrated);
-    draft.formatVersion = 16;
+    draft.formatVersion = 17;
     storage.set(draftKey(0), JSON.stringify(draft));
     expect(loadDraft(0)).toBeNull();
   });
@@ -72,10 +73,10 @@ it('recovers a complete v7 draft with timers, text and annotations without rewri
     action: { type: 'string', text: 'Work\n' }, resumeAction: { type: 'consumer', usage: 0xfff } }];
   const meta = { profileName: 'Work', layerNames: ['Tools', 'Media'] };
   const key = 'universal-macropad:format-v7:draft:six-key';
-  const raw = JSON.stringify({ formatVersion: 7, profile: p, meta, savedAt: 'old' });
+  const raw = JSON.stringify({ formatVersion: 7, profile: legacyProfile(p), meta, savedAt: 'old' });
   storage.set(key, raw);
   p.timedActions![0]!.ticks = 2048;
-  expect(loadDraft(0)).toEqual({ formatVersion: 15, headerMarker: 'B', profile: p, meta, savedAt: 'old' });
+  expect(loadDraft(0)).toEqual({ formatVersion: 16, headerMarker: 'B', profile: p, meta, savedAt: 'old' });
   expect(storage.get(key)).toBe(raw);
   expect(storage.has(draftKey(0))).toBe(false);
 });
@@ -93,10 +94,10 @@ it.each([3, 4, 5, 6, 7, 8, 9, 10, 11])('recovers v%s drafts without clearing the
   const legacy = { ...old } as Partial<typeof old>;
   delete legacy.rainbowPhase;
   delete legacy.rainbowSpeed;
-  const archived = JSON.stringify({ formatVersion: version, profile: legacy, meta: {}, savedAt: 'v3' });
+  const archived = JSON.stringify({ formatVersion: version, profile: legacyProfile(legacy), meta: {}, savedAt: 'v3' });
   storage.set(archivedKey, archived);
   expect(loadDraft(1)?.profile).toEqual(old);
-  expect(loadDraft(1)?.formatVersion).toBe(15);
+  expect(loadDraft(1)?.formatVersion).toBe(16);
   clearDraft(1);
   expect(storage.get(archivedKey)).toBe(archived);
   expect(loadDraft(1)).toBeNull();

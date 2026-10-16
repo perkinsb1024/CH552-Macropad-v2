@@ -1,3 +1,5 @@
+import { legacyJson, legacyProfile } from './legacy-image';
+import { migrateProfileColors } from '../src/model/palette';
 import v13Fixtures from './fixtures/v13-profiles.json';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -25,21 +27,22 @@ it.each(fixtures.fixtures)('migrates authentic finalized v13 bytes, JSON and dra
   p = { ...defaultProfile(p.variant), ...structuredClone(p) };
   for (const layer of p.layers) layer.autoSleep = false;
   expect(original[2]).toBe(13);
+  migrateProfileColors(p);
   const result = decodeImage(original);
   expect(result).toEqual({ ok: true, profile: p });
   if (!result.ok) throw new Error(result.detail);
   const upgraded = encodeProfile(result.profile);
-  expect(upgraded[1]).toBe(15);
+  expect(upgraded[1]).toBe(16);
   expect(validator.accepts(upgraded, p.variant)).toBe(true);
   expect(decodeImage(upgraded)).toEqual(result);
   expect([...original].map(byte => byte.toString(16).padStart(2, '0')).join('')).toBe(hex);
-  const json = JSON.parse(exportProfile(p, { profileName: 'Migrated' })); json.version = 13;
+  const json = JSON.parse(exportProfile(p, { profileName: 'Migrated' })); legacyJson(json); json.version = 13;
   expect(importProfile(JSON.stringify(json))).toEqual({ profile: p, meta: { profileName: 'Migrated' } });
   const oldKey = `universal-macropad:format-v13:draft:${p.variant ? 'three-key' : 'six-key'}`;
-  const oldDraft = JSON.stringify({ formatVersion: 13, profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
+  const oldDraft = JSON.stringify({ formatVersion: 13, profile: legacyProfile(p), meta: { profileName: 'Migrated' }, savedAt: 'old' });
   const storage = new Map([[oldKey, oldDraft]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
-  expect(loadDraft(p.variant)).toEqual({ formatVersion: 15, headerMarker: 'B', profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
+  expect(loadDraft(p.variant)).toEqual({ formatVersion: 16, headerMarker: 'B', profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
   storeDraft(p, { profileName: 'Migrated' });
   expect(storage.has(draftKey(p.variant))).toBe(true);
   expect(storage.get(oldKey)).toBe(oldDraft);
@@ -57,7 +60,7 @@ it.each([0, 1] as const)('matches firmware v14 layer modes and modified holds at
     for (const param of [0, 1, 6, 7, 249, 250, 255]) {
       const image = original.slice(); image.set([aux << 4 | 12, param], offset); sealImage(image);
       const mode = aux & 3;
-      const valid = aux <= 6 && mode !== 3 && !(autonomous && mode === 2) && (aux & 4 ? param <= 6 || param >= 250 : param === 0 || (param === 255 && mode !== 2));
+      const valid = (aux & 7) <= 6 && mode !== 3 && !(autonomous && mode === 2) && (aux & 4 ? param <= 6 || param >= 250 : param === 0 || (param === 255 && mode !== 2));
       expect(decodeImage(image).ok, `Layer mode ${aux}, parameter ${param}, site ${offset}`).toBe(valid);
       expect(validator.accepts(image, variant)).toBe(valid);
     }
@@ -89,9 +92,9 @@ it.each([0, 1] as const)('round-trips new holds in keys, encoder press, chords, 
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
     storeDraft(p, {}); expect(loadDraft(variant)?.profile).toEqual(p);
-    const json = JSON.parse(exportProfile(p)); json.version = 13;
+    const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 13;
     expect(() => importProfile(JSON.stringify(json))).toThrow('version 14');
-    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ formatVersion: 13, profile: p }) });
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify({ formatVersion: 13, profile: legacyProfile(p) }) });
     expect(loadDraft(variant)).toBeNull();
   }
 });

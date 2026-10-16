@@ -1011,6 +1011,8 @@ output {
     position: sticky;
     top: var(--sidebar-top, var(--topbar-height, 64px));
     margin-top: -18px;
+    /* Keep the sticky scroll area against the footer at the page end too. */
+    margin-bottom: calc(-1 * var(--workspace-bottom-space));
   }
   .sidebar-scroll {
     max-height: var(--sidebar-height, calc(100dvh - var(--sidebar-top, var(--topbar-height, 64px))));
@@ -1128,28 +1130,43 @@ output {
   padding: 12px 16px 20px;
 }
 .footer {
-  flex: 0 0 var(--footer-height);
-  height: var(--footer-height);
+  flex: 0 0 auto;
   min-height: var(--footer-height);
-  max-height: var(--footer-height);
   box-sizing: border-box;
   align-items: center;
   margin-top: auto;
-  padding: 0 20px;
+  padding: 8px 20px;
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  text-align: center;
   font-size: 12px;
   color: var(--fg-muted);
   border-top: 1px solid var(--line);
 }
 .footer > span {
-  white-space: nowrap;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.footer[data-wrapped="true"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 721px) {
+  .footer[data-wrapped="true"] > .footer-identity { grid-area: 1 / 1; }
+  .footer[data-wrapped="true"] > .muted { grid-area: 1 / 2; }
+  .footer[data-wrapped="true"] > span:nth-child(2) { grid-area: 2 / 1 / auto / -1; }
+}
+@media (max-width: 720px) {
+  .footer[data-wrapped="true"] { grid-template-columns: minmax(0, 1fr); }
 }
 .footer-identity {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 .footer-version {
@@ -1160,10 +1177,13 @@ output {
   font-size: 11px;
   line-height: 1.5;
 }
-.footer > .muted {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+@media (min-width: 1081px) and (min-height: 700px) {
+  .footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--bg);
+  }
 }
 .notice {
   padding: 10px 14px;
@@ -1383,7 +1403,7 @@ output {
   border-radius: 12px;
   border: 0px solid var(--key-edge);
   border-top: 0;
-  background-image: linear-gradient(var(--led), var(--led)), var(--key-face);
+  background-image: var(--led-strip, linear-gradient(var(--led), var(--led))), var(--key-face);
   background-position: top, center;
   background-repeat: no-repeat, no-repeat;
   background-size: 100% 5px, cover;
@@ -1853,6 +1873,9 @@ output {
   padding-top: 6px;
   margin-top: 2px;
 }
+.legend-free .legend-bytes {
+  grid-column: 4;
+}
 .pool {
   margin-top: 10px;
   font-size: 13px;
@@ -2261,7 +2284,7 @@ output {
 .timer-action.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .timer-resume { margin-top: 12px; }
 .timer-resume summary { cursor: pointer; font-size: 13px; }
-.seg-timers { background: #9878c9; }
+.seg-timers { background: #0896ad; }
 
 /* Read-only profile reference. */
 .viewer-workspace {
@@ -2323,7 +2346,6 @@ output {
   .card-device { padding: 12px; }
   .viewer-layer-status .btn { margin-left: 0; }
   .viewer-binding-list > li { flex-wrap: wrap; }
-  .footer { flex-wrap: wrap; height: auto; min-height: var(--footer-height); max-height: none; }
 }
 
 .inline-link {
@@ -2449,7 +2471,7 @@ output {
 }
 
 /* Macros share the existing timer binding/editor controls. */
-.seg-macros { background: #b87be7; }
+.seg-macros { background: #df4e83; }
 .macros-panel > .btn + .hint { margin-top: 12px; }
 .macro-step-actions { justify-content: flex-end; }
 .macro-add-step { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
@@ -2501,3 +2523,40 @@ output {
 :is(.macro-row, .timed-row) > .drop-line { left: 0; right: 0; height: 3px; }
 :is(.macro-row, .timed-row) > .drop-line-before { top: -7px; transform: translateY(-50%); }
 :is(.macro-row, .timed-row) > .drop-line-after { bottom: -7px; transform: translateY(50%); }
+
+/* Each rainbow remains local to its key or its portion of the layer border. */
+.keycap-rainbow .keycap-led::after {
+  background: linear-gradient(180deg, transparent, var(--key-face-bottom, transparent)), linear-gradient(90deg, #ff000044, #ffff0044, #00ff0044, #00ffff44, #0040ff44, #ff00ff44);
+  mask-image: linear-gradient(#000, transparent);
+}
+/* Alternating color accents distinguish individual keys. */
+.swatch-per-key { background: var(--line-strong); display: inline-flex; align-items: center; justify-content: center; }
+@media (prefers-color-scheme: light) {
+  .swatch-per-key { background: #e3e6ee; }
+}
+.swatch-btn.swatch-per-key { padding: 16%; }
+.palette-mini-keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; width: 100%; pointer-events: none; }
+.palette-mini-key { aspect-ratio: 1; border-radius: 2px; background: var(--fg-muted); }
+.palette-mini-key:nth-child(1) { background: #f000d0; }
+.palette-mini-key:nth-child(3) { background: #ff7f50; }
+.palette-mini-key:nth-child(5) { background: #0066ff; }
+.color-selection-dot.swatch-per-key { width: 20px; height: 18px; border-radius: 4px; padding: 3px; }
+.color-selection-dot .palette-mini-keys { gap: 1px; }
+.color-selection-dot .palette-mini-key { border-radius: 1px; }
+.seg-palettes { background: #ed9229; }
+.meter { overflow: visible; }
+.meter-seg { position: relative; container-type: inline-size; padding: 0; border: 0; border-radius: 0; min-width: 0; height: 100%; flex-shrink: 1; cursor: default; }
+.meter-seg:first-child { border-radius: 8px 0 0 8px; }
+.meter-seg:last-child { border-radius: 0 8px 8px 0; }
+.meter-seg:only-child { border-radius: 8px; }
+.meter-seg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 3; }
+.meter-flyout { display: none; position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); z-index: 10; padding: 5px 8px; background: var(--bg-elev); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 3px 10px #0002; font-size: 11px; line-height: 1.4; white-space: nowrap; pointer-events: none; }
+.meter-flyout .meter-usage { display: block; color: var(--fg-muted); font: inherit; }
+.meter-flyout::after { content: ''; position: absolute; bottom: -5px; left: 50%; width: 8px; height: 8px; transform: translateX(-50%) rotate(45deg); background: var(--bg-elev); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); pointer-events: none; }
+.meter-seg:first-child .meter-flyout { left: 0; transform: none; }
+.meter-seg:last-child .meter-flyout { left: auto; right: 0; transform: none; }
+/* Edge flyouts stay inside the meter; their arrows stay inside both the flyout and segment. */
+.meter-seg:first-child .meter-flyout::after { left: min(50%, 50cqw); }
+.meter-seg:last-child .meter-flyout::after { left: auto; right: min(50%, 50cqw); transform: translateX(50%) rotate(45deg); }
+.meter-seg:only-child .meter-flyout::after { left: 50%; right: auto; transform: translateX(-50%) rotate(45deg); }
+.meter-seg:hover .meter-flyout, .meter-seg:focus .meter-flyout { display: block; }

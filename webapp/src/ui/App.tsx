@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import { installDragAutoScroll } from './dragAutoScroll';
 import { siteUrl } from '../site';
 import { FORMAT_VERSION } from '../model/constants';
@@ -25,6 +25,24 @@ import { ArchivedFirmwareNotice } from './components/ArchivedFirmwareNotice';
 import { variantName } from '../model/constants';
 
 export function App() {
+  const footerRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+    const update = () => {
+      // Measure the natural flex layout before choosing the wrapped grid.
+      footer.dataset.wrapped = 'false';
+      const centers = Array.from(footer.children, child => {
+        const rect = child.getBoundingClientRect();
+        return rect.top + rect.height / 2;
+      });
+      footer.dataset.wrapped = String(Math.max(...centers) - Math.min(...centers) > 1);
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(footer);
+    update();
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     // Clear old page text before a new click/drag. A fresh text-selection drag
     // can then create a selection that still takes precedence over action copying.
@@ -145,7 +163,7 @@ export function App() {
           </Sidebar>
         </main>
       )}
-      <footer class="footer">
+      <footer class="footer" ref={footerRef}>
         <span class="footer-identity">
           <span>Universal Macropad</span>
           <span class="footer-version">Config format v{FORMAT_VERSION}</span>
@@ -156,7 +174,7 @@ export function App() {
           {' · '}
           <a href={siteUrl('webUploader/')}>Web-Based Firmware Uploader</a>
         </span>
-        <span class="muted">Saves write the device's 128-byte DataFlash and read it back before reporting success.</span>
+        <span class="muted">Profiles are saved and verified using the device's 128-byte persistent storage</span>
       </footer>
       <Dialog />
       <Toasts />

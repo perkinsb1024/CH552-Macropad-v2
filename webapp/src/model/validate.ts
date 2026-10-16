@@ -162,6 +162,11 @@ export function validateProfile(profile: Profile): Issue[] {
     layer.leds.forEach((led, i) => {
       if (!Number.isInteger(led) || led < 0 || led > 15) issues.push({ where: `Layer ${li + 1} · LED ${i + 1}`, message: 'Palette index must be 0–15.' });
     });
+    if ((layer.indicatorColor === 0 || layer.idleLeds !== undefined) &&
+      (!Array.isArray(layer.idleLeds) || layer.idleLeds.length !== keys ||
+        layer.idleLeds.some(color => !Number.isInteger(color) || color < 0 || color > 15))) {
+      issues.push({ where: `Layer ${li + 1}`, message: `Expected ${keys} idle LED colors with palette indices 0–15.` });
+    }
     const check = (action: Action, slot: Slot, rotation: boolean) => {
       const problem = actionProblem(action, { layerCount, rotation, macroCount: profile.macros?.length ?? 0, macros: profile.macros });
       if (problem) issues.push({ where: slotLabel(slot), message: problem, slot });

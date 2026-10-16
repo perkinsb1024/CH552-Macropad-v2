@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyV10Codes } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -69,9 +70,9 @@ it('preserves full v9 images, blocks oversized writes, and allows an explicit re
   expect(() => encodeProfile(p)).toThrow('132 bytes');
   const raw = JSON.parse(exportProfile(p, { profileName: 'Full' }));
   expect(importProfile(JSON.stringify(raw)).profile).toEqual(p);
-  raw.version = 9; raw.timedActions.forEach((t: { ticks: number }) => { t.ticks = 64; });
+  legacyJson(raw); raw.version = 9; raw.timedActions.forEach((t: { ticks: number }) => { t.ticks = 64; });
   expect(importProfile(JSON.stringify(raw))).toMatchObject({ profile: p, meta: { profileName: 'Full' } });
-  const storage = new Map([['universal-macropad:format-v9:draft:six-key', JSON.stringify({ formatVersion: 9, profile: { ...p, timedActions: raw.timedActions }, meta: { profileName: 'Full' }, savedAt: 'old' })]]);
+  const storage = new Map([['universal-macropad:format-v9:draft:six-key', JSON.stringify({ formatVersion: 9, profile: { ...legacyProfile(p), timedActions: raw.timedActions }, meta: { profileName: 'Full' }, savedAt: 'old' })]]);
   const originalDraft = storage.values().next().value;
   vi.stubGlobal('localStorage', { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => storage.set(k, v) });
   expect(loadDraft(0)?.profile).toEqual(p);
@@ -92,7 +93,7 @@ it('preserves full v9 images, blocks oversized writes, and allows an explicit re
   profile.value!.timedActions!.forEach(t => { t.action = { type: 'string', text: 'x'.repeat(50) }; });
   profile.value = structuredClone(profile.value!);
   expect(canSave.value).toBe(true);
-  await save(); expect((await c.connection.client.readFlash())[1]).toBe(15);
+  await save(); expect((await c.connection.client.readFlash())[1]).toBe(16);
 });
 
 it.each([0, 1] as const)('uploads and reads back scoped maximum intervals on variant %s', async variant => {

@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyHeader } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -75,7 +76,7 @@ it('accepts only configured layer indices or 255 and rejects previous in v6 and 
   expect(decodeImage(image).ok).toBe(false); expect(validator.accepts(image, 0)).toBe(false);
   const json = JSON.parse(exportProfile(p));
   for (let version = 1; version <= 6; version++) {
-    json.version = version;
+    legacyJson(json); json.version = version;
     expect(() => importProfile(JSON.stringify(json))).toThrow();
   }
 });

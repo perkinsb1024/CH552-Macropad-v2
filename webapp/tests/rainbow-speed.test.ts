@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyActionCodes } from './legacy-image';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
@@ -24,7 +25,7 @@ describe('rainbow speed', () => {
           p.rainbowPhase = phase;
           p.chordWindow = chordWindow;
           const image = encodeProfile(p);
-          expect(image[1]).toBe(15);
+          expect(image[1]).toBe(16);
           expect(image[5]).toBe((chordWindow - 4) / 2 | (phase << 4) | (speed << 6));
           expect(decodeImage(image)).toEqual({ ok: true, profile: p });
           const text = exportProfile(p);
@@ -38,7 +39,7 @@ describe('rainbow speed', () => {
   it.each([1, 2, 3, 4, 5])('migrates JSON v%s without speed to Fast', (version) => {
     const p = defaultProfile(1);
     const old = JSON.parse(exportProfile(p));
-    old.version = version;
+    legacyJson(old); old.version = version;
     delete old.rainbowSpeed;
     expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
   });
@@ -77,7 +78,7 @@ describe('rainbow speed', () => {
     p.rainbowPhase = 3;
     const old = { ...p } as Partial<typeof p>;
     delete old.rainbowSpeed;
-    storage.set(draftKey(0), JSON.stringify({ formatVersion: 5, profile: old, meta: {}, savedAt: 'old' }));
+    storage.set(draftKey(0), JSON.stringify({ formatVersion: 5, profile: legacyProfile(old), meta: {}, savedAt: 'old' }));
     expect(loadDraft(0)?.profile).toEqual(p);
     p.rainbowSpeed = 3;
     storeDraft(p, {});

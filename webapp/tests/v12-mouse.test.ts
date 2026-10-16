@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyV12Codes } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -79,13 +80,13 @@ it('migrates v11 macro, text and timer data while preserving behavior and storag
   const current = encodeProfile(read.profile);
   expect(current).toEqual(encodeProfile(p));
   expect(computeCapacity(read.profile).used).toBe(computeCapacity(p).used);
-  const json = JSON.parse(exportProfile(p)); json.version = 11;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 11;
   expect(importProfile(JSON.stringify(json)).profile).toEqual(p);
   const key = 'universal-macropad:format-v11:draft:six-key';
-  const original = JSON.stringify({ formatVersion: 11, profile: p, meta: { profileName: 'Drag' }, savedAt: 'old' });
+  const original = JSON.stringify({ formatVersion: 11, profile: legacyProfile(p), meta: { profileName: 'Drag' }, savedAt: 'old' });
   const storage = new Map([[key, original]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
-  expect(loadDraft(0)).toMatchObject({ formatVersion: 15, profile: p, savedAt: 'old' });
+  expect(loadDraft(0)).toMatchObject({ formatVersion: 16, profile: p, savedAt: 'old' });
   expect(storage.get(key)).toBe(original); expect(storage.has(draftKey(0))).toBe(false);
   clearDraft(0); expect(loadDraft(0)).toBeNull(); expect(storage.get(key)).toBe(original);
 });
@@ -94,9 +95,9 @@ it.each(['mouseDown', 'mouseUp', 'mouseClick', 'mouseToggle', 'mouseHold'] as co
   const p = defaultProfile(0); p.layers[0]!.keys[0] = { type, buttons: 128 };
   const image = encodeProfile(p); legacyV12Codes(image); image[2] = 11; sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
-  const json = JSON.parse(exportProfile(p)); json.version = 11;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 11;
   expect(() => importProfile(JSON.stringify(json))).toThrow('version 12');
-  const raw = JSON.stringify({ formatVersion: 11, profile: p });
+  const raw = JSON.stringify({ formatVersion: 11, profile: legacyProfile(p) });
   vi.stubGlobal('localStorage', { getItem: () => raw }); expect(loadDraft(0)).toBeNull();
   // New auxiliary modes reject even with an old three-button mask.
   if (type === 'mouseDown' || type === 'mouseUp') { image[10] = 1; sealImage(image); expect(decodeImage(image).ok).toBe(false); }

@@ -12,8 +12,8 @@ const behaviorNames = {
   [LayerIndicatorBehavior.AlwaysOn]: 'Always On',
 };
 const colorName = (color: number) => PALETTE[color]?.name ?? 'Unknown';
-const indicatorColor = (color: number, behavior: LayerIndicatorBehavior) =>
-  color === 15 && behavior !== LayerIndicatorBehavior.None ? 'Rainbow' : colorName(color);
+const indicatorColor = (color: number) =>
+  color === 0 ? 'Per-Key Colors' : colorName(color);
 const actionName = (action: Action) => action.type === 'string'
   ? `Type ${JSON.stringify(action.text)}` : action.type === 'none' ? 'Nothing' : summarize(action);
 const chordId = (chord: Chord) => `${chord.global ? 'global' : chord.layer}:${chord.keyA}:${chord.keyB}`;
@@ -35,6 +35,7 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
       const saved = before.layers[i] ?? before.layers[0]!;
       layer.keys = saved.keys.map((action, key) => layer.keys[key] ?? { ...action });
       layer.leds = saved.leds.map((color, key) => layer.leds[key] ?? color);
+      if (layer.idleLeds) layer.idleLeds = saved.leds.map((_, key) => layer.idleLeds![key] ?? saved.idleLeds?.[key] ?? saved.indicatorColor);
     }
     draft.chords = draft.chords.filter((chord) => chord.keyB < draft.layers[0]!.keys.length);
   });
@@ -87,9 +88,13 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
       const where = `${label} · Key ${key + 1}`;
       if (oldAction && newAction) {
         binding(where, oldAction, newAction, (draft) => { draft.layers[i]!.keys[key] = { ...oldAction }; });
-        change(`${where} Color`, oldLayer.leds[key] ?? 15, newLayer.leds[key] ?? 15, colorName, (draft) => { draft.layers[i]!.leds[key] = oldLayer.leds[key] ?? 15; });
+        change(`${where} Color`, oldLayer.leds[key] ?? 0, newLayer.leds[key] ?? 0, colorName, (draft) => { draft.layers[i]!.leds[key] = oldLayer.leds[key] ?? 0; });
       }
     }
+    if (JSON.stringify(oldLayer.idleLeds) !== JSON.stringify(newLayer.idleLeds)) changes.push({
+      where: `${label} · Idle Colors`, before: oldLayer.idleLeds?.map(colorName).join(', ') ?? 'Not Set', after: newLayer.idleLeds?.map(colorName).join(', ') ?? 'Not Set',
+      undo: draft => { if (oldLayer.idleLeds) draft.layers[i]!.idleLeds = [...oldLayer.idleLeds]; else { delete draft.layers[i]!.idleLeds; draft.layers[i]!.indicatorColor = oldLayer.indicatorColor; } },
+    });
     binding(`${label} · Encoder Button`, oldLayer.encoderButton, newLayer.encoderButton, (draft) => { draft.layers[i]!.encoderButton = { ...oldLayer.encoderButton }; });
     binding(`${label} · Clockwise`, oldLayer.clockwise, newLayer.clockwise, (draft) => { draft.layers[i]!.clockwise = { ...oldLayer.clockwise }; });
     binding(`${label} · Counterclockwise`, oldLayer.counterclockwise, newLayer.counterclockwise, (draft) => { draft.layers[i]!.counterclockwise = { ...oldLayer.counterclockwise }; });
@@ -97,8 +102,8 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
     // Compare the stored color independently: changing indicator behavior must
     // not produce a second, non-undoable Off/Rainbow entry for the same edit.
     if (oldLayer.indicatorColor !== newLayer.indicatorColor) changes.push({
-      where: `${label} · Indicator Color`, before: indicatorColor(oldLayer.indicatorColor, oldLayer.indicatorBehavior), after: indicatorColor(newLayer.indicatorColor, newLayer.indicatorBehavior),
-      undo: (draft) => { draft.layers[i]!.indicatorColor = oldLayer.indicatorColor; },
+      where: `${label} · Indicator Color`, before: indicatorColor(oldLayer.indicatorColor), after: indicatorColor(newLayer.indicatorColor),
+      undo: (draft) => { draft.layers[i]!.indicatorColor = oldLayer.indicatorColor; if (oldLayer.indicatorColor === 0 && oldLayer.idleLeds) draft.layers[i]!.idleLeds = [...oldLayer.idleLeds]; },
     });
     change(`${label} · Auto-Sleep`, oldLayer.autoSleep, newLayer.autoSleep, (v) => v ? 'On' : 'Off', (draft) => { draft.layers[i]!.autoSleep = oldLayer.autoSleep; });
     change(`${label} · Indicator Brightness`, oldLayer.indicatorFullBrightness, newLayer.indicatorFullBrightness, (v) => v ? 'Full Brightness' : 'Dim', (draft) => { draft.layers[i]!.indicatorFullBrightness = oldLayer.indicatorFullBrightness; });

@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { legacyV10Codes } from './legacy-image';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
@@ -34,14 +35,14 @@ it.each([0, 1] as const)('round-trips horizontal buttons, chords, rotation and b
   p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: hold }];
   p.timedActions = [{ ticks: 1, resetOnInput: false, consumeInput: false, action: tap, resumeAction: tap }];
   const image = encodeProfile(p);
-  expect(image[1]).toBe(15);
+  expect(image[1]).toBe(16);
   expect(image[9]).toBe(0xc5);
   expect(decodeImage(image)).toEqual({ ok: true, profile: p });
   expect(validator.accepts(image, variant)).toBe(true);
   expect(importProfile(exportProfile(p)).profile).toEqual(p);
   expect(summarize(hold)).toBe('Scroll Left 127 (Hold)');
   expect(summarize(p.layers[0]!.counterclockwise)).toBe('Scroll Right 127');
-  const json = JSON.parse(exportProfile(p)); json.version = 8;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 8;
   expect(() => importProfile(JSON.stringify(json))).toThrow('Horizontal scrolling requires profile version 9');
   image[2] = 8; sealImage(image);
   expect(decodeImage(image).ok).toBe(false);
@@ -58,6 +59,6 @@ it.each([0, 1] as const)('migrates v8 vertical hold and multi-click without alte
   expect(validator.accepts(old, variant)).toBe(false);
   const decoded = decodeImage(old); if (!decoded.ok) throw new Error(decoded.detail);
   expect(encodeProfile(decoded.profile)).toEqual(latest);
-  const json = JSON.parse(exportProfile(p)); json.version = 8;
+  const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 8;
   expect(importProfile(JSON.stringify(json)).profile).toEqual(p);
 });

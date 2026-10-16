@@ -1,0 +1,23 @@
+{
+  "formatVersion": 15,
+  "sourceCommit": "8c150a05dbf41db44472b81bf88ae2a508f71cab",
+  "changes": [
+    "Frozen finalized v15 editor and live view; active webapp source is identical to the source commit. Preserved v15 board draft namespace. HTML archive banners and shared uploader redirect; application assets unchanged.",
+    "Built with installed dependencies matching the source lockfile."
+  ],
+  "validation": "All 698 tests passed in the extracted source revision with its v15 firmware validator; TypeScript and complete production build passed.",
+  "sha256": {
+    "assets/configurator-CSKXRxoL.js.map": "d469a48fc48bfba8f70be967abf44a88b34d3c5011fd5e3821ec155ab695205c",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-Bzxq_0Dz.js": "89b7e5f6b5ca4ac98bc210a00ae66ebe52d51be9849b82ac23077b1f870c4c10",
+    "assets/main-Bzxq_0Dz.js.map": "6bbc3aa0efdf419aac6df700f2f161c3412853d6b04ac2c0d8ea916b20f45833",
+    "assets/main-gCpXXB54.css": "46eb9ef981573db0d9d25dc0e544577f6a8404d5b262a07f1ecef74e40d4e77f",
+    "assets/viewer-CSKXRxoL.js.map": "430b0673be2adfedfa3885c42367c62eec359258bf8eef034867f84a5462f34a",
+    "favicon.svg": "eb47e87c540ce093bdf9b1ba415afa1ca495b7229ed1b2fff8fb94b51996f961",
+    "index.html": "0defc042e3ed52db79c23275e71ede5ce3c5c48ecf1bfd6446669ab764758a2b",
+    "liveView/index.html": "10e446337bce3e7ef9b6904becbe4dc7697cd80479f41561a3f779975d01f0ce",
+    "webUploader/index.html": "29a77dfb01c27d4af02976b18f45332b4374e17ff9c66382e73810883027c63d",
+    "wheel-debug.html": "e67bc00d70e8654df88232e11c91edd35cbeec3cc286bbca2e78c58bc905fb8a"
+  }
+}

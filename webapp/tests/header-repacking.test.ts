@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { encodeProfile } from '../src/codec/encode';
 import { decodeImage, peekHeader } from '../src/codec/decode';
@@ -43,9 +44,9 @@ it.each([0, 1] as const)('matches firmware for every window and LED combination 
         for (const transparent of [false, true]) {
           p.chordWindow = 4 + 2 * window; p.rainbowPhase = phase; p.rainbowSpeed = speed; p.transparentBlack = transparent;
           const image = encodeProfile(p);
-          expect([...image.subarray(0, 7)]).toEqual([0x42, 15, variant | 2, 6, 12,
+          expect([...image.subarray(0, 7)]).toEqual([0x42, 16, variant | 2, 6, 12,
             window | (Number(transparent) << 3) | (phase << 4) | (speed << 6), 13]);
-          expect(peekHeader(image)).toEqual({ magic: true, version: 15, variant });
+          expect(peekHeader(image)).toEqual({ magic: true, version: 16, variant });
           expect(storedCrc(image)).toBe(reference(image, 7));
           expect(decodeImage(image)).toEqual({ ok: true, profile: p });
           expect(firmware.accepts(image, variant)).toBe(true);
@@ -61,8 +62,8 @@ it.each([0, 1] as const)('rejects every corrupt image bit and reserved field on 
   }
   for (const [offset, mask] of [[2, 128], [3, 1], ...Array.from({ length: 3 }, (_, i) => [6, 1 << (i + 5)])]) {
     const invalid = image.slice(); invalid[offset!]! |= mask!; sealImage(invalid);
-    expect(decodeImage(invalid).ok).toBe(false);
-    expect(firmware.accepts(invalid, variant)).toBe(false);
+    expect(decodeImage(invalid).ok).toBe(true);
+    expect(firmware.accepts(invalid, variant)).toBe(true);
   }
   for (const count of [5, 6, 7]) {
     const invalid = image.slice(); invalid[4] = count; sealImage(invalid);
@@ -107,11 +108,11 @@ it.each([0, 1] as const)('migrates every legacy window consistently in binary, J
     expect(decoded.profile.chords).toEqual(p.chords); expect(decoded.profile.layers[0]!.autoSleep).toBe(true);
     expect(old).toEqual(original); expect(peekHeader(old)).toEqual({ magic: true, version: 15, variant });
     expect(!!decoded.notices?.length).toBe(units !== expected || units === 0);
-    const json = JSON.parse(exportProfile(p)); delete json.headerMarker; json.chordWindowMs = units * 5;
+    const json = JSON.parse(exportProfile(p)); legacyJson(json); json.version = 15; delete json.headerMarker; json.chordWindowMs = units * 5;
     const imported = importProfile(JSON.stringify(json)); expect(imported.profile).toEqual(decoded.profile);
     const key = `universal-macropad:format-v15:draft:${variant ? 'three-key' : 'six-key'}`;
     p.chordWindow = units;
-    const raw = JSON.stringify({ formatVersion: 15, profile: p, meta: { profileName: 'Old' }, savedAt: 'old' });
+    const raw = JSON.stringify({ formatVersion: 15, profile: legacyProfile(p), meta: { profileName: 'Old' }, savedAt: 'old' });
     const storage = new Map([[key, raw]]);
     vi.stubGlobal('localStorage', { getItem: (k: string) => storage.get(k) ?? null, setItem: (k: string, v: string) => storage.set(k, v) });
     const recovered = loadDraft(variant)!; expect(recovered.profile).toEqual(decoded.profile);

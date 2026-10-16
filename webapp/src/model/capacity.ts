@@ -1,10 +1,11 @@
-import { TIMED_ENTRY_SIZE, CHORD_ENTRY_SIZE, HEADER_SIZE, IMAGE_SIZE, layerSize } from './constants';
+import { TIMED_ENTRY_SIZE, CHORD_ENTRY_SIZE, HEADER_SIZE, IMAGE_SIZE, layerSize, layerPaletteSize } from './constants';
 import type { Action, Profile } from './types';
 import { encodedLength } from './strings';
 
 export interface Capacity {
   header: number;
   layers: number;
+  layerPalettes: number;
   chords: number;
   strings: number;
   timedActions: number;
@@ -54,13 +55,14 @@ export function computeCapacity(profile: Profile): Capacity {
   const pool = stringPool(profile);
   const header = HEADER_SIZE;
   const layers = layerSize(profile.variant) * profile.layers.length;
+  const layerPalettes = profile.layers.filter(layer => layer.indicatorColor === 0).length * layerPaletteSize(profile.variant);
   const chords = CHORD_ENTRY_SIZE * profile.chords.length;
   const strings = pool.reduce((sum, s) => sum + encodedLength(s), 0);
   const timedActions = TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0);
   let macros = (profile.macros ?? []).reduce((sum, macro) => sum + 2 * macro.actions.length + 1, 0);
-  const withTerminators = header + layers + chords + timedActions + strings + macros;
+  const withTerminators = header + layers + layerPalettes + chords + timedActions + strings + macros;
   // The image boundary itself terminates the final nonempty sequence.
   if (profile.macros?.at(-1)?.actions.length && withTerminators === IMAGE_SIZE + 1) macros--;
-  const used = header + layers + chords + timedActions + strings + macros;
-  return { header, layers, chords, timedActions, macros, strings, used, remaining: IMAGE_SIZE - used, pool };
+  const used = header + layers + layerPalettes + chords + timedActions + strings + macros;
+  return { header, layers, layerPalettes, chords, timedActions, macros, strings, used, remaining: IMAGE_SIZE - used, pool };
 }

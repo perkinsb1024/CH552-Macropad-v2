@@ -2,11 +2,11 @@ import { ledCommandCode, ledProblem } from '../model/ledControl';
 import {
   SLEEP_TIMEOUT_MINUTES,   TIMED_ENTRY_SIZE, HEADER_RAINBOW_SPEED_SHIFT, HEADER_RAINBOW_PHASE_SHIFT, ActionCode, CHORD_ENTRY_SIZE, HEADER_MARKER, FORMAT_VERSION, HEADER_SIZE, IMAGE_SIZE,
   LAYER_OPT_INDICATOR_SHIFT,
-  LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, keyCount, layerSize,
+  LAYER_OPT_COLOR_SHIFT, LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, keyCount, layerSize, layerPaletteSize,
 } from '../model/constants';
 import type { Action, Profile } from '../model/types';
 import { descriptor } from '../model/actions';
-import { sortedChords, stringPool } from '../model/capacity';
+import { sortedChords, stringPool, computeCapacity } from '../model/capacity';
 import { chordId } from '../model/pairs';
 import { validateProfile } from '../model/validate';
 import { sealImage } from './crc16';
@@ -88,7 +88,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   }
 
   const chords = sortedChords(profile);
-  let macroEnd = HEADER_SIZE + size * profile.layers.length + CHORD_ENTRY_SIZE * chords.length + TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0) + poolLength;
+  let macroEnd = HEADER_SIZE + size * profile.layers.length + computeCapacity(profile).layerPalettes + CHORD_ENTRY_SIZE * chords.length + TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0) + poolLength;
   const macroOffsets = (profile.macros ?? []).map(macro => {
     const start = macroEnd;
     macroEnd += 2 * macro.actions.length + 1;
@@ -127,6 +127,11 @@ export function encodeProfile(profile: Profile): Uint8Array {
   });
 
   let offset = HEADER_SIZE + size * profile.layers.length;
+  for (const layer of profile.layers) {
+    if (layer.indicatorColor !== 0) continue;
+    for (let i = 0; i < keys; i++) image[offset + (i >> 1)]! |= layer.idleLeds![i]! << ((i & 1) * 4);
+    offset += layerPaletteSize(profile.variant);
+  }
   for (const chord of chords) {
     image[offset] = chordId(chord.layer, chord.keyA, chord.keyB, keys, chord.global);
     const [b0, b1] = encodeAction(chord.action, offsets, macroOffsets);

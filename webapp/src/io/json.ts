@@ -2,12 +2,12 @@ import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types'
 import { RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_SPEED, RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS, isPreviousLayer } from '../model/actions';
-import { PALETTE } from '../model/palette';
+import { PALETTE, LEGACY_PALETTE } from '../model/palette';
 import { normalizeText } from '../model/strings';
 import { migrateLegacyProfile, migrateChordWindow } from '../model/defaults';
 
 export const JSON_FORMAT = 'universal-macropad-profile';
-export const JSON_VERSION = 15;
+export const JSON_VERSION = 16;
 const LEGACY_RAINBOW_SPEED_NAMES = ['double', 'normal', 'half', 'quarter'];
 
 /** Optional editor annotations that never reach the device. */
@@ -36,6 +36,7 @@ export interface ExportedProfile {
     clockwise: Action;
     counterclockwise: Action;
     leds: string[];
+    idleLeds?: string[];
     indicatorBehavior: number;
     indicatorColor: number;
     indicatorFullBrightness: boolean;
@@ -68,6 +69,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
       clockwise: layer.clockwise,
       counterclockwise: layer.counterclockwise,
       leds: layer.leds.map((i) => PALETTE[i]?.name ?? String(i)),
+      ...(layer.idleLeds ? { idleLeds: layer.idleLeds.map(color => PALETTE[color]?.name ?? String(color)) } : {}),
       indicatorBehavior: layer.indicatorBehavior,
       indicatorColor: layer.indicatorColor,
       indicatorFullBrightness: layer.indicatorFullBrightness,
@@ -157,10 +159,10 @@ function action(v: unknown, what: string): Action {
   }
 }
 
-function led(v: unknown, what: string): number {
+function led(v: unknown, what: string, legacy = false): number {
   if (typeof v === 'number') return int(v, what);
   if (typeof v === 'string') {
-    const byName = PALETTE.find((p) => p.name.toLowerCase() === v.toLowerCase() || p.hex.toLowerCase() === v.toLowerCase());
+    const byName = (legacy ? LEGACY_PALETTE : PALETTE).find((p) => p.name.toLowerCase() === v.toLowerCase() || p.hex.toLowerCase() === v.toLowerCase());
     if (byName) return byName.index;
     const n = Number(v);
     if (Number.isInteger(n)) return n;
@@ -178,7 +180,8 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   }
   if (!isRecord(raw)) throw new ImportError('The file does not contain a profile object.');
   if (raw.format !== JSON_FORMAT) throw new ImportError('This file is not a Universal Macropad profile.');
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, JSON_VERSION].includes(raw.version as number)) throw new ImportError(`Profile file version ${String(raw.version)} is not supported.`);
+  if (Number(raw.version) >= 16 && raw.headerMarker !== 'B') throw new ImportError('Version 16 requires the B header marker.');
   const variant: Variant = raw.variant === 'three-key' ? VARIANT_THREE_KEYS : raw.variant === 'six-key' ? VARIANT_SIX_KEYS : (() => { throw new ImportError('Unknown variant.'); })();
   const keys = keyCount(variant);
   if (!Array.isArray(raw.layers) || raw.layers.length < 1 || raw.layers.length > maxLayers(variant)) throw new ImportError(`Profile must have 1–${maxLayers(variant)} layers.`);
@@ -191,12 +194,16 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       encoderButton: action(l.encoderButton, `Layer ${li + 1} encoder button`),
       clockwise: action(l.clockwise, `Layer ${li + 1} clockwise`),
       counterclockwise: action(l.counterclockwise, `Layer ${li + 1} counterclockwise`),
-      leds: l.leds.map((c, i) => led(c, `Layer ${li + 1} LED ${i + 1}`)),
+      leds: l.leds.map((c, i) => led(c, `Layer ${li + 1} LED ${i + 1}`, Number(raw.version) < 16)),
       indicatorBehavior: l.indicatorBehavior === undefined ? 0 : int(l.indicatorBehavior, `Layer ${li + 1} indicatorBehavior`),
       indicatorColor: l.indicatorColor === undefined ? 0 : int(l.indicatorColor, `Layer ${li + 1} indicatorColor`),
       indicatorFullBrightness: bool(l.indicatorFullBrightness, `Layer ${li + 1} indicatorFullBrightness`),
       autoSleep: Number(raw.version) >= 15 ? bool(l.autoSleep, `Layer ${li + 1} autoSleep`) : false,
     };
+    if (Number(raw.version) >= 16 && l.idleLeds !== undefined) {
+      if (!Array.isArray(l.idleLeds) || l.idleLeds.length !== keys) throw new ImportError(`Layer ${li + 1} must have ${keys} idle LED colors.`);
+      layer.idleLeds = l.idleLeds.map((c, i) => led(c, `Layer ${li + 1} idle LED ${i + 1}`));
+    }
     if (l.invertScroll === true) (layer as Layer & { invertScroll?: boolean }).invertScroll = true;
     return layer;
   });
@@ -207,8 +214,8 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
     return { layer: int(c.layer, `Chord ${i + 1} layer`), keyA: Math.min(a, b), keyB: Math.max(a, b), global: bool(c.global, `Chord ${i + 1} global`), action: action(c.action, `Chord ${i + 1}`) };
   });
   const chordWindowMs = int(raw.chordWindowMs ?? 40, 'chordWindowMs');
-  const board = Number(raw.version) === 15 && raw.headerMarker === 'B';
-  if (Number(raw.version) === 15 && raw.headerMarker !== undefined && !board)
+  const board = Number(raw.version) >= 15 && raw.headerMarker === 'B';
+  if (Number(raw.version) >= 15 && raw.headerMarker !== undefined && !board)
     throw new ImportError('Unknown profile header marker.');
   if (board ? chordWindowMs !== 0 && (chordWindowMs < 20 || chordWindowMs > 90 || chordWindowMs % 10 !== 0)
     : chordWindowMs % 5 !== 0 || chordWindowMs < 0 || chordWindowMs > 75)
@@ -260,10 +267,12 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   if (Number(raw.version) < 11 && allActions.some(a => a.type === 'macro' || a.type === 'pause')) throw new ImportError('Macros and pauses require profile version 11.');
   if (Number(raw.version) < 9 && allActions.some(a => a.type === 'scroll' && a.horizontal)) throw new ImportError('Horizontal scrolling requires profile version 9.');
   if (Number(raw.version) < 8 && allActions.some(a => a.type === 'consumerHold' || (a.type === 'scroll' && a.hold))) throw new ImportError('Consumer Hold and held scrolling require profile version 8.');
+  const sourceTeal = Number(raw.version) < 16 && (layers.some(l => l.indicatorColor === 7 || l.leds.includes(7)) || allActions.some(a => a.type === 'ledControl' && /^effect(On|Blink[1-8])$/.test(a.command) && a.value === 7));
   migrateLegacyProfile(profile, Number(raw.version));
   if (Number(raw.version) < 6 && [...profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...profile.chords.map((c) => c.action)].some((a) => a.type === 'ledControl')) throw new ImportError('LED actions require profile version 6.');
   const notices = board ? (profile.chordWindow === 0 && profile.chords.length ? migrateChordWindow(profile) : []) : migrateChordWindow(profile);
   if (board && profile.chordWindow === 0 && !profile.chords.length) profile.chordWindow = 8;
+  if (sourceTeal) notices.push('Legacy colors were migrated to palette version 4; Teal is replaced with Cyan. Brightness settings are unchanged.');
   const issues = validateProfile(profile);
   // Oversized imports remain editable and exportable; encoding/saving stays blocked.
   const invalid = issues.filter(i => i.where !== 'Storage' && !(i.where === 'Chord Window' && profile.chordWindow === 0 && profile.chords.length));

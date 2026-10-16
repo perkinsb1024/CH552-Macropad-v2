@@ -1,3 +1,4 @@
+import { migrateColor } from '../model/palette';
 import { reorderMacros, untriggeredMacros } from '../model/macros';
 import { batch, computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
@@ -194,7 +195,7 @@ export interface Toast {
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
-const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/', 13: 'versions/format-v13/', 14: 'versions/format-v14/' };
+const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/', 13: 'versions/format-v13/', 14: 'versions/format-v14/', 15: 'versions/format-v15/' };
 let toastId = 0;
 
 export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
@@ -300,7 +301,7 @@ export function clearSelectedAction(): void {
     rememberAction(slot, action);
     setAction(slot, slot.kind === 'macro' ? { type: 'pause', ticks: 0 } : { type: 'none' });
   } else if (slot.kind === 'key') {
-    updateProfile((draft) => { draft.layers[slot.layer]!.leds[slot.index] = 15; });
+    updateProfile((draft) => { draft.layers[slot.layer]!.leds[slot.index] = 0; });
   }
 }
 
@@ -417,9 +418,10 @@ export function copySelectedConfiguration(showToast = true): string | null {
   if (showToast) notifyActionClipboard('Copied', action, slot);
   return JSON.stringify({
     format: ACTION_CLIPBOARD_FORMAT,
-    version: 1,
+    version: 2,
     action,
     led: slot.kind === 'key' ? p.layers[slot.layer]!.leds[slot.index] : undefined,
+    idleLed: slot.kind === 'key' ? p.layers[slot.layer]!.idleLeds?.[slot.index] : undefined,
   });
 }
 
@@ -432,7 +434,11 @@ export function cutSelectedConfiguration(): void {
   rememberAction(slot, action);
   updateProfile((draft) => {
     putAction(draft, slot, slot.kind === 'macro' ? { type: 'pause', ticks: 0 } : { type: 'none' });
-    if (slot.kind === 'key') draft.layers[slot.layer]!.leds[slot.index] = 15;
+    if (slot.kind === 'key') {
+      const layer = draft.layers[slot.layer]!;
+      layer.leds[slot.index] = 0;
+      if (layer.idleLeds) layer.idleLeds[slot.index] = 0;
+    }
   });
   notifyActionClipboard('Cut', action, slot);
 }
@@ -442,11 +448,12 @@ export function pasteSelectedConfiguration(text: string): boolean {
   const p = profile.value;
   const slot = selectedSlot.value;
   if (!p || !slot || !getAction(p, slot)) return false;
-  let copied: { format?: string; version?: number; action?: Action; led?: number };
+  let copied: { format?: string; version?: number; action?: Action; led?: number; idleLed?: number };
   try {
     copied = JSON.parse(text);
-    if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || copied.version !== 1 || !copied.action) return false;
+    if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || ![1, 2].includes(copied.version ?? 0) || !copied.action) return false;
     if (copied.led !== undefined && (!Number.isInteger(copied.led) || copied.led < 0 || copied.led > 15)) return false;
+    if (copied.idleLed !== undefined && (copied.version !== 2 || !Number.isInteger(copied.idleLed) || copied.idleLed < 0 || copied.idleLed > 15)) return false;
     const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed', macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
     if (problem) {
       notify('error', `Cannot paste here: ${problem}`);
@@ -455,11 +462,23 @@ export function pasteSelectedConfiguration(text: string): boolean {
   } catch {
     return false;
   }
+  if (copied.version === 1) {
+    if (copied.led !== undefined) copied.led = migrateColor(copied.led, true);
+    const a = copied.action!;
+    if (a.type === 'ledControl' && /^effect(On|Blink[1-8])$/.test(a.command) && typeof a.value === 'number') copied.action = { ...a, value: migrateColor(a.value) };
+  }
   const action = copied.action;
   rememberAction(slot, getAction(p, slot)!);
   updateProfile((draft) => {
     putAction(draft, slot, action);
-    if (slot.kind === 'key' && copied.led !== undefined) draft.layers[slot.layer]!.leds[slot.index] = copied.led;
+    if (slot.kind === 'key') {
+      const layer = draft.layers[slot.layer]!;
+      if (copied.led !== undefined) layer.leds[slot.index] = copied.led;
+      if (copied.idleLed !== undefined) {
+        layer.idleLeds ??= layer.leds.map(() => layer.indicatorColor);
+        layer.idleLeds[slot.index] = copied.idleLed;
+      }
+    }
   });
   notifyActionClipboard('Pasted', action, slot);
   return true;
@@ -503,6 +522,7 @@ export function insertSlotAction(source: Slot, target: Slot, position: 'before' 
     if (source.kind === 'key') {
       const layer = draft.layers[source.layer]!;
       layer.leds = insertionOrder(layer.leds, sourceIndex, targetIndex, position);
+      if (layer.idleLeds) layer.idleLeds = insertionOrder(layer.idleLeds, sourceIndex, targetIndex, position);
     }
   });
   selectedSlot.value = order[destination]!;
@@ -521,6 +541,11 @@ export function swapSlotActions(source: Slot, target: Slot): void {
     if (source.kind === 'key' && target.kind === 'key') {
       const sourceLayer = draft.layers[source.layer]!;
       const targetLayer = draft.layers[target.layer]!;
+      if (sourceLayer.idleLeds || targetLayer.idleLeds) {
+        sourceLayer.idleLeds ??= sourceLayer.leds.map(() => sourceLayer.indicatorColor);
+        targetLayer.idleLeds ??= targetLayer.leds.map(() => targetLayer.indicatorColor);
+        [sourceLayer.idleLeds[source.index], targetLayer.idleLeds[target.index]] = [targetLayer.idleLeds[target.index]!, sourceLayer.idleLeds[source.index]!];
+      }
       [sourceLayer.leds[source.index], targetLayer.leds[target.index]] = [targetLayer.leds[target.index]!, sourceLayer.leds[source.index]!];
     }
   });
@@ -687,6 +712,7 @@ export function addLayer(mode: 'blank' | 'duplicate' = 'blank'): void {
       clockwise: { ...source.clockwise },
       counterclockwise: { ...source.counterclockwise },
       leds: [...source.leds],
+      ...(source.idleLeds ? { idleLeds: [...source.idleLeds] } : {}),
     } : emptyLayer(draft.variant));
     if (source) {
       const newIndex = draft.layers.length - 1;
@@ -1068,7 +1094,8 @@ export async function save(): Promise<void> {
     freshStart.value = null;
     updateDeviceStatus(c.connection, await c.connection.client.getStatus().catch(() => c.connection.status));
     saveState.value = { phase: 'saved', at: Date.now() };
-    clearDraft(p.variant);
+    if (p.layers.some(layer => layer.idleLeds)) storeDraft(p, meta.value);
+    else clearDraft(p.variant);
     notify('success', 'Saved and verified. All 128 bytes read back from flash match.');
   } catch (error) {
     const message = (error as Error).message;
@@ -1209,7 +1236,7 @@ effect(() => {
   if (!p) return;
   clearTimeout(draftTimer);
   draftTimer = setTimeout(() => {
-    if (isDirty) storeDraft(p, m);
+    if (isDirty || p.layers.some(layer => layer.idleLeds)) storeDraft(p, m);
     else clearDraft(p.variant);
   }, 400);
 });

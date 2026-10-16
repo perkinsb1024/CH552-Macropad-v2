@@ -19,12 +19,12 @@ it.each([0, 1] as const)('decodes every pointer flag and parameter on variant %s
   const image = encodeProfile(p);
   for (const type of [6, 7]) for (let aux = 0; aux < 16; aux++) for (let param = 0; param < 256; param++) {
     image.set([type | aux << 4, param], 9); sealImage(image);
-    const valid = type === 6 ? aux < 4 && param !== 128 : aux < 8;
+    const valid = type === 6 ? param !== 128 : true;
     const decoded = decodeImage(image);
     expect(decoded.ok).toBe(valid);
     if (!decoded.ok) continue;
     const action = decoded.profile.layers[0]!.keys[0]!;
-    if (type === 7) expect(encodeAction(action, new Map())).toEqual([type | aux << 4, param]);
+    if (type === 7) expect(encodeAction(action, new Map())).toEqual([type | (aux & 7) << 4, param]);
     if (type === 6) expect(action).toEqual({ type: aux & 2 ? 'mouseY' : 'mouseX', delta: param > 127 ? param - 256 : param, ...(aux & 1 ? { hold: true } : {}) });
     else expect(action).toEqual({ type: 'mouseXY', x: ((param & 15) + 1) * 4 * (aux & 2 ? -1 : 1), y: ((param >> 4) + 1) * 4 * (aux & 4 ? -1 : 1), ...(aux & 1 ? { hold: true } : {}) });
   }
@@ -40,7 +40,7 @@ it.each([0, 1] as const)('matches firmware flags at all binding sites on variant
   const original = encodeProfile(p);
   for (const [offset, autonomous] of sites) for (const type of [6, 7]) for (let aux = 0; aux < 16; aux++) for (const param of [0, 128, 255]) {
     const image = original.slice(); image.set([type | aux << 4, param], offset); sealImage(image);
-    const valid = (type === 6 ? aux < 4 && param !== 128 : aux < 8) && !(autonomous && (aux & 1));
+    const valid = (type === 6 ? param !== 128 : true) && !(autonomous && (aux & 1));
     expect(decodeImage(image).ok).toBe(valid);
     expect(validator.accepts(image, variant)).toBe(valid);
   }

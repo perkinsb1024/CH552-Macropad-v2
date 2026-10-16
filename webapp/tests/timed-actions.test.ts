@@ -1,3 +1,4 @@
+import { legacyJson, legacyProfile } from './legacy-image';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 import { defaultProfile, cloneProfile } from '../src/model/defaults';
@@ -28,7 +29,7 @@ describe('v10 timed-action images', () => {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[1]).toBe(15);
+      expect(image[1]).toBe(16);
       expect(image[4]! & 7).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
@@ -91,7 +92,7 @@ describe('v10 timed-action images', () => {
     const raw = JSON.parse(exportProfile(p));
     raw.timedActions[0].resetOnInput = 'yes';
     expect(() => importProfile(JSON.stringify(raw))).toThrow();
-    raw.version = 6; raw.timedActions[0].resetOnInput = true;
+    legacyJson(raw); raw.version = 6; raw.timedActions[0].resetOnInput = true;
     expect(() => importProfile(JSON.stringify(raw))).toThrow('version 7');
   });
   it('includes timer edits in comparisons and restores them with undo', () => {
