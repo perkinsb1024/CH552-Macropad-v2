@@ -1284,4 +1284,3 @@ Stack starts at `0xA4` on six keys and `0xA1` on three keys, reserving 92/95 byt
 These are linker capacity figures, not hardware high-water measurements. The
 builder checks separation of USB, paged, ordinary and absolute allocations, plus
 the USB interrupt's external-RAM parameter storage and startup clearing.
-
