@@ -1,0 +1,66 @@
+[
+  {
+    "case": "ideal",
+    "variant": 0,
+    "preview": true,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/ideal/host-six-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "ideal",
+    "variant": 0,
+    "preview": false,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/ideal/host-six-no-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "ideal",
+    "variant": 1,
+    "preview": true,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/ideal/host-three-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "ideal",
+    "variant": 1,
+    "preview": false,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/ideal/host-three-no-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "fallback",
+    "variant": 0,
+    "preview": true,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/fallback/host-six-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "fallback",
+    "variant": 0,
+    "preview": false,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/fallback/host-six-no-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "fallback",
+    "variant": 1,
+    "preview": true,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/fallback/host-three-preview.log",
+    "compared_frames": 508064
+  },
+  {
+    "case": "fallback",
+    "variant": 1,
+    "preview": false,
+    "passed": true,
+    "log": "/private/tmp/macropad-per-key-palette-20261015/fallback/host-three-no-preview.log",
+    "compared_frames": 508064
+  }
+]
