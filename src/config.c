@@ -209,8 +209,14 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         offset += size;
     }
     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
+#if CONFIG_TIMED_MAX <= 4
+    // Validated counts cap metadata at 251 bytes; only adding the pool can exceed 255.
+    end = (uint8_t)(9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+          (uint8_t)(CONFIG_TIMED_SIZE * timers) + paletteBytes) + (uint16_t)validationUsed;
+#else
     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed + paletteBytes;
+#endif
     if (end > CONFIG_SIZE) {
         return 0;
     }
@@ -300,6 +306,7 @@ uint8_t configLayerPaletteOffset(uint8_t layer) {
 }
 
 uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
+    // Validated palettes and physical keys keep the final image offset below 128.
     uint8_t colors = activeConfig[(uint8_t)(offset + (key >> 1))];
     if (key & 1) colors >>= 4;
     return colors & 15;

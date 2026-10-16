@@ -57,14 +57,14 @@ __code int8_t encoderTransitions[16] = {
 };
 
 __xdata uint8_t ledData[NUM_BYTES];
-// Private button state needs no external-RAM pointer ABI. Internal indirect
-// addressing saves flash; the firmware map measures the resulting stack space.
-__idata uint8_t rawState[7];
+// Raw levels use ordinary external RAM to preserve the internal stack reserve.
+// Stable levels and debounce times remain private to this main-loop scanner.
+__xdata uint8_t rawState[7];
 __idata uint8_t stableState[7];
 __idata uint16_t rawChanged[7];
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
-__idata uint8_t lastLayer;
+__pdata uint8_t lastLayer;
 __pdata uint8_t layerIndicatorPhasesLeft;
 __pdata uint8_t layerIndicatorDeadline;
 __data uint8_t rainbowChanged;
@@ -77,8 +77,9 @@ __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with acti
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
-// Cached during rendering; custom rainbow sources must also drive the clock.
-static ACTION_BIT perKeyRainbowActive;
+// Cache all animation participation during rendering, including custom palettes.
+static ACTION_BIT rainbowAnimationActive;
+// Per-frame scratch; only the main-loop renderer accesses it.
 static __pdata uint8_t frameLayerColors;
 static ACTION_BIT startupWaiting;
 static ACTION_BIT startupWarning;
@@ -122,7 +123,7 @@ uint8_t indicatorBrightness(uint8_t options) {
 }
 
 void updateLeds() {
-  perKeyRainbowActive = 0;
+  rainbowAnimationActive = 0;
   if (startupWaiting) return;
   if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
@@ -132,7 +133,7 @@ void updateLeds() {
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
   frameLayerColors = 0;
   if (!previewOptions && !palette) frameLayerColors = configLayerPaletteOffset(layer);
-  perKeyRainbowActive = options >= 0xF4 && (!previewOptions || (options & 8));
+  rainbowAnimationActive = options >= 0xF4 && (!previewOptions || (options & 8));
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t indicator = indicatorBrightness(options);
   uint8_t keyLevel = ledSettings[3];
@@ -152,7 +153,7 @@ void updateLeds() {
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t color = frameLayerColors ? configLedColorAt(frameLayerColors, i) : palette;
     uint8_t level = indicator;
-    if (frameLayerColors && color == 15) perKeyRainbowActive = 1;
+    if (frameLayerColors && color == 15) rainbowAnimationActive = 1;
     uint8_t red;
     uint8_t green;
     uint8_t blue;
@@ -168,7 +169,7 @@ void updateLeds() {
         if (pressed || !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK)) {
           color = pressed;
           level = keyLevel;
-          if (color == 15) perKeyRainbowActive = 1;
+          if (color == 15) rainbowAnimationActive = 1;
         }
       }
     }
@@ -530,7 +531,7 @@ void loop() {
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
       rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
   {
-    if (perKeyRainbowActive) {
+    if (rainbowAnimationActive) {
       rainbowChanged = (uint8_t)now;
       rainbowHue++;
       // Advance each physical LED at its original staggered frame cadence.

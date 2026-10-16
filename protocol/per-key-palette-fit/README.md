@@ -12,14 +12,29 @@ builder, small model, opt-code-size, 24MHz, 148 USB DMA bytes and preview enable
 Diagnostic links use 16,384 bytes only to measure candidates over the real
 14,336-byte application limit. These diagnostic outputs are not deployable.
 
-| Candidate | Parent | Flash Six / Three | Saving Six / Three | Stack Six / Three | Status |
+| Candidate | Parent | Flash Six / Three | Saving Six / Three | Stack Six / Three | Disposition |
 | --- | --- | --- | --- | --- | --- |
-| Original Ideal | Original Probe | 14478 / 14510 | — | 82 / 85 | Preserved in original experiment |
-| Ignore Nibble | Original Ideal | 14478 / 14474 | 0 / 36 | 82 / 85 | Included |
-| Ignore Unused | Ignore Nibble | 14440 / 14436 | 38 / 38 | 82 / 85 | Included; full host suites adapted |
-| Palette Cursor | Ignore Unused | 14432 / 14428 | 8 / 8 | 82 / 85 | Measured feature candidate |
-| Unified Rainbow | Palette Cursor | 14374 / 14370 | 58 / 58 | 81 / 84 | Measured feature candidate |
-| Selected Color | Unified Rainbow | 14374 / 14370 | 0 / 0 | 82 / 85 | Same flash, recovers one stack byte |
+| ignore-nibble | original ideal | 14478 / 14474 | 0 / 36 | 82 / 85 | Selected or cumulative control |
+| ignore-unused | ignore-nibble | 14440 / 14436 | 38 / 38 | 82 / 85 | Selected or cumulative control |
+| palette-cursor | ignore-unused | 14432 / 14428 | 8 / 8 | 82 / 85 | Selected or cumulative control |
+| unified-rainbow | palette-cursor | 14374 / 14370 | 58 / 58 | 81 / 84 | Selected or cumulative control |
+| selected-color | unified-rainbow | 14374 / 14370 | 0 / 0 | 82 / 85 | Selected or cumulative control |
+| validation-cursor | selected-color | 14362 / 14358 | 12 / 12 | 82 / 85 | Selected or cumulative control |
+| inline-colors | validation-cursor | 14388 / 14384 | -26 / -26 | 81 / 84 | Not selected |
+| pdata-layer | validation-cursor | 14362 / 14358 | 0 / 0 | 82 / 85 | Not selected |
+| pdata-palettes | validation-cursor | 14364 / 14360 | -2 / -2 | 83 / 86 | Not selected |
+| byte-colors | validation-cursor | 14346 / 14342 | 16 / 16 | 82 / 85 | Selected or cumulative control |
+| global-layer | validation-cursor | 14350 / 14346 | 12 / 12 | 82 / 85 | Selected or cumulative control |
+| byte-global | global-layer | 14334 / 14330 | 16 / 16 | 82 / 85 | Selected or cumulative control |
+| global-offsets | byte-global | 14346 / 14342 | -12 / -12 | 82 / 85 | Not selected |
+| stack-restore | byte-global | 14358 / 14354 | -24 / -24 | 90 / 93 | Not selected |
+| effect-clear | byte-global | 14336 / 14332 | -2 / -2 | 82 / 85 | Not selected |
+| crc-fold | byte-global | 14364 / 14360 | -30 / -30 | 82 / 85 | Not selected |
+| crc-bytes | byte-global | 14346 / 14342 | -12 / -12 | 82 / 85 | Not selected |
+| narrow-metadata | byte-global | 14308 / 14304 | 26 / 26 | 84 / 87 | Selected or cumulative control |
+| stack-raw | narrow-metadata | 14332 / 14328 | -24 / -24 | 91 / 94 | Not selected |
+| stack-full | narrow-metadata | 14332 / 14328 | -24 / -24 | 92 / 95 | Selected or cumulative control |
+| final | stack-full | 14332 / 14328 | 0 / 0 | 92 / 95 | Selected or cumulative control |
 
 Each candidate has a complete independent patch against `bc3341b`, a source
 snapshot and native logs/maps under `/private/tmp/macropad-v16-fit/<candidate>/`,
@@ -75,9 +90,64 @@ cuts to LED modes, timing policies, brightness controls or animation options.
 
 ## Checkpoints and Validation
 
-The initial ignored-field checkpoint is still over the real flash limit. Full
-host suites pass with preview enabled; the no-preview run is recorded separately
-in the temporary artifact directory. Final selected candidates require rerunning
-the complete host suites and both real-limit native builds. No candidate is
-claimed fitted or hardware validated at this checkpoint. Configurator, uploader,
-site and archive work are deferred or unchanged, not claimed validated here.
+The final firmware passes complete host suites with preview enabled and disabled,
+including the independent sleep-integration changes present in the shared working
+tree during testing. Both real-limit native builds pass layout/startup/interrupt
+storage checks at 14,332/14,328 flash bytes, leaving 4/8. Stack reserve is 92/95,
+an increase of two bytes on both boards versus published firmware. PSEG107,
+ordinary XSEG372/363, absolute134 and USB148 total761/752 external bytes; this is
+nine additional external bytes per board. No feature cuts or integrity changes.
+
+The exact-buffer AddressSanitizer [bounds probe](bounds-probe.c) passes 511,520
+sealed-image cases, including exhaustive metadata/pool count boundaries and
+20,000 deterministic malformed images. New palette tests compare 508,064 frames
+per board/preview setting to an independent renderer reference and exercise
+ignored-field validation and execution. The final four runs compare 2,032,256
+frames. Both real-limit HEX outputs match their diagnostic counterparts.
+
+Firmware checkpoints: `7540c0e` adds the ideal feature and ignored-field changes;
+`397c2f6` records the first feature-specific fit. The final stack-preserving
+checkpoint follows those changes. Hardware validation and configurator work are
+pending. No releases, archives or active editor files were changed.
+
+
+## Final Selection and Rejected Attempts
+
+The final selection combines direct option cursors, one cached animation gate,
+a selected-color renderer, byte-sized packed-color addressing, and one paged
+frame-palette scratch byte. The color lookup remains a C function: inlining it
+increased flash by 26 bytes and reduced stack, so it was rejected. Local pdata
+qualifiers alone either had no effect because SDCC retained a register or cost
+two flash bytes; a persistent main-loop frame scratch offset saved 12 instead.
+Moving both offsets to globals lost 12 bytes versus storing only the layer offset.
+
+After the feature first fitted, broader probes explored stack preservation.
+Clearing temporary effects before other decoding grew code by two bytes. Two
+equivalent tableless CRC-16 forms grew code by 30 and 12 bytes; neither was
+adopted, and the existing CRC-16 implementation is unchanged.
+
+The selected general arithmetic change narrows the metadata subtotal before
+adding the string pool. The already validated maxima are 9 header bytes +110
+fixed layer bytes +15 palette bytes +93 chord bytes +24 timer bytes =251 on
+six-key hardware, or245 on three-key hardware. This subtotal cannot overflow a
+byte; the following pool addition and final image bound remain 16-bit. Builds
+with CONFIG_TIMED_MAX greater than4 retain the original wide arithmetic. This
+saves26 flash bytes per board and recovers two stack bytes. No bounds checks
+are removed or weakened.
+
+Moving seven raw input levels from internal to ordinary external RAM and the
+last-layer byte from internal to paged external RAM adds24 flash bytes, but
+restores eight internal bytes. Combined with the arithmetic change, final stack
+reserve is92/95 instead of the prototype's82/85 and published90/93. The alternative
+that moved only raw levels has identical flash, PSEG106 and stack91/94; the selected
+form uses one more paged byte for another stack byte. Page-zero still has one
+unused byte; all linked regions and absolute active-image separation are checked.
+
+The new format reference is [Configuration Format V16](../config-v16.md).
+The historical probe files remain unchanged. The standalone bounds probe can be
+reproduced with:
+
+```sh
+cc -std=c99 -O1 -g -fsanitize=address -D__data= -D__idata= -D__pdata= -D__xdata= -D__code= protocol/per-key-palette-fit/bounds-probe.c src/config.c -o /private/tmp/v16-bounds
+/private/tmp/v16-bounds
+```

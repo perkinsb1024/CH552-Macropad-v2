@@ -538,5 +538,221 @@
       "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
       "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
     }
+  },
+  {
+    "label": "crc-fold",
+    "variant": 0,
+    "diagnostic_exit": 0,
+    "flash": 14364,
+    "paged": 106,
+    "external": 365,
+    "stack": 82,
+    "free": -28,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "d5803301124abdff6b37559dabf7d8321f59e9f8a496842034758b1bfe33e640",
+      "src/config.c": "c2cbd34aabca2c1a0d60159c26642e1618d3ad4d29e11b31cadf8fb8a5bcd19d",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "crc-fold",
+    "variant": 1,
+    "diagnostic_exit": 0,
+    "flash": 14360,
+    "paged": 106,
+    "external": 356,
+    "stack": 85,
+    "free": -24,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "d5803301124abdff6b37559dabf7d8321f59e9f8a496842034758b1bfe33e640",
+      "src/config.c": "c2cbd34aabca2c1a0d60159c26642e1618d3ad4d29e11b31cadf8fb8a5bcd19d",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "crc-bytes",
+    "variant": 0,
+    "diagnostic_exit": 0,
+    "flash": 14346,
+    "paged": 106,
+    "external": 365,
+    "stack": 82,
+    "free": -10,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "d5803301124abdff6b37559dabf7d8321f59e9f8a496842034758b1bfe33e640",
+      "src/config.c": "9b44b148f9db42fe23a4b59d60988b72334f16d6498fb49c634c86bdfdd874a3",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "crc-bytes",
+    "variant": 1,
+    "diagnostic_exit": 0,
+    "flash": 14342,
+    "paged": 106,
+    "external": 356,
+    "stack": 85,
+    "free": -6,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "d5803301124abdff6b37559dabf7d8321f59e9f8a496842034758b1bfe33e640",
+      "src/config.c": "9b44b148f9db42fe23a4b59d60988b72334f16d6498fb49c634c86bdfdd874a3",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "narrow-metadata",
+    "variant": 0,
+    "diagnostic_exit": 0,
+    "flash": 14308,
+    "paged": 106,
+    "external": 365,
+    "stack": 84,
+    "free": 28,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "d5803301124abdff6b37559dabf7d8321f59e9f8a496842034758b1bfe33e640",
+      "src/config.c": "d675bfbab513badfd5b7b7aff491670ea1f5104bc8f5ade089d64cc7d88ee3a9",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "narrow-metadata",
+    "variant": 1,
+    "diagnostic_exit": 0,
+    "flash": 14304,
+    "paged": 106,
+    "external": 356,
+    "stack": 87,
+    "free": 32,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "d5803301124abdff6b37559dabf7d8321f59e9f8a496842034758b1bfe33e640",
+      "src/config.c": "d675bfbab513badfd5b7b7aff491670ea1f5104bc8f5ade089d64cc7d88ee3a9",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "stack-raw",
+    "variant": 0,
+    "diagnostic_exit": 0,
+    "flash": 14332,
+    "paged": 106,
+    "external": 372,
+    "stack": 91,
+    "free": 4,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "80f4021af75843427a00d5761041639a73c8ec7a522d739fcc39cf1be5f712f9",
+      "src/config.c": "d675bfbab513badfd5b7b7aff491670ea1f5104bc8f5ade089d64cc7d88ee3a9",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "stack-raw",
+    "variant": 1,
+    "diagnostic_exit": 0,
+    "flash": 14328,
+    "paged": 106,
+    "external": 363,
+    "stack": 94,
+    "free": 8,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "80f4021af75843427a00d5761041639a73c8ec7a522d739fcc39cf1be5f712f9",
+      "src/config.c": "d675bfbab513badfd5b7b7aff491670ea1f5104bc8f5ade089d64cc7d88ee3a9",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "stack-full",
+    "variant": 0,
+    "diagnostic_exit": 0,
+    "flash": 14332,
+    "paged": 107,
+    "external": 372,
+    "stack": 92,
+    "free": 4,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "96670fc0cd43388260eb45c0029998d0174fb6f9a8aa4ade2da206d89be5e01d",
+      "src/config.c": "d675bfbab513badfd5b7b7aff491670ea1f5104bc8f5ade089d64cc7d88ee3a9",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "stack-full",
+    "variant": 1,
+    "diagnostic_exit": 0,
+    "flash": 14328,
+    "paged": 107,
+    "external": 363,
+    "stack": 95,
+    "free": 8,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "96670fc0cd43388260eb45c0029998d0174fb6f9a8aa4ade2da206d89be5e01d",
+      "src/config.c": "d675bfbab513badfd5b7b7aff491670ea1f5104bc8f5ade089d64cc7d88ee3a9",
+      "src/config.h": "0b4d1a18b3248022c91f66f7520ca2be7c0b6e2037261f9859860f7f555bf465",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "final",
+    "variant": 0,
+    "diagnostic_exit": 0,
+    "flash": 14332,
+    "paged": 107,
+    "external": 372,
+    "stack": 92,
+    "free": 4,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "5d3642a9dcffef7cbbfce61c6f226b4811494694f3bebaa77836bc330048f324",
+      "src/config.c": "1ba57c32ca4f292a10a6469b6d38e3762e88780d6bd39d2fb660ab6c793fbd65",
+      "src/config.h": "2458da468c581e8d601a2e185b5d6c4e210b5cdb701a795ee3effc680f63af35",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
+  },
+  {
+    "label": "final",
+    "variant": 1,
+    "diagnostic_exit": 0,
+    "flash": 14328,
+    "paged": 107,
+    "external": 363,
+    "stack": 95,
+    "free": 8,
+    "source_sha256": {
+      "CH552_Universal_Macropad.ino": "5d3642a9dcffef7cbbfce61c6f226b4811494694f3bebaa77836bc330048f324",
+      "src/config.c": "1ba57c32ca4f292a10a6469b6d38e3762e88780d6bd39d2fb660ab6c793fbd65",
+      "src/config.h": "2458da468c581e8d601a2e185b5d6c4e210b5cdb701a795ee3effc680f63af35",
+      "src/actions.c": "b550d8427ac8e0c8025bff292d0a88b279a80701a905b8ffd90e46d5ca49ba7a",
+      "src/timed_actions.inc": "a6bbef7b22ed866caf94be25a2653026779245687bb7a901f0fe1013a17c659e",
+      "src/protocol_firmware.c": "7e2d8b94cb3ab431841ff12598a60af054253d35f6648fc77a7ce4de28a7fa4b"
+    }
   }
 ]

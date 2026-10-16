@@ -392,7 +392,7 @@ static void testIgnoredFields(void) {
         for (uint8_t nibble = 0; nibble < 16; nibble++) {
             uint8_t offset = configLayerPaletteOffset(0)+1;
             activeConfig[offset] = (activeConfig[offset] & 15) | (nibble << 4);
-            activeConfig[configLedColorOffset(0)+1] |= nibble << 4;
+            activeConfig[configLedColorOffset(0)+1] = (activeConfig[configLedColorOffset(0)+1] & 15) | (nibble << 4);
             sealImage(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
             updateLeds(); assert(memcmp(ledData, expected, NUM_BYTES) == 0);
         }

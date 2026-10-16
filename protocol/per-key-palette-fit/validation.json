@@ -1,0 +1,23 @@
+{
+  "base_firmware_revision": "397c2f6",
+  "final_patch": "final.patch",
+  "source_sha256": {
+    "CH552_Universal_Macropad.ino": "5d3642a9dcffef7cbbfce61c6f226b4811494694f3bebaa77836bc330048f324",
+    "src/config.c": "1ba57c32ca4f292a10a6469b6d38e3762e88780d6bd39d2fb660ab6c793fbd65",
+    "src/config.h": "2458da468c581e8d601a2e185b5d6c4e210b5cdb701a795ee3effc680f63af35"
+  },
+  "host_preview": "passed",
+  "host_no_preview": "passed",
+  "real_limit_native_six": "passed",
+  "real_limit_native_three": "passed",
+  "bounds_asan_default": "Passed 511520 sealed-image bounds probes with exact 128-byte buffers.",
+  "bounds_asan_seven_timer_override": "Passed 806432 sealed-image bounds probes with exact 128-byte buffers.",
+  "independent_uncommitted_test_edits": {
+    "tests/input_test.c": "8591a4dc1f2163baab116596d78f54375febbf7a7600ea89d63621d11da61a1b",
+    "tests/run_host_tests.py": "5a13e553ead8790ac75aa8602deeca73fe5cc2f9fd113242fcb4ab960411dfd4",
+    "tests/sleep_integration_test.c": "371a790bb04b556b5429f40153a7240aa549973b09c8528a0435276a3795c889"
+  },
+  "hardware_validation": "not performed",
+  "configurator_v16": "deferred",
+  "release_generation": "not requested or performed"
+}
