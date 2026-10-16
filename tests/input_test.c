@@ -42,10 +42,14 @@ static uint8_t frameCount;
 static uint8_t bytesWritten;
 static uint8_t indicatorRisingEdges;
 static uint8_t indicatorWasLit;
+#ifndef TEST_REAL_PROTOCOL
 static uint8_t resetPending;
+#endif
 static uint8_t flash[CONFIG_SIZE];
+#ifndef TEST_REAL_PROTOCOL
 uint8_t activeConfigValid;
 volatile uint8_t protocolState;
+#endif
 
 uint32_t millis(void) { return currentMs; }
 void delayMicroseconds(uint16_t us) {
@@ -121,6 +125,7 @@ void USB_EP1_reset(void) {}
 void USB_EP1_receiveReady(void) {}
 void USB_setKeyboardLedStatus(uint8_t leds) { (void)leds; }
 uint8_t USB_EP1_sendConfig(const uint8_t *reply) { (void)reply; return 1; }
+#ifndef TEST_REAL_PROTOCOL
 void protocolReset(void) { resetPending = 1; }
 void protocolInit(void) {
     memcpy(activeConfig, flash, CONFIG_SIZE);
@@ -137,6 +142,7 @@ void protocolPoll(uint16_t now) {
     }
 }
 uint8_t protocolReceive(const uint8_t *packet) { (void)packet; return 0; }
+#endif
 
 #include "../CH552_Universal_Macropad.ino"
 
