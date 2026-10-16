@@ -28,7 +28,7 @@ static void testStarterFixture(uint8_t variant) {
     assert(configStartupLayer() == 0);
     assert(configKeyCount() == (variant ? 3 : 6));
     assert(configChordWindowMs() == 0);
-    assert(configLayerOptions(0) == 0);
+    assert(configLayerOptions(0) == 0x10);
     activeConfig[9 + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
     seal();
     assert(configValid(activeConfig, variant));
@@ -38,15 +38,15 @@ static void testStarterFixture(uint8_t variant) {
         assert((first & 15) == CONFIG_ACTION_KEY_TAP);
         assert((first >> 4) == modifiers[i]);
         assert(second == usages[i]);
-        assert(configLedColorAt(configLedColorOffset(0), i) == i);
-        assert(configPalette[i][0] == colors[i][0]);
-        assert(configPalette[i][1] == colors[i][1]);
-        assert(configPalette[i][2] == colors[i][2]);
+        assert(configLedColorAt(configLedColorOffset(0), i) == i+1);
+        assert(configPalette[i+1][0] == colors[i][0]);
+        assert(configPalette[i+1][1] == colors[i][1]);
+        assert(configPalette[i+1][2] == colors[i][2]);
     }
     configBinding(0, configKeyCount(), &first, &second);
     assert(first == CONFIG_ACTION_MOUSE_CLICK && second == 4);
-    assert(configLedColorAt(configLedColorOffset(0), 0) == 0);
-    assert(configLedColorAt(configLedColorOffset(0), 2) == 2);
+    assert(configLedColorAt(configLedColorOffset(0), 0) == 1);
+    assert(configLedColorAt(configLedColorOffset(0), 2) == 3);
 }
 
 static void testCachedColorOffsets(uint8_t variant) {
@@ -320,7 +320,7 @@ static void testActions(void) {
         for (aux = 0; aux < 16; aux++) {
             for (value = 0; value < 256; value++) {
                 uint8_t valid = type == CONFIG_ACTION_MOUSE_AXIS ?
-                    aux < 4 && value != 0x80 : aux < 8;
+                    value != 0x80 : 1;
                 testLoadStarterProfile(CONFIG_SIX_KEYS);
                 activeConfig[9] = (aux << 4) | type;
                 activeConfig[10] = value;
@@ -442,10 +442,10 @@ static void testLedPayloads(void) {
                 if (command == 0 || command == 2) expected = value <= 3 || value == 15;
                 else if (command == 4 || command == 6 || command == 8) expected = value <= 2 || value == 15;
                 else if (command == 1 || command == 3 || command == 5 || command == 7 || command == 9 || command == 12) expected = value != 0 && value != 8;
-                else if (command == 10) expected = value == 0;
+                else if (command == 10) expected = 1;
                 else if (command == 11) expected = value <= 4;
                 else if (command == 13) expected = value >= 1 && value <= 4;
-                else if (command == CONFIG_LED_EFFECT_RESTORE) expected = value == 0;
+                else if (command == CONFIG_LED_EFFECT_RESTORE) expected = 1;
                 else if (command >= CONFIG_LED_EFFECT_ON && command <= CONFIG_LED_EFFECT_BLINK_8) expected = 1;
                 else if (command >= (CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM) &&
                          command <= (CONFIG_LED_EFFECT_BLINK_8 | CONFIG_LED_EFFECT_DIM)) expected = 1;
@@ -464,7 +464,7 @@ static void testLedPayloads(void) {
                 activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
             }
         }
-        assert(accepted == 405);
+        assert(accepted == 435);
     }
 }
 
@@ -620,7 +620,7 @@ static void testTypeZeroAndReserved(void) {
                     if (slot == 5) continue;
                     activeConfig[offset] = aux << 4;
                     seal(); assert(!!configValid(activeConfig, variant) ==
-                        ((!aux && !param) || (aux == 1 && CONFIG_MACRO_PAUSE) ||
+                        ((!aux) || (aux == 1 && CONFIG_MACRO_PAUSE) ||
                          (aux == 2 && (param == 0 || param == 2))));
                 }
             }

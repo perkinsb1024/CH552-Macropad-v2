@@ -189,7 +189,7 @@ static void testStartupIndicatorEnumeration(void) {
                 }
                 testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
                 activeConfig[9 + size * (layer + 1) - 1] =
-                    (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                    (4 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
                     (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
                 saveStartupProfile();
                 indicatorRisingEdges = indicatorWasLit = 0;
@@ -339,7 +339,7 @@ static void testIndicatorBrightness(void) {
              behavior <= CONFIG_LAYER_INDICATOR_ALWAYS_ON; behavior++) {
             for (uint8_t full = 0; full < 2; full++) {
                 activeConfig[9 + size * (layer + 1) - 1] =
-                    (3 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                    (4 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
                     (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) | full;
                 currentMs = 65500;
                 firmwareApplyConfig(1);
@@ -563,23 +563,23 @@ static void testTransparencyAndRainbow(void) {
     uint8_t before[NUM_BYTES];
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfigValid = 1;
-    activeConfig[colorOffset] |= 15; // Key zero has an Off pressed color.
+    activeConfig[colorOffset] &= 0xF0; // Key zero has an Off pressed color.
     P1 = P3 = 0xFF;
     P1 &= ~0x02;
     for (uint8_t full = 0; full < 2; full++) {
-        activeConfig[optionsOffset] = 0x3C | full; // Always-on amber.
+        activeConfig[optionsOffset] = 0x4C | full; // Always-on amber.
         activeConfig[CONFIG_HEADER_LED] &= ~CONFIG_HEADER_TRANSPARENT_BLACK;
         firmwareApplyConfig(1);
         assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
         activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
         updateLeds();
         assertIndicatorLeds(full, 1, 0);
-        activeConfig[colorOffset] &= 0xF0; // A nonblack pressed color remains full brightness.
+        activeConfig[colorOffset] = (activeConfig[colorOffset] & 0xF0) | 1; // A nonblack pressed color remains full brightness.
         updateLeds();
         assert(ledData[0] == 0 && ledData[1] == 255 && ledData[2] == 0);
-        activeConfig[colorOffset] |= 15;
+        activeConfig[colorOffset] &= 0xF0;
         // Transparency has no background to reveal in None mode.
-        activeConfig[optionsOffset] = 0;
+        activeConfig[optionsOffset] = 0x10;
         updateLeds();
         for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] == 0);
         // Rainbow is identical whether the transparent key is held or idle.
@@ -648,7 +648,7 @@ static void testMomentaryIndicatorCancellation(void) {
     testSetLayout(2, 0, 0); // Two layers, starting on zero.
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
     activeConfig[10] = 1;
-    activeConfig[9 + size - 1] = 0x3C; // Always-on amber beneath the momentary layer.
+    activeConfig[9 + size - 1] = 0x4C; // Always-on amber beneath the momentary layer.
     activeConfig[9 + 2 * size - 1] = 0xF4; // Timed Rainbow on the momentary layer.
     activeConfigValid = 1;
     P1 = P3 = 0xFF;
@@ -679,7 +679,7 @@ static void testSameLayerIndicator(void) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
         memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
         activeConfig[9] = types[i];
-        activeConfig[9 + size - 1] = 0x35; // Timed full-brightness amber.
+        activeConfig[9 + size - 1] = 0x45; // Timed full-brightness amber.
         activeConfigValid = 1;
         P1 = P3 = 0xFF;
         currentMs = 10000;
@@ -866,7 +866,7 @@ static void initAutoSleep(void) {
     activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] =
         CONFIG_LAYER_OPT_AUTO_SLEEP | CONFIG_LAYER_OPT_FULL_BRIGHTNESS |
         (CONFIG_LAYER_INDICATOR_ALWAYS_ON << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
-        (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+        (4 << CONFIG_LAYER_OPT_COLOR_SHIFT);
     activeConfigValid = 1;
     P1 = P3 = 0xFF; UsbConfig = 1;
     startupWaiting = startupWarning = 0;
@@ -987,11 +987,11 @@ static void testAutoSleepWakeIndicator(void) {
                     testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
                     activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
                     memset(activeConfig + 9 + size * layer + 2 * (NUM_LEDS + 3),
-                           0xFF, (NUM_LEDS + 1) / 2); // Suppress held-key feedback.
+                           0, (NUM_LEDS + 1) / 2); // Suppress held-key feedback.
                     activeConfig[9 + size * (layer + 1) - 1] =
                         CONFIG_LAYER_OPT_AUTO_SLEEP | full |
                         (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
-                        (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+                        (4 << CONFIG_LAYER_OPT_COLOR_SHIFT);
                     if (!show) activeConfig[CONFIG_HEADER_SLEEP] &= ~CONFIG_SLEEP_INDICATOR;
                     firmwareApplyConfig(1);
                     // Finish the startup indication before sleeping.
@@ -1101,7 +1101,7 @@ static void testSleepSettingsInput(void) {
         activeConfig[CONFIG_HEADER_SLEEP] = consume ? CONFIG_SLEEP_CONSUME : 0;
         activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
         activeConfig[9 + size] = CONFIG_ACTION_KEY_HOLD; activeConfig[10 + size] = 4;
-        activeConfig[9 + 2 * size - 1] = CONFIG_LAYER_OPT_AUTO_SLEEP;
+        activeConfig[9 + 2 * size - 1] = 0x10 | CONFIG_LAYER_OPT_AUTO_SLEEP;
         firmwareApplyConfig(1);
         actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
         advanceSleep(220UL * 256); frameCount = 0;

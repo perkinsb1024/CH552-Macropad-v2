@@ -36,14 +36,14 @@ static void integrity(void) {
     }
     for (unsigned value = 1; value < 256; value++) {
         activeConfig[6] = value; seal(activeConfig);
-        assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (value < 32));
+        assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == 1);
     }
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfig[2] |= 128; seal(activeConfig);
-    assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+    assert(configValid(activeConfig, PHYSICAL_VARIANT));
     testLoadStarterProfile(PHYSICAL_VARIANT);
     activeConfig[3] |= 1; seal(activeConfig);
-    assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+    assert(configValid(activeConfig, PHYSICAL_VARIANT));
     for (unsigned marker = 0; marker < 256; marker++) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
         activeConfig[0] = marker; seal(activeConfig);

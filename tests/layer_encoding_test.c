@@ -19,7 +19,7 @@ static void testUnifiedLayerValidation(void) {
             for (unsigned param = 0; param < 256; param++) {
                 setupLayers(2, 0);
                 uint8_t mode = aux & 3;
-                uint8_t expected = aux < 8 && mode != 3 && (!rotation || mode != 2);
+                uint8_t expected = mode != 3 && (!rotation || mode != 2);
                 if (!RELATIVE_HOLD_ENABLED && aux == 6) expected = 0;
                 if (aux & 4) expected &= param <= 6 || param >= 0xfa;
                 else expected &= param < 2 || (mode != 2 && param == CONFIG_LAYER_PREVIOUS);

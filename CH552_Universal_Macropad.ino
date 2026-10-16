@@ -77,6 +77,8 @@ __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with acti
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
+// Cached during rendering; custom rainbow sources must also drive the clock.
+static ACTION_BIT perKeyRainbowActive;
 static ACTION_BIT startupWaiting;
 static ACTION_BIT startupWarning;
 __xdata uint16_t errorLedChanged;
@@ -119,6 +121,7 @@ uint8_t indicatorBrightness(uint8_t options) {
 }
 
 void updateLeds() {
+  perKeyRainbowActive = 0;
   if (startupWaiting) return;
   if (!activeConfigValid && !previewOptions) return;
   uint8_t layer = actionsLayer();
@@ -126,6 +129,8 @@ void updateLeds() {
   uint8_t options = previewOptions ? previewOptions : configLayerOptions(layer);
   uint8_t behavior = (options >> CONFIG_LAYER_OPT_INDICATOR_SHIFT) & 3;
   uint8_t palette = options >> CONFIG_LAYER_OPT_COLOR_SHIFT;
+  __idata uint8_t layerColors = 0;
+  if (!previewOptions && !palette) layerColors = configLayerPaletteOffset(layer);
   uint8_t phases = layerIndicatorPhasesLeft;
   uint8_t indicator = indicatorBrightness(options);
   uint8_t keyLevel = ledSettings[3];
@@ -145,9 +150,14 @@ void updateLeds() {
       (colorPreviewActive ? behavior == CONFIG_LAYER_INDICATOR_ALWAYS_ON : behavior != CONFIG_LAYER_INDICATOR_NONE);
   __xdata uint8_t *ledPtr = ledData;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
-    uint8_t color = palette;
+    uint8_t background = layerColors ? configLedColorAt(layerColors, i) : palette;
+    uint8_t color = background;
     uint8_t level = indicator;
     ACTION_BIT rainbow = baseRainbow;
+    if (layerColors && color == 15) {
+      rainbow = 1;
+      perKeyRainbowActive = 1;
+    }
     uint8_t red;
     uint8_t green;
     uint8_t blue;
@@ -157,12 +167,13 @@ void updateLeds() {
     if (phases) {
       if (behavior == CONFIG_LAYER_INDICATOR_BLINK_BY_LAYER && (phases & 1)) level = 0;
     } else if (keyLevel && stableState[i] &&
-               ((color = configLedColorAt(colors, i)) != 15 ||
+               ((color = configLedColorAt(colors, i)) != 0 ||
                 !(activeConfig[CONFIG_HEADER_LED] & CONFIG_HEADER_TRANSPARENT_BLACK))) {
       level = keyLevel;
-      rainbow = 0; // Key palette 15 is Off, never Rainbow.
+      rainbow = color == 15;
+      if (rainbow) perKeyRainbowActive = 1;
     } else {
-      color = palette;
+      color = background;
       if (behavior != CONFIG_LAYER_INDICATOR_ALWAYS_ON) level = 0;
     }
     if (!level) {
@@ -528,7 +539,7 @@ void loop() {
       if (!(animationOptions & 8)) animationOptions = 0;
     } else if (activeConfigValid) animationOptions = configLayerOptions(actionsLayer());
     // Equivalent to (animationOptions & 0xFC) > 0xF0 for every byte.
-    if (animationOptions >= 0xF4) {
+    if (animationOptions >= 0xF4 || perKeyRainbowActive) {
       rainbowChanged = (uint8_t)now;
       rainbowHue++;
       // Advance each physical LED at its original staggered frame cadence.

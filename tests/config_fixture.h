@@ -11,10 +11,20 @@ static inline void testSetVariant(uint8_t variant) {
 static inline void testSetTimedCount(uint8_t count) {
     activeConfig[CONFIG_HEADER_COUNTS] = (activeConfig[CONFIG_HEADER_COUNTS] & ~7) | count;
 }
+// Empty v16 fixtures use a uniform Red source, not the zero custom-palette sentinel.
+static inline void testUniformLayers(void) {
+    uint8_t size = (activeConfig[CONFIG_HEADER_LAYERS] & 1) ? 15 : 22;
+    uint8_t layers = ((activeConfig[CONFIG_HEADER_LAYERS] >> 1) & 7) + 1;
+    for (uint8_t layer = 0; layer < layers; layer++) {
+        uint16_t options = 9 + (uint16_t)size * (layer + 1) - 1;
+        if (options < CONFIG_SIZE && !(activeConfig[options] & 0xF0)) activeConfig[options] |= 0x10;
+    }
+}
 static inline void testSetLayout(uint8_t layers, uint8_t startup, uint8_t timers) {
     activeConfig[CONFIG_HEADER_LAYERS] = (activeConfig[CONFIG_HEADER_LAYERS] & 1) |
         ((layers - 1) << 1) | (startup << 4);
     testSetTimedCount(timers);
+    testUniformLayers();
 }
 static inline void testSetChordCount(uint8_t count) {
     activeConfig[CONFIG_HEADER_COUNTS] = (activeConfig[CONFIG_HEADER_COUNTS] & 7) | (count << 3);
@@ -45,7 +55,7 @@ static void testLoadStarterProfile(uint8_t variant) {
         activeConfig[offset + 2 * i] = (modifiers[i] << 4) | CONFIG_ACTION_KEY_TAP;
         activeConfig[offset + 2 * i + 1] = usages[i];
         activeConfig[offset + 2 * (keys + 3) + (i >> 1)] |=
-            (i & 1) ? i << 4 : i;
+            (i & 1) ? (i+1) << 4 : i+1;
     }
     activeConfig[offset + 2 * keys] = CONFIG_ACTION_MOUSE_CLICK;
     activeConfig[offset + 2 * keys + 1] = 4;
@@ -53,7 +63,7 @@ static void testLoadStarterProfile(uint8_t variant) {
     activeConfig[offset + 2 * (keys + 1) + 1] = (uint8_t)-1;
     activeConfig[offset + 2 * (keys + 2)] = CONFIG_ACTION_SCROLL;
     activeConfig[offset + 2 * (keys + 2) + 1] = 1;
-    activeConfig[offset + size - 1] = 0;
+    activeConfig[offset + size - 1] = 0x10;
     crc = configCrc(activeConfig);
     activeConfig[CONFIG_HEADER_CRC] = (uint8_t)crc;
     activeConfig[CONFIG_HEADER_CRC + 1] = (uint8_t)(crc >> 8);

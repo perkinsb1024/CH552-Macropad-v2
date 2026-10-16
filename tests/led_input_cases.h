@@ -153,7 +153,7 @@ static void testTemporaryEffects(void) {
     for (uint8_t behavior = 0; behavior < 4; behavior++) {
         testLoadStarterProfile(PHYSICAL_VARIANT);
         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
-        activeConfig[9 + size - 1] = 1 | (behavior << 2); // Bright red.
+        activeConfig[9 + size - 1] = 0x11 | (behavior << 2); // Bright red.
         P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
         startLayerIndicator(0, currentMs);
         assert(layerIndicatorPhasesLeft == (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 :
@@ -234,16 +234,16 @@ static void testTemporaryEffects(void) {
     activeConfig[9] = activeConfig[10] = 0;
     activeConfig[9 + 2 * (NUM_LEDS + 3)] = 10; // Key 0: blue.
     P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
-    firmwareLedAction(CONFIG_LED_EFFECT_ON, 0); // Bright red.
+    firmwareLedAction(CONFIG_LED_EFFECT_ON, 1); // Bright red.
     P1 &= ~2; currentMs = 1; loop(); currentMs = 11; loop();
     assert((previewOptions & LED_EFFECT_FLAG) && ledData[2] == 255 && ledData[1] == 0);
-    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_1, 0);
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_1, 1);
     assert(ledData[1] == 255 && ledData[2] == 0);
     currentMs = 260; loop(); assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
     currentMs = 510; loop(); assert(!previewOptions && ledData[2] == 255);
-    firmwareLedAction(CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM, 0);
+    firmwareLedAction(CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM, 1);
     assert(ledData[2] == 255 && ledData[1] == 0); // Key retains its bright feedback.
-    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_1 | CONFIG_LED_EFFECT_DIM, 0);
+    firmwareLedAction(CONFIG_LED_EFFECT_BLINK_1 | CONFIG_LED_EFFECT_DIM, 1);
     assert(ledData[1] == 15 && ledData[2] == 0);
     currentMs += 250; loop(); assert(!ledData[1] && !ledData[2]);
     currentMs += 250; loop(); assert(!previewOptions && !layerIndicatorPhasesLeft && ledData[2] == 255);
@@ -422,8 +422,8 @@ static void testSynchronizedBrightness(void) {
     currentMs = 200;
     for (uint8_t full = 0; full < 2; full++) {
         for (uint8_t mode = 0; mode < 4; mode++) {
-            activeConfig[9 + size - 1] = !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
-            activeConfig[9 + 2 * size - 1] = full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+            activeConfig[9 + size - 1] = 0x10 | !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+            activeConfig[9 + 2 * size - 1] = 0x10 | full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
             firmwareApplyConfig(1);
             actionsRotate(0); // Resolve configured brightness from the current layer.
             assert(actionsLayer() == 1);

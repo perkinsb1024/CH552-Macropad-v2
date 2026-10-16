@@ -5,8 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 15 uses the B header and per-layer built-in LED auto-sleep.
-#define CONFIG_VERSION 15
+// Experimental sentinel palette layout; not a published format.
+#define CONFIG_VERSION 16
 #define CONFIG_MARKER 'B'
 #define CONFIG_HEADER_SIZE 9
 #define CONFIG_HEADER_MARKER 0
@@ -56,7 +56,8 @@
 #define CONFIG_HEADER_RAINBOW_PHASE_SHIFT 4
 #define CONFIG_HEADER_RAINBOW_SPEED_SHIFT 6
 #define CONFIG_HEADER_TRANSPARENT_BLACK 0x08
-#define CONFIG_PALETTE_VERSION 3
+#define CONFIG_PALETTE_VERSION 4
+#define CONFIG_PER_KEY_RAINBOW 1
 #define CONFIG_MAX_LAYERS (PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 7 : 5)
 #define CONFIG_SIX_KEYS 0
 #define CONFIG_THREE_KEYS 1
@@ -189,6 +190,8 @@ uint8_t configChordWindowMs(void);
 uint8_t configLayerOptions(uint8_t layer);
 // Call once per frame with a valid layer, then read packed colors by key.
 uint8_t configLedColorOffset(uint8_t layer);
+// Offset of this layer's optional palette, or the section end for layerCount.
+uint8_t configLayerPaletteOffset(uint8_t layer);
 uint8_t configLedColorAt(uint8_t offset, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
 FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);

@@ -61,6 +61,7 @@ static void probeInit(uint8_t timers) {
     memset(activeConfig, 0, CONFIG_SIZE);
     activeConfig[0] = CONFIG_MARKER;
     activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+    testSetVariant(PHYSICAL_VARIANT);
     testSetLayout(3, 0, timers); // Three layers.
     testSetStringLength(0);
     activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_DEFAULT;
@@ -107,7 +108,7 @@ static void validation(void) {
         for (uint8_t scope = 0; scope < 8; scope++) {
             probeInit(1);
             testSetLayout(layers, 0, 1);
-            memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+            memset(activeConfig + 9, 0, CONFIG_SIZE - 9); testUniformLayers();
             setScope(0, scope); probeSeal();
             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) ==
                    (!PROBE_SCOPED || scope <= layers));
@@ -124,7 +125,7 @@ static void validation(void) {
     assert(configStringChar(0, 0) == 'A' && configStringChar(0, 1) == 0);
     // A full string pool fits exactly, then one extra byte is rejected.
     probeInit(1); testSetLayout(1, 0, 1);
-    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+    memset(activeConfig + 9, 0, CONFIG_SIZE - 9); testUniformLayers();
     pool = configTimedOffset() + CONFIG_TIMED_SIZE;
     testSetStringLength(CONFIG_SIZE - pool);
     probeSeal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
