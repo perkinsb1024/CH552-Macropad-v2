@@ -27,10 +27,12 @@ It supports the action map below, including modified consumer holds and relative
 layer holds. It imports binary versions 2–14, JSON versions 1–14 and older local
 drafts by decoding their source format before v15 encoding.
 
-Native builds and automated regressions pass on
-both hardware variants. No pre-built v15 release has been generated, and v15
-hardware validation is outstanding. Published v14 firmware uses its frozen
-configurator at `versions/format-v14/`.
+The pre-built v15 release files use source revision `a91cb995`:
+[three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
+[six-key](../releases/ch552-macropad-6-key-a91cb995.hex). Native builds and
+automated regressions pass on both hardware variants. The user has completed
+v15 firmware hardware validation. The active configurator matches these files;
+v14 firmware uses its frozen configurator at `versions/format-v14/`.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields
@@ -96,7 +98,8 @@ objects retain their meanings when imported. The new action objects are:
 These are exposed as **Media / System with Modifiers** and **Relative Layer**,
 both with **Behavior** set to **Hold**. Both require a physical release and are available on keys, encoder
 presses and chords. Encoder rotation, both timer fields and macro steps reject
-these actions. Earlier JSON/draft versions cannot contain these v15-only types.
+these actions. Both action types were introduced in v14 and remain supported
+when migrating v14 JSON and drafts.
 
 Each JSON layer also has `autoSleep: boolean`, exposed as **Auto-Sleep** in
 **Layer Options**. Missing values default to `false`. Imported binary versions
@@ -122,7 +125,8 @@ older imports remain editable and exportable, with saving blocked until repaired
 
 Published v14 firmware uses the frozen editor at `versions/format-v14/`.
 Connecting it to the active editor offers that archive. The shared firmware
-installer continues to provide the published v14 release and earlier releases.
+installer provides v15 as the latest release and preserves v14 and earlier
+releases with their matching archived editors.
 
 ## Header and Rainbow Settings
 
@@ -147,7 +151,7 @@ Timer counts 5–7 and nonzero reserved bits are rejected. All 32 combinations
 of byte 6 bits 0–4 are valid, even when sleep is disabled on every layer.
 The saved timer count excludes the runtime-only **Auto-Sleep** timer; elapsed
 runtime state does not update DataFlash. Existing per-layer sleep enablement,
-fixed timeout and wake behavior remain in effect.
+selected timeout and wake behavior apply as specified below.
 
 | Selector | **Chord Window** |
 | --- | --- |
@@ -1243,8 +1247,9 @@ The current native builds use the following allocations, in bytes:
 
 Host suites pass with color preview enabled and disabled, and both native
 builds pass real-limit layout/startup checks. The active v15 configurator
-supports the complete encoding above. Hardware validation is outstanding;
-these measurements do not describe the published v14 HEX files.
+supports the complete encoding above. The user has completed v15 firmware
+hardware validation. These measurements describe the v15 release from source
+revision `a91cb995`; both release HEX files match fresh temporary native builds.
 
 Build both hardware variants with the real 14,336-byte application limit:
 

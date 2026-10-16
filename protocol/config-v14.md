@@ -27,7 +27,7 @@ It supports the action map below, including modified consumer holds and relative
 layer holds. It imports binary versions 2–13, JSON versions 1–13 and older local
 drafts by decoding their source format before v14 encoding.
 
-The pre-built v14 release files use source revision `518f6bd3`: [three-key](../releases/ch552-macropad-3-key-518f6bd3.hex) and [six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). Native builds and automated regressions pass on both variants. The user has completed hardware validation.
+The pre-built v14 release files use source revision `518f6bd3`: [three-key](../webUploader/firmware-history/ch552-macropad-3-key-518f6bd3.hex) and [six-key](../webUploader/firmware-history/ch552-macropad-6-key-518f6bd3.hex). Native builds and automated regressions pass on both variants. The user has completed hardware validation.
 
 The firmware validates the version, variant, section bounds, every action,
 string encoding, macro references, and CRC before activation. Reserved fields

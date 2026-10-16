@@ -219,7 +219,7 @@ Return-path warnings explain that this target depends on runtime history.
 The protocol simulator accepts only valid v15 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Previous released firmware has been hardware tested on both geometries; see
-**Release Firmware Status** for published v14 coverage. Bundled `../profiles/*.json`
+**Release Firmware Status** for current v15 coverage. Bundled `../profiles/*.json`
 maximum-capacity starter files use v15 JSON and are checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
@@ -271,12 +271,12 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v14 firmware from revision
-`518f6bd3`: [three-key](../releases/ch552-macropad-3-key-518f6bd3.hex) and
-[six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). The [frozen v14 editor](public/versions/format-v14/) matches
-these releases. The active editor targets format 15 with **Auto-Sleep**; no v15
-release files have been generated. Automated tests and native builds pass on both geometries;
-the user has completed v14 hardware validation.
+The release HEX files and bundled uploader use v15 firmware from revision
+`a91cb995`: [three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
+[six-key](../releases/ch552-macropad-6-key-a91cb995.hex). The
+[active editor](https://perkinsb1024.github.io/CH552-Macropad-v2/) matches
+these releases, including **Auto-Sleep**. The user has completed v15 firmware
+hardware validation. Automated tests and native builds pass on both geometries.
 Older-firmware connections link to the matching archive and updater. Back up
 profiles, update firmware, then load/import and explicitly save in the active
 editor. Older imports preserve action semantics, macros, timer units and storage.
@@ -430,7 +430,9 @@ Sleep selects **Both Off** or **Layers and Keys Dim**, using existing dim
 brightness. Wake restores **Both as Configured** before any unconsumed binding.
 Dimming preserves configured indicator behavior; it does not force lighting on.
 
-Effective layer changes restart the interval and preserve a pending wake.
+Switching between enabled layers preserves elapsed sleep time. Entering a layer
+with **Auto-Sleep** disabled clears the timer and pending wake state, restoring
+configured lighting if asleep. Returning to an enabled layer starts a full timeout.
 Unbound presses and complete encoder turns count as activity; releases, holds,
 partial turns and USB traffic do not. A consumed wake and its release preserve
 an armed one-shot layer. With consumption disabled, the same input executes
@@ -451,7 +453,7 @@ the saved timeout and wake policies in live view.
 The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
 outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
 and file checksums. Published v14 firmware routes there; the shared uploader
-continues to bundle the published v14 release.
+bundles v15 as the latest release and preserves v14 under **Previous Release**.
 
 
 ## Header and Chord Window

@@ -2,13 +2,17 @@
 
 *This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
-The bundled default firmware uses configuration format v14, built from revision
-`518f6bd3`: [three-key](../releases/ch552-macropad-3-key-518f6bd3.hex) and
-[six-key](../releases/ch552-macropad-6-key-518f6bd3.hex). Use the
-[frozen v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/)
-with these files. The installer reads each bundled HEX's format and links to its
-matching editor. Back up profiles before updating; older profiles remain in
-DataFlash with actions inactive until explicitly migrated and saved in v14. The user has completed v14 firmware hardware validation.
+The bundled default firmware uses configuration format v15, built from revision
+`a91cb995`: [three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
+[six-key](../releases/ch552-macropad-6-key-a91cb995.hex). Use the
+[current configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+with these files. V15 adds per-layer **Auto-Sleep** with configurable timeout,
+lighting and wake behavior. The installer reads each bundled HEX's format and
+links to its matching editor. Back up profiles before updating; older profiles
+remain in DataFlash with actions inactive until explicitly migrated and saved
+in v15. Older imports start with **Auto-Sleep** disabled. The user has completed
+v15 firmware hardware validation. The outgoing v14 pair is preserved unchanged
+in `firmware-history/` and uses its frozen v14 configurator.
 
 The static page is built into `webapp/dist/webUploader/` for the existing GitHub Pages site. Its URL after deployment is:
 
@@ -152,7 +156,7 @@ variant retains the selected version when a matching build is available.
 Downloads and installation use the selected entry's SHA-256, size, variant and
 matching configurator link.
 
-`firmware-history/` contains 38 exact historical HEX files for formats 2–13, with
+`firmware-history/` contains 40 exact preserved HEX files for formats 2–14, with
 release commits, publication timestamps and SHA-256 checksums in `index.json`. These are recovered files,
 not regenerated builds. Early firmware constructs **GET_INFO** without a constant
 identity record; its format metadata comes from `src/config.h` at the recorded

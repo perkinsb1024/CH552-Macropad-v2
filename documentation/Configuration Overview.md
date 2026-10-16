@@ -153,7 +153,7 @@ Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
 and application. Buttons 4/5 often mean Back/Forward; those meanings are not
 guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
 may not observe buttons 6–8 even when another application can use them.
-Buttons 4–8 and down/up require v12 firmware. The bundled v14 release supports all eight buttons and these persistent
+Buttons 4–8 and down/up require v12 firmware. The bundled v15 release supports all eight buttons and these persistent
 actions; older firmware uses its matching frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
@@ -563,8 +563,10 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are supported by the [pre-built v14 release firmware](../README.md#how-to-compile-the-firmware)
-and its [matching v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/). Older firmware uses its matching archived editor; versions before v11 do not support macros.
+Macros are supported by the [pre-built v15 release firmware](../README.md#how-to-compile-the-firmware)
+and its [matching configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
+V15 hardware validation is complete. Older firmware uses its matching archived
+editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add Macro**
 2. Select a step to edit it in the **Action Editor**; choose **Add Step** to extend the sequence
