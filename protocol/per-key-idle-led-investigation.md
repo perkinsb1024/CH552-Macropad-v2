@@ -1,5 +1,10 @@
 # Per-Key Layer Color Investigation
 
+The full per-key **Rainbow** design has since been fitted in firmware source
+`4a05616`. See the standalone [V16 Format Reference](config-v16.md) and
+[Fitting Results](per-key-palette-fit/README.md). Configurator planning remains
+separate. The original investigation below is retained as the design history.
+
 Source reviewed: `8c150a0`, configuration format v15. This is a source-based
 design investigation, not an implemented feature. Storage costs are calculated;
 no candidate firmware was compiled, so added program-flash, RAM and stack costs

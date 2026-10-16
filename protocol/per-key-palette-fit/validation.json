@@ -19,5 +19,21 @@
   },
   "hardware_validation": "not performed",
   "configurator_v16": "deferred",
-  "release_generation": "not requested or performed"
+  "release_generation": "not requested or performed",
+  "firmware_revision": "4a05616",
+  "deployment_gate": {
+    "status": "failed",
+    "configurator_tests_passed": 618,
+    "configurator_tests_failed": 80,
+    "reason": "The unchanged v15 editor generates images rejected by the new v16-only firmware validator; configurator integration is explicitly deferred."
+  },
+  "uploader": {
+    "standalone_build": "passed",
+    "tests_passed": 91,
+    "tests_failed": 0
+  },
+  "complete_site": {
+    "build": "passed",
+    "frozen_archive_manifests_verified": 13
+  }
 }

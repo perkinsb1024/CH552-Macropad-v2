@@ -474,6 +474,10 @@
     "final/source/tests/layer_encoding_test.c": "f2b8501c62217f551c0d750da77a574ffab7726b922e528ffb02f39a73e0dbf3",
     "final/source/tests/config_fixture.h": "d6b49e947c0f403350d27f94fb1e76dc9a5ffa9cef5c92943dd53a303e7d29bc",
     "final/source/tests/protocol_test.c": "cd5d47369fd99eeb099d454426d0abf3a2cfc0899d8398ce3cb2f36e792db018",
-    "final/source/tests/modified_hold_test.c": "b442814bc4db4477953b7cbd8e1c573e438097c6cce0754dfe511aa19674e47a"
+    "final/source/tests/modified_hold_test.c": "b442814bc4db4477953b7cbd8e1c573e438097c6cce0754dfe511aa19674e47a",
+    "verify-deploy.log": "9129dc9dd9fd3b07a098290dff1941db525af947b5b6b5480c5cbddf2d255244",
+    "uploader-build.log": "85eb0572826968458cf40ff65f27632593bfce99a9309253d3a84d7e77c621e0",
+    "uploader-tests.log": "863163f59e495e0e094b515f777403d0c207971a0a50c816f797cc4cdf7d06f5",
+    "site-build.log": "8fb1380c7c0937ee26e0eba083fca43ebf964f2fac68d6f754f741ea910ad626"
   }
 }

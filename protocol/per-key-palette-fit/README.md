@@ -107,7 +107,7 @@ frames. Both real-limit HEX outputs match their diagnostic counterparts.
 
 Firmware checkpoints: `7540c0e` adds the ideal feature and ignored-field changes;
 `397c2f6` records the first feature-specific fit. The final stack-preserving
-checkpoint follows those changes. Hardware validation and configurator work are
+firmware checkpoint is `4a05616`. Hardware validation and configurator work are
 pending. No releases, archives or active editor files were changed.
 
 
@@ -151,3 +151,27 @@ reproduced with:
 cc -std=c99 -O1 -g -fsanitize=address -D__data= -D__idata= -D__pdata= -D__xdata= -D__code= protocol/per-key-palette-fit/bounds-probe.c src/config.c -o /private/tmp/v16-bounds
 /private/tmp/v16-bounds
 ```
+
+
+## Deployment Validation With Configurator Work Deferred
+
+The final firmware revision is `4a05616`; final verification ran with only
+independent sleep-test changes and these documentation updates uncommitted.
+No firmware source differed from that revision. Configurator files, uploader
+sources, checked-in firmware releases and frozen archives remain unchanged.
+
+The required `npm run verify:deploy` was attempted on the final firmware and
+existing v15 editor. It stops at configurator tests: 618 pass and 80 fail in 14
+files. The interoperability helper in `webapp/tests/firmware-validator.mjs`
+compiles the active `src/config.c`; positive v15 image cases are correctly rejected
+by the new v16-only validator. The editor still emits v15 images. No tests were
+bypassed and no configurator changes were made to disguise this format mismatch.
+Full deployment validation therefore has not passed and is deferred to the
+separately planned configurator integration.
+
+The later unchanged components were checked independently: standalone uploader
+build passes, all 91 uploader tests pass, and `npm run build` passes TypeScript,
+complete-site/uploader packaging and all 13 frozen archive manifests. These
+individual passes do not turn the failed shared gate into a pass. Existing v15
+release HEX files remain the uploader's latest release; no v16 release was made.
+Logs and hashes are preserved with the other fitting artifacts.
