@@ -1,0 +1,36 @@
+Passed config []
+Passed actions []
+Passed protocol []
+Passed usb [0]
+Passed usb [1]
+Passed header_repacking [0]
+Passed header_repacking [1]
+Passed erase_config []
+Passed modified_hold [0]
+Passed modified_hold [1]
+Passed layer_encoding [0]
+Passed layer_encoding [1]
+Passed macros [0]
+Passed macros [1]
+Passed timed_actions [0]
+Passed timed_actions [1]
+Passed input [0]
+Passed input [1]
+Passed global_sleep [0]
+Passed global_sleep [1]
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK
+.6-key macropad acknowledged bootloader entry.
+..6-key macropad acknowledged bootloader entry.
+..No running macropad found (it may already be in bootloader mode).
+....3-key macropad acknowledged bootloader entry.
+...6-key macropad acknowledged bootloader entry.
+...Automatic bootloader entry unavailable: unsupported
+....
+----------------------------------------------------------------------
+Ran 19 tests in 0.010s
+
+OK

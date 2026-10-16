@@ -1,0 +1,853 @@
+{
+  "baseline_revision": "a91cb995efa57f7290328bf46d26d809547a0bf9",
+  "toolchain": "CH55xDuino 0.0.25, SDCC build.13407_4",
+  "clock_hz": 24000000,
+  "usb_dma_bytes": 148,
+  "flash_limit_bytes": 14336,
+  "baseline": {
+    "six": {
+      "flash_used": 14222,
+      "flash_free": 114,
+      "paged_ram": 105,
+      "ordinary_xram": 365,
+      "absolute_xram": 134,
+      "usb_dma": 148,
+      "total_external_ram": 752,
+      "stack_capacity": 90
+    },
+    "three": {
+      "flash_used": 14218,
+      "flash_free": 118,
+      "paged_ram": 105,
+      "ordinary_xram": 356,
+      "absolute_xram": 134,
+      "usb_dma": 148,
+      "total_external_ram": 743,
+      "stack_capacity": 93
+    }
+  },
+  "finalists": {
+    "a-four-single": {
+      "source_sha256": {
+        "src/actions.c": "c8a169ff480a467736f182300a627d733e5df424bbbcfc07124af98dab6c976a",
+        "src/config.c": "48904656a8a13d0d4fad03a806fdc0cfcf5dda39abae38cf4588a7a5a7852875",
+        "src/config.h": "c520604f3917087208a58c4a0dd743aa17ee169ef678240c8b8d34d0f7f63d29",
+        "src/timed_actions.inc": "df783f309c5776c2f95df442cdac1fe2c18f7b5f9056c0e4fd1b1a68af9c6e63",
+        "tests/config_fixture.h": "f10e3cca7faa8c32ccf290976a443e989e0214d760227e8bf27a2d52e19eaf54",
+        "tests/config_test.c": "41396ac26986f7b06c844da51e80e8ca23872fcd218965cdbc91c5ffb566488c",
+        "tests/global_sleep_fixture.h": "f0e45edf79a60a9ce78254244fb633d7af6ed165ec903497a29fa32c940238f8",
+        "tests/global_sleep_test.c": "184690fcead85fbb781e8df38ad202160de1aba959513c384125f153d46b76d0",
+        "tests/header_repacking_test.c": "3b309a4d19a1ab639f20a91096f0f830b702b6469363ebe46e7938eea01d891d",
+        "tests/input_test.c": "77f05de8817c369767c028ee5a8a7c673911be0ff3730e3a86d90ed49746dbd7",
+        "tests/run_host_tests.py": "242bef98e8fc2b7ce91c8040ebd8a765a9cbcc158e30eda5e32ad11f46ef5541",
+        "tests/timed_actions_test.c": "82f9c6e2bb34294878791d4aa5ece64f3ff09ca31151630209f47209685a86d7"
+      },
+      "files": [
+        "src/actions.c",
+        "src/config.c",
+        "src/config.h",
+        "src/timed_actions.inc",
+        "tests/config_fixture.h",
+        "tests/config_test.c",
+        "tests/global_sleep_fixture.h",
+        "tests/global_sleep_test.c",
+        "tests/header_repacking_test.c",
+        "tests/input_test.c",
+        "tests/run_host_tests.py",
+        "tests/timed_actions_test.c"
+      ],
+      "patch_sha256": "e56045cb4d4b2133731900278450dea71077a9dbb6b0435ccfc05d23b36dcf55",
+      "native": {
+        "six": {
+          "flash_used": 14212,
+          "flash_free": 124,
+          "paged_ram": 105,
+          "ordinary_xram": 365,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 752,
+          "stack_capacity": 90
+        },
+        "three": {
+          "flash_used": 14208,
+          "flash_free": 128,
+          "paged_ram": 105,
+          "ordinary_xram": 356,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 743,
+          "stack_capacity": 93
+        }
+      },
+      "validation": {
+        "host_preview_enabled": "passed, both geometries",
+        "host_preview_disabled": "passed, both geometries",
+        "native_builds": "passed, both geometries",
+        "applied_patch_hash_match": true
+      }
+    },
+    "b-four-dual": {
+      "source_sha256": {
+        "src/actions.c": "2f2f2ce65d8927d27ff6f846a99f0e0c2d1d557bdf39492a0c92b209a1284e37",
+        "src/config.c": "464f919a02cc63caa86acc110b86bdac53671ee8764aa080da36d6f3489248ae",
+        "src/config.h": "c520604f3917087208a58c4a0dd743aa17ee169ef678240c8b8d34d0f7f63d29",
+        "src/timed_actions.inc": "df783f309c5776c2f95df442cdac1fe2c18f7b5f9056c0e4fd1b1a68af9c6e63",
+        "tests/config_fixture.h": "f10e3cca7faa8c32ccf290976a443e989e0214d760227e8bf27a2d52e19eaf54",
+        "tests/config_test.c": "f28146201fe84ab1bd88b8a6f77d288291f7aa69ca9444f85cd12c4c03a60452",
+        "tests/global_sleep_fixture.h": "e3f3007e33f9ce8cadb4df24dbd0ac721c01c4b506b38b4a41b5ebd90762be24",
+        "tests/global_sleep_test.c": "184690fcead85fbb781e8df38ad202160de1aba959513c384125f153d46b76d0",
+        "tests/header_repacking_test.c": "3b309a4d19a1ab639f20a91096f0f830b702b6469363ebe46e7938eea01d891d",
+        "tests/input_test.c": "77f05de8817c369767c028ee5a8a7c673911be0ff3730e3a86d90ed49746dbd7",
+        "tests/run_host_tests.py": "242bef98e8fc2b7ce91c8040ebd8a765a9cbcc158e30eda5e32ad11f46ef5541",
+        "tests/timed_actions_test.c": "82f9c6e2bb34294878791d4aa5ece64f3ff09ca31151630209f47209685a86d7"
+      },
+      "files": [
+        "src/actions.c",
+        "src/config.c",
+        "src/config.h",
+        "src/timed_actions.inc",
+        "tests/config_fixture.h",
+        "tests/config_test.c",
+        "tests/global_sleep_fixture.h",
+        "tests/global_sleep_test.c",
+        "tests/header_repacking_test.c",
+        "tests/input_test.c",
+        "tests/run_host_tests.py",
+        "tests/timed_actions_test.c"
+      ],
+      "patch_sha256": "4f100830bc534bce2313d4cdd88b18810f7ff97d8710f77d22d4c75c177897b6",
+      "native": {
+        "six": {
+          "flash_used": 14226,
+          "flash_free": 110,
+          "paged_ram": 105,
+          "ordinary_xram": 365,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 752,
+          "stack_capacity": 90
+        },
+        "three": {
+          "flash_used": 14222,
+          "flash_free": 114,
+          "paged_ram": 105,
+          "ordinary_xram": 356,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 743,
+          "stack_capacity": 93
+        }
+      },
+      "validation": {
+        "host_preview_enabled": "passed, both geometries",
+        "host_preview_disabled": "passed, both geometries",
+        "native_builds": "passed, both geometries",
+        "applied_patch_hash_match": true
+      }
+    },
+    "c-eight-single": {
+      "source_sha256": {
+        "src/actions.c": "c8a169ff480a467736f182300a627d733e5df424bbbcfc07124af98dab6c976a",
+        "src/config.c": "48904656a8a13d0d4fad03a806fdc0cfcf5dda39abae38cf4588a7a5a7852875",
+        "src/config.h": "56bfcb60e55c2892a5d190d727db63f7c259094a4c72b58ca1340452e8bea44e",
+        "src/timed_actions.inc": "63e5a9bad4797f04e58244d07fb6e6313971b2d5e0b3cfba0116660d505e88af",
+        "tests/config_fixture.h": "26f7811c04dd466c6f082e16db9d9fdb1f7a90d90c51ad79ef5a9135766ca939",
+        "tests/config_test.c": "41396ac26986f7b06c844da51e80e8ca23872fcd218965cdbc91c5ffb566488c",
+        "tests/global_sleep_fixture.h": "9b233dedfc402efe933268086a2c947a7fc39b313ecd0546f104d359883ca188",
+        "tests/global_sleep_test.c": "184690fcead85fbb781e8df38ad202160de1aba959513c384125f153d46b76d0",
+        "tests/header_repacking_test.c": "3b309a4d19a1ab639f20a91096f0f830b702b6469363ebe46e7938eea01d891d",
+        "tests/input_test.c": "77f05de8817c369767c028ee5a8a7c673911be0ff3730e3a86d90ed49746dbd7",
+        "tests/run_host_tests.py": "242bef98e8fc2b7ce91c8040ebd8a765a9cbcc158e30eda5e32ad11f46ef5541",
+        "tests/timed_actions_test.c": "82f9c6e2bb34294878791d4aa5ece64f3ff09ca31151630209f47209685a86d7"
+      },
+      "files": [
+        "src/actions.c",
+        "src/config.c",
+        "src/config.h",
+        "src/timed_actions.inc",
+        "tests/config_fixture.h",
+        "tests/config_test.c",
+        "tests/global_sleep_fixture.h",
+        "tests/global_sleep_test.c",
+        "tests/header_repacking_test.c",
+        "tests/input_test.c",
+        "tests/run_host_tests.py",
+        "tests/timed_actions_test.c"
+      ],
+      "patch_sha256": "46bb30088003b5b474f8e1026eb6d338c0ec863b21f07d1abcd13d73ccbfe238",
+      "native": {
+        "six": {
+          "flash_used": 14222,
+          "flash_free": 114,
+          "paged_ram": 105,
+          "ordinary_xram": 365,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 752,
+          "stack_capacity": 90
+        },
+        "three": {
+          "flash_used": 14218,
+          "flash_free": 118,
+          "paged_ram": 105,
+          "ordinary_xram": 356,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 743,
+          "stack_capacity": 93
+        }
+      },
+      "validation": {
+        "host_preview_enabled": "passed, both geometries",
+        "host_preview_disabled": "passed, both geometries",
+        "native_builds": "passed, both geometries",
+        "applied_patch_hash_match": true
+      }
+    },
+    "d-eight-dual": {
+      "source_sha256": {
+        "src/actions.c": "2f2f2ce65d8927d27ff6f846a99f0e0c2d1d557bdf39492a0c92b209a1284e37",
+        "src/config.c": "464f919a02cc63caa86acc110b86bdac53671ee8764aa080da36d6f3489248ae",
+        "src/config.h": "56bfcb60e55c2892a5d190d727db63f7c259094a4c72b58ca1340452e8bea44e",
+        "src/timed_actions.inc": "63e5a9bad4797f04e58244d07fb6e6313971b2d5e0b3cfba0116660d505e88af",
+        "tests/config_fixture.h": "26f7811c04dd466c6f082e16db9d9fdb1f7a90d90c51ad79ef5a9135766ca939",
+        "tests/config_test.c": "f28146201fe84ab1bd88b8a6f77d288291f7aa69ca9444f85cd12c4c03a60452",
+        "tests/global_sleep_fixture.h": "1e24a54dd66f83d748d8d3630b69bddeda6bcd0e082919933b6a17ae902a6103",
+        "tests/global_sleep_test.c": "184690fcead85fbb781e8df38ad202160de1aba959513c384125f153d46b76d0",
+        "tests/header_repacking_test.c": "3b309a4d19a1ab639f20a91096f0f830b702b6469363ebe46e7938eea01d891d",
+        "tests/input_test.c": "77f05de8817c369767c028ee5a8a7c673911be0ff3730e3a86d90ed49746dbd7",
+        "tests/run_host_tests.py": "242bef98e8fc2b7ce91c8040ebd8a765a9cbcc158e30eda5e32ad11f46ef5541",
+        "tests/timed_actions_test.c": "82f9c6e2bb34294878791d4aa5ece64f3ff09ca31151630209f47209685a86d7"
+      },
+      "files": [
+        "src/actions.c",
+        "src/config.c",
+        "src/config.h",
+        "src/timed_actions.inc",
+        "tests/config_fixture.h",
+        "tests/config_test.c",
+        "tests/global_sleep_fixture.h",
+        "tests/global_sleep_test.c",
+        "tests/header_repacking_test.c",
+        "tests/input_test.c",
+        "tests/run_host_tests.py",
+        "tests/timed_actions_test.c"
+      ],
+      "patch_sha256": "52e19fb3b71ab71987ca43126c99e8c7fd46cf59535904ff4bc4881f92a9995f",
+      "native": {
+        "six": {
+          "flash_used": 14236,
+          "flash_free": 100,
+          "paged_ram": 105,
+          "ordinary_xram": 365,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 752,
+          "stack_capacity": 90
+        },
+        "three": {
+          "flash_used": 14232,
+          "flash_free": 104,
+          "paged_ram": 105,
+          "ordinary_xram": 356,
+          "absolute_xram": 134,
+          "usb_dma": 148,
+          "total_external_ram": 743,
+          "stack_capacity": 93
+        }
+      },
+      "validation": {
+        "host_preview_enabled": "passed, both geometries",
+        "host_preview_disabled": "passed, both geometries",
+        "native_builds": "passed, both geometries",
+        "applied_patch_hash_match": true
+      }
+    }
+  },
+  "other_measurements": {
+    "eight-aux-break": {
+      "six": {
+        "flash_used": 14248,
+        "flash_free": 88,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-aux-fixed": {
+      "six": {
+        "flash_used": 14254,
+        "flash_free": 82,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-aux-inline": {
+      "six": {
+        "flash_used": 14246,
+        "flash_free": 90,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-aux-off": {
+      "six": {
+        "flash_used": 14244,
+        "flash_free": 92,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-aux": {
+      "six": {
+        "flash_used": 14264,
+        "flash_free": 72,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-aux-valid": {
+      "six": {
+        "flash_used": 14240,
+        "flash_free": 96,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      },
+      "three": {
+        "flash_used": 14238,
+        "flash_free": 98,
+        "paged_ram": 105,
+        "ordinary_xram": 356,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 743,
+        "stack_capacity": 93
+      }
+    },
+    "eight-none": {
+      "six": {
+        "flash_used": 14178,
+        "flash_free": 158,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param-break": {
+      "six": {
+        "flash_used": 14240,
+        "flash_free": 96,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param-fixed": {
+      "six": {
+        "flash_used": 14246,
+        "flash_free": 90,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param-inline": {
+      "six": {
+        "flash_used": 14238,
+        "flash_free": 98,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param-off-bitcache": {
+      "six": {
+        "flash_used": 14250,
+        "flash_free": 86,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param-off-cache": {
+      "six": {
+        "flash_used": 14246,
+        "flash_free": 90,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param-off": {
+      "six": {
+        "flash_used": 14236,
+        "flash_free": 100,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-param": {
+      "six": {
+        "flash_used": 14256,
+        "flash_free": 80,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-break": {
+      "six": {
+        "flash_used": 14234,
+        "flash_free": 102,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-fixed": {
+      "six": {
+        "flash_used": 14236,
+        "flash_free": 100,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-inline": {
+      "six": {
+        "flash_used": 14232,
+        "flash_free": 104,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-off": {
+      "six": {
+        "flash_used": 14230,
+        "flash_free": 106,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single": {
+      "six": {
+        "flash_used": 14242,
+        "flash_free": 94,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-valid-bitcache": {
+      "six": {
+        "flash_used": 14224,
+        "flash_free": 112,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-valid-cache": {
+      "six": {
+        "flash_used": 14222,
+        "flash_free": 114,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "eight-single-valid": {
+      "six": {
+        "flash_used": 14226,
+        "flash_free": 110,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux-bit": {
+      "six": {
+        "flash_used": 14244,
+        "flash_free": 92,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux-break": {
+      "six": {
+        "flash_used": 14238,
+        "flash_free": 98,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux-fixed": {
+      "six": {
+        "flash_used": 14244,
+        "flash_free": 92,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux-inline": {
+      "six": {
+        "flash_used": 14236,
+        "flash_free": 100,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux-off": {
+      "six": {
+        "flash_used": 14234,
+        "flash_free": 102,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux": {
+      "six": {
+        "flash_used": 14254,
+        "flash_free": 82,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-aux-valid": {
+      "six": {
+        "flash_used": 14230,
+        "flash_free": 106,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      },
+      "three": {
+        "flash_used": 14228,
+        "flash_free": 108,
+        "paged_ram": 105,
+        "ordinary_xram": 356,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 743,
+        "stack_capacity": 93
+      }
+    },
+    "four-none": {
+      "six": {
+        "flash_used": 14168,
+        "flash_free": 168,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-bit": {
+      "six": {
+        "flash_used": 14234,
+        "flash_free": 102,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-break": {
+      "six": {
+        "flash_used": 14230,
+        "flash_free": 106,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-fixed": {
+      "six": {
+        "flash_used": 14236,
+        "flash_free": 100,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-inline": {
+      "six": {
+        "flash_used": 14228,
+        "flash_free": 108,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-off-bitcache": {
+      "six": {
+        "flash_used": 14240,
+        "flash_free": 96,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-off-cache": {
+      "six": {
+        "flash_used": 14236,
+        "flash_free": 100,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param-off": {
+      "six": {
+        "flash_used": 14226,
+        "flash_free": 110,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-param": {
+      "six": {
+        "flash_used": 14246,
+        "flash_free": 90,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-bit": {
+      "six": {
+        "flash_used": 14224,
+        "flash_free": 112,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-break": {
+      "six": {
+        "flash_used": 14224,
+        "flash_free": 112,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-fixed": {
+      "six": {
+        "flash_used": 14226,
+        "flash_free": 110,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-inline": {
+      "six": {
+        "flash_used": 14222,
+        "flash_free": 114,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-off": {
+      "six": {
+        "flash_used": 14220,
+        "flash_free": 116,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single": {
+      "six": {
+        "flash_used": 14232,
+        "flash_free": 104,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-valid-bitcache": {
+      "six": {
+        "flash_used": 14214,
+        "flash_free": 122,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-valid-cache": {
+      "six": {
+        "flash_used": 14212,
+        "flash_free": 124,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    },
+    "four-single-valid": {
+      "six": {
+        "flash_used": 14216,
+        "flash_free": 120,
+        "paged_ram": 105,
+        "ordinary_xram": 365,
+        "absolute_xram": 134,
+        "usb_dma": 148,
+        "total_external_ram": 752,
+        "stack_capacity": 90
+      }
+    }
+  }
+}

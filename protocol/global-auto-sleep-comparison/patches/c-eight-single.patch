@@ -1,0 +1,745 @@
+diff --git a/src/actions.c b/src/actions.c
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -290,7 +290,14 @@
+       firmwareLedAction(second, first >> 4);
+       break;
+     case CONFIG_ACTION_NONE:
+-      if (first) queueAction(first, second, rotation); // Text/Pause auxiliary values.
++      if (first & 0x40) {
++        // Explicit wake clears only built-in sleep, never user timer state.
++        uint8_t pending = timedHigh[CONFIG_TIMED_MAX] & 1;
++        timedAge[CONFIG_TIMED_MAX] = 0;
++        timedFraction[CONFIG_TIMED_MAX] = 0;
++        timedHigh[CONFIG_TIMED_MAX] = 0;
++        if (pending) firmwareLedAction(CONFIG_LED_PRESET_SET, 0);
++      } else if (first) queueAction(first, second, rotation); // Text/Pause auxiliary values.
+       break;
+     case CONFIG_ACTION_KEY_HOLD:
+       break;
+@@ -732,7 +739,7 @@
+         pointerRepeated = now;
+         currentFirst = 0;
+       }
+-    } else if (type >= CONFIG_ACTION_MOUSE_TOGGLE) {
++    } else if (type >= CONFIG_ACTION_MOUSE_TOGGLE || currentFirst == CONFIG_ACTION_SLEEP_RESET) {
+       // Held bindings never enter this queue; X/Y movement was handled above.
+       runAction(currentFirst, currentSecond, 0, 9);
+       currentFirst = 0;
+diff --git a/src/config.c b/src/config.c
+--- a/src/config.c
++++ b/src/config.c
+@@ -150,7 +150,7 @@
+         case CONFIG_ACTION_MOUSE_XY:
+             return !(aux & (uint8_t)(8 | rotation));
+         case CONFIG_ACTION_NONE:
+-            if (!aux) return param == 0;
++            if (!(aux & 11)) return param == 0;
+ #if CONFIG_MACRO_PAUSE
+             if (aux == (CONFIG_ACTION_PAUSE >> 4)) return 1;
+ #endif
+diff --git a/src/config.h b/src/config.h
+--- a/src/config.h
++++ b/src/config.h
+@@ -5,7 +5,7 @@
+ #include "firmware_types.h"
+ 
+ #define CONFIG_SIZE 128
+-// Format 15 uses the B header and per-layer built-in LED auto-sleep.
++// Format 15 uses the B header and profile-wide built-in LED auto-sleep.
+ #define CONFIG_VERSION 15
+ #define CONFIG_MARKER 'B'
+ #define CONFIG_HEADER_SIZE 9
+@@ -27,13 +27,14 @@
+ #define CONFIG_HEADER_TIMED_MASK 0x07
+ #define CONFIG_HEADER_CHORD_SHIFT 3
+ #define CONFIG_HEADER_WINDOW_MASK 0x07
+-#define CONFIG_HEADER_SLEEP_MASK 0x1F
+-#define CONFIG_HEADER_SLEEP_RESERVED 0xE0
+-#define CONFIG_SLEEP_TIMEOUT_MASK 0x03
+-#define CONFIG_SLEEP_CONSUME 0x04
+-#define CONFIG_SLEEP_INDICATOR 0x08
+-#define CONFIG_SLEEP_DIM 0x10
+-#define CONFIG_SLEEP_DEFAULT 0x0D // 30 minutes, consume wake, show layer indicator.
++#define CONFIG_HEADER_SLEEP_MASK 0x3F
++#define CONFIG_HEADER_SLEEP_RESERVED 0xC0
++#define CONFIG_SLEEP_ENABLE_MASK 0x07
++#define CONFIG_SLEEP_TIMEOUT_MASK 0x07
++#define CONFIG_SLEEP_CONSUME 0x08
++#define CONFIG_SLEEP_INDICATOR 0x10
++#define CONFIG_SLEEP_DIM 0x20
++#define CONFIG_SLEEP_DEFAULT 0x18 // Off, consume wake, show layer indicator.
+ #ifndef CONFIG_MACRO_REPEAT
+ #define CONFIG_MACRO_REPEAT 1
+ #endif
+@@ -71,6 +72,7 @@
+ // Action numbers are part of the saved format. V14 assignments are provisional.
+ #define CONFIG_ACTION_NONE             0x0
+ #define CONFIG_ACTION_PAUSE            0x10 // Full first byte; parameter: 16ms units.
++#define CONFIG_ACTION_SLEEP_RESET       0x40 // Full first byte.
+ #define CONFIG_ACTION_STRING           0x20 // Full first byte; parameter: pool offset.
+ #define CONFIG_ACTION_KEY_TAP          0x1
+ #define CONFIG_ACTION_KEY_HOLD         0x2
+@@ -154,9 +156,9 @@
+ #define CONFIG_MOUSE_X_NEGATIVE        0x20
+ #define CONFIG_MOUSE_Y_NEGATIVE        0x40
+ 
+-// Per-layer options: full brightness bit 0, auto-sleep bit 1, indicator bits 2–3, palette bits 4–7.
++// Per-layer options: full brightness bit 0, ignored bit 1, indicator bits 2–3, palette bits 4–7.
+ #define CONFIG_LAYER_OPT_FULL_BRIGHTNESS 0x01
+-#define CONFIG_LAYER_OPT_AUTO_SLEEP     0x02
++#define CONFIG_LAYER_OPT_IGNORED     0x02
+ #define CONFIG_LAYER_OPT_INDICATOR_SHIFT 2
+ #define CONFIG_LAYER_OPT_INDICATOR_MASK  0x0C
+ #define CONFIG_LAYER_OPT_COLOR_SHIFT     4
+diff --git a/src/timed_actions.inc b/src/timed_actions.inc
+--- a/src/timed_actions.inc
++++ b/src/timed_actions.inc
+@@ -4,12 +4,13 @@
+ // consume in bit 6 and restart-on-input in bit 7. Pending input actions survive
+ // layer transitions and are serviced even outside their timer's assigned layer.
+ 
+-// The last runtime slot uses a synthesized record after the saved image.
++// State slot CONFIG_TIMED_MAX is reserved for global sleep; its synthesized
++// record follows the saved image regardless of the number of user timers.
+ // User timers retain their original order and all four configuration slots.
+ // Bit 0 of timedHigh latches the pending next-input action; bits 3-5 are age.
+-// Low interval-1 byte and pre-positioned high bits for 220/440/879/1758 ticks.
+-static const __code uint8_t sleepLow[] = {219, 183, 110, 221};
+-static const __code uint8_t sleepHigh[] = {0, 8, 24, 48};
++// Low interval-1 bytes and pre-positioned high interval bits.
++static const __code uint8_t sleepLow[] = {0, 146, 219, 183, 147, 110, 38, 221};
++static const __code uint8_t sleepHigh[] = {0, 0, 0, 8, 16, 24, 40, 48};
+ 
+ void actionsTimedReset(uint8_t tick) {
+   uint8_t settings = activeConfig[CONFIG_HEADER_SLEEP];
+@@ -20,7 +21,7 @@
+   activeConfig[CONFIG_SIZE + 2] = CONFIG_LED_PRESET_SET;
+   activeConfig[CONFIG_SIZE + 3] = CONFIG_ACTION_LED_CONTROL;
+   activeConfig[CONFIG_SIZE + 4] = CONFIG_LED_PRESET_SET;
+-  activeConfig[CONFIG_SIZE + 5] = 128 | sleepHigh[timeout] | ((settings & CONFIG_SLEEP_CONSUME) << 4);
++  activeConfig[CONFIG_SIZE + 5] = 128 | sleepHigh[timeout] | ((settings & CONFIG_SLEEP_CONSUME) << 3);
+   for (uint8_t i = 0; i <= CONFIG_TIMED_MAX; i++) {
+     timedAge[i] = 0;
+     timedHigh[i] = 0;
+@@ -32,10 +33,13 @@
+   uint8_t offset = configTimedOffset();
+   uint8_t count = configTimedCount();
+   ACTION_BIT consume = 0;
+-  for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
++  for (uint8_t i = 0; i <= CONFIG_TIMED_MAX; i++, offset += CONFIG_TIMED_SIZE) {
+     if (i == count) {
++      // Skip unused user state slots; sleep always has a fixed state index.
++      i = CONFIG_TIMED_MAX;
+       offset = CONFIG_SIZE;
+-      if (tick && !(configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP)) continue;
++      // Applying a profile clears state, so Off cannot have a pending wake.
++      if (!(activeConfig[CONFIG_HEADER_SLEEP] & CONFIG_SLEEP_ENABLE_MASK)) continue;
+     }
+     uint8_t age = timedAge[i];
+     uint8_t action = 0;
+@@ -55,7 +59,7 @@
+         action = 3;
+         if (flags & CONFIG_TIMED_CONSUME) consume = 1;
+         // Reuse the normal indication without changing or consuming the layer.
+-        if (i == count && (activeConfig[CONFIG_HEADER_SLEEP] & CONFIG_SLEEP_INDICATOR))
++        if (i == CONFIG_TIMED_MAX && (activeConfig[CONFIG_HEADER_SLEEP] & CONFIG_SLEEP_INDICATOR))
+           layerSelectionPending = 1;
+       }
+       timedHigh[i] &= ~1;
+@@ -92,22 +96,12 @@
+ }
+ 
+ static void resetLayerTimers(void) {
+-  // Point directly at each user timer's scope byte (inside the saved image).
+   uint8_t offset = configTimedOffset() + 5;
+   uint8_t count = configTimedCount();
+-  for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
+-    if (i == count) {
+-      // Enabled layers preserve sleep time and any pending physical wake.
+-      if (configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP) return;
+-    } else if (!(activeConfig[offset] & 7)) continue;
++  for (uint8_t i = 0; i < count; i++, offset += CONFIG_TIMED_SIZE) {
++    if (!(activeConfig[offset] & 7)) continue;
+     timedAge[i] = 0;
+     timedHigh[i] &= 1;
+     timedFraction[i] = 0;
+   }
+-  // The shared reset retained only the pending bit; clear it before restoring
+-  // lighting so this transition cannot consume the next physical input.
+-  if (timedHigh[count]) {
+-    timedHigh[count] = 0;
+-    firmwareLedAction(CONFIG_LED_PRESET_SET, 0);
+-  }
+ }
+diff --git a/tests/config_fixture.h b/tests/config_fixture.h
+--- a/tests/config_fixture.h
++++ b/tests/config_fixture.h
+@@ -3,6 +3,11 @@
+ 
+ #include <stdint.h>
+ #include "../src/config.h"
++
++static inline uint8_t testSleepSettings(uint8_t old) {
++    static const uint8_t selectors[] = {2, 3, 5, 7};
++    return selectors[old & 3] | ((old & 28) << 1);
++}
+ 
+ /* Canonical target-header setters; unrelated fields are retained. */
+ static inline void testSetVariant(uint8_t variant) {
+diff --git a/tests/config_test.c b/tests/config_test.c
+--- a/tests/config_test.c
++++ b/tests/config_test.c
+@@ -513,7 +513,7 @@
+         activeConfig[pool] = 'A'; activeConfig[pool + 1] = 0;
+         for (uint8_t aux = 0; aux < 16; aux++) {
+             activeConfig[9] = aux << 4; activeConfig[10] = 0;
+-            seal(); assert(!!configValid(activeConfig, variant) == (aux <= (CONFIG_MACRO_PAUSE ? 2 : 1)));
++            seal(); assert(!!configValid(activeConfig, variant) == ((aux <= (CONFIG_MACRO_PAUSE ? 2 : 1)) || aux == 4));
+         }
+         testSetLayout(1, 0, 1);
+         uint8_t timer = configTimedOffset();
+@@ -621,7 +621,7 @@
+                     activeConfig[offset] = aux << 4;
+                     seal(); assert(!!configValid(activeConfig, variant) ==
+                         ((!aux && !param) || (aux == 1 && CONFIG_MACRO_PAUSE) ||
+-                         (aux == 2 && (param == 0 || param == 2))));
++                         (aux == 2 && (param == 0 || param == 2)) || (aux == 4 && param == 0)));
+                 }
+             }
+         }
+diff --git a/tests/global_sleep_fixture.h b/tests/global_sleep_fixture.h
+new file mode 100644
+--- /dev/null
++++ b/tests/global_sleep_fixture.h
+@@ -0,0 +1,10 @@
++#define TEST_ENABLE_BITS 0
++#define TEST_FIRST_SELECTOR 1
++#define TEST_SELECTOR_COUNT 8
++#define TEST_15_SELECTOR 2
++#define TEST_MAX_RESET_PARAM 0
++#define TEST_AUX_MODE 0
++#define TEST_DUAL_MODE 0
++#define TEST_ONLY_FIRST 64
++#define TEST_ONLY_PARAM 0
++static const uint16_t testIntervals[] = {0,147,220,440,660,879,1319,1758};
+diff --git a/tests/global_sleep_test.c b/tests/global_sleep_test.c
+new file mode 100644
+--- /dev/null
++++ b/tests/global_sleep_test.c
+@@ -0,0 +1,202 @@
++#define GLOBAL_SLEEP_INCLUSION
++/* Global-sleep experiment: real dispatcher, validator and timer implementation. */
++#include "timed_actions_test.c"
++#undef main
++#include "global_sleep_fixture.h"
++
++static uint8_t settings(uint8_t selector, uint8_t flags) {
++    return selector | TEST_ENABLE_BITS | ((flags & 1) ? CONFIG_SLEEP_CONSUME : 0) |
++        ((flags & 2) ? CONFIG_SLEEP_INDICATOR : 0) | ((flags & 4) ? CONFIG_SLEEP_DIM : 0);
++}
++static void sleepInit(uint8_t timers, uint8_t selector, uint8_t flags) {
++    probeInit(timers); activeConfig[CONFIG_HEADER_SLEEP] = settings(selector, flags);
++    actionsTimedReset(fine); actionsTakeLayerSelection();
++}
++static void invoke(uint8_t first, uint8_t param) {
++    uint8_t keys = PHYSICAL_VARIANT ? 3 : 6;
++    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
++    uint8_t offset = 9 + size * actionsLayer() + 2 * (keys + 2);
++    activeConfig[offset] = first; activeConfig[offset + 1] = param;
++    actionsRotate(0);
++}
++static void fineSteps(uint32_t ticks) {
++    while (ticks--) { fine++; actionsTimedPoll(fine); }
++}
++static void globalIntervals(void) {
++    for (uint8_t selector = TEST_FIRST_SELECTOR; selector < TEST_SELECTOR_COUNT; selector++) {
++        uint32_t interval = (uint32_t)testIntervals[selector] * 256;
++        for (uint8_t flags = 0; flags < 8; flags++) {
++            sleepInit(0, selector, flags);
++            advanceFine(interval - 1); assert(ledCalls == 0);
++            advanceFine(1); assert(ledCalls == 1);
++            assert(ledValue == ((flags & 4) ? 2 : 4));
++            advanceFine(interval * 2); assert(ledCalls == 3);
++            assert(!actionsTakeLayerSelection());
++            assert(!!actionsTimedInput() == !!(flags & 1));
++            assert(ledCalls == 4 && ledValue == 0);
++            assert(!!actionsTakeLayerSelection() == !!(flags & 2));
++            assert(!actionsTimedInput());
++            advanceFine(interval - 1); assert(ledCalls == 4);
++            actionsTimedInput();
++            advanceFine(interval - 1); assert(ledCalls == 4);
++            advanceFine(1); assert(ledCalls == 5);
++        }
++    }
++    for (uint8_t flags = 0; flags < 8; flags++) {
++        probeInit(0); activeConfig[CONFIG_HEADER_SLEEP] = settings(TEST_FIRST_SELECTOR, flags) & ~CONFIG_SLEEP_ENABLE_MASK;
++        actionsTimedReset(fine);
++        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] |= 2; // Old layer bit ignored.
++        advanceFine(1758UL * 512); assert(ledCalls == 0);
++        assert(!actionsTimedInput() && !actionsTakeLayerSelection());
++    }
++}
++static void layersAndSlots(void) {
++    uint32_t interval = (uint32_t)testIntervals[TEST_15_SELECTOR] * 256;
++    for (uint8_t timers = 0; timers <= CONFIG_TIMED_MAX; timers++) {
++        sleepInit(timers, TEST_15_SELECTOR, 3);
++        for (uint8_t i = 0; i < timers; i++) {
++            uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
++            activeConfig[offset + 1] = CONFIG_ACTION_NONE; activeConfig[offset + 2] = 0;
++            setFlags(i, CONFIG_TIMED_CONSUME);
++        }
++        advanceFine(interval / 2);
++        probeLayer(1); actionsTakeLayerSelection();
++        advanceFine(interval / 2 - 1); assert(ledCalls == 0);
++        advanceFine(1); assert(ledCalls == 1);
++        probeLayer(0); actionsTakeLayerSelection(); assert(ledCalls == 1); // No implicit layer wake.
++        assert(actionsTimedInput()); assert(ledCalls == timers + 2);
++        assert(actionsTakeLayerSelection());
++    }
++    // A repeating relative-layer timer cannot prevent global sleep.
++    sleepInit(1, TEST_15_SELECTOR, 0);
++    uint8_t timer = configTimedOffset();
++    activeConfig[timer + 1] = CONFIG_ACTION_RELATIVE_LAYER; activeConfig[timer + 2] = 1;
++    activeConfig[timer + 3] = activeConfig[timer + 4] = 0;
++    advanceFine(interval); assert(ledCalls == 1);
++}
++static uint8_t expectedReset(uint8_t first, uint8_t param) {
++    return (first == 0x40 && param <= TEST_MAX_RESET_PARAM) ||
++        (TEST_AUX_MODE && first == 0x80 && param == 0);
++}
++static void actionValidation(void) {
++    // Exhaust all auxiliary nibble/parameter combinations at every action site.
++    for (uint8_t site = 0; site < 6; site++) {
++        for (uint8_t aux = 3; aux < 16; aux++) for (unsigned param = 0; param < 256; param++) {
++            probeInit(site == 3 || site == 4 ? 1 : 0);
++            uint8_t offset;
++            if (site == 0) offset = 9;
++            else if (site == 1) offset = 9 + 2 * ((PHYSICAL_VARIANT ? 3 : 6) + 2);
++            else if (site == 2) { testSetChordCount(1); offset = configTimedOffset() - 2; }
++            else if (site == 3 || site == 4) offset = configTimedOffset() + (site == 3 ? 1 : 3);
++            else offset = configTimedOffset(); // Macro definition.
++            activeConfig[offset] = aux << 4; activeConfig[offset + 1] = param;
++            probeSeal();
++            assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == !!expectedReset(aux << 4, param));
++        }
++    }
++    probeInit(0);
++    uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
++    for (unsigned raw = 0; raw < 256; raw++) {
++        activeConfig[CONFIG_HEADER_SLEEP] = raw; probeSeal();
++        assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (raw < 64));
++    }
++    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_DEFAULT;
++    for (unsigned opts = 0; opts < 256; opts++) {
++        activeConfig[9 + size - 1] = opts; probeSeal();
++        assert(configValid(activeConfig, PHYSICAL_VARIANT));
++    }
++}
++static void resetActions(void) {
++    uint32_t interval = (uint32_t)testIntervals[TEST_15_SELECTOR] * 256;
++    for (uint8_t flags = 0; flags < 8; flags++) for (uint8_t asleep = 0; asleep < 2; asleep++) {
++        sleepInit(0, TEST_15_SELECTOR, flags);
++        advanceFine(asleep ? interval : interval - 1);
++        invoke(0x40, 0);
++        assert(ledCalls == (asleep ? 2 : 0));
++        if (asleep) assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 0);
++        assert(!actionsTakeLayerSelection());
++        assert(!actionsTimedInput()); // No built-in consumption or reminder remains.
++        advanceFine(interval - 1); assert(ledCalls == (asleep ? 2 : 0));
++        advanceFine(1); assert(ledCalls == (asleep ? 3 : 1));
++    }
++    // Clear every high-age field and fractional phase, including long timeouts.
++    for (uint8_t selector = TEST_FIRST_SELECTOR; selector < TEST_SELECTOR_COUNT; selector++) {
++        uint32_t full = (uint32_t)testIntervals[selector] * 256;
++        sleepInit(0, selector, 0);
++        advanceFine(full - 1); invoke(0x40, 0);
++        advanceFine(full - 1); assert(ledCalls == 0);
++        advanceFine(1); assert(ledCalls == 1);
++        invoke(0x40, 0); assert(ledCalls == 2 && !actionsTimedInput());
++        if (TEST_DUAL_MODE) {
++            sleepInit(0, selector, 3);
++            advanceFine(full - 1); invoke(TEST_ONLY_FIRST, TEST_ONLY_PARAM);
++            advanceFine(full - 1); assert(ledCalls == 0);
++            advanceFine(1); assert(ledCalls == 1);
++            invoke(TEST_ONLY_FIRST, TEST_ONLY_PARAM); assert(ledCalls == 1);
++            assert(actionsTimedInput() && ledCalls == 2 && actionsTakeLayerSelection());
++        }
++    }
++    // The action itself must not reset, execute or consume a user's pending timer.
++    for (uint8_t timers = 1; timers <= CONFIG_TIMED_MAX; timers++) {
++        sleepInit(timers, TEST_15_SELECTOR, 3);
++        for (uint8_t i = 0; i < timers; i++) {
++            uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
++            activeConfig[offset + 1] = CONFIG_ACTION_NONE; activeConfig[offset + 2] = 0;
++            setFlags(i, CONFIG_TIMED_CONSUME | 128);
++        }
++        advanceFine(interval); assert(ledCalls == 1);
++        invoke(0x40, 0); assert(ledCalls == 2 && !actionsTakeLayerSelection());
++        assert(actionsTimedInput()); assert(ledCalls == 2 + timers);
++        assert(!actionsTakeLayerSelection());
++    }
++    // A timer with restart-on-input set must still expire despite explicit resets.
++    sleepInit(2, TEST_15_SELECTOR, 0);
++    uint8_t timer = configTimedOffset();
++    activeConfig[timer + 1] = 0x40; activeConfig[timer + 2] = 0;
++    activeConfig[timer + 3] = activeConfig[timer + 4] = 0;
++    activeConfig[timer + 6] = 2; setFlags(1, 128);
++    advanceFine(3UL * 256); assert(ledCalls == 1 && ledCommand == CONFIG_LED_KEY_SET);
++    // Timer firing just before or just after sleep has the same awake outcome.
++    for (uint8_t after = 0; after < 2; after++) {
++        sleepInit(1, TEST_15_SELECTOR, 3);
++        timer = configTimedOffset();
++        activeConfig[timer] = testIntervals[TEST_15_SELECTOR] + (after ? 0 : -2);
++        activeConfig[timer + 1] = 0x40; activeConfig[timer + 2] = 0;
++        activeConfig[timer + 3] = activeConfig[timer + 4] = 0;
++        fineSteps(interval + (after ? 256 : -256));
++        assert(ledCalls == (after ? 2 : 0));
++        if (after) assert(ledValue == 0);
++        assert(!actionsTakeLayerSelection() && !actionsTimedInput());
++    }
++    // Macro order, repetition and following keyboard output are preserved.
++    sleepInit(0, TEST_15_SELECTOR, 3); advanceFine(interval);
++    count = blocked = 0; reportLimit = 64;
++    timer = configTimedOffset();
++    activeConfig[timer] = 0x40; activeConfig[timer + 1] = 0;
++    activeConfig[timer + 2] = CONFIG_ACTION_KEY_TAP; activeConfig[timer + 3] = 4;
++    activeConfig[timer + 4] = 0;
++    invoke(CONFIG_ACTION_MACRO | 0x10, timer);
++    for (uint16_t now = 0; now < 200; now++) actionsPoll(now);
++    assert(ledCalls == 2 && count == 4); // Two key press/release pairs.
++    assert(!actionsTakeLayerSelection() && !actionsTimedInput());
++    if (TEST_DUAL_MODE) {
++        // Reset-only also executes in macro order without waking or consuming input.
++        sleepInit(0, TEST_15_SELECTOR, 3); advanceFine(interval);
++        timer = configTimedOffset(); count = blocked = 0; reportLimit = 64;
++        activeConfig[timer] = TEST_ONLY_FIRST; activeConfig[timer + 1] = TEST_ONLY_PARAM;
++        activeConfig[timer + 2] = CONFIG_ACTION_KEY_TAP; activeConfig[timer + 3] = 4;
++        activeConfig[timer + 4] = 0;
++        invoke(CONFIG_ACTION_MACRO, timer);
++        for (uint16_t now = 0; now < 200; now++) actionsPoll(now);
++        assert(ledCalls == 1 && count == 2 && !actionsTakeLayerSelection());
++        advanceFine(interval - 1); assert(ledCalls == 1);
++        assert(actionsTimedInput()); assert(ledCalls == 2 && actionsTakeLayerSelection());
++    }
++    // No LED policy restoration when awake, even with global sleep disabled.
++    probeInit(0); actionsTimedReset(fine); invoke(0x40, 0); assert(ledCalls == 0);
++}
++int main(void) {
++    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers();
++    globalIntervals(); layersAndSlots(); actionValidation(); resetActions();
++    return 0;
++}
+diff --git a/tests/header_repacking_test.c b/tests/header_repacking_test.c
+--- a/tests/header_repacking_test.c
++++ b/tests/header_repacking_test.c
+@@ -36,7 +36,7 @@
+     }
+     for (unsigned value = 1; value < 256; value++) {
+         activeConfig[6] = value; seal(activeConfig);
+-        assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (value < 32));
++        assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (value < 64));
+     }
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     activeConfig[2] |= 128; seal(activeConfig);
+diff --git a/tests/input_test.c b/tests/input_test.c
+--- a/tests/input_test.c
++++ b/tests/input_test.c
+@@ -863,8 +863,9 @@
+ 
+ static void initAutoSleep(void) {
+     testLoadStarterProfile(PHYSICAL_VARIANT);
++    activeConfig[CONFIG_HEADER_SLEEP] = testSleepSettings(0x0D);
+     activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] =
+-        CONFIG_LAYER_OPT_AUTO_SLEEP | CONFIG_LAYER_OPT_FULL_BRIGHTNESS |
++        CONFIG_LAYER_OPT_IGNORED | CONFIG_LAYER_OPT_FULL_BRIGHTNESS |
+         (CONFIG_LAYER_INDICATOR_ALWAYS_ON << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
+         (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+     activeConfigValid = 1;
+@@ -929,48 +930,31 @@
+     assert(!actionsTimedInput());
+ }
+ 
+-static void testAutoSleepDisabledLayer(void) {
+-    const uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
++static void testExplicitSleepWakeLighting(void) {
+     const uint32_t interval = 220UL * 256;
+     for (uint8_t dim = 0; dim < 2; dim++) {
+-        for (uint8_t afterSleep = 0; afterSleep < 2; afterSleep++) {
++        for (uint8_t after = 0; after < 2; after++) {
+             initAutoSleep();
+-            testSetLayout(2, 0, 1);
+-            activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME |
+-                CONFIG_SLEEP_INDICATOR | (dim ? CONFIG_SLEEP_DIM : 0);
+-            activeConfig[9 + 2 * size - 1] =
+-                activeConfig[9 + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP;
++            activeConfig[CONFIG_HEADER_SLEEP] = testSleepSettings(12 | (dim ? 16 : 0));
++            testSetTimedCount(1);
+             uint8_t timer = configTimedOffset();
+-            // Switch just before or just after the 15-minute sleep timeout.
+-            activeConfig[timer] = afterSleep ? 220 : 218;
+-            activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER;
+-            activeConfig[timer + 2] = 1;
++            activeConfig[timer] = after ? 220 : 218;
++            activeConfig[timer + 1] = CONFIG_ACTION_SLEEP_RESET;
++            activeConfig[timer + 2] = 0;
+             activeConfig[timer + 3] = activeConfig[timer + 4] = activeConfig[timer + 5] = 0;
+             firmwareApplyConfig(1);
+-            if (afterSleep) {
++            if (after) {
+                 advanceSleep(interval);
+                 assert(ledSettings[2] == (dim ? 1 : 0));
+                 if (!dim) assertBlack();
+                 advanceSleep(256);
+             } else advanceSleep(interval - 256);
+             actionsPoll(currentMs);
+-            assert(actionsLayer() == 1);
+             assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+             uint8_t lit = 0;
+             for (uint8_t i = 0; i < NUM_BYTES; i++) lit |= ledData[i];
+-            assert(lit); // Always On indicator is visible in both cases.
+-            assert(!actionsTimedInput()); // Wake no longer consumes physical input.
+-            advanceSleep(interval * 2);
+-            assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+-            // Return without physical input; a full fresh timeout must elapse.
+-            activeConfig[9 + size + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
+-            activeConfig[10 + size + 2 * (NUM_LEDS + 2)] = 0;
+-            actionsRotate(0);
+-            assert(actionsLayer() == 0);
+-            activeConfig[timer + 1] = CONFIG_ACTION_NONE;
+-            activeConfig[timer + 2] = 0; // Stop selecting layer 2 again.
+-            advanceSleep(interval - 1); assert(ledSettings[2] == 3);
+-            advanceSleep(1); assert(ledSettings[2] == (dim ? 1 : 0));
++            assert(lit); // Always On is visible before and after the timeout.
++            assert(!actionsTimedInput()); // Explicit wake leaves no input to consume.
+         }
+     }
+ }
+@@ -989,7 +973,7 @@
+                     memset(activeConfig + 9 + size * layer + 2 * (NUM_LEDS + 3),
+                            0xFF, (NUM_LEDS + 1) / 2); // Suppress held-key feedback.
+                     activeConfig[9 + size * (layer + 1) - 1] =
+-                        CONFIG_LAYER_OPT_AUTO_SLEEP | full |
++                        CONFIG_LAYER_OPT_IGNORED | full |
+                         (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
+                         (3 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+                     if (!show) activeConfig[CONFIG_HEADER_SLEEP] &= ~CONFIG_SLEEP_INDICATOR;
+@@ -1063,7 +1047,8 @@
+ 
+ static void testSleepSettingsInput(void) {
+     static const uint16_t intervals[] = {220, 440, 879, 1758};
+-    for (uint8_t settings = 0; settings < 32; settings++) {
++    for (uint8_t rawSettings = 0; rawSettings < 32; rawSettings++) {
++        uint8_t settings = testSleepSettings(rawSettings);
+         for (uint8_t input = 0; input < 4; input++) {
+             initAutoSleep();
+             activeConfig[CONFIG_HEADER_SLEEP] = settings;
+@@ -1073,7 +1058,7 @@
+             activeConfig[9 + 2 * slot] = 0x10 | CONFIG_ACTION_LED_CONTROL;
+             activeConfig[10 + 2 * slot] = CONFIG_LED_KEY_SET;
+             firmwareApplyConfig(1);
+-            advanceSleep((uint32_t)intervals[settings & 3] * 256);
++            advanceSleep((uint32_t)intervals[rawSettings & 3] * 256);
+             assert(ledSettings[2] == ((settings & CONFIG_SLEEP_DIM) ? 1 : 0));
+             assert(ledSettings[3] == ledSettings[2]);
+             if (settings & CONFIG_SLEEP_DIM) assertIndicatorLeds(0, 1, 0);
+@@ -1098,10 +1083,10 @@
+         initAutoSleep();
+         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+         testSetLayout(2, 0, 0);
+-        activeConfig[CONFIG_HEADER_SLEEP] = consume ? CONFIG_SLEEP_CONSUME : 0;
++        activeConfig[CONFIG_HEADER_SLEEP] = testSleepSettings(consume ? 4 : 0);
+         activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
+         activeConfig[9 + size] = CONFIG_ACTION_KEY_HOLD; activeConfig[10 + size] = 4;
+-        activeConfig[9 + 2 * size - 1] = CONFIG_LAYER_OPT_AUTO_SLEEP;
++        activeConfig[9 + 2 * size - 1] = CONFIG_LAYER_OPT_IGNORED;
+         firmwareApplyConfig(1);
+         actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
+         advanceSleep(220UL * 256); frameCount = 0;
+@@ -1117,7 +1102,7 @@
+ 
+ int main(void) {
+     testAutoSleepInput();
+-    testAutoSleepDisabledLayer();
++    testExplicitSleepWakeLighting();
+     testSleepSettingsInput();
+     testAutoSleepWakeIndicator();
+     testStartupDebounce();
+@@ -1300,7 +1285,7 @@
+     for (uint8_t valid = 0; valid < 2; valid++) {
+         if (valid) {
+             testLoadStarterProfile(PHYSICAL_VARIANT);
+-            activeConfig[30] &= ~CONFIG_LAYER_OPT_AUTO_SLEEP;
++            activeConfig[30] &= ~CONFIG_LAYER_OPT_IGNORED;
+             memcpy(flash, activeConfig, CONFIG_SIZE);
+         } else {
+             memset(flash, 0xFF, sizeof(flash));
+diff --git a/tests/run_host_tests.py b/tests/run_host_tests.py
+--- a/tests/run_host_tests.py
++++ b/tests/run_host_tests.py
+@@ -20,6 +20,7 @@
+     suites += [("macros", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+     suites += [("timed_actions", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+     suites += [("input", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
++    suites += [("global_sleep", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+     for suite in suites:
+         name, sources, *variant = suite
+         options = [f"-DPHYSICAL_VARIANT={variant[0]}"] if variant else []
+diff --git a/tests/timed_actions_test.c b/tests/timed_actions_test.c
+--- a/tests/timed_actions_test.c
++++ b/tests/timed_actions_test.c
+@@ -273,148 +273,11 @@
+     probeLayer(2); advanceFine(256); assert(ledCalls == 6);
+ }
+ 
+-static void autoSleep(void) {
+-    const uint32_t interval = 440UL * 256;
+-    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+-    probeInit(0);
+-    advanceFine(interval * 2); assert(ledCalls == 0);
+-    assert(!actionsTimedInput());
+-    assert(!actionsTakeLayerSelection());
+-    activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+-    advanceFine(interval - 1); assert(ledCalls == 0);
+-    advanceFine(1); assert(ledCalls == 1);
+-    assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 4);
+-    advanceFine(interval * 10); assert(ledCalls == 11); // Repeated Off coalesces wake.
+-    assert(!actionsTakeLayerSelection()); // Expiry does not request an indication.
+-    ledCalls = 1;
+-    assert(actionsTimedInput());
+-    assert(actionsTakeLayerSelection());
+-    assert(!actionsTakeLayerSelection());
+-    assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 0);
+-    assert(!actionsTimedInput());
+-    assert(!actionsTakeLayerSelection()); // Ordinary input does not retrigger it.
+-    advanceFine(interval - 1); assert(ledCalls == 2);
+-    actionsTimedInput(); // Restart independent phase immediately before expiry.
+-    advanceFine(interval - 1); assert(ledCalls == 2);
+-    advanceFine(1); assert(ledCalls == 3);
+-    probeLayer(1); // A disabled layer restores lighting without physical input.
+-    assert(actionsTakeLayerSelection());
+-    assert(ledCalls == 4 && ledValue == 0);
+-    assert(!actionsTimedInput()); // No pending sleep input remains to consume.
+-    assert(!actionsTakeLayerSelection());
+-    assert(actionsLayer() == 1);
+-    advanceFine(interval * 2); assert(ledCalls == 4);
+-    probeLayer(0); advanceFine(interval / 2);
+-    probeLayer(1); probeLayer(0);
+-    // Visiting a disabled layer clears elapsed sleep time.
+-    advanceFine(interval - 1); assert(ledCalls == 4);
+-    advanceFine(1); assert(ledCalls == 5);
+-    actionsTimedReset(fine); assert(!actionsTimedInput());
+-    // A global timer switching layers every 4.096 seconds must not prevent
+-    // sleep. The same-layer case must preserve the phase too.
+-    for (uint8_t target = 0; target < 2; target++) {
+-        probeInit(1);
+-        for (uint8_t layer = 0; layer < 3; layer++)
+-            activeConfig[options + layer * (PHYSICAL_VARIANT ? 15 : 22)] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+-        uint8_t offset = configTimedOffset();
+-        activeConfig[offset + 1] = CONFIG_ACTION_SET_LAYER | CONFIG_LAYER_RELATIVE;
+-        activeConfig[offset + 2] = target;
+-        activeConfig[offset + 3] = CONFIG_ACTION_NONE;
+-        activeConfig[offset + 4] = 0;
+-        advanceFine(interval - 1); assert(ledCalls == 0);
+-        advanceFine(1); assert(ledCalls == 1);
+-        assert(ledValue == 4);
+-        assert(actionsTimedInput()); assert(ledCalls == 2);
+-        advanceFine(interval / 2);
+-        assert(!actionsTimedInput()); // Physical input restarts sleep.
+-        advanceFine(interval - 1); assert(ledCalls == 2);
+-        advanceFine(1); assert(ledCalls == 3);
+-    }
+-    // All four user timers remain available alongside auto-sleep.
+-    probeInit(4); activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+-    for (uint8_t i = 0; i < 4; i++) {
+-        uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
+-        activeConfig[offset] = 255; activeConfig[offset + 5] = 56;
+-    }
+-    advanceFine(interval); assert(ledCalls == 1);
+-    assert(actionsTimedInput()); assert(ledCalls == 2);
+-    assert(actionsTakeLayerSelection());
+-    advanceFine(2048UL * 256 - interval);
+-    assert(ledCalls == 9); // Four user expiries and three additional Off periods.
+-    // Only the built-in pending wake requests an indication. Subsequent user
+-    // timer resumes with no built-in sleep pending leave it clear.
+-    assert(actionsTimedInput());
+-    assert(actionsTakeLayerSelection());
+-    activeConfig[options] &= ~CONFIG_LAYER_OPT_AUTO_SLEEP;
+-    advanceFine(2048UL * 256);
+-    actionsTimedInput();
+-    assert(!actionsTakeLayerSelection());
+-}
+-
+-static void disabledLayerUserResumes(void) {
+-    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+-    for (uint8_t count = 0; count <= CONFIG_TIMED_MAX; count++) {
+-        probeInit(count);
+-        activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+-        for (uint8_t i = 0; i < count; i++) {
+-            uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
+-            activeConfig[offset + 1] = CONFIG_ACTION_NONE;
+-            activeConfig[offset + 2] = 0;
+-            setFlags(i, CONFIG_TIMED_CONSUME);
+-        }
+-        advanceFine(440UL * 256); assert(ledCalls == 1);
+-        probeLayer(1); // Wakes sleep but preserves every armed user follow-up.
+-        assert(ledCalls == 2 && ledValue == 0);
+-        assert(actionsTakeLayerSelection());
+-        assert(!!actionsTimedInput() == !!count);
+-        assert(ledCalls == 2 + count);
+-        assert(!actionsTakeLayerSelection()); // No built-in physical wake remains.
+-    }
+-}
+-
+-static void sleepSettings(void) {
+-    static const uint16_t ticks[] = {220, 440, 879, 1758};
+-    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+-    for (uint8_t settings = 0; settings < 32; settings++) {
+-        probeInit(0);
+-        activeConfig[CONFIG_HEADER_SLEEP] = settings;
+-        activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+-        actionsTimedReset(fine);
+-        uint32_t interval = (uint32_t)ticks[settings & 3] * 256;
+-        advanceFine(interval - 1); assert(ledCalls == 0);
+-        advanceFine(1); assert(ledCalls == 1);
+-        assert(ledCommand == CONFIG_LED_PRESET_SET);
+-        assert(ledValue == ((settings & CONFIG_SLEEP_DIM) ? 2 : 4));
+-        assert(!actionsTakeLayerSelection());
+-        assert(!!actionsTimedInput() == !!(settings & CONFIG_SLEEP_CONSUME));
+-        assert(ledCalls == 2 && ledValue == 0);
+-        assert(!!actionsTakeLayerSelection() == !!(settings & CONFIG_SLEEP_INDICATOR));
+-        assert(!actionsTimedInput() && !actionsTakeLayerSelection());
+-        advanceFine(interval - 1); assert(ledCalls == 2);
+-        actionsTimedInput(); // Each preset resets its fractional phase on input.
+-        advanceFine(interval - 1); assert(ledCalls == 2);
+-        advanceFine(1); assert(ledCalls == 3);
+-        probeLayer(1); assert(actionsTakeLayerSelection());
+-        assert(ledCalls == 4 && ledValue == 0); // Disabled layer wakes immediately.
+-        assert(!actionsTimedInput());
+-        assert(!actionsTakeLayerSelection());
+-        advanceFine(interval); assert(ledCalls == 4); // Opt-out remains awake.
+-        probeLayer(0); assert(actionsTakeLayerSelection());
+-        advanceFine(interval); assert(ledCalls == 5);
+-        actionsTimedReset(fine); assert(!actionsTimedInput()); // Apply cancels pending wake.
+-    }
+-    // A consuming user timer still consumes input when sleep itself passes it.
+-    probeInit(4);
+-    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_INDICATOR;
+-    activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+-    setFlags(3, CONFIG_TIMED_CONSUME);
+-    actionsTimedReset(fine);
+-    advanceFine(220UL * 256);
+-    assert(actionsTimedInput());
+-    assert(actionsTakeLayerSelection());
+-}
+-
+-int main(void) {
+-    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers(); autoSleep(); disabledLayerUserResumes(); sleepSettings();
++int existingTimedMain(void) {
++    crcReference(); validation(); timing(); highIntervals(); boundariesAndPhase(); layers();
+     return 0;
+ }
++
++#ifndef GLOBAL_SLEEP_INCLUSION
++int main(void) { return existingTimedMain(); }
++#endif
