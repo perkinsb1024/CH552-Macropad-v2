@@ -20,7 +20,7 @@ export function Toasts() {
       {warning && <div class="toast toast-error" role="status"><span>{warning}</span></div>}
       {toasts.value.slice().reverse().map((t) => (
         <div key={t.id} class={`toast toast-${t.tone}`} role="status">
-          <span>{t.text}</span>
+          <span>{t.text}{t.link && <> <a href={t.link.href} target="_blank" rel="noreferrer">{t.link.label}</a></>}</span>
           <button class="toast-close" aria-label="Dismiss" onClick={() => dismissToast(t.id)}>×</button>
         </div>
       ))}

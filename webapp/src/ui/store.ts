@@ -200,15 +200,16 @@ export interface Toast {
   id: number;
   tone: 'info' | 'success' | 'error';
   text: string;
+  link?: { label: string; href: string };
 }
 export const toasts = signal<Toast[]>([]);
 export const archivedFirmware = signal<{ version: number; url: string } | null>(null);
 const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/', 13: 'versions/format-v13/', 14: 'versions/format-v14/', 15: 'versions/format-v15/', 16: 'versions/format-v16/' };
 let toastId = 0;
 
-export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500, key?: string): void {
+export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500, key?: string, link?: Toast['link']): void {
   const id = ++toastId;
-  const next = [...toasts.value, { id, tone, text, key }];
+  const next = [...toasts.value, { id, tone, text, key, link }];
   const expired = new Set(key ? next.filter(t => t.key === key).slice(0, -4).map(t => t.id) : []);
   toasts.value = next.filter(t => !expired.has(t.id));
   setTimeout(() => dismissToast(id), ttl);
@@ -1194,7 +1195,7 @@ export async function save(): Promise<void> {
     saveState.value = { phase: 'saved', at: Date.now() };
     if (p.layers.some(layer => layer.idleLeds)) storeDraft(p, meta.value);
     else clearDraft(p.variant);
-    notify('success', 'Saved and verified. All 128 bytes read back from flash match.');
+    notify('success', 'Saved and verified. Test out your profile with', undefined, undefined, { label: 'Live View', href: siteUrl('liveView/') });
   } catch (error) {
     const message = (error as Error).message;
     saveState.value = { phase: 'error', message };
