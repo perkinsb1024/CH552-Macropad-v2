@@ -1,0 +1,79 @@
+{
+  "testedRevision": "52d34c6",
+  "workingTreeHadUncommittedChanges": true,
+  "firmware": {
+    "hostPreview": {
+      "cSuites": 27,
+      "layoutTests": 8,
+      "bootloaderTests": 19,
+      "passed": true
+    },
+    "hostNoPreview": {
+      "cSuites": 27,
+      "layoutTests": 8,
+      "bootloaderTests": 19,
+      "passed": true
+    },
+    "addressAndUndefinedSanitizers": {
+      "suites": [
+        "config",
+        "protocol",
+        "live_state"
+      ],
+      "bothGeometries": true,
+      "passed": true
+    },
+    "native": {
+      "six": {
+        "flash": 14331,
+        "stackReserve": 103,
+        "hexSha256": "4145fba3287fa943babc546cf7a38c425b4511bb25390e674d7a5c9c63cc1963",
+        "outputDirectory": "/private/tmp/macropad-live-v17/committed-six",
+        "realApplicationLimit": 14336
+      },
+      "three": {
+        "flash": 14327,
+        "stackReserve": 106,
+        "hexSha256": "3ef831b7aae6b26b1e76e53a551d905d09ef775c1c23b58429b724cc4468116a",
+        "outputDirectory": "/private/tmp/macropad-live-v17/committed-three",
+        "realApplicationLimit": 14336
+      }
+    }
+  },
+  "configurator": {
+    "files": 64,
+    "tests": 758,
+    "passed": true
+  },
+  "uploader": {
+    "build": true,
+    "tests": 91,
+    "passed": true
+  },
+  "completeSite": {
+    "build": true,
+    "typecheck": true,
+    "frozenArchives": 14,
+    "passed": true
+  },
+  "gate": "npm run verify:deploy",
+  "gateLog": "/private/tmp/macropad-live-v17/verify-deploy.log",
+  "hardwareValidated": false,
+  "releaseGenerated": false,
+  "firmwareFlashed": false,
+  "published": false,
+  "viewerSourceSha256": {
+    "webapp/src/codec/decode.ts": "1d9baa485dfbef7d035d303df62dde2524c7f9ae2c007eb00627db7dcdebe75d",
+    "webapp/src/protocol/client.ts": "ead62cd1592de5697533226327114031d64bbdb04c65a1f0aeffb81ed1feb00e",
+    "webapp/src/protocol/live.ts": "8fe99ad9e08cc8f89b55cc3abfab468cf76d5f682727213b29861c5543402137",
+    "webapp/src/protocol/packet.ts": "6ee9969d763991d53c837de23537f4fbd8b93ee42d126dd4394f199543756afb",
+    "webapp/src/protocol/simulator.ts": "cef1148d0e1c5ef14c6e7bede34508b02bffc57ea0a26443a5be746d4d4a1818",
+    "webapp/src/styles/app.css": "428049921e7b8a2a33a34323f6115d8988049b5ab131092ce01c88eedee8bd3b",
+    "webapp/src/ui/components/DeviceView.tsx": "c866fb1cf80e03c4db065bea84352e26bec80265b8a28e4fce31f87a4c01f56d",
+    "webapp/src/ui/components/LiveStatus.tsx": "5ab4126b69844fc7957fe5abc8f731edca2d38ecfde0393600f7bf7c1ec12da2",
+    "webapp/src/ui/components/ProfileViewer.tsx": "b924bdb5878249ee6b4f99f29139bf35a7912c0c3c36ca8099ce37f886545178",
+    "webapp/src/ui/store.ts": "8c97124678ad313f78f83516ea00aae3570abaa8c320db94f84d5454917c694b",
+    "webapp/tests/live-telemetry.test.ts": "ef28e4cbae4597b6fd82108f6b827f55329836e634901e545f41efdf2ceeaf49",
+    "webapp/tests/profile-viewer.test.ts": "23e6d81751afe40961bf505dbf1733db054cd76736fe1e6f49f8112f1f0293f0"
+  }
+}

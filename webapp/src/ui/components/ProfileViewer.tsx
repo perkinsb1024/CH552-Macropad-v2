@@ -1,10 +1,12 @@
 import { useEffect } from 'preact/hooks';
-import { connection, connectSimulator, layerName, profile, selectedLayer } from '../store';
+import { connection, connectSimulator, layerName, liveClock, liveRuntime, profile, selectedLayer } from '../store';
 import { followDeviceLayer } from '../profileViewer';
 import { ActionLabel } from './ActionLabel';
 import { ArchivedFirmwareNotice } from './ArchivedFirmwareNotice';
 import { DeviceView } from './DeviceView';
 import { TopBar } from './TopBar';
+import { LiveStatus, countdown } from './LiveStatus';
+import { timerRemaining } from '../../protocol/live';
 import { Toasts } from './Toasts';
 import { SLEEP_TIMEOUT_LABELS, SLEEP_TIMEOUT_MINUTES, MAX_TIMED_ACTIONS, TIMED_TICK_SECONDS } from '../../model/constants';
 import { duration } from './TimedActionsPanel';
@@ -36,6 +38,11 @@ export function ViewerTimers() {
         <div><strong>Timer {index + 1}</strong><span class="muted">{timer.layer === undefined ? 'All Layers' : layerName(timer.layer)}</span><span class="muted">
           {timer.resetOnInput ? 'After ' : 'Repeats every '}{duration(timer.ticks * TIMED_TICK_SECONDS)}{timer.resetOnInput ? ' of inactivity' : ''}
         </span></div>
+        {liveRuntime.value && liveClock.value - liveRuntime.value.receivedAt < 1000 && <p class="viewer-timer-status">
+          {(liveRuntime.value.timers.high[index]! & 1) ? 'Next Input Action Armed · ' : ''}
+          {timer.layer !== undefined && timer.layer !== liveRuntime.value.state.layer ? 'Paused Outside Its Layer' : `${countdown(timerRemaining(liveRuntime.value.timers, index, timer.ticks))} Until Next Fire`}
+          {(liveRuntime.value.timers.high[index]! & 1) && timer.consumeInput ? ' · Next Input Consumed' : ''}
+        </p>}
         <div><span class="muted">When Fired</span><ActionLabel action={timer.action} /></div>
         {(timer.resumeAction.type !== 'none' || timer.consumeInput) && <div>
           <span class="muted">Next Input</span><ActionLabel action={timer.resumeAction} />
@@ -102,6 +109,7 @@ export function ProfileViewer() {
             </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
           </div>}
           <DeviceView readOnly />
+          <LiveStatus />
           <p class="muted viewer-indicator"><strong>Layer Indicator</strong>: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
           <p class="muted viewer-indicator"><strong>Auto-Sleep</strong>: {viewedLayer?.autoSleep ? `${SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]} · ${p.dimInsteadOfOff ? 'Dim' : 'Off'} · ${p.consumeWakeInput ? 'Wake Input Consumed' : 'Wake and Execute'} · Layer Reminder ${p.showLayerIndicatorOnWake ? 'On' : 'Off'}` : 'Disabled'}</p>
         </section>

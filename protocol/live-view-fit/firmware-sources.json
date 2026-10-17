@@ -1,7 +1,6 @@
 {
   "CH552_Universal_Macropad.ino": "c465a2222bef2dba82931fb4101d8e7d4a4ba569c7e7ca0dc8fb1bc7bf8ad566",
   "platformio.ini": "74605f0cf98f19a0e48926165588f1d14caed113b11719327bb5e652aafbbbc8",
-  "src/.DS_Store": "571e60e45762b93e732d0f5c88502f66c58aeec54fd7a384b9717779f5637325",
   "src/actions.c": "b22655beb63dd34ce29f23ffa6cca36eca9f26ce240cfc4458d1e55c2722a5dc",
   "src/actions.h": "2656fff42aae5125611eefb05167b5837658ff74ed7342458fc388e8aad0e522",
   "src/config.c": "82f14a5593a7a230e4c53fb38465357c50a5d07d800c23115b63d728308592a4",

@@ -2575,3 +2575,15 @@ output {
 .meter-seg:last-child .meter-flyout::after { left: auto; right: min(50%, 50cqw); transform: translateX(50%) rotate(45deg); }
 .meter-seg:only-child .meter-flyout::after { left: 50%; right: auto; transform: translateX(-50%) rotate(45deg); }
 .meter-seg:hover .meter-flyout, .meter-seg:focus .meter-flyout { display: block; }
+
+/* Device feedback keeps physical input and accepted binding dispatch distinct. */
+.keycap.is-live-pressed, .enc-part.is-live-pressed { outline: 3px solid #54a8ef; outline-offset: 2px; }
+.keycap.is-live-fired, .enc-part.is-live-fired { box-shadow: inset 0 0 0 3px #5ace97, 0 0 16px #5ace9740; }
+.viewer-live { border-top: 1px solid var(--line); margin-top: 1.25rem; padding-top: 1rem; }
+.viewer-live header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.viewer-live h2 { margin: 0; font-size: 1rem; }
+.live-last-binding { display: grid; gap: .45rem; margin: 1rem 0; }
+.live-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.live-state-grid dt { font-size: .75rem; color: var(--fg-muted); margin-bottom: .3rem; }
+.live-state-grid dd { margin: 0; font-size: .85rem; line-height: 1.5; }
+.viewer-timer-status { font-size: .8rem; color: var(--fg-muted); }

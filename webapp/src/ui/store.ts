@@ -18,6 +18,7 @@ import { decodeImage, peekHeader, type DecodeResult } from '../codec/decode';
 import { ConfigClient, ProtocolError, type SavePhase } from '../protocol/client';
 import { WebHidTransport, webHidSupported, type Transport } from '../protocol/transport';
 import { SimulatedDevice } from '../protocol/simulator';
+import { advanceActivity, type LiveActivity, type LiveRuntime } from '../protocol/live';
 import { TRANSPORT_VERSION, type DeviceInfo, type DeviceStatus } from '../protocol/packet';
 import { exportProfile, importProfile, type LocalMetadata } from '../io/json';
 import { clearDraft, loadDraft, storeDraft } from '../io/drafts';
@@ -42,6 +43,11 @@ export const connection = signal<ConnectionState>({ kind: 'disconnected' });
 /** Read-only route: load hardware bindings without restoring or clearing editor drafts. */
 export const viewerMode = signal(false);
 export const hidSupported = webHidSupported();
+export const liveActivity = signal<LiveActivity | null>(null);
+export const liveRuntime = signal<LiveRuntime | null>(null);
+export const liveClock = signal(0);
+let liveOwner: Connection | null = null;
+
 
 /** Raw flash bytes from the last read, kept for diagnostics/export even when undecodable. */
 export const deviceFlash = signal<Uint8Array | null>(null);
@@ -847,34 +853,67 @@ export function resetToDefaults(): void {
 function updateDeviceStatus(conn: Connection, status: DeviceStatus): void {
   const c = connection.peek();
   if (c.kind !== 'connected' || c.connection !== conn) return;
+  if (viewerMode.peek()) {
+    const now = performance.now();
+    if (liveOwner !== conn) { liveOwner = conn; liveActivity.value = null; liveRuntime.value = null; }
+    if (status.live && status.flashValid) liveActivity.value = advanceActivity(liveActivity.peek(), status.live, now);
+    else liveActivity.value = null;
+    liveClock.value = now;
+  }
   conn.status = status;
   connection.value = { ...c };
 }
 
-// Poll serially so slow replies cannot accumulate queued status requests.
-// Signal updates restart this effect; disconnect/reconnect cancels the old loop.
-effect(() => {
+// Track connection identity so publishing status does not restart an in-flight poll.
+const pollingConnection = computed(() => {
   const c = connection.value;
-  if (c.kind !== 'connected') return;
+  return c.kind === 'connected' ? c.connection : null;
+});
+// One poll in flight. Runtime requests share the same client queue as status/saves.
+effect(() => {
+  const conn = pollingConnection.value;
+  const viewing = viewerMode.value;
+  if (!conn) {
+    liveOwner = null; liveActivity.value = null; liveRuntime.value = null;
+    return;
+  }
   let stopped = false;
   let timer: ReturnType<typeof setTimeout>;
+  const clockTimer = viewing ? setInterval(() => { liveClock.value = performance.now(); }, 100) : null;
+  const hidden = () => typeof document !== 'undefined' && document.hidden;
+  const interval = () => viewing && conn.status.live && !hidden() ? 50 : 500;
   const poll = async () => {
     try {
       if (saveState.peek().phase !== 'busy') {
-        const status = await c.connection.client.getStatus();
-        if (!stopped) updateDeviceStatus(c.connection, status);
+        const status = await conn.client.getStatus();
+        if (stopped) return;
+        updateDeviceStatus(conn, status);
+        if (viewing && status.live && status.flashValid && !hidden()) {
+          const previous = liveRuntime.peek();
+          if (!previous || performance.now() - previous.receivedAt >= 250) {
+            const state = await conn.client.getRuntime();
+            const timers = await conn.client.getTimers();
+            if (stopped) return;
+            const flash = deviceFlash.peek();
+            const crc = flash ? flash[7]! | flash[8]! << 8 : -1;
+            if (timers.profileCrc !== crc || !profile.peek()) {
+              liveActivity.value = null; liveRuntime.value = null;
+              await loadFromDevice();
+              return;
+            }
+            if (previous && previous.state.generation !== state.generation) liveActivity.value = advanceActivity(null, status.live, performance.now());
+            liveRuntime.value = { state, timers, receivedAt: performance.now() };
+          }
+        }
       }
     } catch {
-      // Keep the last known status on a transient failure and try again later.
+      // Retain the last sample; the viewer marks it stale after one second.
     } finally {
-      if (!stopped) timer = setTimeout(poll, 500);
+      if (!stopped) { liveClock.value = performance.now(); timer = setTimeout(poll, interval()); }
     }
   };
-  timer = setTimeout(poll, 500);
-  return () => {
-    stopped = true;
-    clearTimeout(timer);
-  };
+  timer = setTimeout(poll, interval());
+  return () => { stopped = true; clearTimeout(timer); if (clockTimer !== null) clearInterval(clockTimer); };
 });
 
 async function attach(transport: Transport, label: string): Promise<void> {
@@ -1010,6 +1049,8 @@ export async function loadFromDevice(options: { initial?: boolean } = {}): Promi
     const status = await client.getStatus();
     updateDeviceStatus(c.connection, status);
     const flash = await client.readFlash();
+    const current = connection.peek();
+    if (current.kind !== 'connected' || current.connection !== c.connection) return;
     deviceFlash.value = flash;
     const decoded = decodeImage(flash, info.variant);
     deviceDecode.value = decoded;

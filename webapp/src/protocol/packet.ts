@@ -12,6 +12,8 @@ export const enum Opcode {
   CommitWrite = 7,
   AbortWrite = 8,
   PreviewColor = 9,
+  GetLive = 11,
+  GetTimers = 12,
 }
 
 export const enum Status {
@@ -130,6 +132,7 @@ export interface DeviceStatus {
   uploadState: 0 | 1 | 2;
   droppedButtonActions: number;
   droppedRotationActions: number;
+  live?: FastLiveState;
 }
 
 export function parseStatus(data: Uint8Array): DeviceStatus | null {
@@ -141,5 +144,44 @@ export function parseStatus(data: Uint8Array): DeviceStatus | null {
     uploadState: Math.min(data[3]!, 2) as 0 | 1 | 2,
     droppedButtonActions: data[4]!,
     droppedRotationActions: data[5]!,
+    ...(data.length === 23 ? { live: parseFastLive(data) } : {}),
   };
+}
+
+/** Optional status extension. Counters wrap modulo 256 and are never cleared by reads. */
+export interface FastLiveState {
+  bindingLayer: number;
+  pressed: number;
+  clockwise: number;
+  counterclockwise: number;
+  bindings: number[];
+  source: number;
+  first: number;
+  second: number;
+  sequence: number;
+}
+function parseFastLive(data: Uint8Array): FastLiveState {
+  return { bindingLayer: data[6]!, pressed: data[7]!, clockwise: data[8]!, counterclockwise: data[9]!,
+    bindings: Array.from(data.slice(10, 19)), source: data[19]!, first: data[20]!, second: data[21]!, sequence: data[22]! };
+}
+export interface RuntimeState {
+  layer: number; baseLayer: number; previousLayer: number; oneShotReturn: number;
+  actionBusy: boolean; macroBusy: boolean; queued: number;
+  pendingKey: number; mouseButtons: number; rainbowPhase: number; rainbowSpeed: number;
+  indicatorPolicy: number; keyPolicy: number; effect: number; phases: number;
+  colorPreview: boolean; generation: number;
+}
+export function parseRuntime(data: Uint8Array): RuntimeState | null {
+  if (data.length !== 23) return null;
+  return { layer: data[0]!, baseLayer: data[1]!, previousLayer: data[2]!, oneShotReturn: data[3]!,
+    actionBusy: !!data[4], macroBusy: !!data[5], queued: data[6]!,
+    pendingKey: data[12]!, mouseButtons: data[13]!, rainbowPhase: data[14]!, rainbowSpeed: data[15]!,
+    indicatorPolicy: data[16]!, keyPolicy: data[17]!, effect: data[18]!, phases: data[19]!,
+    colorPreview: !!data[18] && !(data[18]! & 2), generation: data[21]! };
+}
+export interface TimerState { age: number[]; high: number[]; fraction: number[]; profileCrc: number }
+export function parseTimers(data: Uint8Array): TimerState | null {
+  if (data.length !== 17) return null;
+  return { age: Array.from(data.slice(0, 5)), high: Array.from(data.slice(5, 10)),
+    fraction: Array.from(data.slice(10, 15)), profileCrc: data[15]! | data[16]! << 8 };
 }

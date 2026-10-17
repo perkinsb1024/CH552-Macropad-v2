@@ -5,7 +5,7 @@ import { actionTooltip, summarize } from '../../model/actions';
 import { matchesChord } from '../../model/chords';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
+import { connection, liveActivity, liveClock, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconRotate } from './Icons';
 import { ActionLabel } from './ActionLabel';
@@ -25,6 +25,13 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const chordKeys = new Set<number>();
   for (const c of p.chords) if (c.global || c.layer === li) { chordKeys.add(c.keyA); chordKeys.add(c.keyB); }
   const selection = readOnly ? null : selectedSlot.value;
+  const c = connection.value;
+  const activity = readOnly ? liveActivity.value : null;
+  const fresh = activity && liveClock.value - activity.receivedAt < 1000 && c.kind === 'connected' && c.connection.status.flashValid && c.connection.status.currentLayer === li;
+  const pressed = (index: number) => !!fresh && !!(activity!.sample.pressed & (1 << index));
+  const fired = (index: number) => !!fresh && activity!.sample.bindingLayer === li && activity!.hotUntil[index]! > liveClock.value;
+  const turned = (index: number) => !!fresh && index >= 7 && activity!.turnUntil[index - 7]! > liveClock.value;
+
   const selectedChord = selection?.kind === 'chord'
     ? p.chords.find((c) => matchesChord(c, selection) && (c.global || c.layer === li))
     : undefined;
@@ -171,7 +178,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         key={index}
         title={actionTooltip(action)}
         data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)}
-        class={`keycap ${rainbow ? 'keycap-rainbow' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
+        class={`keycap ${pressed(index) ? 'is-live-pressed' : ''} ${fired(index) ? 'is-live-fired' : ''} ${rainbow ? 'keycap-rainbow' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-strip:${rainbow ? RAINBOW_GRADIENT : `linear-gradient(${color}, ${color})`}; --led-glow:${off ? 'transparent' : rainbow ? '#8000ff' : color}`}
         onClick={readOnly ? undefined : () => select(slot)}
         draggable={!readOnly}
@@ -193,14 +200,15 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   };
 
   const renderEncoderPart = ({ slot, label, icon }: { slot: Slot; label: string; icon?: preact.ComponentChildren }) => {
+    const liveIndex = slot.kind === 'encoderButton' ? keys : slot.kind === 'clockwise' ? 7 : 8;
     const action = slot.kind === 'encoderButton' ? layer.encoderButton : slot.kind === 'clockwise' ? layer.clockwise : layer.counterclockwise;
     const problem = actionProblem(action, { layerCount, rotation: slot.kind !== 'encoderButton' });
     const dragged = readOnly ? null : draggedSlot.value;
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
     const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
-      <button title={actionTooltip(action)} data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)} class={`enc-part ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
-        <span class="enc-part-label">{icon}{label}</span>
+      <button title={actionTooltip(action)} data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)} class={`enc-part ${(slot.kind === 'encoderButton' && pressed(liveIndex)) || turned(liveIndex) ? 'is-live-pressed' : ''} ${fired(liveIndex) ? 'is-live-fired' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
+        <span class="enc-part-label">{icon}{label}{readOnly && turned(liveIndex) && <small> · {activity!.turns[liveIndex - 7]} Detent{activity!.turns[liveIndex - 7] === 1 ? '' : 's'}</small>}</span>
         <span class="enc-part-value"><ActionLabel action={action} showTooltip={false} /></span>
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>

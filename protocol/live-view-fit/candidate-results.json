@@ -353,5 +353,19 @@
         "stack": 103
       }
     ]
+  },
+  {
+    "ledger": "manual-paged-generation",
+    "parent": "reverse-serialization",
+    "candidates": [
+      {
+        "name": "paged-generation",
+        "rc": 1,
+        "flash": 14339,
+        "stack": 103,
+        "pagedRam": 108,
+        "reason": "exceeds real flash limit by 3 bytes"
+      }
+    ]
   }
 ]

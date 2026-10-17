@@ -7,6 +7,8 @@ import { draftKey, storeDraft } from '../src/io/drafts';
 import { connection, connectSimulator, disconnect, dialog, profile, selectedLayer, viewerMode } from '../src/ui/store';
 import { followDeviceLayer } from '../src/ui/profileViewer';
 import { DeviceView } from '../src/ui/components/DeviceView';
+import { LiveStatus } from '../src/ui/components/LiveStatus';
+import { liveActivity, liveRuntime, liveClock } from '../src/ui/store';
 import { ProfileViewer, ViewerChords, ViewerMacros, ViewerTimers } from '../src/ui/components/ProfileViewer';
 
 vi.mock('preact/hooks', async importOriginal => ({
@@ -46,6 +48,7 @@ afterEach(async () => {
   await disconnecting;
   profile.value = null;
   viewerMode.value = false;
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -169,4 +172,78 @@ it('shows the saved sleep timeout and wake policies for enabled layers', async (
   expect(text(ProfileViewer())).toContain('Auto-Sleep: 2 Hours · Dim · Wake and Execute · Layer Reminder Off');
   profile.value.layers[0]!.autoSleep = false;
   expect(text(ProfileViewer())).toContain('Auto-Sleep: Disabled');
+});
+
+it('shows brief accepted bindings, physical holds and independent consumed encoder activity', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  const device = conn.transport as SimulatedDevice;
+  device.liveStatus[1] = 1; // Held Key 1.
+  device.liveStatus[4] = 1; // Accepted Key 1 binding counter.
+  device.liveStatus[13] = 0; device.liveStatus[14] = 1; device.liveStatus[15] = 4; device.liveStatus[16] = 1;
+  await vi.advanceTimersByTimeAsync(60);
+  const first = nodes(DeviceView({ readOnly: true })).find(node => String(node.props['aria-label']).startsWith('Key 1:'))!;
+  expect(first.props.class).toContain('is-live-pressed');
+  expect(first.props.class).toContain('is-live-fired');
+  expect(text(LiveStatus())).toContain('Latest Binding');
+  device.liveStatus[1] = 0;
+  device.liveStatus[2] = 2; // Two clockwise detents consumed by wake; no binding counter change.
+  await vi.advanceTimersByTimeAsync(60);
+  const encoder = nodes(DeviceView({ readOnly: true })).filter(node => String(node.props.class).startsWith('enc-part '));
+  expect(encoder.some(node => String(node.props.class).includes('is-live-pressed'))).toBe(true);
+  expect(encoder.some(node => String(node.props.class).includes('is-live-fired'))).toBe(false);
+  expect(liveActivity.value?.turns[0]).toBe(2);
+});
+it('reports sleep independently from brightness and marks stale telemetry', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  const device = conn.transport as SimulatedDevice;
+  device.timers[5 + (profile.value?.timedActions?.length ?? 0)] = 1;
+  device.runtime[16] = 2; device.runtime[17] = 1; // Lighting can change while asleep.
+  await vi.advanceTimersByTimeAsync(300);
+  const content = text(LiveStatus());
+  expect(content).toContain('Asleep');
+  expect(content).toContain('Layers Bright');
+  expect(content).toContain('Keys Dim');
+  vi.spyOn(conn.client, 'getStatus').mockRejectedValue(new Error('unavailable'));
+  await vi.advanceTimersByTimeAsync(1200);
+  expect(text(LiveStatus())).toContain('Updates Paused');
+  expect(nodes(DeviceView({ readOnly: true })).some(node => String(node.props.class).includes('is-live-pressed'))).toBe(false);
+});
+it('reloads bindings after an external profile save and clears old activity after a firmware reset', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  const device = conn.transport as SimulatedDevice;
+  const oldProfile = profile.value;
+  const p = structuredClone(profile.value!);
+  p.layers[0]!.keys[0] = { type: 'keyTap', modifiers: 0, usage: 5 };
+  const image = encodeProfile(p);
+  device.flash.set(image); device.active.set(image);
+  device.runtime[21] = device.runtime[21]! + 1;
+  await vi.advanceTimersByTimeAsync(400);
+  expect(profile.value).not.toBe(oldProfile);
+  expect(profile.value!.layers[0]!.keys[0]).toEqual(p.layers[0]!.keys[0]);
+  expect(liveRuntime.value?.timers.profileCrc).toBe(image[7]! | image[8]! << 8);
+  device.liveStatus[4] = 1; device.liveStatus[16] = 1;
+  await vi.advanceTimersByTimeAsync(60);
+  expect(liveActivity.value?.latest).not.toBeNull();
+  device.runtime[21] = device.runtime[21]! + 1;
+  await vi.advanceTimersByTimeAsync(300);
+  expect(liveActivity.value?.latest).toBeNull();
+  expect(liveClock.value - liveActivity.value!.receivedAt).toBeLessThan(100);
+});
+
+it('expires highlights and marks stale state while a status request is still in flight', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  const device = conn.transport as SimulatedDevice;
+  device.liveStatus[1] = 1;
+  await vi.advanceTimersByTimeAsync(60);
+  let resolve!: (status: typeof conn.status) => void;
+  vi.spyOn(conn.client, 'getStatus').mockImplementation(() => new Promise(done => { resolve = done; }));
+  await vi.advanceTimersByTimeAsync(1200);
+  expect(text(LiveStatus())).toContain('Updates Paused');
+  expect(nodes(DeviceView({ readOnly: true })).some(node => String(node.props.class).includes('is-live-pressed'))).toBe(false);
+  resolve(conn.status);
+  await vi.advanceTimersByTimeAsync(1);
 });
