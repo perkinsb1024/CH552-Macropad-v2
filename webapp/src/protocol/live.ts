@@ -29,10 +29,11 @@ export function advanceActivity(previous: LiveActivity | null, sample: FastLiveS
   });
   const delta = counterDelta(sample.sequence, previous.sample.sequence);
   if (delta) for (const key of sourceKeys(sample.source)) hotUntil[key] = now + 180;
-  const turns = [counterDelta(sample.clockwise, previous.sample.clockwise), counterDelta(sample.counterclockwise, previous.sample.counterclockwise)];
+  const turnDeltas = [counterDelta(sample.clockwise, previous.sample.clockwise), counterDelta(sample.counterclockwise, previous.sample.counterclockwise)];
+  const turns = turnDeltas.map((count, i) => count + (previous.turnUntil[i]! > now ? previous.turns[i]! : 0));
   const turnUntil = [...previous.turnUntil];
-  turns.forEach((count, i) => { if (count) turnUntil[i] = now + 180; });
-  return { sample, receivedAt: now, hotUntil, turns: turns.map((count, i) => count || previous.turns[i]!), turnUntil,
+  turnDeltas.forEach((count, i) => { if (count) turnUntil[i] = now + 180; });
+  return { sample, receivedAt: now, hotUntil, turns, turnUntil,
     latest: delta ? sample : previous.latest, latestAt: delta ? now : previous.latestAt,
     bindingDelta: delta || previous.bindingDelta };
 }

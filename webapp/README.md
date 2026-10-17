@@ -1,7 +1,7 @@
 # Universal Macropad Configurator
 
 Browser-based editor for the CH552 **Universal Macropad**. It talks to the device over
-WebHID, edits the 128-byte configuration image defined in `protocol/config-v16.md`,
+WebHID, edits the 128-byte configuration image defined in `protocol/config-v17.md`,
 and saves it using the transport in `protocol/hid-v1.md`. There is no server: the
 built output is static files and runs from GitHub Pages, any static host, or a local
 directory.
@@ -62,14 +62,62 @@ to keep a compact shortcut reference beside your work. The configurator's
 **Live View** link opens it in another tab. Connect the macropad in the viewer
 to read its saved profile; editor drafts are neither restored nor cleared.
 
-The viewer shows the same macropad preview, layer tabs, applicable local/global
-chords, and compact timed-action summaries. It has no editing, saving, drag/drop,
-or configuration clipboard shortcuts. Device status is polled every 500ms.
-Manual tab selection shows a persistent warning when it differs from the active
-device layer. Ordinary polls preserve that selection; the next reported device
-layer change selects the device layer again. **Follow Device** also resynchronizes
-immediately. On disconnect, the last loaded profile remains available with a
-disconnected notice. Blank/invalid device profiles do not display starter bindings.
+The viewer shows the macropad preview, layer tabs, applicable local/global
+chords, macro steps and timed-action summaries. It has no editing, saving,
+drag/drop or configuration clipboard shortcuts. It reads the saved device
+profile independently of unsaved configurator edits.
+
+With v17 firmware:
+
+- Blue outlines show debounced physical keys, encoder-button holds and completed
+  clockwise/counterclockwise detents, including consumed wake inputs.
+- Green flashes show accepted bindings, including short taps between polls and
+  both keys of a chord. Feedback lasts about 180ms. **Latest Binding** identifies
+  the source, action and effective layer at dispatch. Several bindings between
+  polls show an update count and only the latest action.
+- **Auto-Sleep** distinguishes **Disabled**, **Asleep** and an awake countdown.
+  **Brightness**, **LED Effect** and **Rainbow** show runtime policies, temporary
+  effects or color preview, remaining blink phases and rainbow settings. They
+  do not stream actual rendered LED colors.
+- **Layer State** shows base/previous layers, armed one-shot return and a key
+  waiting for a chord. **Playback** shows action/macro activity and the binding
+  queue depth. **Latched Mouse Buttons** and **Dropped Actions** appear when nonzero.
+- **Timed Actions** show remaining time, **Paused Outside Its Layer**, and armed
+  next-input actions with consumption state. All four user timer slots remain
+  available; telemetry consumes no saved-profile bytes or timer slots.
+
+Visible telemetry viewers schedule status polls 50ms after the previous poll
+completes, with runtime/timer reads at least 250ms apart. Requests run serially
+and pause during that page's saves. Hidden pages use 500ms status polling and
+suspend runtime/timer reads; the ordinary configurator retains 500ms polling.
+Slow requests and background browser scheduling can increase these intervals.
+A separate 100ms UI clock expires feedback during stalled requests. Samples
+older than one second suppress live highlights and show stale-state messages.
+Profile CRC changes reload saved settings; reset-generation changes clear old
+activity. Polling does not restart inactivity timers or prevent sleep.
+
+An accepted binding means dispatch or queue acceptance, not completed output or
+host receipt. Physical wake can occur without its binding firing. The display
+is not an event log: counters wrap modulo 256, a burst of exactly 256 unseen
+events can be missed, and a short consumed press/release can fall between physical
+bitmap samples. Gaps longer than one second establish a new baseline rather than
+replaying activity. Runtime and timer replies are separate snapshots; countdowns
+also inherit 16ms timer quantization, polling delay and clock error. Persistent
+mouse latches do not include every physical hold or temporary click.
+
+Manual layer selection shows a persistent warning when it differs from the active
+device layer and suppresses live outlines on that inactive layer. Ordinary polls
+preserve that selection; the next reported device layer change selects the device
+layer again. **Follow Device** also resynchronizes immediately. On disconnect,
+the last loaded profile remains available with a disconnected notice.
+Blank/invalid profiles do not display starter bindings or live activity.
+
+The active viewer connects to v17 firmware. Published v16 devices are directed
+to the frozen v16 editor/viewer, which provides the saved-profile/layer reference
+without telemetry. Within a supported connection, six-byte `GET_STATUS` replies
+retain that basic view and skip runtime requests; 23 bytes advertise telemetry.
+New reads are `GET_LIVE` (11) and `GET_TIMERS` (12), over transport version 1.
+See the [complete wire reference](../protocol/config-v17.md#live-view-telemetry).
 
 `/liveView/?sim=six` and `?sim=three` provide hardware-free previews. Like the
 configurator, the simulator models configuration transport rather than physical
@@ -126,7 +174,7 @@ the complete site and verifies archives. Direct pushes to `main` are supported;
 pull requests and repository protection are optional, as described in the
 [release process](../documentation/Firmware%20Release%20Process.md#publish-after-validation).
 
-The active format 16 editor is served at the project site's root. Frozen
+The active format 17 editor is served at the project site's root. Frozen
 configurators are checked into `public/versions/` and copied into `dist/versions/`
 by Vite on every build. The build verifies each archived file's SHA-256 against
 its `archive.json`, so a failed archive check prevents deployment. No old editor
@@ -144,12 +192,13 @@ is rebuilt from dependencies in CI.
 - `versions/format-v11/` serves the frozen v11 editor and live view from the finalized v11 release.
 - `versions/format-v10/` serves the frozen v10 editor and live view built before v11 changes.
 - `versions/format-v9/` serves the frozen v9 editor and live view built before the v10 changes.
+- `versions/format-v16/` serves the finalized published v16 editor and live view from `51db5e6`, without runtime telemetry.
 - `versions/format-v15/` serves the finalized v15 release editor and live view from `8c150a0`.
 - `versions/format-v14/` serves the frozen outgoing v14 editor and live view from `0fb6132`.
 - `versions/format-v13/` serves the frozen published v13 editor and live view.
 - `versions/format-v7/` serves the frozen v7 editor and live view from commit `196e81e`.
 
-The footer links to the archive list. Detecting format 2–15 firmware presents a
+The footer links to the archive list. Detecting format 2–16 firmware presents a
 persistent link to its archived editor and closes the connection without reading
 or writing profiles. The active editor has one firmware encoder and one set of
 indicator controls. [Archive provenance and rebuild instructions](archives/README.md)
@@ -157,13 +206,13 @@ record the minimal hosting adjustments to the v2 build.
 
 Each editor writes to a separate `universal-macropad:format-vN:` draft namespace.
 The active editor can still recover/migrate drafts under the former shared key,
-and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11/v12/v13/v14/v15 drafts without overwriting or clearing the archived namespace.
+and can recover v2/v3/v4/v5/v6/v7/v8/v9/v10/v11/v12/v13/v14/v15/v16 drafts without overwriting or clearing the archived namespace.
 
-Version 2–15 binary profiles, version 1–15 JSON files, and older drafts can still be
-migrated into the active format 16 editor after a firmware upgrade. Bindings and
+Version 2–16 binary profiles, version 1–16 JSON files, and older drafts can still be
+migrated into the active format 17 editor after a firmware upgrade. Bindings and
 colors retain their meanings, with **Teal** replaced by **Cyan**; **Blink Once** becomes the timed indication and transparency
 defaults to off. **Rainbow Phase Spacing** defaults to **60°** on both variants. Firmware does not migrate flash itself: save the migrated profile
-through the active editor to store v16. Older stored profiles remain readable but inactive until saved as v16.
+through the active editor to store v17. Older stored profiles remain readable but inactive until saved as v17.
 
 **LED Control** bindings expose existing LED commands plus **Set All LEDs**, relative steps of -1 or +1,
 absolute settings, configured restores, and five common brightness presets.
@@ -217,10 +266,10 @@ preserved through layer edits, clipboard and undo; v6 profiles/drafts reject it.
 visits. Repeating a persistent **Previous Layer** action swaps between two layers.
 Return-path warnings explain that this target depends on runtime history.
 
-The protocol simulator accepts only valid v16 profiles and round-trips the new
+The protocol simulator accepts only valid v17 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Previous released firmware has been hardware tested on both geometries; see
-**Release Firmware Status** for published v15 coverage. Bundled `../profiles/*.json`
+**Release Firmware Status** for published v16 coverage. Bundled `../profiles/*.json`
 maximum-capacity starter files use v15 JSON (migrated on import) and are checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
@@ -241,7 +290,7 @@ and media controls. Acceleration is not part of this merged build.
 v8 writes **Type Text** with first byte `0x10`; old type-9 text is decoded according
 to its source version before re-encoding. **None** remains `00 00`. Binary, JSON,
 draft and raw-device migration cover every binding location, including timers.
-Legacy firmware connects through its frozen editor, while old flash on v16 can
+Legacy firmware connects through its frozen editor, while old flash on v17 can
 be read and migrated without being automatically overwritten.
 
 ## Mouse Clicks (v8+)
@@ -272,16 +321,22 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v15 firmware from revision
-`a91cb995`: [three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
-[six-key](../releases/ch552-macropad-6-key-a91cb995.hex). The
-[frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/) matches
-these releases, including **Auto-Sleep**. The active editor targets v16 source; no v16 release is bundled. The user has completed v15 firmware
-hardware validation. Automated tests and native builds pass on both geometries.
-Older-firmware connections link to the matching archive and updater. Back up
-profiles, update firmware, then load/import and explicitly save in the active
-editor. Older imports preserve action semantics, macros, timer units and storage.
-Oversized older imports remain editable/exportable until reduced.
+The release HEX files and bundled uploader use v16 firmware from revision
+`780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and
+[six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The
+[frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/)
+matches these hardware-validated releases. The active editor targets unreleased
+v17 with **Live View** telemetry. No v17 release is bundled, and v17 hardware
+validation remains pending. Older-firmware connections link to the matching
+archive and updater. The frozen v16 editor/viewer was built from finalized
+release source `51db5e6`; all 746 tests and its production build passed.
+
+Back up profiles before updating firmware. V17 firmware leaves v16 DataFlash
+readable but inactive until **Save to Device** explicitly writes a v17 profile.
+Binary migration preserves the v16 payload and updates the version and CRC.
+JSON v16 and board drafts migrate with settings and local metadata intact,
+including retained per-key palettes. Original drafts remain unchanged. Oversized
+older imports remain editable/exportable until reduced.
 
 ## Horizontal Scrolling (v9)
 
@@ -347,7 +402,7 @@ All **Mouse Toggle** actions share one global button state across physical input
 chords, timers and macros. Any toggle can undo another toggle for the same button;
 held actions retain their physical ownership. Layer-route analysis follows steps
 until cancellation.
-See [the complete v15 reference](../protocol/config-v16.md) and
+See [the complete v17 reference](../protocol/config-v17.md) and
 [implementation and optimization notes](../protocol/macros-implementation.md).
 
 ## Mouse Buttons and Persistent Actions (V12)
@@ -379,7 +434,7 @@ the shared mouse action; legacy pointer steps become signed single-axis deltas.
 
 **Media / System** taps expose **Ctrl**, **Shift**, **Alt** and **GUI** modifiers
 for eight-bit usages. Twelve-bit unmodified taps and holds remain available;
-modified usages above `0xFF` are rejected. The active v16 editor also supports
+modified usages above `0xFF` are rejected. The active v17 editor also supports
 modified holds. Firmware drains
 the keyboard modifier report before the consumer press, then drains the
 consumer release before removing temporary modifiers.
@@ -392,10 +447,10 @@ by regression tests. USB product names are **3-Key Macropad** and **6-Key Macrop
 
 ## Action Ordering and Holds (V14)
 
-The active editor exports JSON v16, writes binary format 16 and stores local
-profiles under `format-v16:board:`. JSON and drafts use `headerMarker: "B"`,
+The active editor exports JSON v17, writes binary format 17 and stores local
+profiles under `format-v17:board:`. JSON and drafts use `headerMarker: "B"`,
 while binary images use marker `0x42`, version byte 1 and CRC bytes 7–8. Its codec uses the reordered types in
-[the complete format reference](../protocol/config-v16.md), including swapped
+[the complete format reference](../protocol/config-v17.md), including swapped
 **Pause**/**Type Text** records and the shared layer action modes. Migration
 decodes every binding, both timer fields and every macro step using the source
 version, then re-encodes and computes the CRC. Authentic finalized v13 binary
@@ -413,7 +468,7 @@ analysis includes relative holds.
 
 The finalized v13 editor and live view are frozen at `public/versions/format-v13/`
 with source provenance and checksums. Published v13 firmware connects through
-that editor; the shared uploader offers v13 as a previous release and v14 as the latest release.
+that editor; the shared uploader offers v13 as a previous release and v16 as the latest release.
 
 ## Auto-Sleep (v15 and Later)
 
@@ -451,7 +506,7 @@ restarts **On for 1.5 Seconds** or **Blink by Layer Number**; **Always On** and
 indicate when the wake reminder is disabled.
 
 Enablement uses layer bit 1; profile settings use header byte 6 bits 0–4.
-No profile bytes or user timer slots are added. JSON v16 and drafts preserve
+No profile bytes or user timer slots are added. JSON v17 and drafts preserve
 `sleepTimeoutMinutes`, `consumeWakeInput`, `showLayerIndicatorOnWake` and
 `dimInsteadOfOff`, as well as `autoSleep` per layer. Missing fields in older
 JSON/drafts use the defaults above. Binary v2–v14, JSON v1–v14 and older drafts
@@ -462,12 +517,12 @@ the saved timeout and wake policies in live view.
 The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
 outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
 and file checksums. Published v14 firmware routes there; the shared uploader
-bundles v15 as the latest release and preserves v14 under **Previous Release**.
+bundles v16 as the latest release and preserves v15 and earlier releases under **Previous Release**.
 
 
 ## Header and Chord Window
 
-The active v16 editor keeps the nine-byte header and 119-byte payload. It packs
+The active v17 editor keeps the nine-byte header and 119-byte payload. It packs
 the saved timer count into byte 4 bits 0–2, chords into bits 3–7, the shifted
 pool length into byte 3, and window/transparency/rainbow settings into byte 5.
 Byte 6 stores **Sleep Timeout** in bits 0–1, **Consume Wake Input** in bit 2,
@@ -484,8 +539,8 @@ Saved chords with an old zero window retain their bindings and require an
 explicit window selection before encoding or saving. They remain exportable
 as JSON and recoverable as drafts while awaiting that selection.
 
-Earlier v15 draft keys remain unchanged; recovered profiles use
-`universal-macropad:format-v16:board:draft:six-key` or corresponding three-key
+Earlier v16 and v15 draft keys remain unchanged; recovered profiles use
+`universal-macropad:format-v17:board:draft:six-key` or corresponding three-key
 key on subsequent persistence. The editor retains 5ms units internally for
 profile comparisons and old-draft interpretation; only even values 4–18 are
 valid device settings. Zero is an editor-only unresolved migration state.
@@ -493,7 +548,7 @@ valid device settings. Zero is an editor-only unresolved migration state.
 
 ## Per-Key Layer Colors (v16)
 
-The active editor writes format 16 and palette version 4. **Layer Indicator
+The active editor writes format 17 and palette version 4. **Layer Indicator
 Color** starts with **Per-Key Colors** and ends with **Rainbow**. Selecting
 **Per-Key Colors** initializes each idle color from the current uniform color;
 subsequent selections restore the retained palette. Select a numbered key to edit
@@ -514,7 +569,7 @@ Storage segments, including free space, expose compact hover/focus/tap flyouts.
 
 The optional layer field `idleLeds` contains one palette index per physical key.
 It is required when `indicatorColor` is zero. Drafts preserve active and inactive
-palettes; JSON v16 exports the array as color names and imports names, hex values
+palettes; JSON v17 exports the array as color names and imports names, hex values
 or indices. Uniform layers retain their inactive array locally but encode no
 palette bytes. Device reads recover only active palettes. Retained palettes
 survive uploads through a browser draft, and JSON backups preserve them across

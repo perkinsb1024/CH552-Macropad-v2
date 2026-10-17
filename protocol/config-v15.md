@@ -28,10 +28,10 @@ layer holds. It imports binary versions 2–14, JSON versions 1–14 and older l
 drafts by decoding their source format before v15 encoding.
 
 The pre-built v15 release files use source revision `a91cb995`:
-[three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
-[six-key](../releases/ch552-macropad-6-key-a91cb995.hex). Native builds and
+[three-key](../webUploader/firmware-history/ch552-macropad-3-key-a91cb995.hex) and
+[six-key](../webUploader/firmware-history/ch552-macropad-6-key-a91cb995.hex). Native builds and
 automated regressions pass on both hardware variants. The user has completed
-v15 firmware hardware validation. The active configurator matches these files;
+v15 firmware hardware validation. The frozen v15 configurator matches these files;
 v14 firmware uses its frozen configurator at `versions/format-v14/`.
 
 The firmware validates the version, variant, section bounds, every action,
@@ -125,7 +125,7 @@ older imports remain editable and exportable, with saving blocked until repaired
 
 Published v14 firmware uses the frozen editor at `versions/format-v14/`.
 Connecting it to the active editor offers that archive. The shared firmware
-installer provides v15 as the latest release and preserves v14 and earlier
+installer provides v16 as the latest release and preserves v15 and earlier
 releases with their matching archived editors.
 
 ## Header and Rainbow Settings
@@ -1246,7 +1246,7 @@ The current native builds use the following allocations, in bytes:
 | Three keys | 14,218 | 118 | 105 | 356 | 134 | 93 |
 
 Host suites pass with color preview enabled and disabled, and both native
-builds pass real-limit layout/startup checks. The active v15 configurator
+builds pass real-limit layout/startup checks. The frozen v15 configurator
 supports the complete encoding above. The user has completed v15 firmware
 hardware validation. These measurements describe the v15 release from source
 revision `a91cb995`; both release HEX files match fresh temporary native builds.

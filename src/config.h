@@ -6,7 +6,7 @@
 
 #define CONFIG_SIZE 128
 // Format 16 adds optional per-key layer palettes and a unified LED palette.
-#define CONFIG_VERSION 16
+#define CONFIG_VERSION 17
 #define CONFIG_MARKER 'B'
 #define CONFIG_HEADER_SIZE 9
 #define CONFIG_HEADER_MARKER 0
@@ -69,7 +69,7 @@
 #error "PHYSICAL_VARIANT must be 0 (six keys) or 1 (three keys)."
 #endif
 
-// Action numbers are part of the saved format; v16 retains the finalized map.
+// Action numbers are part of the saved format; v17 retains the finalized v16 map.
 #define CONFIG_ACTION_NONE             0x0
 #define CONFIG_ACTION_PAUSE            0x10 // Full first byte; parameter: 16ms units.
 #define CONFIG_ACTION_STRING           0x20 // Full first byte; parameter: pool offset.

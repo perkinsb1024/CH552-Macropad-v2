@@ -1,5 +1,12 @@
 # Live View Telemetry Experiment
 
+This document preserves the implementation and fitting history. Current behavior
+and wire layouts are documented in the standalone
+[format 17 reference](config-v17.md#live-view-telemetry), with user guidance in the
+[Configuration Overview](../documentation/Configuration%20Overview.md#live-view).
+The retained feature is now assigned firmware/configuration version 17. The
+format-16 wire description below records the prototype before that version bump.
+
 Branch: `experiment/v17-instant-auto-sleep-and-live-view-updates`.
 Baseline: `780fcc7`. Fitted firmware checkpoint: `52d34c6`.
 Saved configuration remains format 16; transport remains version 1.

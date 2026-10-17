@@ -13,7 +13,7 @@ import { ACTION_DESCRIPTORS, blankAction, relativeTargetLayer } from '../src/mod
 const hex = (bytes: Uint8Array) => [...bytes].map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
 
 describe('default profile image headers', () => {
-  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes the B/v15 header', (variant) => {
+  it.each([VARIANT_SIX_KEYS, VARIANT_THREE_KEYS])('migrates version 2 images for variant %s and writes the current B header', (variant) => {
     const profile = defaultProfile(variant);
     profile.layers[0]!.indicatorBehavior = 1;
     profile.layers[0]!.indicatorColor = 8;
@@ -28,7 +28,7 @@ describe('default profile image headers', () => {
     expect(decoded.ok && decoded.profile).toEqual(profile);
     if (!decoded.ok) throw new Error(decoded.detail);
     const upgraded = encodeProfile(decoded.profile);
-    expect(upgraded[1]).toBe(16);
+    expect(upgraded[1]).toBe(17);
     expect(upgraded[5]).toBe(0x62);
     expect([...upgraded.subarray(9)]).toEqual([...encodeProfile(profile).subarray(9)]);
     legacy[6] = legacy[6]! ^ 1;
@@ -46,12 +46,12 @@ describe('default profile image headers', () => {
   });
   it('six-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_SIX_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('42 10 02 00 00 62');
+    expect(hex(image.subarray(0, 6))).toBe('42 11 02 00 00 62');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('three-key default header', () => {
     const image = encodeProfile(defaultProfile(VARIANT_THREE_KEYS));
-    expect(hex(image.subarray(0, 6))).toBe('42 10 03 00 00 62');
+    expect(hex(image.subarray(0, 6))).toBe('42 11 03 00 00 62');
     expect(imageCrc(image)).toBe(storedCrc(image));
   });
   it('defaults round-trip', () => {
@@ -152,7 +152,7 @@ describe('pointer hold auxiliary bit', () => {
     profile.layers[0]!.keys[0] = { type: 'mouseX', delta: -1, hold: true };
     image = encodeProfile(profile);
     expect([...image.subarray(9, 11)]).toEqual([0x16, 0xff]);
-    expect(image[1]).toBe(16);
+    expect(image[1]).toBe(17);
     image[9] = 0x46;
     sealImage(image);
     expect(decodeImage(image).ok).toBe(true);
@@ -323,7 +323,7 @@ describe('decoder rejections', () => {
   });
   it('unsupported version', () => {
     const image = base();
-    image[1] = 17;
+    image[1] = 18;
     sealImage(image);
     expect(decodeImage(image)).toMatchObject({ ok: false, reason: 'unsupported-version' });
   });

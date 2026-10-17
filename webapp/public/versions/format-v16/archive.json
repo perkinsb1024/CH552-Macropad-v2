@@ -1,0 +1,23 @@
+{
+  "formatVersion": 16,
+  "sourceCommit": "51db5e6df553e8cd123dbc47acbe711134b25a68",
+  "changes": [
+    "Frozen finalized published v16 editor and live view, without Live View telemetry. Preserved v16 board draft namespace. HTML archive banners and shared uploader redirect; application assets unchanged.",
+    "Built with installed dependencies matching the unchanged source lockfile."
+  ],
+  "validation": "All 746 tests across 63 files passed against the extracted release source and its v16 firmware validator; TypeScript, production build and existing archive checks passed.",
+  "sha256": {
+    "assets/configurator-DTZoJLE1.js.map": "a3dab9e12e6b25e9f3e24f5f9045fdd36e9ec1c740d2fa00e38dfd27af87a52b",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-DBbncTel.css": "57e878bc2cb3b778870256f3127c2e13d3073a82f8254be1efd3a84fe4d019c4",
+    "assets/main-wQRvMJ9D.js": "2fec41d1401cd29d0efbf563b1320b20875bd5230fe948a928cea5a97e1ef291",
+    "assets/main-wQRvMJ9D.js.map": "c95b0b1b02987ae176f59b506be1adc26c01b4278e63357e929787ea6dbd6a84",
+    "assets/viewer-DTZoJLE1.js.map": "008a7ae5b1903f224377f85cc6dc9f3db8f4d8050a36c8d8fb5d5a5c96edfd3a",
+    "favicon.svg": "eb47e87c540ce093bdf9b1ba415afa1ca495b7229ed1b2fff8fb94b51996f961",
+    "index.html": "ffe143279829fef1d09d94afcfa37343877837ec9b1d66a9f2a57c544da36fdb",
+    "liveView/index.html": "4bfa4426fd143597cf052f5b0ad80b47b20232d5bf45addf902e17621fad0d6f",
+    "webUploader/index.html": "29a77dfb01c27d4af02976b18f45332b4374e17ff9c66382e73810883027c63d",
+    "wheel-debug.html": "e67bc00d70e8654df88232e11c91edd35cbeec3cc286bbca2e78c58bc905fb8a"
+  }
+}

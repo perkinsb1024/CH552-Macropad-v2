@@ -29,6 +29,20 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
+Format 17 retains transport version 1, the GET_INFO layout, action mask
+`0x7FFF` and palette version 4. Its B-header image advertises version 17, with
+the same storage layout and action encodings as v16. **Live View** extends
+`GET_STATUS` from six to 23 data bytes and adds read-only `GET_LIVE` (11) and
+`GET_TIMERS` (12), without changing report descriptors. Detect telemetry by
+status length. See the standalone [configuration format 17 reference](config-v17.md),
+including [telemetry layouts and interpretation](config-v17.md#live-view-telemetry).
+
+Published format 16 uses six-byte status replies and lacks the runtime opcodes.
+Its GET_INFO reports format 16, palette version 4 and action mask `0x7FFF`.
+V16 profiles migrate to v17 by validating and re-encoding with version 17 and
+a recomputed CRC. Firmware accepts only its own format; no automatic DataFlash
+conversion occurs. See [configuration format 16](config-v16.md).
+
 Format 15 retains transport version 1 and the GET_INFO layout, with action mask
 `0x7FFF`. Its stored image uses marker `B`, version byte 1 and CRC bytes 7–8;
 BEGIN_WRITE still carries a separate full 16-bit expected CRC. Legacy images
@@ -65,7 +79,7 @@ before the window expires to activate a mapped chord.
 | Opcode | Request | Reply Data |
 | ---: | --- | --- |
 | 1 | GET_INFO, offset and length zero | `UMAC`, transport version, format version, physical variant, key count, LED count, maximum layers, image capacity, palette version, 16-bit action mask |
-| 2 | GET_STATUS, offset and length zero | Flash-valid flag, current layer, startup layer, upload state, saturated dropped button-action count, saturated dropped rotation-action count |
+| 2 | GET_STATUS, offset and length zero | Six-byte legacy status prefix: flash-valid flag, current layer, startup layer, upload state, saturated dropped button/rotation counts; telemetry-capable firmware appends 17 bytes |
 | 3 | READ_FLASH, offset and length 1–23 | Actual DataFlash bytes |
 | 4 | READ_ACTIVE, offset and length 1–23 | Active RAM image bytes; invalid flash means no active profile |
 | 5 | BEGIN_WRITE, offset zero, length 3 | Data bytes: image size 128, expected CRC low byte, expected CRC high byte. Starts a new upload and discards any prior staging. |
@@ -73,6 +87,22 @@ before the window expires to activate a mapped chord.
 | 7 | COMMIT_WRITE, offset and length zero | Validates the full image and CRC, saves changed DataFlash bytes, verifies all 128 bytes, then activates the configuration. Repeated commit is safe. |
 | 8 | ABORT_WRITE, offset and length zero | Discards staging without changing flash or the active profile. |
 | 9 | PREVIEW_COLOR, options in offset, length zero | Overrides every LED; offset zero cancels. Empty reply. |
+| 10 | ENTER_BOOTLOADER, offset and length zero | Empty success reply followed by bootloader entry; v12 and later |
+| 11 | GET_LIVE, offset and length zero | Runtime layers, playback, lighting and reset generation; 23 bytes on telemetry-capable firmware |
+| 12 | GET_TIMERS, offset and length zero | Five runtime timer slots and active profile CRC; 17 bytes on telemetry-capable firmware |
+
+GET_LIVE and GET_TIMERS require zero request status, offset, length and unused
+bytes. Earlier firmware returns status 2 (unsupported opcode); hosts receiving
+legacy six-byte status replies should keep the profile/layer view without
+requesting these extensions. Telemetry is polled using one outstanding request
+at a time. Reads do not mutate counters, saved profiles or inactivity state.
+The first six GET_STATUS bytes retain their original meaning.
+
+ENTER_BOOTLOADER does not write DataFlash and works without a valid profile.
+After acknowledging, firmware drains reports for up to 100ms before entering the
+factory bootloader. Verify GET_INFO identity first; do not automatically retry
+following a missing acknowledgement. The complete command semantics are in the
+[current configuration reference](config-v17.md#hid-configuration-protocol).
 
 PREVIEW_COLOR uses the offset byte as compact LED options: bits 4–7 are the
 palette index, bit 0 selects full brightness, bit 2 enables preview, and bit 3
@@ -134,9 +164,10 @@ the scheduler sends unchanged reports when their configured interval expires.
 Format 7 adds timer records and temporary LED-control commands without changing
 transport v1. See [config-v7.md](config-v7.md). V7 firmware accepts format 6 images, which its editor can migrate before saving
 v7. V12 firmware accepts only format 12; its frozen editor migrates older profiles
-before explicitly saving v12. Current v15 firmware accepts only B-header v15;
+before explicitly saving v12. Published v15 firmware accepts only B-header v15;
 firmware updates leave older DataFlash unchanged, with inputs inactive until
-a valid B/v15 profile is saved.
+a valid B/v15 profile is saved. Published v16 firmware similarly requires B/v16, and current v17 requires B/v17;
+the matching editor migrates older profiles before an explicit save.
 Format 10 changes timer records without changing the HID transport or action
 mask. Format 11 adds macros and pauses and remaps action types without changing
 the transport version or GET_INFO layout.

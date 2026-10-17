@@ -33,6 +33,29 @@ describe('telemetry decoding and activity', () => {
     expect(after.latest).toBeNull();
     expect(counterDelta(0, 255)).toBe(1);
   });
+  it('accumulates detents independently until each direction highlight expires', () => {
+    let activity = advanceActivity(null, sample({ clockwise: 254 }), 0);
+    activity = advanceActivity(activity, sample({ clockwise: 255, counterclockwise: 2 }), 50);
+    activity = advanceActivity(activity, sample({ clockwise: 1, counterclockwise: 2 }), 150);
+    expect(activity.turns).toEqual([3, 2]);
+    expect(activity.turnUntil).toEqual([330, 230]);
+    activity = advanceActivity(activity, sample({ clockwise: 1, counterclockwise: 2 }), 200);
+    expect(activity.turns).toEqual([3, 2]);
+    expect(activity.turnUntil).toEqual([330, 230]); // Idle polls do not extend highlights.
+    activity = advanceActivity(activity, sample({ clockwise: 2, counterclockwise: 3 }), 250);
+    expect(activity.turns).toEqual([4, 1]);
+    expect(activity.turnUntil).toEqual([430, 430]);
+    activity = advanceActivity(activity, sample({ clockwise: 2, counterclockwise: 3 }), 430);
+    expect(activity.turns).toEqual([0, 0]);
+    activity = advanceActivity(activity, sample({ clockwise: 3, counterclockwise: 4 }), 450);
+    expect(activity.turns).toEqual([1, 1]);
+  });
+  it('starts a new detent count when a turn arrives exactly at highlight expiry', () => {
+    let activity = advanceActivity(null, sample(), 0);
+    activity = advanceActivity(activity, sample({ clockwise: 2 }), 50);
+    activity = advanceActivity(activity, sample({ clockwise: 3 }), 230);
+    expect(activity.turns).toEqual([1, 0]);
+  });
   it('flashes short accepted presses and both chord keys after they have been released', () => {
     const before = advanceActivity(null, sample({ sequence: 255 }), 0);
     const after = advanceActivity(before, sample({ source: 0x20, sequence: 0, bindings: [1, ...Array(8).fill(0)] }), 50);

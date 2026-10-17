@@ -156,7 +156,7 @@ describe('per-layer auto-sleep', () => {
       layer.indicatorColor = options >> 4;
       if (!layer.indicatorColor) layer.idleLeds = [...layer.leds]; else delete layer.idleLeds;
       const image = encodeProfile(p);
-      expect(image[1]).toBe(16);
+      expect(image[1]).toBe(17);
       expect(image[optionsOffset]).toBe(options);
       expect(validator.accepts(image, variant)).toBe(true);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
@@ -184,7 +184,7 @@ describe('per-layer auto-sleep', () => {
   it('preserves current JSON and drafts while clearing the option in old imports', () => {
     const p = defaultProfile(0); p.layers[0]!.autoSleep = true;
     const current = exportProfile(p, { profileName: 'Sleep' });
-    expect(JSON.parse(current).version).toBe(16);
+    expect(JSON.parse(current).version).toBe(17);
     expect(importProfile(current).profile).toEqual(p);
     const old = JSON.parse(current); legacyJson(old); old.version = 14;
     expect(importProfile(JSON.stringify(old)).profile.layers.every(l => !l.autoSleep)).toBe(true);
@@ -199,7 +199,7 @@ describe('per-layer auto-sleep', () => {
     expect(loadDraft(0)?.profile.layers[0]!.autoSleep).toBe(false);
     expect(storage.get(key)).toBe(saved);
     storeDraft(p, { profileName: 'Sleep' });
-    expect(draftKey(0)).toContain('format-v16:');
+    expect(draftKey(0)).toContain('format-v17:');
     expect(loadDraft(0)?.profile).toEqual(p);
   });
 
@@ -293,7 +293,7 @@ describe('profile sleep settings', () => {
     const fields = ['sleepTimeoutMinutes', 'consumeWakeInput', 'showLayerIndicatorOnWake', 'dimInsteadOfOff'] as const;
     for (const field of fields) { delete old[field]; delete oldDraft[field]; }
     expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
-    const saved = JSON.stringify({ formatVersion: 16, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
+    const saved = JSON.stringify({ formatVersion: 17, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
     const storage = new Map([[draftKey(0), saved]]);
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,

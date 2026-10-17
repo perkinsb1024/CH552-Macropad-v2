@@ -1,0 +1,465 @@
+{
+  "sourceCommit": "51db5e6df553e8cd123dbc47acbe711134b25a68",
+  "fixtures": [
+    {
+      "variant": 0,
+      "profile": {
+        "variant": 0,
+        "sleepTimeoutMinutes": 60,
+        "consumeWakeInput": false,
+        "showLayerIndicatorOnWake": true,
+        "dimInsteadOfOff": true,
+        "transparentBlack": false,
+        "startupLayer": 0,
+        "chordWindow": 8,
+        "rainbowPhase": 2,
+        "rainbowSpeed": 1,
+        "layers": [
+          {
+            "keys": [
+              {
+                "type": "macro",
+                "macro": 0,
+                "repeats": 2
+              },
+              {
+                "type": "keyTap",
+                "usage": 27,
+                "modifiers": 8
+              },
+              {
+                "type": "keyTap",
+                "usage": 4,
+                "modifiers": 8
+              },
+              {
+                "type": "keyTap",
+                "usage": 29,
+                "modifiers": 8
+              },
+              {
+                "type": "keyTap",
+                "usage": 6,
+                "modifiers": 8
+              },
+              {
+                "type": "keyTap",
+                "usage": 25,
+                "modifiers": 8
+              }
+            ],
+            "encoderButton": {
+              "type": "relativeLayer",
+              "offset": 1
+            },
+            "clockwise": {
+              "type": "scroll",
+              "delta": -2
+            },
+            "counterclockwise": {
+              "type": "scroll",
+              "delta": 2
+            },
+            "leds": [
+              15,
+              14,
+              14,
+              14,
+              14,
+              14
+            ],
+            "indicatorBehavior": 3,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false,
+            "autoSleep": true,
+            "idleLeds": [
+              0,
+              15,
+              8,
+              1,
+              14,
+              7
+            ]
+          },
+          {
+            "keys": [
+              {
+                "type": "string",
+                "text": "Hi"
+              },
+              {
+                "type": "keyTap",
+                "usage": 27,
+                "modifiers": 1
+              },
+              {
+                "type": "keyTap",
+                "usage": 4,
+                "modifiers": 1
+              },
+              {
+                "type": "keyTap",
+                "usage": 29,
+                "modifiers": 1
+              },
+              {
+                "type": "keyTap",
+                "usage": 6,
+                "modifiers": 1
+              },
+              {
+                "type": "keyTap",
+                "usage": 25,
+                "modifiers": 1
+              }
+            ],
+            "encoderButton": {
+              "type": "relativeLayer",
+              "offset": 1
+            },
+            "clockwise": {
+              "type": "scroll",
+              "delta": -2
+            },
+            "counterclockwise": {
+              "type": "scroll",
+              "delta": 2
+            },
+            "leds": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "indicatorBehavior": 3,
+            "indicatorColor": 5,
+            "indicatorFullBrightness": false,
+            "autoSleep": false,
+            "idleLeds": [
+              1,
+              8,
+              15,
+              0,
+              7,
+              14
+            ]
+          }
+        ],
+        "chords": [
+          {
+            "layer": 0,
+            "keyA": 0,
+            "keyB": 1,
+            "global": true,
+            "action": {
+              "type": "oneShotSetLayer",
+              "layer": 255
+            }
+          }
+        ],
+        "macros": [
+          {
+            "actions": [
+              {
+                "type": "ledControl",
+                "command": "effectOn",
+                "value": 15
+              },
+              {
+                "type": "pause",
+                "ticks": 3
+              },
+              {
+                "type": "string",
+                "text": "Hi"
+              }
+            ]
+          }
+        ],
+        "timedActions": [
+          {
+            "ticks": 440,
+            "resetOnInput": false,
+            "consumeInput": false,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          },
+          {
+            "ticks": 441,
+            "resetOnInput": true,
+            "consumeInput": false,
+            "layer": 1,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          },
+          {
+            "ticks": 442,
+            "resetOnInput": false,
+            "consumeInput": true,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          },
+          {
+            "ticks": 443,
+            "resetOnInput": true,
+            "consumeInput": true,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          }
+        ]
+      },
+      "meta": {
+        "profileName": "V16 Migration",
+        "layerNames": [
+          "Work",
+          "Media"
+        ]
+      },
+      "hex": "421002060c621a15b21e56811b8104811d810681194c0105fe0502efeeee0e2000111b1104111d110611194c0105fe05025555555cf0187e801cffb78d830d8008b88d830d808ab98d830d8048ba8d830d80c8486900fd8110032000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "json": "{\n  \"format\": \"universal-macropad-profile\",\n  \"version\": 16,\n  \"headerMarker\": \"B\",\n  \"sleepTimeoutMinutes\": 60,\n  \"consumeWakeInput\": false,\n  \"showLayerIndicatorOnWake\": true,\n  \"dimInsteadOfOff\": true,\n  \"variant\": \"six-key\",\n  \"startupLayer\": 0,\n  \"transparentBlack\": false,\n  \"chordWindowMs\": 40,\n  \"rainbowPhaseDegrees\": 60,\n  \"rainbowSpeed\": \"fast\",\n  \"layers\": [\n    {\n      \"keys\": [\n        {\n          \"type\": \"macro\",\n          \"macro\": 0,\n          \"repeats\": 2\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 27,\n          \"modifiers\": 8\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 4,\n          \"modifiers\": 8\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 29,\n          \"modifiers\": 8\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 6,\n          \"modifiers\": 8\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 25,\n          \"modifiers\": 8\n        }\n      ],\n      \"encoderButton\": {\n        \"type\": \"relativeLayer\",\n        \"offset\": 1\n      },\n      \"clockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": -2\n      },\n      \"counterclockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": 2\n      },\n      \"leds\": [\n        \"Rainbow\",\n        \"White\",\n        \"White\",\n        \"White\",\n        \"White\",\n        \"White\"\n      ],\n      \"idleLeds\": [\n        \"Off\",\n        \"Rainbow\",\n        \"Cyan\",\n        \"Red\",\n        \"White\",\n        \"Leaf\"\n      ],\n      \"indicatorBehavior\": 3,\n      \"indicatorColor\": 0,\n      \"indicatorFullBrightness\": false,\n      \"autoSleep\": true\n    },\n    {\n      \"keys\": [\n        {\n          \"type\": \"string\",\n          \"text\": \"Hi\"\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 27,\n          \"modifiers\": 1\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 4,\n          \"modifiers\": 1\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 29,\n          \"modifiers\": 1\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 6,\n          \"modifiers\": 1\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 25,\n          \"modifiers\": 1\n        }\n      ],\n      \"encoderButton\": {\n        \"type\": \"relativeLayer\",\n        \"offset\": 1\n      },\n      \"clockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": -2\n      },\n      \"counterclockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": 2\n      },\n      \"leds\": [\n        \"Yellow\",\n        \"Yellow\",\n        \"Yellow\",\n        \"Yellow\",\n        \"Yellow\",\n        \"Yellow\"\n      ],\n      \"idleLeds\": [\n        \"Red\",\n        \"Cyan\",\n        \"Rainbow\",\n        \"Off\",\n        \"Leaf\",\n        \"White\"\n      ],\n      \"indicatorBehavior\": 3,\n      \"indicatorColor\": 5,\n      \"indicatorFullBrightness\": false,\n      \"autoSleep\": false\n    }\n  ],\n  \"chords\": [\n    {\n      \"layer\": 0,\n      \"keys\": [\n        0,\n        1\n      ],\n      \"global\": true,\n      \"action\": {\n        \"type\": \"oneShotSetLayer\",\n        \"layer\": 255\n      }\n    }\n  ],\n  \"macros\": [\n    {\n      \"actions\": [\n        {\n          \"type\": \"ledControl\",\n          \"command\": \"effectOn\",\n          \"value\": 15\n        },\n        {\n          \"type\": \"pause\",\n          \"ticks\": 3\n        },\n        {\n          \"type\": \"string\",\n          \"text\": \"Hi\"\n        }\n      ]\n    }\n  ],\n  \"timedActions\": [\n    {\n      \"ticks\": 440,\n      \"resetOnInput\": false,\n      \"consumeInput\": false,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    },\n    {\n      \"ticks\": 441,\n      \"resetOnInput\": true,\n      \"consumeInput\": false,\n      \"layer\": 1,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    },\n    {\n      \"ticks\": 442,\n      \"resetOnInput\": false,\n      \"consumeInput\": true,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    },\n    {\n      \"ticks\": 443,\n      \"resetOnInput\": true,\n      \"consumeInput\": true,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    }\n  ],\n  \"localMetadata\": {\n    \"profileName\": \"V16 Migration\",\n    \"layerNames\": [\n      \"Work\",\n      \"Media\"\n    ]\n  }\n}\n"
+    },
+    {
+      "variant": 1,
+      "profile": {
+        "variant": 1,
+        "sleepTimeoutMinutes": 60,
+        "consumeWakeInput": false,
+        "showLayerIndicatorOnWake": true,
+        "dimInsteadOfOff": true,
+        "transparentBlack": false,
+        "startupLayer": 0,
+        "chordWindow": 8,
+        "rainbowPhase": 2,
+        "rainbowSpeed": 1,
+        "layers": [
+          {
+            "keys": [
+              {
+                "type": "macro",
+                "macro": 0,
+                "repeats": 2
+              },
+              {
+                "type": "keyTap",
+                "usage": 6,
+                "modifiers": 8
+              },
+              {
+                "type": "keyTap",
+                "usage": 25,
+                "modifiers": 8
+              }
+            ],
+            "encoderButton": {
+              "type": "relativeLayer",
+              "offset": 1
+            },
+            "clockwise": {
+              "type": "scroll",
+              "delta": -2
+            },
+            "counterclockwise": {
+              "type": "scroll",
+              "delta": 2
+            },
+            "leds": [
+              15,
+              14,
+              14
+            ],
+            "indicatorBehavior": 3,
+            "indicatorColor": 0,
+            "indicatorFullBrightness": false,
+            "autoSleep": true,
+            "idleLeds": [
+              0,
+              15,
+              8
+            ]
+          },
+          {
+            "keys": [
+              {
+                "type": "string",
+                "text": "Hi"
+              },
+              {
+                "type": "keyTap",
+                "usage": 6,
+                "modifiers": 1
+              },
+              {
+                "type": "keyTap",
+                "usage": 25,
+                "modifiers": 1
+              }
+            ],
+            "encoderButton": {
+              "type": "relativeLayer",
+              "offset": 1
+            },
+            "clockwise": {
+              "type": "scroll",
+              "delta": -2
+            },
+            "counterclockwise": {
+              "type": "scroll",
+              "delta": 2
+            },
+            "leds": [
+              5,
+              5,
+              5
+            ],
+            "indicatorBehavior": 3,
+            "indicatorColor": 5,
+            "indicatorFullBrightness": false,
+            "autoSleep": false,
+            "idleLeds": [
+              1,
+              8,
+              15
+            ]
+          }
+        ],
+        "chords": [
+          {
+            "layer": 0,
+            "keyA": 0,
+            "keyB": 1,
+            "global": true,
+            "action": {
+              "type": "oneShotSetLayer",
+              "layer": 255
+            }
+          }
+        ],
+        "macros": [
+          {
+            "actions": [
+              {
+                "type": "ledControl",
+                "command": "effectOn",
+                "value": 15
+              },
+              {
+                "type": "pause",
+                "ticks": 3
+              },
+              {
+                "type": "string",
+                "text": "Hi"
+              }
+            ]
+          }
+        ],
+        "timedActions": [
+          {
+            "ticks": 440,
+            "resetOnInput": false,
+            "consumeInput": false,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          },
+          {
+            "ticks": 441,
+            "resetOnInput": true,
+            "consumeInput": false,
+            "layer": 1,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          },
+          {
+            "ticks": 442,
+            "resetOnInput": false,
+            "consumeInput": true,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          },
+          {
+            "ticks": 443,
+            "resetOnInput": true,
+            "consumeInput": true,
+            "action": {
+              "type": "ledControl",
+              "command": "effectBlink2",
+              "value": 8
+            },
+            "resumeAction": {
+              "type": "ledControl",
+              "command": "effectRestore",
+              "value": 0
+            }
+          }
+        ]
+      },
+      "meta": {
+        "profileName": "V16 Migration",
+        "layerNames": [
+          "Work",
+          "Media"
+        ]
+      },
+      "hex": "421003060c621ad5a41e47810681194c0105fe0502ef0e0e2000110611194c0105fe050255055cf008801cffb78d830d8008b88d830d808ab98d830d8048ba8d830d80c8486900fd8110032000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "json": "{\n  \"format\": \"universal-macropad-profile\",\n  \"version\": 16,\n  \"headerMarker\": \"B\",\n  \"sleepTimeoutMinutes\": 60,\n  \"consumeWakeInput\": false,\n  \"showLayerIndicatorOnWake\": true,\n  \"dimInsteadOfOff\": true,\n  \"variant\": \"three-key\",\n  \"startupLayer\": 0,\n  \"transparentBlack\": false,\n  \"chordWindowMs\": 40,\n  \"rainbowPhaseDegrees\": 60,\n  \"rainbowSpeed\": \"fast\",\n  \"layers\": [\n    {\n      \"keys\": [\n        {\n          \"type\": \"macro\",\n          \"macro\": 0,\n          \"repeats\": 2\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 6,\n          \"modifiers\": 8\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 25,\n          \"modifiers\": 8\n        }\n      ],\n      \"encoderButton\": {\n        \"type\": \"relativeLayer\",\n        \"offset\": 1\n      },\n      \"clockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": -2\n      },\n      \"counterclockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": 2\n      },\n      \"leds\": [\n        \"Rainbow\",\n        \"White\",\n        \"White\"\n      ],\n      \"idleLeds\": [\n        \"Off\",\n        \"Rainbow\",\n        \"Cyan\"\n      ],\n      \"indicatorBehavior\": 3,\n      \"indicatorColor\": 0,\n      \"indicatorFullBrightness\": false,\n      \"autoSleep\": true\n    },\n    {\n      \"keys\": [\n        {\n          \"type\": \"string\",\n          \"text\": \"Hi\"\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 6,\n          \"modifiers\": 1\n        },\n        {\n          \"type\": \"keyTap\",\n          \"usage\": 25,\n          \"modifiers\": 1\n        }\n      ],\n      \"encoderButton\": {\n        \"type\": \"relativeLayer\",\n        \"offset\": 1\n      },\n      \"clockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": -2\n      },\n      \"counterclockwise\": {\n        \"type\": \"scroll\",\n        \"delta\": 2\n      },\n      \"leds\": [\n        \"Yellow\",\n        \"Yellow\",\n        \"Yellow\"\n      ],\n      \"idleLeds\": [\n        \"Red\",\n        \"Cyan\",\n        \"Rainbow\"\n      ],\n      \"indicatorBehavior\": 3,\n      \"indicatorColor\": 5,\n      \"indicatorFullBrightness\": false,\n      \"autoSleep\": false\n    }\n  ],\n  \"chords\": [\n    {\n      \"layer\": 0,\n      \"keys\": [\n        0,\n        1\n      ],\n      \"global\": true,\n      \"action\": {\n        \"type\": \"oneShotSetLayer\",\n        \"layer\": 255\n      }\n    }\n  ],\n  \"macros\": [\n    {\n      \"actions\": [\n        {\n          \"type\": \"ledControl\",\n          \"command\": \"effectOn\",\n          \"value\": 15\n        },\n        {\n          \"type\": \"pause\",\n          \"ticks\": 3\n        },\n        {\n          \"type\": \"string\",\n          \"text\": \"Hi\"\n        }\n      ]\n    }\n  ],\n  \"timedActions\": [\n    {\n      \"ticks\": 440,\n      \"resetOnInput\": false,\n      \"consumeInput\": false,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    },\n    {\n      \"ticks\": 441,\n      \"resetOnInput\": true,\n      \"consumeInput\": false,\n      \"layer\": 1,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    },\n    {\n      \"ticks\": 442,\n      \"resetOnInput\": false,\n      \"consumeInput\": true,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    },\n    {\n      \"ticks\": 443,\n      \"resetOnInput\": true,\n      \"consumeInput\": true,\n      \"action\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectBlink2\",\n        \"value\": 8\n      },\n      \"resumeAction\": {\n        \"type\": \"ledControl\",\n        \"command\": \"effectRestore\",\n        \"value\": 0\n      }\n    }\n  ],\n  \"localMetadata\": {\n    \"profileName\": \"V16 Migration\",\n    \"layerNames\": [\n      \"Work\",\n      \"Media\"\n    ]\n  }\n}\n"
+    }
+  ]
+}

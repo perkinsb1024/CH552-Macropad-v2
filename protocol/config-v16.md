@@ -20,9 +20,8 @@ transport. It includes independent per-key layer palettes, keypress and layer
 **Rainbow**, per-layer **Auto-Sleep**, keyboard and consumer actions with modifiers,
 absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers and runtime LED controls. All action records
-remain two bytes. The active configurator supports v16, including binary, JSON and draft migration.
-Published release files and the bundled uploader still use v15; their matching
-configurator is frozen at `webapp/public/versions/format-v15/`.
+remain two bytes. The frozen v16 configurator supports v16, including binary, JSON and draft migration.
+The pre-built v16 release uses source revision `780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and [six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The [frozen v16 configurator](../webapp/public/versions/format-v16/) matches these files. Hardware validation is complete. The outgoing v15 configurator is frozen at `webapp/public/versions/format-v15/`.
 
 ## Version and Compatibility
 
@@ -1264,11 +1263,10 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 ## Builds and Measurements
 
-The firmware and active configurator support the complete binary encoding above.
-Hardware validation is pending. No v16 release HEX files have
-been generated. Published v15 releases and their editor remain unchanged.
+The released firmware and frozen v16 configurator support the complete binary encoding above.
+The user has completed v16 firmware hardware validation. Both supplied release HEX files match fresh temporary native builds.
 
-Current source at revision `ad9ecea`, including pre-sleep brightness restoration
+Release source at revision `780fcc79`, including pre-sleep brightness restoration
 and bounded protocol-buffer indexing, produces the following native allocations
 with preview enabled and the real 14,336-byte application limit. Restoring the
 previous policies changes firmware behavior without changing the binary encoding;
@@ -1289,14 +1287,12 @@ including invalid ranges and mismatches in the last payload byte. Independent
 per-key rendering and ignored-field execution tests also pass. Earlier validator
 AddressSanitizer checks on revision `4a05616` used exact 128-byte image buffers
 for 511,520 sealed-image cases, including malformed images and metadata/pool
-boundaries. The validator and original CRC-16 remain unchanged. Hardware
-validation has not been performed for v16.
+boundaries. The validator and original CRC-16 remain unchanged. The user has completed hardware validation for v16.
 
 Build temporary outputs without generating releases:
 
 ```sh
 python3 tests/run_host_tests.py
-python3 tests/run_host_tests.py --no-preview
 python3 pio-platform/build_firmware.py build . /private/tmp/macropad-v16-six 24000000 148 14336 0
 python3 pio-platform/build_firmware.py build . /private/tmp/macropad-v16-three 24000000 148 14336 1
 ```

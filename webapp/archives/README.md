@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v16 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v17 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -98,3 +98,13 @@ build, archive checksums and archive serving checks passed. HTML entry points ad
 archive banners and latest-editor links; the installer redirects to the shared
 uploader. The existing `format-v15:board:` draft namespace is preserved. The
 manifest records provenance, hosting adjustments and SHA-256 hashes.
+
+The frozen v16 editor and live view are in `../public/versions/format-v16/`,
+built from finalized published release source `51db5e6`. All 746 tests across
+63 files passed against that source and its firmware validator. TypeScript, the
+production build and existing archive checks passed. HTML archive banners and
+a shared-uploader redirect were added; application assets and the
+`format-v16:board:` draft namespace are unchanged. The manifest records source
+provenance and checksums. The archived viewer provides saved shortcuts and layer
+following; runtime telemetry belongs to v17. Both v16 entry points pass archive
+serving checks, and v16 devices route to this archive from the active editor.

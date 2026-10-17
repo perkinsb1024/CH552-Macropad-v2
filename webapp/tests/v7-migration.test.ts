@@ -24,7 +24,7 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   const decoded = decodeImage(original); expect(decoded).toEqual({ ok: true, profile: p });
   if (!decoded.ok) throw new Error('decode failed');
   const migrated = encodeProfile(decoded.profile);
-  expect(migrated[1]).toBe(16);
+  expect(migrated[1]).toBe(17);
   const reverted = migrated.slice(); legacyTextCodes(reverted); reverted[2] = 6; sealImage(reverted);
   expect(reverted).toEqual(original);
   expect(validator.accepts(original, variant)).toBe(false);
