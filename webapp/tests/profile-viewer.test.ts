@@ -6,10 +6,11 @@ import { SimulatedDevice } from '../src/protocol/simulator';
 import { draftKey, storeDraft } from '../src/io/drafts';
 import { connection, connectSimulator, disconnect, dialog, profile, selectedLayer, viewerMode } from '../src/ui/store';
 import { followDeviceLayer } from '../src/ui/profileViewer';
+import { viewerSection } from '../src/ui/viewerSections';
 import { DeviceView } from '../src/ui/components/DeviceView';
-import { LiveStatus } from '../src/ui/components/LiveStatus';
-import { liveActivity, liveRuntime, liveClock } from '../src/ui/store';
-import { ProfileViewer, ViewerChords, ViewerMacros, ViewerTimers } from '../src/ui/components/ProfileViewer';
+import { LiveStatus, countdown } from '../src/ui/components/LiveStatus';
+import { liveActivity, liveRuntime, liveClock, toasts } from '../src/ui/store';
+import { ProfileViewer, ViewerChords, ViewerMacros, ViewerTimers, tallestViewerSection } from '../src/ui/components/ProfileViewer';
 
 vi.mock('preact/hooks', async importOriginal => ({
   ...await importOriginal<typeof import('preact/hooks')>(),
@@ -37,6 +38,7 @@ beforeEach(() => {
     setItem: (key: string, value: string) => storage.set(key, value),
     removeItem: (key: string) => storage.delete(key),
   });
+  toasts.value = [];
   viewerMode.value = true;
   profile.value = null;
   dialog.value = null;
@@ -169,9 +171,9 @@ it('shows the saved sleep timeout and wake policies for enabled layers', async (
   profile.value.consumeWakeInput = false;
   profile.value.showLayerIndicatorOnWake = false;
   profile.value.dimInsteadOfOff = true;
-  expect(text(ProfileViewer())).toContain('Auto-Sleep: 2 Hours · Dim · Wake and Execute · Layer Reminder Off');
+  expect(text(ProfileViewer())).toContain('Auto-Sleep2 Hours (Dim)Wake and ExecuteLayer Reminder Off');
   profile.value.layers[0]!.autoSleep = false;
-  expect(text(ProfileViewer())).toContain('Auto-Sleep: Disabled');
+  expect(text(ProfileViewer())).toContain('Auto-SleepDisabled');
 });
 
 it('shows brief accepted bindings, physical holds and independent consumed encoder activity', async () => {
@@ -185,7 +187,21 @@ it('shows brief accepted bindings, physical holds and independent consumed encod
   const first = nodes(DeviceView({ readOnly: true })).find(node => String(node.props['aria-label']).startsWith('Key 1:'))!;
   expect(first.props.class).toContain('is-live-pressed');
   expect(first.props.class).toContain('is-live-fired');
-  expect(text(LiveStatus())).toContain('Latest Binding');
+  expect(text(LiveStatus())).toContain('Latest Trigger');
+  const triggerToast = toasts.value.find(toast => toast.key === 'live-trigger')!;
+  expect(triggerToast.text).toContain('Latest Trigger: Key 1 (Layer 1)');
+  await vi.advanceTimersByTimeAsync(60);
+  expect(toasts.value.filter(toast => toast.key === 'live-trigger')).toEqual([triggerToast]);
+  device.liveStatus[16] = 2;
+  await vi.advanceTimersByTimeAsync(60);
+  expect(toasts.value.filter(toast => toast.key === 'live-trigger')).toHaveLength(2);
+  for (let sequence = 3; sequence <= 6; sequence++) {
+    device.liveStatus[16] = sequence;
+    await vi.advanceTimersByTimeAsync(60);
+  }
+  const recent = toasts.value.filter(toast => toast.key === 'live-trigger');
+  expect(recent).toHaveLength(4);
+  expect(recent.some(toast => toast.id === triggerToast.id)).toBe(false);
   device.liveStatus[1] = 0;
   device.liveStatus[2] = 2; // Two clockwise detents consumed by wake; no binding counter change.
   await vi.advanceTimersByTimeAsync(60);
@@ -246,4 +262,50 @@ it('expires highlights and marks stale state while a status request is still in 
   expect(nodes(DeviceView({ readOnly: true })).some(node => String(node.props.class).includes('is-live-pressed'))).toBe(false);
   resolve(conn.status);
   await vi.advanceTimersByTimeAsync(1);
+});
+
+it('packs any tall Live View section beside the other two only when their heights are close', () => {
+  expect(tallestViewerSection([100, 180, 160], 16)).toBeNull();
+  expect(tallestViewerSection([100, 500, 160], 16)).toBe(1);
+  expect(tallestViewerSection([500, 100, 160], 16)).toBe(0);
+  expect(tallestViewerSection([100, 160, 500], 16)).toBe(2);
+  expect(tallestViewerSection([100, 240, 160], 16)).toBe(1);
+});
+
+it('formats countdowns with explicit hours, minutes and seconds', () => {
+  expect(countdown(0)).toBe('0s');
+  expect(countdown(9)).toBe('9s');
+  expect(countdown(59.2)).toBe('1m 00s');
+  expect(countdown(129)).toBe('2m 09s');
+  expect(countdown(3729)).toBe('1hr 02m 09s');
+  expect(countdown(135 * 60 + 57)).toBe('2hr 15m 57s');
+  expect(countdown(3600)).toBe('1hr 00m 00s');
+});
+
+it('remembers disclosure states independently and defaults Layer Settings to collapsed', () => {
+  const settings = { open: true } as HTMLDetailsElement;
+  viewerSection('layer-settings', false).ref(settings);
+  expect(settings.open).toBe(false);
+  settings.open = true;
+  viewerSection('layer-settings', false).onToggle({ currentTarget: settings } as unknown as Event);
+  const restored = { open: false } as HTMLDetailsElement;
+  viewerSection('layer-settings', false).ref(restored);
+  expect(restored.open).toBe(true);
+  restored.open = false;
+  viewerSection('layer-settings', false).ref(restored);
+  expect(restored.open).toBe(false); // Renders preserve the native state.
+  const chords = { open: false } as HTMLDetailsElement;
+  viewerSection('chords').ref(chords);
+  expect(chords.open).toBe(true);
+});
+
+it('keeps disclosures functional when local storage is blocked', () => {
+  vi.stubGlobal('localStorage', {
+    getItem: () => { throw new Error('blocked'); },
+    setItem: () => { throw new Error('blocked'); },
+  });
+  const element = { open: false } as HTMLDetailsElement;
+  expect(() => viewerSection('macros').ref(element)).not.toThrow();
+  expect(element.open).toBe(true);
+  expect(() => viewerSection('macros').onToggle({ currentTarget: element } as unknown as Event)).not.toThrow();
 });

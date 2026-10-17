@@ -2309,11 +2309,22 @@ output {
 }
 .viewer-workspace .tabs { margin-bottom: 10px; }
 .viewer-workspace .device { padding-top: 18px; }
-.viewer-indicator { margin: 8px 0 0; text-align: center; font-size: 13px; }
+.viewer-settings { margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--line); display: grid; gap: .75rem; font-size: 13px; }
+.viewer-settings > div { display: grid; grid-template-columns: minmax(0, 120px) minmax(0, 1fr); gap: 1rem; }
+.viewer-settings dt { color: var(--fg-muted); }
+.viewer-settings dd { margin: 0; }
 .viewer-layer-status { margin: 0 0 16px; }
 .viewer-layer-status .notice { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .viewer-layer-status .btn { margin-left: auto; }
-.viewer-extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 16px; }
+.viewer-extras { align-items: stretch; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 16px; }
+.viewer-extras[data-tallest] { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: var(--viewer-first-row-height) auto; }
+.viewer-extras[data-tallest="chords"] { grid-template-areas: "chords macros" "chords timers"; }
+.viewer-extras[data-tallest="macros"] { grid-template-areas: "chords macros" "timers macros"; }
+.viewer-extras[data-tallest="timers"] { grid-template-areas: "chords timers" "macros timers"; }
+.viewer-extras[data-tallest] > :nth-child(1) { grid-area: chords; }
+.viewer-extras[data-tallest] > :nth-child(2) { grid-area: macros; }
+.viewer-extras[data-tallest] > :nth-child(3) { grid-area: timers; }
+
 .viewer-binding-list { list-style: none; margin: 0; padding: 0; }
 .viewer-binding-list > li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
 .viewer-binding-list > li:first-child { border-top: 0; }
@@ -2579,11 +2590,36 @@ output {
 /* Device feedback keeps physical input and accepted binding dispatch distinct. */
 .keycap.is-live-pressed, .enc-part.is-live-pressed { outline: 3px solid #54a8ef; outline-offset: 2px; }
 .keycap.is-live-fired, .enc-part.is-live-fired { box-shadow: inset 0 0 0 3px #5ace97, 0 0 16px #5ace9740; }
-.viewer-live { border-top: 1px solid var(--line); margin-top: 1.25rem; padding-top: 1rem; }
-.viewer-live header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.viewer-live h2 { margin: 0; font-size: 1rem; }
+.viewer-live { margin-top: 16px; }
+.viewer-timed-actions { grid-column: 1 / -1; }
+.viewer-section > summary { display: flex; align-items: center; gap: 1rem; cursor: pointer; list-style: none; margin-bottom: 0; }
+.viewer-section > summary::-webkit-details-marker { display: none; }
+.viewer-section > summary h2 { flex: 1; margin: 0; }
+.viewer-section > summary > svg { flex-shrink: 0; transition: transform 150ms ease; }
+.viewer-section[open] > summary { margin-bottom: 12px; }
+.viewer-section[open] > summary > svg { transform: rotate(180deg); }
+.viewer-saved-settings { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.viewer-saved-settings .viewer-settings { margin: 0; padding: 0; border: 0; }
+.profile-viewer .tab-badge { cursor: default; }
+.profile-viewer .tab-badge:hover { box-shadow: none; filter: none; }
 .live-last-binding { display: grid; gap: .45rem; margin: 1rem 0; }
-.live-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.live-binding-context { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem .75rem; font-size: .8rem; }
+.live-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1rem; margin: 1rem 0; }
 .live-state-grid dt { font-size: .75rem; color: var(--fg-muted); margin-bottom: .3rem; }
 .live-state-grid dd { margin: 0; font-size: .85rem; line-height: 1.5; }
-.viewer-timer-status { font-size: .8rem; color: var(--fg-muted); }
+.live-detail { display: block; color: var(--fg-muted); font-size: .8rem; line-height: 1.5; }
+.viewer-timer-status { display: grid; gap: .2rem; margin: .25rem 0; font-size: .8rem; color: var(--fg-muted); }
+.live-countdown { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live-input-note > span { display: inline-block; max-width: 100%; vertical-align: top; text-wrap: balance; }
+
+/* Keep Live View descriptions compact without crowding individual actions. */
+.viewer-macros ol > li + li { margin-top: 6px; }
+.viewer-timer-interval { margin: 0; font-size: .85rem; }
+.viewer-saved-settings .viewer-settings { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1rem 2rem; }
+.viewer-saved-settings .viewer-settings > div { grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: baseline; }
+.viewer-saved-settings dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .75rem; }
+.viewer-saved-settings .live-detail { display: inline; }
+.device-readonly .enc-part-label { white-space: nowrap; }
+.device-readonly .enc-part-label small { flex-shrink: 0; font-size: 9px; letter-spacing: 0; }
+
+.viewer-all-layers { color: var(--accent); background: var(--accent-soft); }

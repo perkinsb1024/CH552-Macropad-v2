@@ -152,7 +152,7 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean } = {}) {
           <span class="pill pill-muted" title={`Connecting to ${c.label}…`}><span class="spinner" /> <span class="connection-name">Connecting to {c.label}…</span></span>
         )}
         {c.kind === 'connected' && (
-          <span class={`pill ${c.connection.transport.kind === 'simulator' ? 'pill-sim' : 'pill-ok'}`} title={`${variantName(c.connection.info.variant)} · ${c.connection.info.keyCount} keys · format v${c.connection.info.formatVersion}`}>
+          <span class={`pill ${c.connection.transport.kind === 'simulator' ? 'pill-sim' : 'pill-ok'}`} title={`${variantName(c.connection.info.variant)} (${c.connection.info.keyCount} keys, format v${c.connection.info.formatVersion})`}>
             <span class="dot" /> <span class="connection-name">{c.connection.transport.name}</span>
             {!c.connection.status.flashValid && <span class="pill-flag" title="Device profile is missing, old or invalid; device inputs are inactive"><IconWarning /> <span class="connection-name">Device profile is missing, old or invalid</span></span>}
           </span>

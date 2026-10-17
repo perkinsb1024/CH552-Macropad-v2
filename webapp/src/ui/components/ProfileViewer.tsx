@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { connection, connectSimulator, layerName, liveClock, liveRuntime, profile, selectedLayer } from '../store';
 import { followDeviceLayer } from '../profileViewer';
 import { ActionLabel } from './ActionLabel';
@@ -9,39 +9,40 @@ import { LiveStatus, countdown } from './LiveStatus';
 import { timerRemaining } from '../../protocol/live';
 import { Toasts } from './Toasts';
 import { SLEEP_TIMEOUT_LABELS, SLEEP_TIMEOUT_MINUTES, MAX_TIMED_ACTIONS, TIMED_TICK_SECONDS } from '../../model/constants';
-import { duration } from './TimedActionsPanel';
+import { viewerSection } from '../viewerSections';
+import { IconChevron } from './Icons';
 
 export function ViewerChords() {
   const p = profile.value!;
   const chords = p.chords.filter(c => c.global || c.layer === selectedLayer.value)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB);
-  return <section class="card viewer-bindings">
-    <header class="card-head"><h2>Chords ({chords.length})</h2></header>
+  return <details class="card viewer-bindings viewer-section" {...viewerSection('chords')}>
+    <summary class="card-head"><h2>Chords ({chords.length})</h2><IconChevron /></summary>
     {chords.length ? <ul class="viewer-binding-list">
       {chords.map(c => <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`}>
         <span class="chord-keys"><kbd>{c.keyA + 1}</kbd><span>+</span><kbd>{c.keyB + 1}</kbd></span>
         <ActionLabel action={c.action} />
-        {c.global && <span class="tab-badge">All Layers</span>}
+        {c.global && <span class="tab-badge viewer-all-layers">All Layers</span>}
       </li>)}
     </ul> : <p class="muted">No chords on this layer.</p>}
     {chords.length > 0 && p.chordWindow === 0 && <p class="hint warn">These imported chords need a Chord Window selected before saving.</p>}
-  </section>;
+  </details>;
 }
 
 export function ViewerTimers() {
   const timers = profile.value!.timedActions ?? [];
-  if (!timers.length) return null;
-  return <section class="card viewer-bindings">
-    <header class="card-head"><h2>Timed Actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2></header>
+  return <details class="card viewer-bindings viewer-section viewer-timed-actions" {...viewerSection('timers')}>
+    <summary class="card-head"><h2>Timed Actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2><IconChevron /></summary>
+    {!timers.length && <p class="muted">No timed actions in this profile.</p>}
     <ul class="viewer-binding-list viewer-timers">
       {timers.map((timer, index) => <li key={index}>
-        <div><strong>Timer {index + 1}</strong><span class="muted">{timer.layer === undefined ? 'All Layers' : layerName(timer.layer)}</span><span class="muted">
-          {timer.resetOnInput ? 'After ' : 'Repeats every '}{duration(timer.ticks * TIMED_TICK_SECONDS)}{timer.resetOnInput ? ' of inactivity' : ''}
-        </span></div>
+        <div><strong>Timer {index + 1}</strong><span class={timer.layer === undefined ? 'tab-badge viewer-all-layers' : 'muted'}>{timer.layer === undefined ? 'All Layers' : layerName(timer.layer)}</span></div>
+        <p class="muted viewer-timer-interval">
+          {timer.resetOnInput ? 'After ' : 'Repeats every '}<span class="live-countdown">{countdown(timer.ticks * TIMED_TICK_SECONDS)}</span>{timer.resetOnInput ? ' of inactivity' : ''}
+        </p>
         {liveRuntime.value && liveClock.value - liveRuntime.value.receivedAt < 1000 && <p class="viewer-timer-status">
-          {(liveRuntime.value.timers.high[index]! & 1) ? 'Next Input Action Armed · ' : ''}
-          {timer.layer !== undefined && timer.layer !== liveRuntime.value.state.layer ? 'Paused Outside Its Layer' : `${countdown(timerRemaining(liveRuntime.value.timers, index, timer.ticks))} Until Next Fire`}
-          {(liveRuntime.value.timers.high[index]! & 1) && timer.consumeInput ? ' · Next Input Consumed' : ''}
+          <span>{timer.layer !== undefined && timer.layer !== liveRuntime.value.state.layer ? 'Paused Outside Its Layer' : <><span class="live-countdown">{countdown(timerRemaining(liveRuntime.value.timers, index, timer.ticks))}</span> Until Next Fire</>}</span>
+          {!!(liveRuntime.value.timers.high[index]! & 1) && <span>Next Input Action Armed{timer.consumeInput ? ' (Next Input Consumed)' : ''}</span>}
         </p>}
         <div><span class="muted">When Fired</span><ActionLabel action={timer.action} /></div>
         {(timer.resumeAction.type !== 'none' || timer.consumeInput) && <div>
@@ -50,7 +51,7 @@ export function ViewerTimers() {
         </div>}
       </li>)}
     </ul>
-  </section>;
+  </details>;
 }
 
 export function ViewerMacros() {
@@ -65,10 +66,78 @@ export function ViewerMacros() {
       .flatMap(timer => [timer.action, timer.resumeAction]),
   ];
   const triggeredMacros = new Set(triggers.filter(action => action.type === 'macro').map(action => action.macro));
-  return <section class="card viewer-bindings"><header class="card-head"><h2>Macros ({macros.length})</h2></header>
+  return <details class="card viewer-bindings viewer-section viewer-macros" {...viewerSection('macros')}><summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
     {!macros.length && <p class="muted">No macros in this profile.</p>}
     {macros.map((macro, index) => <div style={{ opacity: triggeredMacros.has(index) ? 1 : 0.5 }}><h3>Macro {index + 1}</h3><ol>{macro.actions.map(action => <li><ActionLabel action={action} /></li>)}</ol></div>)}
-  </section>;
+  </details>;
+}
+
+// Compare all cards at the same column width, including the normally full-width timers.
+export function tallestViewerSection(heights: number[], gap: number): number | null {
+  const tallest = heights.indexOf(Math.max(...heights));
+  const stacked = heights.reduce((sum, height, index) => sum + (index === tallest ? 0 : height), gap);
+  return heights[tallest]! >= stacked * 0.85 ? tallest : null;
+}
+
+export function ViewerExtras() {
+  const container = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = container.current;
+    if (!element) return;
+    const cards = Array.from(element.children) as HTMLElement[];
+    const names = ['chords', 'macros', 'timers'];
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const gap = parseFloat(getComputedStyle(element).columnGap);
+      const width = element.clientWidth;
+      if (width < 320 * 2 + gap) {
+        delete element.dataset.tallest;
+        element.style.removeProperty('--viewer-first-row-height');
+        return;
+      }
+      const columnWidth = (width - gap) / 2;
+      const heights = cards.map(card => {
+        const measurement = card.cloneNode(true) as HTMLElement;
+        measurement.setAttribute('aria-hidden', 'true');
+        measurement.setAttribute('inert', '');
+        Object.assign(measurement.style, {
+          position: 'absolute', visibility: 'hidden', pointerEvents: 'none',
+          width: `${columnWidth}px`, boxSizing: 'border-box', top: '0', left: '0',
+        });
+        element.appendChild(measurement);
+        const height = measurement.getBoundingClientRect().height;
+        measurement.remove();
+        return height;
+      });
+      const tallest = tallestViewerSection(heights, gap);
+      if (tallest === null) {
+        delete element.dataset.tallest;
+        element.style.removeProperty('--viewer-first-row-height');
+      } else {
+        element.dataset.tallest = names[tallest];
+        const firstStacked = heights.findIndex((_, index) => index !== tallest);
+        element.style.setProperty('--viewer-first-row-height', `${heights[firstStacked]}px`);
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const observer = new ResizeObserver(schedule);
+    observer.observe(element);
+    cards.forEach(card => {
+      observer.observe(card);
+      Array.from(card.children).forEach(child => observer.observe(child));
+    });
+    element.addEventListener('toggle', schedule, true);
+    schedule();
+    return () => {
+      observer.disconnect();
+      element.removeEventListener('toggle', schedule, true);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  return <div class="viewer-extras" ref={container}><ViewerChords /><ViewerMacros /><ViewerTimers /></div>;
 }
 
 export function ProfileViewer() {
@@ -106,14 +175,23 @@ export function ProfileViewer() {
             {mismatch ? <div class="notice notice-warn" role="status">
               Viewing {layerName(selectedLayer.value)}. Your macropad is on {layerName(deviceLayer!)}.
               <button class="btn" onClick={() => { selectedLayer.value = deviceLayer!; }}>Follow Device</button>
-            </div> : <p class="muted">Device disconnected or layer unavailable · showing the last loaded profile</p>}
+            </div> : <p class="muted">Device disconnected or layer unavailable. Showing the last loaded profile.</p>}
           </div>}
           <DeviceView readOnly />
-          <LiveStatus />
-          <p class="muted viewer-indicator"><strong>Layer Indicator</strong>: {indicatorMode}, {viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</p>
-          <p class="muted viewer-indicator"><strong>Auto-Sleep</strong>: {viewedLayer?.autoSleep ? `${SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]} · ${p.dimInsteadOfOff ? 'Dim' : 'Off'} · ${p.consumeWakeInput ? 'Wake Input Consumed' : 'Wake and Execute'} · Layer Reminder ${p.showLayerIndicatorOnWake ? 'On' : 'Off'}` : 'Disabled'}</p>
+          <details class="viewer-section viewer-saved-settings" {...viewerSection('layer-settings', false)}>
+            <summary class="card-head"><h2>Layer Settings</h2><IconChevron /></summary>
+          <dl class="viewer-settings" aria-label="Layer Settings">
+            <div><dt>Layer Indicator</dt><dd>{indicatorMode}<span class="live-detail">{viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</span></dd></div>
+            <div><dt>Auto-Sleep</dt><dd>{viewedLayer?.autoSleep ? <>
+              {SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]} ({p.dimInsteadOfOff ? 'Dim' : 'Off'})
+              <span class="live-detail">{p.consumeWakeInput ? 'Wake Input Consumed' : 'Wake and Execute'}</span>
+              <span class="live-detail">Layer Reminder {p.showLayerIndicatorOnWake ? 'On' : 'Off'}</span>
+            </> : 'Disabled'}</dd></div>
+          </dl>
+          </details>
         </section>
-        <div class="viewer-extras"><ViewerChords /><ViewerTimers /><ViewerMacros /></div>
+        <ViewerExtras />
+        <LiveStatus />
       </>}
     </main>
     <Toasts />

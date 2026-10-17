@@ -2,6 +2,7 @@ import { migrateColor } from '../model/palette';
 import { reorderMacros, untriggeredMacros } from '../model/macros';
 import { batch, computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
+import { liveSource, runtimeAction } from './liveTrigger';
 import { actionFamilyType } from './actionFamilies';
 import type { Action, Chord, Issue, Profile, Slot } from '../model/types';
 import { actionNeedsRelease, isPreviousLayer, summarize } from '../model/actions';
@@ -14,7 +15,7 @@ import { selfReferentialLayerWarnings } from '../model/layerWarnings';
 import { timedToggleWarnings } from '../model/timedWarnings';
 import { computeCapacity } from '../model/capacity';
 import { encodeProfile } from '../codec/encode';
-import { decodeImage, peekHeader, type DecodeResult } from '../codec/decode';
+import { decodeImage, decodeLiveAction, peekHeader, type DecodeResult } from '../codec/decode';
 import { ConfigClient, ProtocolError, type SavePhase } from '../protocol/client';
 import { WebHidTransport, webHidSupported, type Transport } from '../protocol/transport';
 import { SimulatedDevice } from '../protocol/simulator';
@@ -195,6 +196,7 @@ export const saveState = signal<SaveState>({ phase: 'idle' });
 // Notifications & dialogs
 
 export interface Toast {
+  key?: string;
   id: number;
   tone: 'info' | 'success' | 'error';
   text: string;
@@ -204,9 +206,11 @@ export const archivedFirmware = signal<{ version: number; url: string } | null>(
 const ARCHIVED_CONFIGURATORS: Record<number, string> = { 2: 'versions/format-v2/', 3: 'versions/format-v3/', 4: 'versions/format-v4/', 5: 'versions/format-v5/', 6: 'versions/format-v6/', 7: 'versions/format-v7/', 8: 'versions/format-v8/', 9: 'versions/format-v9/', 10: 'versions/format-v10/', 11: 'versions/format-v11/', 12: 'versions/format-v12/', 13: 'versions/format-v13/', 14: 'versions/format-v14/', 15: 'versions/format-v15/', 16: 'versions/format-v16/' };
 let toastId = 0;
 
-export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500): void {
+export function notify(tone: Toast['tone'], text: string, ttl = tone === 'error' ? 9000 : 4500, key?: string): void {
   const id = ++toastId;
-  toasts.value = [...toasts.value, { id, tone, text }];
+  const next = [...toasts.value, { id, tone, text, key }];
+  const expired = new Set(key ? next.filter(t => t.key === key).slice(0, -4).map(t => t.id) : []);
+  toasts.value = next.filter(t => !expired.has(t.id));
   setTimeout(() => dismissToast(id), ttl);
 }
 
@@ -856,7 +860,19 @@ function updateDeviceStatus(conn: Connection, status: DeviceStatus): void {
   if (viewerMode.peek()) {
     const now = performance.now();
     if (liveOwner !== conn) { liveOwner = conn; liveActivity.value = null; liveRuntime.value = null; }
-    if (status.live && status.flashValid) liveActivity.value = advanceActivity(liveActivity.peek(), status.live, now);
+    if (status.live && status.flashValid) {
+      const previous = liveActivity.peek();
+      const activity = advanceActivity(previous, status.live, now);
+      liveActivity.value = activity;
+      const latest = activity.latest;
+      if (latest && latest !== previous?.latest) {
+        const image = deviceFlash.peek();
+        const action = image ? decodeLiveAction(image, latest.first, latest.second) : null;
+        const slots = profile.peek()?.timedActions?.length ?? 0;
+        const description = action ? summarize(action) : runtimeAction(latest.source, latest.second, slots);
+        notify('info', `Latest Trigger: ${liveSource(latest.source, conn.info.keyCount, slots)} (${layerName(latest.bindingLayer)}) - ${description}`, 3000, 'live-trigger');
+      }
+    }
     else liveActivity.value = null;
     liveClock.value = now;
   }
