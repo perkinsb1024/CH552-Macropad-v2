@@ -143,7 +143,25 @@ static void testPreviewCancelAfterSleep(void) {
 }
 #endif
 
+static void testUsbResetWhileAsleepDiscardsSnapshot(void) {
+    const uint32_t duration = 220UL * 4096;
+    initSleepProfile(0, 0, 0);
+    firmwareLedAction(CONFIG_LED_BOTH_SET, 1);
+    idleLoop(duration, 0, 0);
+    assertBlack();
+    protocolReset();
+    loop();
+    assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+    firmwareLedAction(CONFIG_LED_INDICATOR_SET, 2);
+    firmwareLedAction(CONFIG_LED_KEY_SET, 0);
+    idleLoop(duration, 0, 0);
+    assertBlack();
+    assert(actionsTimedInput());
+    assert(ledSettings[2] == 2 && ledSettings[3] == 0);
+}
+
 int main(void) {
+    testUsbResetWhileAsleepDiscardsSnapshot();
     testSleepThroughMainLoop();
     testIdleInputRestart();
     testUsbResetRestartsSleep();

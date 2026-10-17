@@ -17,9 +17,9 @@ void actionsTimedReset(uint8_t tick) {
   timedClock = tick;
   activeConfig[CONFIG_SIZE + 0] = sleepLow[timeout];
   activeConfig[CONFIG_SIZE + 1] = (settings & CONFIG_SLEEP_DIM) ? 0x2D : 0x4D;
-  activeConfig[CONFIG_SIZE + 2] = CONFIG_LED_PRESET_SET;
+  activeConfig[CONFIG_SIZE + 2] = LED_SLEEP_CAPTURE;
   activeConfig[CONFIG_SIZE + 3] = CONFIG_ACTION_LED_CONTROL;
-  activeConfig[CONFIG_SIZE + 4] = CONFIG_LED_PRESET_SET;
+  activeConfig[CONFIG_SIZE + 4] = LED_SLEEP_RESTORE;
   activeConfig[CONFIG_SIZE + 5] = 128 | sleepHigh[timeout] | ((settings & CONFIG_SLEEP_CONSUME) << 4);
   for (uint8_t i = 0; i <= CONFIG_TIMED_MAX; i++) {
     timedAge[i] = 0;
@@ -108,6 +108,6 @@ static void resetLayerTimers(void) {
   // lighting so this transition cannot consume the next physical input.
   if (timedHigh[count]) {
     timedHigh[count] = 0;
-    firmwareLedAction(CONFIG_LED_PRESET_SET, 0);
+    firmwareLedAction(LED_SLEEP_RESTORE, 0);
   }
 }

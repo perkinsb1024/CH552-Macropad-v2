@@ -7,6 +7,7 @@
 /* Production v10 timer regression suite, using the common USB/LED stubs. */
 #define main existingActionsMain
 #include "actions_test.c"
+#include "../src/led_control.h"
 #undef main
 #undef actionsTimedReset
 #undef actionsTimedPoll
@@ -284,14 +285,14 @@ static void autoSleep(void) {
     activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
     advanceFine(interval - 1); assert(ledCalls == 0);
     advanceFine(1); assert(ledCalls == 1);
-    assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 4);
+    assert(ledCommand == LED_SLEEP_CAPTURE && ledValue == 4);
     advanceFine(interval * 10); assert(ledCalls == 11); // Repeated Off coalesces wake.
     assert(!actionsTakeLayerSelection()); // Expiry does not request an indication.
     ledCalls = 1;
     assert(actionsTimedInput());
     assert(actionsTakeLayerSelection());
     assert(!actionsTakeLayerSelection());
-    assert(ledCommand == CONFIG_LED_PRESET_SET && ledValue == 0);
+    assert(ledCommand == LED_SLEEP_RESTORE && ledValue == 0);
     assert(!actionsTimedInput());
     assert(!actionsTakeLayerSelection()); // Ordinary input does not retrigger it.
     advanceFine(interval - 1); assert(ledCalls == 2);
@@ -384,7 +385,7 @@ static void sleepSettings(void) {
         uint32_t interval = (uint32_t)ticks[settings & 3] * 256;
         advanceFine(interval - 1); assert(ledCalls == 0);
         advanceFine(1); assert(ledCalls == 1);
-        assert(ledCommand == CONFIG_LED_PRESET_SET);
+        assert(ledCommand == LED_SLEEP_CAPTURE);
         assert(ledValue == ((settings & CONFIG_SLEEP_DIM) ? 2 : 4));
         assert(!actionsTakeLayerSelection());
         assert(!!actionsTimedInput() == !!(settings & CONFIG_SLEEP_CONSUME));

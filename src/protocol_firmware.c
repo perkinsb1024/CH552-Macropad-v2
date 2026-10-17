@@ -111,13 +111,15 @@ static uint8_t processRequest(void) {
   } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
     return PROTOCOL_BAD_RANGE;
   }
+  // Validated lengths keep payload indices below 32 and image indices below 128.
+  // Narrow the sums so SDCC does not emit unnecessary 16-bit address arithmetic.
   switch (opcode) {
     case PROTOCOL_ENTER_BOOTLOADER:
       break; // Main loop enters only after the successful reply is queued.
     case PROTOCOL_GET_INFO:
       protocolReply[7] = 14;
       for (i = 0; i < sizeof(protocolInfo); i++)
-        protocolReply[9 + i] = protocolInfo[i];
+        protocolReply[(uint8_t)(9 + i)] = protocolInfo[i];
       break;
     case PROTOCOL_GET_STATUS:
       protocolReply[7] = 6;
@@ -132,8 +134,8 @@ static uint8_t processRequest(void) {
     case PROTOCOL_READ_ACTIVE:
       protocolReply[7] = length;
       for (i = 0; i < length; i++) {
-        protocolReply[9 + i] = opcode == PROTOCOL_READ_FLASH ?
-                                storageRead(offset + i) : activeConfig[offset + i];
+        protocolReply[(uint8_t)(9 + i)] = opcode == PROTOCOL_READ_FLASH ?
+                                storageRead(offset + i) : activeConfig[(uint8_t)(offset + i)];
       }
       break;
     case PROTOCOL_BEGIN_WRITE:
@@ -153,13 +155,13 @@ static uint8_t processRequest(void) {
           return PROTOCOL_BAD_SEQUENCE;
         }
         for (i = 0; i < length; i++) {
-          if (stagedConfig[offset + i] != protocolInbox[9 + i]) {
+          if (stagedConfig[(uint8_t)(offset + i)] != protocolInbox[(uint8_t)(9 + i)]) {
             return PROTOCOL_BAD_SEQUENCE;
           }
         }
       } else {
         for (i = 0; i < length; i++) {
-          stagedConfig[offset + i] = protocolInbox[9 + i];
+          stagedConfig[(uint8_t)(offset + i)] = protocolInbox[(uint8_t)(9 + i)];
         }
         uploadNext += length;
       }

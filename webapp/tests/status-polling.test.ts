@@ -15,7 +15,9 @@ async function connect() {
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(async () => {
-  await disconnect();
+  const disconnecting = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await disconnecting;
   saveState.value = { phase: 'idle' };
   vi.restoreAllMocks();
   vi.useRealTimers();
@@ -77,7 +79,9 @@ describe('device status polling', () => {
     await vi.advanceTimersByTimeAsync(2000);
     expect(getStatus).toHaveBeenCalledTimes(1);
     const previous = conn.status;
-    await disconnect();
+    const disconnecting = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await disconnecting;
     resolve({ ...previous, currentLayer: 3 });
     await vi.advanceTimersByTimeAsync(2000);
     expect(connection.peek().kind).toBe('disconnected');
@@ -88,7 +92,9 @@ describe('device status polling', () => {
   it('stops polling the old client and starts polling after reconnect', async () => {
     const old = await connect();
     const oldGetStatus = vi.spyOn(old.client, 'getStatus');
-    await disconnect();
+    const disconnecting = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await disconnecting;
     const next = await connect();
     const nextGetStatus = vi.spyOn(next.client, 'getStatus');
     await vi.advanceTimersByTimeAsync(1000);

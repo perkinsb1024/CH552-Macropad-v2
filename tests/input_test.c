@@ -1121,7 +1121,147 @@ static void testSleepSettingsInput(void) {
     }
 }
 
+static void testRememberedSleepBrightness(void) {
+    const uint32_t interval = 220UL * 256;
+    // All concrete/configured policy pairs, both sleep modes, both wake modes,
+    // and key / encoder button / clockwise / counterclockwise physical wake.
+    static const uint16_t intervals[] = {220, 440, 879, 1758};
+    for (uint8_t indicator = 0; indicator < 4; indicator++) {
+        for (uint8_t key = 0; key < 4; key++) {
+            for (uint8_t settings = 0; settings < 32; settings++) {
+                uint8_t dim = !!(settings & CONFIG_SLEEP_DIM);
+                uint8_t consume = !!(settings & CONFIG_SLEEP_CONSUME);
+                for (uint8_t input = 0; input < 4; input++) {
+                    initAutoSleep();
+                    activeConfig[CONFIG_HEADER_SLEEP] = settings;
+                    uint8_t slot = input ? NUM_LEDS + input - 1 : 0;
+                    activeConfig[9 + 2 * slot] = 0x20 | CONFIG_ACTION_LED_CONTROL;
+                    activeConfig[10 + 2 * slot] = CONFIG_LED_KEY_SET;
+                    firmwareApplyConfig(1);
+                    firmwareLedAction(CONFIG_LED_INDICATOR_SET, indicator == 3 ? 15 : indicator);
+                    firmwareLedAction(CONFIG_LED_KEY_SET, key == 3 ? 15 : key);
+                    uint8_t phase = ledSettings[0], speed = ledSettings[1];
+                    // Later expiries must not overwrite the original snapshot.
+                    for (uint8_t repeat = 0; repeat < 3; repeat++) {
+                        advanceSleep((uint32_t)intervals[settings & CONFIG_SLEEP_TIMEOUT_MASK] * 256);
+                        assert(ledSettings[2] == dim && ledSettings[3] == dim);
+                    }
+                    wakeSleepInput(input);
+                    assert(ledSettings[2] == indicator);
+                    assert(ledSettings[3] == (consume ? key : 2));
+                    assert(ledSettings[0] == phase && ledSettings[1] == speed);
+                }
+            }
+        }
+    }
+    // Timed layer changes restore the snapshot immediately and cancel wake.
+    const uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+    for (uint8_t enabled = 0; enabled < 2; enabled++) {
+        initAutoSleep();
+        testSetLayout(2, 0, 1);
+        activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME;
+        activeConfig[9 + 2 * size - 1] =
+            (activeConfig[9 + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP) |
+            (enabled ? CONFIG_LAYER_OPT_AUTO_SLEEP : 0);
+        uint8_t timer = configTimedOffset();
+        activeConfig[timer] = 220;
+        activeConfig[timer + 1] = CONFIG_ACTION_SET_LAYER;
+        activeConfig[timer + 2] = 1;
+        activeConfig[timer + 3] = activeConfig[timer + 4] = activeConfig[timer + 5] = 0;
+        firmwareApplyConfig(1);
+        firmwareLedAction(CONFIG_LED_INDICATOR_SET, 1);
+        firmwareLedAction(CONFIG_LED_KEY_SET, 15);
+        advanceSleep(interval); assert(ledSettings[2] == 0);
+        advanceSleep(256); assert(actionsLayer() == 1);
+        if (enabled) {
+          assert(ledSettings[2] == 0 && ledSettings[3] == 0);
+          assert(actionsTimedInput());
+        } else {
+          assert(ledSettings[2] == 1 && ledSettings[3] == 3);
+          assert(!actionsTimedInput());
+        }
+        assert(ledSettings[2] == 1 && ledSettings[3] == 3);
+        firmwareApplyConfig(0);
+        assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+        assert(!actionsTimedInput());
+    }
+}
+
+static void testSleepSnapshotLifetime(void) {
+    const uint32_t interval = 220UL * 256;
+    initAutoSleep();
+    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME;
+    firmwareApplyConfig(1);
+    firmwareLedAction(CONFIG_LED_INDICATOR_SET, 1);
+    firmwareLedAction(CONFIG_LED_KEY_SET, 15);
+    advanceSleep(interval);
+    assert(ledSettings[2] == 0 && ledSettings[3] == 0);
+    // Explicit commands still work while asleep; neither they nor subsequent
+    // expiries replace the snapshot of the original awake selection.
+    firmwareLedAction(CONFIG_LED_BOTH_SET, 2);
+    assert(ledSettings[2] == 2 && ledSettings[3] == 2);
+    advanceSleep(interval);
+    assert(ledSettings[2] == 0 && ledSettings[3] == 0);
+    assert(actionsTimedInput());
+    assert(ledSettings[2] == 1 && ledSettings[3] == 3);
+    // The next sleep cycle captures a fresh manual selection.
+    firmwareLedAction(CONFIG_LED_INDICATOR_SET, 2);
+    firmwareLedAction(CONFIG_LED_KEY_SET, 0);
+    advanceSleep(interval);
+    assert(actionsTimedInput());
+    assert(ledSettings[2] == 2 && ledSettings[3] == 0);
+    // Applying a profile while asleep discards the old capture latch.
+    advanceSleep(interval);
+    firmwareApplyConfig(0);
+    firmwareLedAction(CONFIG_LED_INDICATOR_SET, 0);
+    firmwareLedAction(CONFIG_LED_KEY_SET, 1);
+    advanceSleep(interval);
+    assert(actionsTimedInput());
+    assert(ledSettings[2] == 0 && ledSettings[3] == 1);
+    // Temporary effects remain active across sleep and wake.
+    firmwareLedAction(CONFIG_LED_EFFECT_ON, 4);
+    advanceSleep(interval);
+    assert(previewOptions & LED_EFFECT_FLAG);
+    assert(actionsTimedInput());
+    assert(previewOptions & LED_EFFECT_FLAG);
+    assert(ledSettings[2] == 0 && ledSettings[3] == 1);
+    firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
+#if ENABLE_COLOR_PREVIEW
+    firmwarePreviewColor(0xFD);
+    advanceSleep(interval);
+    assert(colorPreviewActive);
+    assert(actionsTimedInput());
+    assert(colorPreviewActive);
+    assert(ledSettings[2] == 0 && ledSettings[3] == 1);
+    firmwarePreviewColor(0);
+#endif
+    // Four user timer resumes execute first; built-in restoration follows.
+    initAutoSleep();
+    testSetLayout(1, 0, 4);
+    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME;
+    for (uint8_t i = 0; i < 4; i++) {
+      uint8_t offset = configTimedOffset() + i * CONFIG_TIMED_SIZE;
+      activeConfig[offset] = 220; // Expire one coarse tick after built-in sleep.
+      activeConfig[offset + 1] = 0x20 | CONFIG_ACTION_LED_CONTROL;
+      activeConfig[offset + 2] = CONFIG_LED_BOTH_SET;
+      activeConfig[offset + 3] = CONFIG_ACTION_LED_CONTROL;
+      activeConfig[offset + 4] = CONFIG_LED_BOTH_SET;
+      activeConfig[offset + 5] = 0;
+    }
+    firmwareApplyConfig(1);
+    firmwareLedAction(CONFIG_LED_INDICATOR_SET, 1);
+    firmwareLedAction(CONFIG_LED_KEY_SET, 15);
+    advanceSleep(interval);
+    assert(ledSettings[2] == 0 && ledSettings[3] == 0);
+    advanceSleep(256);
+    assert(ledSettings[2] == 2 && ledSettings[3] == 2);
+    assert(actionsTimedInput());
+    assert(ledSettings[2] == 1 && ledSettings[3] == 3);
+}
+
 int main(void) {
+    testSleepSnapshotLifetime();
+    testRememberedSleepBrightness();
     testAutoSleepInput();
     testAutoSleepDisabledLayer();
     testSleepSettingsInput();

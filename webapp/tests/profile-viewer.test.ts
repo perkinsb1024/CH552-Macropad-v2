@@ -41,7 +41,9 @@ beforeEach(() => {
 });
 afterEach(async () => {
   dispose?.(); dispose = undefined;
-  await disconnect();
+  const disconnecting = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await disconnecting;
   profile.value = null;
   viewerMode.value = false;
   vi.unstubAllGlobals();
@@ -91,7 +93,9 @@ it('keeps manual browsing through polls, warns persistently, then follows the ne
   await vi.advanceTimersByTimeAsync(510);
   expect(selectedLayer.value).toBe(0);
   expect(profile.value).toBe(loaded);
-  await disconnect();
+  const disconnecting = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await disconnecting;
   expect(text(ProfileViewer())).toContain('Device disconnected');
 });
 it('follows the current runtime layer rather than the startup layer on initial load and reconnect', async () => {
@@ -101,7 +105,9 @@ it('follows the current runtime layer rather than the startup layer on initial l
   await vi.advanceTimersByTimeAsync(510);
   dispose = followDeviceLayer();
   expect(selectedLayer.value).toBe(1);
-  await disconnect();
+  const disconnecting = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await disconnecting;
   await connect();
   expect(selectedLayer.value).toBe(0);
 });

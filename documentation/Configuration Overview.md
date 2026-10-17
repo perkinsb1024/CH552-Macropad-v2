@@ -422,7 +422,7 @@ separately; hover, focus or tap a bar segment for its byte count.
 
 ### Auto-Sleep
 
-With format 15 firmware, enable **Auto-Sleep** in **Layer Options**, or choose
+With format 15 or later firmware, enable **Auto-Sleep** in **Layer Options**, or choose
 **On** in **Profile Settings** to enable every layer. **Per Layer** keeps
 individual layer choices; **Off** disables every layer. During editing, choosing
 **On** or **Off** remembers your per-layer choices; choose **Per Layer** again
@@ -436,21 +436,30 @@ The profile-wide settings apply to every enabled layer:
 | Setting | Behavior |
 | --- | --- |
 | **Sleep Timeout** | **15 Minutes**, **30 Minutes** (default), **1 Hour** or **2 Hours** of inactivity |
-| **Consume Wake Input** | Enabled by default. The first press or complete encoder turn restores **Both as Configured** and is consumed, including its release. Disable to wake and execute the same binding. |
+| **Consume Wake Input** | Enabled by default. The first press or complete encoder turn wakes the pad and is consumed, including its release. Disable to wake and execute the same binding. |
 | **Show Layer Indicator** | Enabled by default. Restart **On for 1.5 Seconds** or **Blink by Layer Number** on wake; **Always On** and **Do Not Indicate** keep their configured behavior. |
 | **Dim Instead of Off** | Disabled by default. Use **Layers and Keys Dim** during sleep instead of **Both Off**, retaining configured indicator behavior at the existing fixed dim brightness. |
 
 Presses and completed encoder turns restart the timer, even when unbound.
 Releases, held inputs, partial turns and USB traffic do not. Switching between
 enabled layers preserves elapsed sleep time. Entering a disabled layer clears
-the timer and, if asleep, restores **Both as Configured** immediately without
+the timer and, if asleep, restores awake lighting immediately without
 consuming the next input. That layer stays awake; returning to an enabled layer
 starts a full timeout. This applies even to switches made by **Timed Actions**
 or macros. Other timed actions and macro output do not restart the timer.
 Explicit LED commands still work on disabled layers. A consumed wake preserves
 an armed one-shot layer; an
 executed wake uses it normally. A consuming user timer can still consume the
-input. Wake restores configured brightness before an executed binding runs.
+input. Format 16 firmware restores the indicator and key-press brightness policies
+selected before sleep, including manual overrides and mixed policies, before an
+executed binding runs. Repeated sleep timeouts preserve that selection. Published
+v15 firmware restores **Both as Configured**. Timed or macro LED commands can
+change lighting while asleep, but do not end sleep or replace the remembered
+selection. Applying a profile or resetting USB clears it and restores configured
+brightness.
+Brightness preservation is automatic with the updated format 16 firmware; it
+requires no new setting or profile conversion. For example, **Layers and Keys Dim**
+selected before sleep is restored even when sleep turns the LEDs off.
 Dimming does not turn an inactive indicator on. USB, scanning and held output
 continue during sleep. Use **Timed Actions** for other intervals or custom
 sleep/wake actions.

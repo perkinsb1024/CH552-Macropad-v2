@@ -160,6 +160,60 @@ static void testReads(void) {
     assert(sent[9] == flash[CONFIG_HEADER_CRC]); // Boot copies even invalid flash into the inactive RAM image.
 }
 
+static void testBufferRangeBoundaries(void) {
+    reset();
+    for (uint8_t opcode = 3; opcode <= 4; opcode++) {
+        for (unsigned offset = 0; offset < 256; offset++) {
+            for (unsigned length = 0; length < 256; length++) {
+                uint8_t valid = length && length <= 23 && offset + length <= CONFIG_SIZE;
+                request(opcode, offset, length, 0);
+                assert(sent[8] == (valid ? 0 : 3));
+                if (valid) {
+                    assert(sent[7] == length);
+                    assert(memcmp(sent + 9, original + offset, length) == 0);
+                }
+            }
+        }
+    }
+
+    // A complete staged image lets every valid range exercise retransmission,
+    // including the last image byte and the last 23-byte packet payload byte.
+    begin();
+    chunks();
+    for (unsigned offset = 0; offset < 256; offset++) {
+        for (unsigned length = 0; length < 256; length++) {
+            uint8_t valid = length && length <= 23 && offset + length <= CONFIG_SIZE;
+            prepare(6, offset, length, 0);
+            if (valid) memcpy(packet + 9, upload + offset, length);
+            sendPacket();
+            assert(sent[8] == (valid ? 0 : 3));
+            if (valid) {
+                packet[8 + length] ^= 1;
+                sendPacket();
+                assert(sent[8] == 10); // The last retransmitted byte must match too.
+            }
+        }
+    }
+    assert(!writes && !applies && memcmp(activeConfig, original, CONFIG_SIZE) == 0);
+    request(7, 0, 0, 0);
+    assert(sent[8] == 0 && memcmp(flash, upload, CONFIG_SIZE) == 0);
+
+    // Fresh writes use the same bounded indices as retransmission comparisons.
+    for (unsigned chunkSize = 1; chunkSize <= 23; chunkSize++) {
+        reset();
+        begin();
+        for (unsigned offset = 0; offset < CONFIG_SIZE;) {
+            unsigned length = CONFIG_SIZE - offset;
+            if (length > chunkSize) length = chunkSize;
+            request(6, offset, length, upload + offset);
+            assert(sent[8] == 0);
+            offset += length;
+        }
+        request(7, 0, 0, 0);
+        assert(sent[8] == 0 && memcmp(flash, upload, CONFIG_SIZE) == 0);
+    }
+}
+
 static void testSaveAndRetry(void) {
     unsigned programmed;
     reset();
@@ -430,6 +484,7 @@ static void testBootloaderRequest(void) {
 }
 
 int main(void) {
+    testBufferRangeBoundaries();
     testBootloaderRequest();
     testPreview();
     testReads();

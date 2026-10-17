@@ -3,6 +3,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 const effects = vi.hoisted(() => [] as Array<() => void | (() => void)>);
 vi.mock('preact/hooks', async (importOriginal) => ({
   ...await importOriginal<typeof import('preact/hooks')>(),
+  // App is invoked directly here, without a mounted footer or layout phase.
+  useRef: (current: unknown) => ({ current }),
+  useLayoutEffect: () => {},
   useEffect: (effect: () => void | (() => void)) => { effects.push(effect); },
 }));
 

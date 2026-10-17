@@ -74,6 +74,9 @@ __idata uint8_t rainbowDrift[NUM_LEDS];
 // Current global rainbow presets; saved defaults remain in activeConfig.
 // Phase, speed, indicator policy, key policy. Policies: Off=0, Dim=1, Bright=2, Configured=3.
 __pdata uint8_t ledSettings[4]; // Shares the checked page-zero budget with actions.c.
+// Exact two-bit policies, including As Configured; captured once per sleep.
+static __data uint8_t awakeBrightness;
+static ACTION_BIT sleepBrightnessPending;
 __code uint8_t ledPresets[5] = {15, 13, 5, 4, 0};
 __pdata uint8_t previewOptions; // Zero = normal; bit 1 marks a persistent LED effect.
 static ACTION_BIT colorPreviewActive;
@@ -247,6 +250,11 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
   uint8_t end;
   if (command >= CONFIG_LED_PRESET_SET) {
     end = ledSettings[2] | (ledSettings[3] << 2);
+    // Repeat expiry actions without replacing the original awake policies.
+    if (command == LED_SLEEP_CAPTURE) {
+      if (!sleepBrightnessPending) awakeBrightness = end;
+      sleepBrightnessPending = 1;
+    }
     if (command == CONFIG_LED_PRESET_RELATIVE) {
       // Match the actual policies, including As configured, not rendered RGB.
       for (current = 0; current < 5; current++)
@@ -258,7 +266,10 @@ void firmwareLedAction(uint8_t command, uint8_t value) {
       }
       value = ledStep(current, delta, 5);
     }
-    value = ledPresets[value];
+    if (command == LED_SLEEP_RESTORE) {
+      value = awakeBrightness;
+      sleepBrightnessPending = 0;
+    } else value = ledPresets[value];
     // Compare policies rather than rendered brightness; no toggle latch is needed.
     if (command == CONFIG_LED_PRESET_TOGGLE && value == end) value = 15;
     ledSettings[2] = value & 3;
@@ -454,6 +465,7 @@ void firmwareApplyConfig(ACTION_BIT restartIndicator) {
   ledSettings[0] = (activeConfig[CONFIG_HEADER_LED] >> 4) & 3;
   ledSettings[1] = activeConfig[CONFIG_HEADER_LED] >> 6;
   ledSettings[2] = ledSettings[3] = 3;
+  sleepBrightnessPending = 0;
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
     rawChanged[i] = now;

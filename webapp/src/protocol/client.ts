@@ -141,6 +141,12 @@ export class ConfigClient {
     await this.exchange(Opcode.PreviewColor);
   }
 
+  /** Best-effort teardown send: bypass the queue, without waiting for a reply. */
+  cancelPreviewImmediately(): Promise<void> {
+    const sequence = this.sequence = (this.sequence + 1) & 0xff;
+    return this.transport.send(buildRequest({ opcode: Opcode.PreviewColor, sequence }));
+  }
+
   async abortWrite(): Promise<void> {
     await this.exchange(Opcode.AbortWrite);
   }

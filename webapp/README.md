@@ -415,7 +415,7 @@ The finalized v13 editor and live view are frozen at `public/versions/format-v13
 with source provenance and checksums. Published v13 firmware connects through
 that editor; the shared uploader offers v13 as a previous release and v14 as the latest release.
 
-## Auto-Sleep (v15)
+## Auto-Sleep (v15 and Later)
 
 **Layer Options** includes **Auto-Sleep**, disabled by default. **Profile Settings**
 provides **On**, **Per Layer** and **Off**. Switching to **On** or **Off** retains
@@ -428,12 +428,20 @@ Four settings are shared by enabled layers: **Sleep Timeout** (**15 Minutes**, *
 **Consume Wake Input**, **Show Layer Indicator**, and **Dim Instead of Off**.
 Defaults are 30 minutes, consume enabled, reminder enabled and dim disabled.
 Sleep selects **Both Off** or **Layers and Keys Dim**, using existing dim
-brightness. Wake restores **Both as Configured** before any unconsumed binding.
+brightness. Format 16 firmware remembers both brightness policies on the first
+sleep timeout and restores them before any unconsumed wake binding. This includes
+manual overrides, mixed policies and **As Configured**. Repeated timeouts retain
+the original selection; timer or macro LED commands do not end sleep or replace
+it. Profile application and USB reset clear it and restore configured brightness.
+Published v15 firmware restores **Both as Configured** on wake.
+Brightness preservation is automatic with the updated format 16 firmware; it
+requires no new setting or profile conversion. For example, **Layers and Keys Dim**
+selected before sleep is restored even when sleep turns the LEDs off.
 Dimming preserves configured indicator behavior; it does not force lighting on.
 
 Switching between enabled layers preserves elapsed sleep time. Entering a layer
 with **Auto-Sleep** disabled clears the timer and pending wake state, restoring
-configured lighting if asleep. Returning to an enabled layer starts a full timeout.
+awake lighting if asleep. Returning to an enabled layer starts a full timeout.
 Unbound presses and complete encoder turns count as activity; releases, holds,
 partial turns and USB traffic do not. A consumed wake and its release preserve
 an armed one-shot layer. With consumption disabled, the same input executes

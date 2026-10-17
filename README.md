@@ -65,6 +65,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
+| [v16](protocol/config-v16.md) (Unreleased) | - **Per-key** idle colors (custom background palettes)<br> - **Rainbow** is now available as a key press color (**Teal** is no longer available)<br> - Runtime brightness overrides persist after waking from **Auto-Sleep** |
 | [v15](protocol/config-v15.md) | - Optional **Auto-Sleep** after **15 Minutes**, **30 Minutes**, **1 Hour** or **2 Hours** of inactivity (can be enabled per-layer, can set LEDs to **dim** or **off**, and can optionally display layer indicator again on wake)  |
 | [v14](protocol/config-v14.md) | - **Media / System with Modifiers** now supports **Hold**<br> - Added support for **Relative Layer While Held**<br> *This version also reorganized action types to keep logical groups together* |
 | [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier key support for 8-bit **Media / System** taps<br> - USB device names identify three-key and six-key macropads |
@@ -147,14 +148,14 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the published format 15 firmware release, in bytes, with a 14,336-byte application flash limit:
+Memory in the current format 16 source at revision `ad9ecea`, with LED preview enabled, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash Used | 14,218 | 14,222 |
-| Flash Remaining | 118 | 114 |
-| Total External RAM Allocated | 743 | 752 |
-| Stack Available (Linker Reserve) | 93 | 90 |
+| Flash Used | 14,282 | 14,286 |
+| Flash Remaining | 54 | 50 |
+| Total External RAM Allocated | 752 | 761 |
+| Stack Available (Linker Reserve) | 94 | 91 |
 
 ### Build Release HEX Files for Both Variants
 
@@ -279,7 +280,9 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores configured lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. The active editor targets format 16, while bundled firmware remains v15 and uses the frozen v15 editor.
+**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores awake lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. Format 16 firmware restores the indicator and key-press brightness policies selected before sleep, including manual overrides. Timed or macro LED commands do not end sleep or replace that selection. Published v15 firmware restores **Both as Configured**. The active editor targets format 16, while bundled firmware remains v15 and uses the frozen v15 editor.
+
+As of firmware v16, **LED Control** brightness overrides persist after waking from auto-sleep. For example, selecting **Layers and Keys Dim** before sleep restores that same dim setting on wake, even when sleep turns the LEDs off. Indicator and key-press overrides are remembered independently.
 
 **Media / System** set to **Hold** holds a consumer control until release. Host/application
 support determines whether it repeats. The newest media action wins; previous

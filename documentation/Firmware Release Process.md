@@ -32,9 +32,11 @@ Update these locations using the actual release files and measured builds:
   revision, both HEX links, feature summary and matching configurator paragraph.
   Check this section separately from **Firmware Version History**; updating the
   history table does not update the installation instructions.
-- README **Available Memory**: report flash used/free, USB DMA, paged RAM,
-  ordinary XSEG, absolute image, total external allocation and linker stack
-  reserve for both variants. Distinguish stack capacity from runtime usage.
+- README **Available Memory**: keep its four rows for flash used, flash remaining,
+  total external RAM allocated and linker stack reserve for both variants.
+  Keep the detailed USB DMA, paged RAM, ordinary XSEG and absolute-image
+  allocations in the current protocol reference. Distinguish stack capacity
+  from runtime usage.
 - README **Firmware Version History**, **Configuring Your Macropad** and
   **Further Documentation**: describe the published features and current format.
 - Current `protocol/config-vN.md`: update release revision/HEX links,

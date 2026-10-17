@@ -925,17 +925,39 @@ export async function connectSimulator(variant: Variant, blankFlash = false): Pr
   await attach(device, device.name);
 }
 
-export async function previewColor(color: number, fullBrightness = true, rainbow = false): Promise<void> {
+export const COLOR_PREVIEW_DURATION_MS = 3000;
+export const activeColorPreview = signal<{
+  id: number; source: object | null; color: number; fullBrightness: boolean; rainbow: boolean;
+} | null>(null);
+let previewTimer: ReturnType<typeof setTimeout> | undefined;
+let previewId = 0;
+let disconnecting: Connection | null = null;
+
+function clearColorPreview(): void {
+  clearTimeout(previewTimer);
+  previewTimer = undefined;
+  activeColorPreview.value = null;
+}
+
+export async function previewColor(color: number, fullBrightness = true, rainbow = false, source: object | null = null): Promise<void> {
   const c = connection.value;
-  if (c.kind !== 'connected' || c.connection.previewSupported === false) return;
+  if (c.kind !== 'connected' || c.connection.previewSupported === false || disconnecting === c.connection) return;
+  clearColorPreview();
+  activeColorPreview.value = { id: ++previewId, source, color, fullBrightness, rainbow };
+  previewTimer = setTimeout(() => {
+    const current = connection.peek();
+    if (current.kind === 'connected' && current.connection === c.connection) void cancelPreview();
+  }, COLOR_PREVIEW_DURATION_MS);
   try {
     await c.connection.client.previewColor(color, fullBrightness, rainbow);
   } catch (error) {
+    // A lost reply can still mean the preview started; retain the cancellation timer.
     notify('error', `Color preview failed: ${(error as Error).message}`);
   }
 }
 
 export async function cancelPreview(): Promise<void> {
+  clearColorPreview();
   const c = connection.value;
   if (c.kind !== 'connected' || c.connection.previewSupported === false) return;
   try {
@@ -945,10 +967,24 @@ export async function cancelPreview(): Promise<void> {
   }
 }
 
+/** Page teardown cannot wait for the request queue or a device reply. */
+export function cancelPreviewOnPageHide(): void {
+  if (!activeColorPreview.peek()) return;
+  clearColorPreview();
+  const c = connection.peek();
+  if (c.kind === 'connected') void c.connection.client.cancelPreviewImmediately().catch(() => undefined);
+}
+
 export async function disconnect(): Promise<void> {
   const c = connection.value;
   if (c.kind !== 'connected') return;
+  if (disconnecting === c.connection) return;
+  disconnecting = c.connection;
+  await cancelPreview();
   await c.connection.transport.close().catch(() => undefined);
+  disconnecting = null;
+  const current = connection.peek();
+  if (current.kind !== 'connected' || current.connection !== c.connection) return;
   connection.value = { kind: 'disconnected' };
   saveState.value = { phase: 'idle' };
   notify('info', 'Disconnected. Your edits stay in the editor.');
@@ -957,6 +993,7 @@ export async function disconnect(): Promise<void> {
 function handleDisconnect(conn: Connection): void {
   const c = connection.value;
   if (c.kind !== 'connected' || c.connection !== conn) return;
+  clearColorPreview();
   connection.value = { kind: 'disconnected' };
   if (saveState.value.phase === 'busy') saveState.value = { phase: 'error', message: 'The device disconnected during the save. Reconnect and save again.' };
   notify('error', 'The macropad was disconnected. Unsaved changes are kept in the editor.');
@@ -1242,6 +1279,7 @@ effect(() => {
 });
 
 if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', cancelPreviewOnPageHide);
   window.addEventListener('beforeunload', (event) => {
     if (dirty.value && connection.value.kind === 'connected') {
       event.preventDefault();

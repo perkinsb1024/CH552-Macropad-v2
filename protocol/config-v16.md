@@ -277,16 +277,17 @@ encoder detents in either direction restart it, including bindings set to
 **Nothing**. Releases, held inputs, partial detents and USB traffic do not.
 Transitions between enabled layers preserve elapsed sleep time and pending
 wake state. Entering a layer with **Auto-Sleep** disabled clears elapsed sleep
-time and pending wake state; if asleep, it applies **Both as Configured**
-immediately without consuming the next physical input. The disabled layer
-stays awake, and returning to an enabled layer starts a full timeout. This
+time and pending wake state; if asleep, it restores the brightness policies
+selected before sleep immediately without consuming the next physical input.
+The disabled layer stays awake, and returning to an enabled layer starts a full timeout. This
 also applies to layer changes made by **Timed Actions** or macros. Other timed
 actions and macro output do not restart the sleep timer. Explicit LED commands
 retain their normal behavior on disabled layers.
 
-The first subsequent physical input applies **Both as Configured** before its
-binding can execute. With **Consume Wake Input** enabled, the press/detent and
-its release are consumed, preserving an armed one-shot layer. With it disabled,
+The first subsequent physical input restores the pre-sleep layer-indicator and
+key-press brightness policies before its binding can execute. With
+**Consume Wake Input** enabled, the press/detent and its release are consumed,
+preserving an armed one-shot layer. With it disabled,
 the same input executes normally, including physical holds, chords and one-shot
 layer consumption. A consuming user timer can still consume this input.
 User timers run first in their saved order; the built-in sleep resume follows,
@@ -307,10 +308,18 @@ the pending wake. **Dim Instead of Off** uses the existing fixed dim brightness
 for both indicator and pressed-key policies. It preserves configured indicator
 behavior and does not force an inactive indicator on or illuminate an unpressed
 key. Other LED commands, temporary effects and color preview retain their
-existing interactions with these policies. Wake restores **Both as Configured**,
-rather than a previously chosen runtime preset; rainbow phase and speed remain.
-USB reset/reconfiguration or profile application clears pending wake and starts
-new timer state. Scanning, USB service, held output and animation clocks continue;
+existing interactions with these policies. The first expiry captures the exact
+indicator/key policy pair, including mixed policies and **As Configured**.
+Successive expiries preserve that snapshot. For example, **Layers and Keys Dim**
+followed by an off sleep restores **Layers and Keys Dim** on wake. A saved
+**As Configured** policy resolves against the layer current at wake. Timed or
+macro LED commands can change lighting while asleep, but they do not end sleep,
+restart the inactivity interval or replace the snapshot. User timer resumes run
+before the built-in restore, and an unconsumed physical binding runs afterward.
+Rainbow phase and speed retain their current values. USB reset/reconfiguration
+or profile application clears the snapshot and pending wake, restores configured
+brightness policies and starts new timer state. Scanning, USB service, held
+output and animation clocks continue;
 the processor does not enter a low-power mode.
 
 At power-up with a valid profile, all LEDs remain dark while waiting for USB
@@ -1255,29 +1264,33 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 ## Builds and Measurements
 
-The fitted firmware supports the complete binary encoding above. Configurator
-integration and hardware validation are pending. No v16 release HEX files have
+The firmware and active configurator support the complete binary encoding above.
+Hardware validation is pending. No v16 release HEX files have
 been generated. Published v15 releases and their editor remain unchanged.
 
-Firmware source revision `4a05616` produces the following native allocations,
-with preview enabled and the real 14,336-byte application limit:
+Current source at revision `ad9ecea`, including pre-sleep brightness restoration
+and bounded protocol-buffer indexing, produces the following native allocations
+with preview enabled and the real 14,336-byte application limit. Restoring the
+previous policies changes firmware behavior without changing the binary encoding;
+existing format 16 profiles need only the updated firmware.
 
 | Hardware | Flash Used | Flash Free | Paged RAM | Ordinary XSEG | Absolute Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six Keys | 14,332 | 4 | 107 | 372 | 134 | 92 |
-| Three Keys | 14,328 | 8 | 107 | 363 | 134 | 95 |
+| Six Keys | 14,286 | 50 | 107 | 372 | 134 | 91 |
+| Three Keys | 14,282 | 54 | 107 | 363 | 134 | 94 |
 
 Complete host suites pass with preview enabled and disabled, including both
 hardware geometries. Both native builds pass paged/external/absolute layout,
-startup clearing and interrupt-parameter checks. Independent per-key rendering,
-ignored-field execution and bounds tests pass. An AddressSanitizer test uses
-exact 128-byte image buffers for 511,520 sealed-image cases, including deterministic
-malformed images and metadata/pool boundaries. The original CRC-16 is unchanged.
-Hardware validation has not been performed for v16.
-
-The measured firmware contents match the committed source above. The current
-v15 configurator does not encode this format. These firmware results do not claim
-v16 configurator integration or a published/hardware-validated release.
+startup clearing and interrupt-parameter checks. Restoration tests cover all
+sixteen brightness-policy pairs, all 32 sleep settings, physical wake kinds,
+repeated timeouts, reset cancellation and user-timer ordering. Protocol tests
+exhaust all byte-sized offset/length pairs for reads and chunk retransmission,
+including invalid ranges and mismatches in the last payload byte. Independent
+per-key rendering and ignored-field execution tests also pass. Earlier validator
+AddressSanitizer checks on revision `4a05616` used exact 128-byte image buffers
+for 511,520 sealed-image cases, including malformed images and metadata/pool
+boundaries. The validator and original CRC-16 remain unchanged. Hardware
+validation has not been performed for v16.
 
 Build temporary outputs without generating releases:
 
@@ -1294,6 +1307,9 @@ Those six bytes are excluded from DataFlash, CRC, protocol reads/writes and
 advertised image capacity. Timer state includes five runtime slots, with the last
 active slot reserved for **Auto-Sleep**. Pending next-input state occupies bit 0
 of each timer's high-age byte; bits 3–5 hold its interval age.
+One internal byte stores the packed pre-sleep indicator/key policies, and one
+native bit marks a captured snapshot. The synthesized timer uses runtime-only
+LED commands `0E` and `0F`; saved-image validation rejects both command IDs.
 
 USB DMA reserves 148 bytes. Total external allocation, including USB DMA, PSEG,
 ordinary XSEG and the absolute buffer, is 761 bytes on six keys and 752 on three
@@ -1302,7 +1318,10 @@ with one byte left in page zero. Ordinary XSEG occupies `0x113–0x286` on six k
 and `0x113–0x27D` on three keys. Seven raw input levels occupy ordinary external
 RAM; the last-layer and per-frame layer-palette offsets occupy paged external RAM.
 
-Stack starts at `0xA4` on six keys and `0xA1` on three keys, reserving 92/95 bytes.
+Stack starts at `0xA5` on six keys and `0xA2` on three keys, reserving 91/94 bytes.
+The saved brightness byte costs one internal byte compared with the preceding
+format 16 source. The resulting reserves remain one byte larger per board than
+the published v15 firmware's 90/93-byte reserves (six/three keys).
 These are linker capacity figures, not hardware high-water measurements. The
 builder checks separation of USB, paged, ordinary and absolute allocations, plus
 the USB interrupt's external-RAM parameter storage and startup clearing.
