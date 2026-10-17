@@ -42,59 +42,60 @@ static uint8_t sendDescriptor(void) {
   return len;
 }
 
+static const __code uint8_t * const __code stringDescriptors[] = {
+  LanguageDescriptor, (const __code uint8_t *)ManufacturerDescriptor,
+  (const __code uint8_t *)ProductDescriptor, (const __code uint8_t *)SerialDescriptor
+};
+
 void USB_EP0_SETUP() {
   __data uint8_t len = USB_RX_LEN;
   __data uint8_t descriptorLen = 0;
   ep0ReportExpected = 0;
   descriptorInRam = 0;
   if (len == (sizeof(USB_SETUP_REQ))) {
+    // Read each SETUP field once, before the shared EP0 buffer carries reply bytes.
+    __data uint8_t setupType = UsbSetupBuf->bRequestType;
+    __data uint8_t valueLow = UsbSetupBuf->wValueL;
+    __data uint8_t valueHigh = UsbSetupBuf->wValueH;
+    __data uint8_t indexLow = UsbSetupBuf->wIndexL;
+    __data uint8_t indexHigh = UsbSetupBuf->wIndexH;
     // Every supported IN transfer is shorter than 256 bytes. Saturation keeps
     // exact OUT/zero-length validation intact even for malformed high bytes.
     SetupLen = UsbSetupBuf->wLengthH ? 255 : UsbSetupBuf->wLengthL;
     len = 0; // Default is success and upload 0 length
     SetupReq = UsbSetupBuf->bRequest;
     usbMsgFlags = 0;
-    if ((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK) !=
+    if ((setupType & USB_REQ_TYP_MASK) !=
         USB_REQ_TYP_STANDARD) // Not standard request
     {
 
-      // here is the commnunication starts, refer to usbFunctionSetup of USBtiny
-      // or usb_setup in usbtiny
-
-      switch ((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK)) {
-      case USB_REQ_TYP_VENDOR: {
-        switch (SetupReq) {
-        default:
-          len = 0xFF; // command not supported
-          break;
-        }
-        break;
-      }
-      case USB_REQ_TYP_CLASS: {
-        if (UsbSetupBuf->wIndexL != 0 || UsbSetupBuf->wIndexH != 0) {
+      if ((setupType & USB_REQ_TYP_MASK) != USB_REQ_TYP_CLASS) {
+        len = 0xFF;
+      } else {
+        if (indexLow != 0 || indexHigh != 0) {
           len = 0xFF;
-        } else if (SetupReq == 0x09 && UsbSetupBuf->bRequestType == 0x21 &&
-                   UsbSetupBuf->wValueH == 2 &&
-                   ((UsbSetupBuf->wValueL == 3 && SetupLen == 32) ||
-                    (UsbSetupBuf->wValueL == 1 && SetupLen == 2))) {
+        } else if (SetupReq == 0x09 && setupType == 0x21 &&
+                   valueHigh == 2 &&
+                   ((valueLow == 3 && SetupLen == 32) ||
+                    (valueLow == 1 && SetupLen == 2))) {
           ep0ReportExpected = SetupLen;
           ep0ReportReceived = 0;
-        } else if (SetupReq == 0x0A && UsbSetupBuf->bRequestType == 0x21 &&
+        } else if (SetupReq == 0x0A && setupType == 0x21 &&
                    SetupLen == 0 &&
-                   (UsbSetupBuf->wValueL == 0 || UsbSetupBuf->wValueL == 1 ||
-                    UsbSetupBuf->wValueL == 2 || UsbSetupBuf->wValueL == 5) && UsbConfig) {
-          USB_setIdle(UsbSetupBuf->wValueL, UsbSetupBuf->wValueH);
-        } else if (SetupReq == 0x02 && UsbSetupBuf->bRequestType == 0xA1 &&
-                   (UsbSetupBuf->wValueL == 0 || UsbSetupBuf->wValueL == 1 ||
-                    UsbSetupBuf->wValueL == 2 || UsbSetupBuf->wValueL == 5) &&
-                   UsbSetupBuf->wValueH == 0 && SetupLen == 1 && UsbConfig) {
-          Ep0Buffer[0] = USB_getIdle(UsbSetupBuf->wValueL);
+                   (valueLow == 0 || valueLow == 1 ||
+                    valueLow == 2 || valueLow == 5) && UsbConfig) {
+          USB_setIdle(valueLow, valueHigh);
+        } else if (SetupReq == 0x02 && setupType == 0xA1 &&
+                   (valueLow == 0 || valueLow == 1 ||
+                    valueLow == 2 || valueLow == 5) &&
+                   valueHigh == 0 && SetupLen == 1 && UsbConfig) {
+          Ep0Buffer[0] = USB_getIdle(valueLow);
           len = 1; // GET_IDLE
-        } else if (SetupReq == 0x01 && UsbSetupBuf->bRequestType == 0xA1 &&
-                   (UsbSetupBuf->wValueH == 1 || UsbSetupBuf->wValueH == 2) &&
+        } else if (SetupReq == 0x01 && setupType == 0xA1 &&
+                   (valueHigh == 1 || valueHigh == 2) &&
                    UsbConfig) {
-          descriptorLen = USB_getReport(UsbSetupBuf->wValueL,
-                                        UsbSetupBuf->wValueH == 2, Ep0Report);
+          descriptorLen = USB_getReport(valueLow,
+                                        valueHigh == 2, Ep0Report);
           if (descriptorLen) {
             pDescr = (const __code uint8_t *)Ep0Report;
             descriptorInRam = 1;
@@ -105,11 +106,6 @@ void USB_EP0_SETUP() {
         } else {
           len = 0xFF;
         }
-        break;
-      }
-      default:
-        len = 0xFF; // command not supported
-        break;
       }
 
     } else // Standard request
@@ -117,7 +113,7 @@ void USB_EP0_SETUP() {
       switch (SetupReq) // Request ccfType
       {
       case USB_GET_DESCRIPTOR:
-        switch (UsbSetupBuf->wValueH) {
+        switch (valueHigh) {
         case 1: // Device Descriptor
           pDescr = (__code uint8_t *)
               &DeviceDescriptor; // Put Device Descriptor into outgoing buffer
@@ -128,18 +124,8 @@ void USB_EP0_SETUP() {
           descriptorLen = sizeof(USB_Descriptor_Configuration_t);
           break;
         case 3:
-          if (UsbSetupBuf->wValueL == 0) {
-            pDescr = LanguageDescriptor;
-          } else if (UsbSetupBuf->wValueL == 1) {
-            pDescr = (__code uint8_t *)ManufacturerDescriptor;
-          } else if (UsbSetupBuf->wValueL == 2) {
-            pDescr = (__code uint8_t *)ProductDescriptor;
-          } else if (UsbSetupBuf->wValueL == 3) {
-            pDescr = (__code uint8_t *)SerialDescriptor;
-          } else {
-            len = 0xff;
-            break;
-          }
+          if (valueLow > 3) { len = 0xFF; break; }
+          pDescr = stringDescriptors[valueLow];
           descriptorLen = pDescr[0];
           break;
         case 0x21:
@@ -147,7 +133,7 @@ void USB_EP0_SETUP() {
           descriptorLen = sizeof(USB_HID_Descriptor_HID_t);
           break;
         case 0x22:
-          if (UsbSetupBuf->wValueL == 0) {
+          if (valueLow == 0) {
             pDescr = (__code uint8_t *)ReportDescriptor;
             descriptorLen = ConfigurationDescriptor.HID_KeyboardHID.HIDReportLength;
           } else {
@@ -160,7 +146,7 @@ void USB_EP0_SETUP() {
         }
         break;
       case USB_SET_ADDRESS:
-        SetupLen = UsbSetupBuf->wValueL; // Save the assigned address
+        SetupLen = valueLow; // Save the assigned address
         break;
       case USB_GET_CONFIGURATION:
         Ep0Buffer[0] = UsbConfig;
@@ -169,12 +155,12 @@ void USB_EP0_SETUP() {
         }
         break;
       case USB_SET_CONFIGURATION:
-        if (UsbSetupBuf->bRequestType || UsbSetupBuf->wValueH ||
-            UsbSetupBuf->wValueL > 1 || UsbSetupBuf->wIndexL ||
-            UsbSetupBuf->wIndexH || SetupLen) {
+        if (setupType || valueHigh ||
+            valueLow > 1 || indexLow ||
+            indexHigh || SetupLen) {
           len = 0xFF;
         } else {
-          UsbConfig = UsbSetupBuf->wValueL;
+          UsbConfig = valueLow;
           USB_EP1_reset();
           protocolReset();
           UEP1_CTRL = bUEP_AUTO_TOG | UEP_T_RES_NAK | UEP_R_RES_ACK;
@@ -182,11 +168,11 @@ void USB_EP0_SETUP() {
         break;
       case USB_GET_INTERFACE:
       case USB_SET_INTERFACE:
-        if (UsbSetupBuf->wIndexL || UsbSetupBuf->wIndexH ||
-            UsbSetupBuf->wValueL || UsbSetupBuf->wValueH || !UsbConfig ||
+        if (indexLow || indexHigh ||
+            valueLow || valueHigh || !UsbConfig ||
             (SetupReq == USB_GET_INTERFACE ?
-              UsbSetupBuf->bRequestType != 0x81 || SetupLen != 1 :
-              UsbSetupBuf->bRequestType != 0x01 || SetupLen != 0)) {
+              setupType != 0x81 || SetupLen != 1 :
+              setupType != 0x01 || SetupLen != 0)) {
           len = 0xFF;
         } else if (SetupReq == USB_GET_INTERFACE) {
           Ep0Buffer[0] = 0;
@@ -195,10 +181,10 @@ void USB_EP0_SETUP() {
         break;
       case USB_CLEAR_FEATURE:
       case USB_SET_FEATURE:
-        if (UsbSetupBuf->bRequestType != 0x02 || UsbSetupBuf->wValueL != 0 ||
-            UsbSetupBuf->wValueH != 0 || UsbSetupBuf->wIndexH != 0 || SetupLen) {
+        if (setupType != 0x02 || valueLow != 0 ||
+            valueHigh != 0 || indexHigh != 0 || SetupLen) {
           len = 0xFF;
-        } else if (UsbSetupBuf->wIndexL == 0x81) {
+        } else if (indexLow == 0x81) {
           if (SetupReq == USB_SET_FEATURE) {
             UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_STALL;
           } else {
@@ -207,7 +193,7 @@ void USB_EP0_SETUP() {
             USB_EP1_reset();
             protocolReset();
           }
-        } else if (UsbSetupBuf->wIndexL == 0x01) {
+        } else if (indexLow == 0x01) {
           UEP1_CTRL = UEP1_CTRL & ~(bUEP_R_TOG | MASK_UEP_R_RES) |
                       (SetupReq == USB_SET_FEATURE ? UEP_R_RES_STALL : UEP_R_RES_ACK);
         } else {
@@ -215,8 +201,8 @@ void USB_EP0_SETUP() {
         }
         break;
       case USB_GET_STATUS:
-        descriptorLen = UsbSetupBuf->wIndexL;
-        if (UsbSetupBuf->bRequestType == 0x82) {
+        descriptorLen = indexLow;
+        if (setupType == 0x82) {
           if (descriptorLen == 0x81) {
             descriptorLen = (UEP1_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL;
           } else if (descriptorLen == 1) {
@@ -227,12 +213,12 @@ void USB_EP0_SETUP() {
             len = 0xFF;
             break;
           }
-        } else if ((UsbSetupBuf->bRequestType != 0x80 &&
-                    UsbSetupBuf->bRequestType != 0x81) || descriptorLen) {
+        } else if ((setupType != 0x80 &&
+                    setupType != 0x81) || descriptorLen) {
           len = 0xFF;
           break;
         }
-        if (UsbSetupBuf->wIndexH || UsbSetupBuf->wValueL || UsbSetupBuf->wValueH) {
+        if (indexHigh || valueLow || valueHigh) {
           len = 0xFF;
           break;
         }
@@ -262,14 +248,9 @@ void USB_EP0_SETUP() {
     SetupReq = 0xFF;
     UEP0_CTRL =
         bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL; // STALL
-  } else if (len <=
-             DEFAULT_ENDP0_SIZE) // Tx data to host or send 0-length packet
-  {
-    UEP0_T_LEN = len;
-    UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK |
-                (ep0ReportExpected ? UEP_T_RES_NAK : UEP_T_RES_ACK);
   } else {
-    UEP0_T_LEN = 0; // Tx data to host or send 0-length packet
+    if (len > DEFAULT_ENDP0_SIZE) len = 0;
+    UEP0_T_LEN = len;
     UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK |
                 (ep0ReportExpected ? UEP_T_RES_NAK : UEP_T_RES_ACK);
   }
@@ -301,7 +282,7 @@ void USB_EP0_OUT() {
       USB_RX_LEN <= DEFAULT_ENDP0_SIZE &&
       ep0ReportReceived + USB_RX_LEN <= ep0ReportExpected) {
     for (i = 0; i < USB_RX_LEN; i++) {
-      Ep0Report[ep0ReportReceived + i] = Ep0Buffer[i];
+      Ep0Report[(uint8_t)(ep0ReportReceived + i)] = Ep0Buffer[i];
     }
     ep0ReportReceived += USB_RX_LEN;
     if (ep0ReportReceived == ep0ReportExpected) {

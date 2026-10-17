@@ -207,7 +207,7 @@ FW_BIT USB_EP1_sendConfig(const __xdata uint8_t *reply) USB_CRITICAL {
     return 0;
   }
   for (i = 0; i < 32; i++) {
-    Ep1Buffer[64 + i] = reply[i];
+    Ep1Buffer[(uint8_t)(64 + i)] = reply[i];
   }
   configWaiting = 0;
   configTurn = 0;
@@ -270,7 +270,7 @@ static FW_BIT queueKeyboard(const __xdata uint8_t *keys) {
   if (reportCount == 8 || UsbConfig == 0) {
     return 0;
   }
-  __xdata uint8_t *report = reportQueue[reportHead];
+  __xdata uint8_t *report = ((__xdata uint8_t *)reportQueue) + (uint8_t)(reportHead * 9);
   *report++ = 1;
   for (i = 0; i < 8; i++) {
     uint8_t key = keys[i];
@@ -289,7 +289,7 @@ static FW_BIT queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scro
     return 0;
   }
   mouseState = buttons;
-  __xdata uint8_t *report = reportQueue[reportHead];
+  __xdata uint8_t *report = ((__xdata uint8_t *)reportQueue) + (uint8_t)(reportHead * 9);
   report[0] = 2;
   report[1] = buttons;
   report[2] = x;
@@ -307,7 +307,7 @@ static FW_BIT queueConsumer(uint16_t usage) {
     return 0;
   }
   consumerState = usage;
-  __xdata uint8_t *report = reportQueue[reportHead];
+  __xdata uint8_t *report = ((__xdata uint8_t *)reportQueue) + (uint8_t)(reportHead * 9);
   report[0] = 5;
   report[1] = usage;
   report[2] = usage >> 8;
@@ -352,10 +352,10 @@ void USB_reportPoll(uint16_t now) USB_CRITICAL {
       (UEP1_CTRL & MASK_UEP_T_RES) == UEP_T_RES_STALL) {
     return;
   }
-  __xdata const uint8_t *report = reportQueue[reportTail];
+  __xdata const uint8_t *report = ((__xdata uint8_t *)reportQueue) + (uint8_t)(reportTail * 9);
   uint8_t identity = *report;
   uint8_t length = reportLength[reportTail];
-  for (i = 0; i < length; i++) Ep1Buffer[64 + i] = *report++;
+  for (i = 0; i < length; i++) Ep1Buffer[(uint8_t)(64 + i)] = *report++;
   if (identity == 1) keyboardTime = now;
   else if (identity == 2) mouseTime = now;
   else if (identity == 5) consumerTime = now;
@@ -409,7 +409,7 @@ uint8_t USB_getReport(uint8_t report, USB_ISR_PARAM uint8_t output,
       return 2;
     }
     for (i = 0; i < 8; i++) {
-      data[i + 1] = keyboardState[i];
+      data[(uint8_t)(i + 1)] = keyboardState[i];
     }
     return 9;
   }

@@ -75,13 +75,14 @@ static FW_BIT keyboardUsageValid(uint8_t usage) {
 
 // Validation runs only in the main loop. Sharing context avoids repeatedly
 // passing image metadata and reduces SDCC register spills into internal RAM.
+// Validated image/pool addresses stay below 128; narrow bounded index sums before access.
 static __data uint8_t validationLayers, validationPool, validationUsed;
 static const __xdata uint8_t *__data validationImage;
 static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
     uint8_t first = validationImage[offset];
     uint8_t type = first & 15;
     uint8_t aux = first >> 4;
-    uint8_t param = validationImage[offset + 1];
+    uint8_t param = validationImage[(uint8_t)(offset + 1)];
     __idata uint8_t macros = validationPool + validationUsed;
     if (rotation == 2 && type != CONFIG_ACTION_MACRO) rotation = 1;
     switch (type) {
@@ -155,7 +156,7 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             if (aux == (CONFIG_ACTION_PAUSE >> 4)) return 1;
 #endif
             if (aux != (CONFIG_ACTION_STRING >> 4) || param >= validationUsed) return 0;
-            return param == 0 || validationImage[validationPool + param - 1] == 0;
+            return param == 0 || validationImage[(uint8_t)(validationPool + param - 1)] == 0;
         case CONFIG_ACTION_SET_LAYER:
             if ((aux & (rotation << 1)) || (aux & 3) == 3) return 0;
             if (aux & 4) return (uint8_t)(param + 6) <= 12;
@@ -223,8 +224,8 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     validationPool = (uint8_t)end - validationUsed;
     offset = 9;
     for (layer = 0; layer < validationLayers; layer++) {
-        for (i = 0; i < keys + 3; i++, offset += 2) {
-            if (!actionValid(offset, i >= keys + 1)) {
+        for (i = 0; i < (uint8_t)(keys + 3); i++, offset += 2) {
+            if (!actionValid(offset, i > keys)) {
                 return 0;
             }
         }
@@ -251,11 +252,11 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         if (!actionValid(offset + 3, 1)) return 0;
 #endif
     }
-    if (validationUsed && validationImage[validationPool + validationUsed - 1] != 0) {
+    if (validationUsed && validationImage[(uint8_t)(validationPool + validationUsed - 1)] != 0) {
         return 0;
     }
     for (i = 0; i < validationUsed; i++) {
-        uint8_t c = validationImage[validationPool + i];
+        uint8_t c = validationImage[(uint8_t)(validationPool + i)];
         if ((uint8_t)(c - 32) > 94 && c && (uint8_t)(c - 9) > 1) {
             return 0;
         }
@@ -286,7 +287,7 @@ static uint8_t layerOffset(uint8_t layer) {
 }
 
 uint8_t configLayerOptions(uint8_t layer) {
-    return activeConfig[layerOffset(layer + 1) - 1];
+    return activeConfig[(uint8_t)(layerOffset(layer + 1) - 1)];
 }
 
 uint8_t configLedColorOffset(uint8_t layer) {
@@ -321,7 +322,7 @@ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data u
     }
     offset = layerOffset(layer) + 2 * input;
     *first = activeConfig[offset];
-    *second = activeConfig[offset + 1];
+    *second = activeConfig[(uint8_t)(offset + 1)];
 }
 
 FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
@@ -346,8 +347,8 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     for (i = 0; i < count; i++, offset += 3) {
         if (activeConfig[offset] == id ||
             (activeConfig[offset] & 0x8F) == (0x80 | (id & 15))) {
-            *first = activeConfig[offset + 1];
-            *second = activeConfig[offset + 2];
+            *first = activeConfig[(uint8_t)(offset + 1)];
+            *second = activeConfig[(uint8_t)(offset + 2)];
             return 1;
         }
     }
@@ -362,12 +363,12 @@ uint8_t configTimedOffset(void) {
     return configLayerPaletteOffset(configLayerCount()) + 3 * (activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT);
 }
 
-uint8_t configStringChar(uint8_t offset, __xdata uint8_t index) {
+uint8_t configStringChar(uint8_t offset, uint8_t index) {
     uint8_t position = offset + index;
     uint8_t start;
     if (position < offset || position >= (activeConfig[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT)) {
         return 0;
     }
     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
-    return activeConfig[start + position];
+    return activeConfig[(uint8_t)(start + position)];
 }

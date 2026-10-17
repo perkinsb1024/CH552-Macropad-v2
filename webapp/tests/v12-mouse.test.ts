@@ -86,7 +86,7 @@ it('migrates v11 macro, text and timer data while preserving behavior and storag
   const original = JSON.stringify({ formatVersion: 11, profile: legacyProfile(p), meta: { profileName: 'Drag' }, savedAt: 'old' });
   const storage = new Map([[key, original]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
-  expect(loadDraft(0)).toMatchObject({ formatVersion: 16, profile: p, savedAt: 'old' });
+  expect(loadDraft(0)).toMatchObject({ formatVersion: 17, profile: p, savedAt: 'old' });
   expect(storage.get(key)).toBe(original); expect(storage.has(draftKey(0))).toBe(false);
   clearDraft(0); expect(loadDraft(0)).toBeNull(); expect(storage.get(key)).toBe(original);
 });

@@ -3,7 +3,7 @@ import { keyCount, layerSize } from '../src/model/constants';
 export function legacyHeader(image: Uint8Array): Uint8Array {
   if (image[0] !== 0x42) return image;
   const layers = image[2]!;
-  if (image[1] === 16) {
+  if (image[1]! >= 16) {
     const variant = (layers & 1) as 0 | 1;
     const count = ((layers >> 1) & 7) + 1;
     const color = (c: number, key = false) => c === 0 ? (key ? 15 : 0) : c < 8 ? c - 1 : c;
@@ -184,7 +184,7 @@ export function legacyProfile<T>(profile: T): T {
 
 /** Downgrade only palette semantics before a fabricated historical JSON version is assigned. */
 export function legacyJson(raw: any): void {
-  if (raw.version !== 16) return;
+  if (raw.version < 16) return;
   for (const l of raw.layers) l.indicatorColor = l.indicatorColor > 0 && l.indicatorColor < 8 ? l.indicatorColor - 1 : l.indicatorColor;
   const action = (a: any) => {
     if (a.type === 'ledControl' && /^effect(On|Blink[1-8])$/.test(a.command) && typeof a.value === 'number' && a.value > 0 && a.value < 8) a.value--;

@@ -1,7 +1,7 @@
 import { IMAGE_SIZE, MAX_CHUNK } from '../model/constants';
 import { imageCrc } from '../codec/crc16';
 import {
-  buildRequest, Opcode, parseInfo, parseReply, parseStatus, Status, statusText,
+  buildRequest, Opcode, parseInfo, parseReply, parseStatus, parseRuntime, parseTimers, Status, statusText,
   type DeviceInfo, type DeviceStatus, type Reply,
 } from './packet';
 import type { Transport } from './transport';
@@ -96,6 +96,20 @@ export class ConfigClient {
     const status = parseStatus(reply.data);
     if (!status) throw new ProtocolError('Malformed status reply.');
     return status;
+  }
+
+  async getRuntime() {
+    const reply = await this.exchange(Opcode.GetLive, 0, undefined, undefined, 0);
+    const state = parseRuntime(reply.data);
+    if (!state) throw new ProtocolError('Malformed runtime reply.');
+    return state;
+  }
+
+  async getTimers() {
+    const reply = await this.exchange(Opcode.GetTimers, 0, undefined, undefined, 0);
+    const state = parseTimers(reply.data);
+    if (!state) throw new ProtocolError('Malformed timer reply.');
+    return state;
   }
 
   private async readImage(opcode: Opcode.ReadFlash | Opcode.ReadActive, onProgress?: (fraction: number) => void): Promise<Uint8Array> {

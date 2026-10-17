@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include "../src/config.h"
 
+// Standalone suites omit the protocol object; integration links its strong mailbox.
+__attribute__((weak)) uint8_t protocolReply[32];
+
 /* Canonical target-header setters; unrelated fields are retained. */
 static inline void testSetVariant(uint8_t variant) {
     activeConfig[CONFIG_HEADER_LAYERS] = (activeConfig[CONFIG_HEADER_LAYERS] & ~1) | variant;

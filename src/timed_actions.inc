@@ -68,7 +68,7 @@ static ACTION_BIT timedEvent(uint8_t tick) {
     timedAge[i] = age;
     if (action) {
       action += offset;
-      runAction(activeConfig[action], activeConfig[action + 1], 0, 9 + i);
+      runAction(activeConfig[action], activeConfig[(uint8_t)(action + 1)], 0, 9 + i);
       updateLayer();
     }
   }

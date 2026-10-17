@@ -354,3 +354,28 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   if (teal) notices.push('Teal was replaced with Cyan. Brightness settings are unchanged.');
   return { ok: true, profile, ...(notices.length ? { notices } : {}) };
 }
+
+/** Decode a dispatched action without guessing its binding from the current layer. */
+export function decodeLiveAction(image: Uint8Array, first: number, second: number): Action | null {
+  const decoded = decodeImage(image);
+  if (!decoded.ok || image[1] !== FORMAT_VERSION) return null;
+  const p = decoded.profile;
+  let start = HEADER_SIZE + layerSize(p.variant) * p.layers.length;
+  for (const l of p.layers) if (l.indicatorColor === 0) start += layerPaletteSize(p.variant);
+  start += CHORD_ENTRY_SIZE * p.chords.length + TIMED_ENTRY_SIZE * (p.timedActions?.length ?? 0);
+  const pool = { start, used: image[3]! >> 1, bytes: image };
+  const action = decodeAction(first, second, p.layers.length, false, pool, FORMAT_VERSION);
+  if (typeof action === 'string') return null;
+  if (action.type === 'macro') {
+    // The decoder sorts referenced macro starts; locate this binding's original address.
+    const addresses = new Set<number>();
+    const add = (offset: number) => { if ((image[offset]! & 15) === 14) addresses.add(image[offset + 1]!); };
+    for (let li = 0; li < p.layers.length; li++) for (let i = 0; i < keyCount(p.variant) + 3; i++) add(HEADER_SIZE + li * layerSize(p.variant) + 2 * i);
+    let offset = start - CHORD_ENTRY_SIZE * p.chords.length - TIMED_ENTRY_SIZE * (p.timedActions?.length ?? 0);
+    for (let i = 0; i < p.chords.length; i++, offset += CHORD_ENTRY_SIZE) add(offset + 1);
+    for (let i = 0; i < (p.timedActions?.length ?? 0); i++, offset += TIMED_ENTRY_SIZE) { add(offset + 1); add(offset + 3); }
+    action.macro = [...addresses].sort((a, b) => a - b).indexOf(second);
+    if (action.macro < 0) return null;
+  }
+  return action;
+}

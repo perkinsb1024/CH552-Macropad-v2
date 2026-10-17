@@ -19,6 +19,7 @@ export interface SimulatorOptions {
   failNextCommit?: boolean;
   /** Model firmware built with ENABLE_COLOR_PREVIEW=0 (or older firmware). */
   previewSupported?: boolean;
+  liveSupported?: boolean;
 }
 
 /**
@@ -31,6 +32,10 @@ export class SimulatedDevice implements Transport {
   readonly active = new Uint8Array(IMAGE_SIZE);
   flashValid = false;
   previewOptions = 0;
+  /** Mutable hardware snapshots for simulator interaction and protocol tests. */
+  readonly liveStatus = new Uint8Array(17);
+  readonly runtime = new Uint8Array(23);
+  readonly timers = new Uint8Array(17);
   private activeValid = false;
   private staging = new Uint8Array(IMAGE_SIZE);
   private uploadState: 0 | 1 | 2 = 0;
@@ -57,6 +62,20 @@ export class SimulatedDevice implements Transport {
     this.activeValid = this.flashValid;
     this.active.set(this.flash);
     this.uploadState = 0;
+    this.resetRuntime();
+  }
+
+  private resetRuntime(): void {
+    const layer = this.activeValid ? this.active[2]! >> 4 & 7 : 0;
+    const generation = (this.runtime[21]! + 1) & 255;
+    this.runtime.fill(0);
+    this.runtime[0] = this.runtime[1] = this.runtime[2] = layer;
+    this.runtime[3] = 255;
+    this.runtime[14] = (this.active[5]! >> 4) & 3;
+    this.runtime[15] = this.active[5]! >> 6;
+    this.runtime[16] = this.runtime[17] = 3;
+    this.runtime[21] = generation;
+    this.timers.fill(0);
   }
 
   async send(payload: Uint8Array): Promise<void> {
@@ -112,8 +131,23 @@ export class SimulatedDevice implements Transport {
         reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, FORMAT_VERSION, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, maxLayers(this.options.variant), IMAGE_SIZE, PALETTE_VERSION, 0xff, 0x7f], 8);
         return Status.Ok;
       case Opcode.GetStatus:
-        reply[6] = 6;
+        reply[6] = this.options.liveSupported === false ? 6 : 23;
         reply.set([this.flashValid ? 1 : 0, this.activeValid ? this.active[2]! >> 4 & 7 : 0, this.activeValid ? this.active[2]! >> 4 & 7 : 0, this.uploadState, 0, 0], 8);
+        if (this.options.liveSupported !== false) reply.set(this.liveStatus, 14);
+        return Status.Ok;
+      case Opcode.GetLive:
+        if (this.options.liveSupported === false) return Status.BadOpcode;
+        reply[6] = 23;
+        this.runtime[0] = this.activeValid ? this.active[2]! >> 4 & 7 : 0;
+        this.runtime[18] = this.previewOptions || (this.runtime[18]! & 2 ? this.runtime[18]! : 0);
+        reply.set(this.runtime, 8);
+        return Status.Ok;
+      case Opcode.GetTimers:
+        if (this.options.liveSupported === false) return Status.BadOpcode;
+        reply[6] = 17;
+        this.timers[15] = this.active[7]!;
+        this.timers[16] = this.active[8]!;
+        reply.set(this.timers, 8);
         return Status.Ok;
       case Opcode.ReadFlash:
         reply[6] = length;
@@ -160,6 +194,7 @@ export class SimulatedDevice implements Transport {
         this.flashValid = true;
         this.activeValid = true;
         this.active.set(this.staging);
+        this.resetRuntime();
         this.uploadState = 2;
         touchUpload();
         return Status.Ok;

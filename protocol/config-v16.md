@@ -20,8 +20,8 @@ transport. It includes independent per-key layer palettes, keypress and layer
 **Rainbow**, per-layer **Auto-Sleep**, keyboard and consumer actions with modifiers,
 absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers and runtime LED controls. All action records
-remain two bytes. The active configurator supports v16, including binary, JSON and draft migration.
-The pre-built v16 release uses source revision `780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and [six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The active configurator matches these files. Hardware validation is complete. The outgoing v15 configurator is frozen at `webapp/public/versions/format-v15/`.
+remain two bytes. The frozen v16 configurator supports v16, including binary, JSON and draft migration.
+The pre-built v16 release uses source revision `780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and [six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The [frozen v16 configurator](../webapp/public/versions/format-v16/) matches these files. Hardware validation is complete. The outgoing v15 configurator is frozen at `webapp/public/versions/format-v15/`.
 
 ## Version and Compatibility
 
@@ -1263,7 +1263,7 @@ the scheduler sends unchanged reports when their configured interval expires.
 
 ## Builds and Measurements
 
-The firmware and active configurator support the complete binary encoding above.
+The released firmware and frozen v16 configurator support the complete binary encoding above.
 The user has completed v16 firmware hardware validation. Both supplied release HEX files match fresh temporary native builds.
 
 Release source at revision `780fcc79`, including pre-sleep brightness restoration

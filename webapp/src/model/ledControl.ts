@@ -85,7 +85,7 @@ export function ledSummary(command: LedCommand, value: LedValue, compact = false
   const code = ledCommandCode(command);
   if (code < 0) return 'Unknown LED command';
   if (code >= 0x80) return code === 0x80 ? 'All LEDs: As Configured'
-    : `All LEDs: ${value === 15 ? 'Rainbow' : PALETTE[Number(value)]?.name ?? '?'} · ${brightness === 'dim' ? 'Dim · ' : ''}${ledCommandSpec(command)!.label}`;
+    : `All LEDs: ${value === 15 ? 'Rainbow' : PALETTE[Number(value)]?.name ?? '?'} (${brightness === 'dim' ? 'Dim, ' : ''}${ledCommandSpec(command)!.label})`;
   if (code === 10) return compact ? 'LED Restore' : ledCommandSpec(command)!.label;
   const label = compact
     ? code === 13 ? 'LED Toggle' : code >= 11 ? 'LED Preset' : ['LED Phase', 'LED Speed', 'Layer LEDs', 'Key LEDs', 'All LEDs'][code >> 1]

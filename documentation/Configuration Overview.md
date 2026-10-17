@@ -4,7 +4,7 @@ Using this macropad gives you quick access to the things you do most often: copy
 
 You configure it in your browser with the configurator tool. Once you click **Save to Device**, the settings stay on the macropad — even when you unplug it or use it on a different computer. You do not need to keep the configurator open for the macropad to work.
 
-This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 16. The bundled v16 firmware matches the active editor and supports per-key idle colors and key-press **Rainbow**. Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
+This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets unreleased format 17 with **Live View** telemetry. Published v16 firmware supports per-key idle colors and key-press **Rainbow** and uses the [frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
 
 ## Index
 
@@ -21,9 +21,10 @@ This guide covers the current configurator and its supported three-key and six-k
 11. [**Macros**](#macros)
 12. [The 128-Byte Configuration Size Limit](#the-128-byte-configuration-size-limit)
 13. [Save, Back Up, and Restore](#save-back-up-and-restore)
-14. [Example Configurations](#example-configurations)
-15. [Troubleshooting](#troubleshooting)
-16. [Advanced: Gotchas and Things to Watch Out for with Timed Actions](#timed-action-gotchas)
+14. [Live View](#live-view)
+15. [Example Configurations](#example-configurations)
+16. [Troubleshooting](#troubleshooting)
+17. [Advanced: Gotchas and Things to Watch Out for with Timed Actions](#timed-action-gotchas)
 
 ## Get Connected—Or Try a Virtual Macropad
 
@@ -312,7 +313,7 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 
 ### Chord Timing
 
-The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v16 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
+The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v17 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
 
 - A larger window makes chords easier to press but adds a small delay to individual keys that belong to a chord
 - A smaller window makes those individual keys respond sooner, but requires more nearly simultaneous presses
@@ -596,7 +597,7 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 ## Macros
 
 Macros are supported by the [pre-built v16 release firmware](../README.md#how-to-compile-the-firmware)
-and its [matching configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
+and its [matching v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/).
 V16 hardware validation is complete. Older firmware uses its matching archived
 editor; versions before v11 do not support macros.
 
@@ -749,6 +750,57 @@ Holding the encoder button while connecting USB remains available with every ver
 
 Firmware update mode is for replacing device software. Use **Save to Device** to change a profile. See the [firmware setup instructions](../README.md#how-to-upload-the-firmware) for hardware bootloader entry if the firmware cannot run.
 
+## Live View
+
+Click **Live View** in the configurator's top bar to open a separate viewer tab,
+then click **Connect Macropad** there. It reads the saved profile and follows the
+active device layer, showing shortcuts, chords, macros and timed actions. Unsaved
+editor changes do not appear. The viewer provides no configuration editing or
+saving controls.
+
+You can browse another layer without switching the hardware. A warning identifies
+the difference; click **Follow Device** to return to the active layer. The next
+device layer change also resumes following. Live input outlines appear only on
+the active layer.
+
+With v17 firmware, the viewer adds:
+
+| Display | Meaning |
+| --- | --- |
+| Blue outlines | Physical key or encoder-button presses and completed encoder turns, even when a wake input is consumed |
+| Green flashes | Accepted bindings, including short taps and both keys of a chord |
+| **Latest Binding** | The most recent action, its input/timer/macro source and effective layer at dispatch |
+| **Auto-Sleep** | **Disabled**, **Asleep**, or an awake countdown to sleep |
+| **Brightness**, **LED Effect**, **Rainbow** | Current indicator/key policies, temporary effects, blink progress, color preview and rainbow settings |
+| **Layer State** | Base and previous layers, one-shot return and any key waiting for a chord |
+| **Playback** | Action or macro activity and the number of queued bindings |
+| **Timed Actions** | Time until firing, a pause outside the timer's layer, and any armed next-input action or input consumption |
+| **Latched Mouse Buttons**, **Dropped Actions** | Persistent mouse latches and rejected actions, shown when nonzero |
+
+Green feedback means the firmware accepted the binding; output may still be
+queued, and an application may not have received it yet. The latest binding is
+a summary, not a complete event history. Waking the pad can show a blue outline
+without a green flash when **Consume Wake Input** blocks the normal binding.
+Brightness policies describe runtime settings; actual rendered LED colors are
+not streamed.
+
+The visible viewer schedules each input poll 50ms after the previous poll
+completes and reads runtime state after each input reply. Timers are sampled
+about every 250ms, or immediately after an application/reset generation change,
+subject to browser and USB delays. Countdown values are sampled rather
+than exact stopwatches. Background tabs update less often. After one second
+without fresh data, live outlines disappear and stale-state messages appear.
+On disconnect, the saved shortcut reference remains visible. A changed saved
+profile is reloaded automatically when its checksum changes.
+
+The frozen v16 viewer retains the shortcut/layer reference without telemetry. The
+bundled v16 release does not provide the new live state; use its matching frozen
+editor/viewer until updating to v17. Back up before updating, then import or read
+the preserved profile and click **Save to Device** in the v17 editor. Settings
+retain their meanings, but actions stay inactive until the v17 profile is saved.
+Telemetry uses no additional configuration storage or user timer slot. A device with
+an invalid profile must first be repaired in the configurator.
+
 ## Example Configurations
 
 ### Everyday Editing with a Useful Wheel
@@ -798,7 +850,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type Text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v16 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v17 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume This Input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

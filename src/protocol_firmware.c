@@ -1,6 +1,7 @@
 #include "protocol_firmware.h"
 #include "config.h"
 #include "actions.h"
+#include "live_state.h"
 #include "storage.h"
 
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
@@ -17,6 +18,8 @@ void firmwareApplyConfig(FW_BIT restartIndicator);
 #define PROTOCOL_ABORT_WRITE 8
 #define PROTOCOL_PREVIEW_COLOR 9
 #define PROTOCOL_ENTER_BOOTLOADER 10
+#define PROTOCOL_GET_LIVE 11
+#define PROTOCOL_GET_TIMERS 12
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -122,13 +125,28 @@ static uint8_t processRequest(void) {
         protocolReply[(uint8_t)(9 + i)] = protocolInfo[i];
       break;
     case PROTOCOL_GET_STATUS:
-      protocolReply[7] = 6;
+      protocolReply[7] = 23;
       protocolReply[9] = flashValid;
       protocolReply[10] = activeConfigValid ? actionsLayer() : 0;
       protocolReply[11] = activeConfigValid ? configStartupLayer() : 0;
       protocolReply[12] = uploadState;
       protocolReply[13] = actionsDropped(0);
       protocolReply[14] = actionsDropped(1);
+      liveReply[6] = liveBindingLayer; // Layer at accepted dispatch; legacy prefix is unchanged.
+      firmwareWriteInputs();
+      i = 13;
+      do { --i; liveReply[(uint8_t)(10 + i)] = liveBindings[i]; } while (i);
+      break;
+    case PROTOCOL_GET_LIVE:
+      protocolReply[7] = 23;
+      actionsWriteLive();
+      firmwareWriteLive();
+      break;
+    case PROTOCOL_GET_TIMERS:
+      protocolReply[7] = 17;
+      actionsWriteTimers();
+      liveReply[15] = activeConfig[CONFIG_HEADER_CRC];
+      liveReply[16] = activeConfig[CONFIG_HEADER_CRC + 1];
       break;
     case PROTOCOL_READ_FLASH:
     case PROTOCOL_READ_ACTIVE:
@@ -227,9 +245,8 @@ void protocolPoll(uint16_t now) {
     return;
   }
   if (protocolState == 1) {
-    for (i = 0; i < 32; i++) {
-      protocolReply[i] = 0;
-    }
+    i = 32;
+    do { protocolReply[--i] = 0; } while (i);
     protocolReply[0] = 4;
     protocolReply[1] = 'U';
     protocolReply[2] = 'M';

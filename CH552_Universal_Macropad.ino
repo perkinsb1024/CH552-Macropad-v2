@@ -13,6 +13,7 @@
 #include <WS2812.h>
 #include "src/actions.h"
 #include "src/led_control.h"
+#include "src/live_state.h"
 #include "src/config.h"
 #include "src/protocol_firmware.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
@@ -61,7 +62,9 @@ __xdata uint8_t ledData[NUM_BYTES];
 // Stable levels and debounce times remain private to this main-loop scanner.
 __xdata uint8_t rawState[7];
 __idata uint8_t stableState[7];
-__idata uint16_t rawChanged[7];
+__xdata uint16_t rawChanged[7];
+__xdata uint8_t liveRotations[2];
+__xdata uint8_t liveGeneration;
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
 __pdata uint8_t lastLayer;
@@ -446,17 +449,37 @@ void scanEncoder() {
     encoderMovement += movement;
     if (encoderMovement >= 4) {
       encoderMovement = 0;
+      liveRotations[0]++;
       if (!actionsTimedInput()) actionsRotate(1);
       updateLeds();
     } else if (encoderMovement <= -4) {
       encoderMovement = 0;
+      liveRotations[1]++;
       if (!actionsTimedInput()) actionsRotate(0);
       updateLeds();
     }
   }
 }
 
+void firmwareWriteInputs(void) {
+  uint8_t mask = 0;
+  uint8_t i = NUM_LEDS + 1;
+  do { mask = (mask << 1) | stableState[--i]; } while (i);
+  liveReply[7] = mask;
+  liveReply[8] = liveRotations[0];
+  liveReply[9] = liveRotations[1];
+}
+
+void firmwareWriteLive(void) {
+  uint8_t i = 4;
+  do { --i; liveReply[(uint8_t)(14 + i)] = ledSettings[i]; } while (i);
+  liveReply[18] = previewOptions;
+  liveReply[19] = layerIndicatorPhasesLeft;
+  liveReply[21] = liveGeneration;
+}
+
 void firmwareApplyConfig(ACTION_BIT restartIndicator) {
+  liveGeneration++;
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
@@ -540,8 +563,9 @@ void loop() {
     scanButton(i, now);
   }
   scanEncoder();
+  // Color preview uses saved speed; LED effects follow the runtime override.
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
-      rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
+      rainbowFrameMs[colorPreviewActive ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
   {
     if (rainbowAnimationActive) {
       rainbowChanged = (uint8_t)now;

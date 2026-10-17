@@ -5,8 +5,9 @@
 The bundled default firmware uses configuration format v16, built from revision
 `780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and
 [six-key](../releases/ch552-macropad-6-key-780fcc79.hex). Use the
-[active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
-with these files. V16 adds independent per-key idle colors, key-press **Rainbow**
+[frozen v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/)
+with these files. The active configurator targets unreleased v17; the installer
+continues to offer v16 until v17 is released. V16 adds independent per-key idle colors, key-press **Rainbow**
 and runtime brightness overrides that persist after waking from **Auto-Sleep**.
 The installer reads each bundled HEX's format and links to its matching editor.
 Back up profiles before updating; older profiles remain in DataFlash with actions
