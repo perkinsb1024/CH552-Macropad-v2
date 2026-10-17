@@ -66,7 +66,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
-| [v17](protocol/config-v17.md) (Unreleased) | - **Live View** shows physical inputs, triggers, sleep/timer countdowns, lighting and playback state<br> - Fixed a bug where forcing **Rainbow** through **LED Control** didn't respect runtime speed overrides |
+| [v17](protocol/config-v17.md) | - **Live View** shows physical inputs, triggers, sleep/timer countdowns, lighting and playback state<br> - Fixed a bug where forcing **Rainbow** through **LED Control** didn't respect runtime speed overrides |
 | [v16](protocol/config-v16.md) | - Per-key idle colors (custom background palettes)<br> - **Rainbow** is available as a key-press color (**Teal** is no longer available)<br> - Runtime brightness overrides persist after waking from **Auto-Sleep** |
 | [v15](protocol/config-v15.md) | - Optional **Auto-Sleep** after **15 Minutes**, **30 Minutes**, **1 Hour** or **2 Hours** of inactivity (can be enabled per-layer, can set LEDs to **dim** or **off**, and can optionally display layer indicator again on wake)  |
 | [v14](protocol/config-v14.md) | - **Media / System with Modifiers** now supports **Hold**<br> - Added support for **Relative Layer While Held**<br> *This version also reorganized action types to keep logical groups together* |
@@ -89,9 +89,9 @@ Below are the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v16 firmware files are available for [three-key](releases/ch552-macropad-3-key-780fcc79.hex) and [six-key](releases/ch552-macropad-6-key-780fcc79.hex) macropads, built from source revision `780fcc79`. This version adds independent per-key idle colors, key-press **Rainbow**, and runtime brightness overrides that persist after waking from **Auto-Sleep**. **Teal** is replaced by **Rainbow** in the palette. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v17 firmware files are available for [three-key](releases/ch552-macropad-3-key-64fa750c.hex) and [six-key](releases/ch552-macropad-6-key-64fa750c.hex) macropads, built from source revision `64fa750c`. This version adds **Live View** telemetry for physical inputs, accepted bindings, timers, lighting and playback state, and fixes runtime **Rainbow** speed overrides for **LED Control** effects. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [frozen v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/) with these published v16 files. The active configurator targets unreleased v17 with **Live View** telemetry. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) provide matching editors for older firmware. Back up your profile before updating firmware, then import it and click **Save to Device** in the matching editor to activate it. Updating from v16 to v17 preserves DataFlash but leaves actions inactive until you save a v17 profile; all settings migrate without changing their meaning. Older **Teal** colors migrate to **Cyan** with brightness unchanged. Imports from before v15 start with **Auto-Sleep** disabled.
+Use the [active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v17 release files. Published v16 firmware uses the [frozen v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) provide matching editors for older firmware. Back up your profile before updating firmware, then import it and click **Save to Device** in the matching editor to activate it. Updating from v16 to v17 preserves DataFlash but leaves actions inactive until you save a v17 profile; all settings migrate without changing their meaning. Older **Teal** colors migrate to **Cyan** with brightness unchanged. Imports from before v15 start with **Auto-Sleep** disabled.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -150,7 +150,7 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current v17 firmware at revision `cf8d7e4`, in bytes, with a 14,336-byte application flash limit:
+Memory in the v17 release source at revision `64fa750c`, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
@@ -282,7 +282,7 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores awake lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. Format 16 firmware restores the indicator and key-press brightness policies selected before sleep, including manual overrides. Timed or macro LED commands do not end sleep or replace that selection. Published v15 firmware restores **Both as Configured**. The active editor targets format 17; bundled v16 firmware uses its frozen editor.
+**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores awake lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. Format 16 firmware restores the indicator and key-press brightness policies selected before sleep, including manual overrides. Timed or macro LED commands do not end sleep or replace that selection. Published v15 firmware restores **Both as Configured**. The active editor and bundled firmware use format 17.
 
 As of firmware v16, **LED Control** brightness overrides persist after waking from auto-sleep. For example, selecting **Layers and Keys Dim** before sleep restores that same dim setting on wake, even when sleep turns the LEDs off. Indicator and key-press overrides are remembered independently.
 
@@ -349,7 +349,7 @@ Accepted bindings can still be waiting for output; the view is not a complete
 event history or confirmation that an application received the action.
 
 The frozen v16 viewer retains the saved-profile/layer view without live telemetry.
-The bundled v16 release does not include the telemetry extension. See the
+The bundled v17 release includes the telemetry extension. See the
 [Live View guide](documentation/Configuration%20Overview.md#live-view) for details.
 
 ### Run the Web App Locally

@@ -2,20 +2,20 @@
 
 *This tool is a beta prototype. macOS has been tested and verified; Windows and Linux hardware validation is still pending.* It programs the published three-key or six-key CH552 firmware through WebUSB, with no PlatformIO or Arduino installation needed by the user. Preservation of on-device profiles in DataFlash has been verified during a macOS web firmware upload.
 
-The bundled default firmware uses configuration format v16, built from revision
-`780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and
-[six-key](../releases/ch552-macropad-6-key-780fcc79.hex). Use the
-[frozen v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/)
-with these files. The active configurator targets unreleased v17; the installer
-continues to offer v16 until v17 is released. V16 adds independent per-key idle colors, key-press **Rainbow**
-and runtime brightness overrides that persist after waking from **Auto-Sleep**.
+The bundled default firmware uses configuration format v17, built from revision
+`64fa750c`: [three-key](../releases/ch552-macropad-3-key-64fa750c.hex) and
+[six-key](../releases/ch552-macropad-6-key-64fa750c.hex). Use the
+[active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+with these files. V17 adds **Live View** telemetry for physical inputs, accepted
+bindings, timers, lighting and playback state, and fixes runtime **Rainbow**
+speed overrides for **LED Control** effects.
 The installer reads each bundled HEX's format and links to its matching editor.
 Back up profiles before updating; older profiles remain in DataFlash with actions
-inactive until explicitly migrated and saved in v16. Older **Teal** colors migrate
+inactive until explicitly migrated and saved in v17. Older **Teal** colors migrate
 to **Cyan** with brightness unchanged. Imports from before v15 start with
-**Auto-Sleep** disabled. The user has completed v16 firmware hardware validation.
-The outgoing v15 pair is preserved unchanged in `firmware-history/` and uses
-its frozen v15 configurator.
+**Auto-Sleep** disabled. The user has completed v17 firmware hardware validation.
+The outgoing v16 pair is preserved unchanged in `firmware-history/` and uses
+its frozen v16 configurator.
 
 The static page is built into `webapp/dist/webUploader/` for the existing GitHub Pages site. Its URL after deployment is:
 
@@ -159,7 +159,7 @@ variant retains the selected version when a matching build is available.
 Downloads and installation use the selected entry's SHA-256, size, variant and
 matching configurator link.
 
-`firmware-history/` contains 42 exact preserved HEX files for formats 2–15, with
+`firmware-history/` contains 44 exact preserved HEX files for formats 2–16, with
 release commits, publication timestamps and SHA-256 checksums in `index.json`. These are recovered files,
 not regenerated builds. Early firmware constructs **GET_INFO** without a constant
 identity record; its format metadata comes from `src/config.h` at the recorded

@@ -22,8 +22,7 @@ absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers, runtime LED controls and read-only
 **Live View** telemetry. All action records
 remain two bytes. The active configurator supports v17, including binary, JSON and draft migration.
-V17 is unreleased. The published v16 firmware and its matching configurator
-are preserved; use `webapp/public/versions/format-v16/` for v16 devices.
+The pre-built v17 release uses source revision `64fa750c`: [three-key](../releases/ch552-macropad-3-key-64fa750c.hex) and [six-key](../releases/ch552-macropad-6-key-64fa750c.hex). The active configurator matches these files. Hardware validation is complete. Published v16 firmware is preserved in `webUploader/firmware-history/`; use `webapp/public/versions/format-v16/` for v16 devices.
 
 **Live View** adds runtime observations while retaining the 128-byte storage
 layout, action encodings, palette version 4 and HID transport version 1. The
@@ -1423,10 +1422,11 @@ runtime and timer replies an atomic snapshot.
 ## Builds and Measurements
 
 The firmware and active configurator support the complete binary encoding above.
-Hardware validation is pending. No v17 release HEX files have
-been generated. Published v16 releases and their frozen editor remain unchanged.
+The user has completed v17 firmware hardware validation. Both supplied release
+HEX files match fresh temporary native builds. Published v16 files are preserved
+unchanged in `webUploader/firmware-history/` with their frozen editor.
 
-The v17 firmware at revision `cf8d7e4` includes telemetry, pre-sleep brightness
+The v17 release source at revision `64fa750c` includes telemetry, pre-sleep brightness
 restoration and runtime rainbow overrides. Fresh native builds at the real
 14,336-byte application limit measure:
 
@@ -1440,9 +1440,7 @@ host runner and native paged/external/absolute layout, startup clearing and
 interrupt-parameter checks pass. Earlier configuration/protocol/live-state
 sanitizer runs covered the telemetry implementation before the version bump. Scanner/dispatch/protocol tests cover input counters, accepted bindings,
 chords, timer sources and read-only telemetry. Brightness restoration, per-key
-rendering, malformed images and protocol bounds remain covered. These are
-automated results, not hardware validation; v17 hardware validation
-remains pending.
+rendering, malformed images and protocol bounds remain covered. These automated checks supplement the completed v17 hardware validation.
 
 Build temporary outputs without generating releases:
 

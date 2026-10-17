@@ -4,7 +4,7 @@ Using this macropad gives you quick access to the things you do most often: copy
 
 You configure it in your browser with the configurator tool. Once you click **Save to Device**, the settings stay on the macropad — even when you unplug it or use it on a different computer. You do not need to keep the configurator open for the macropad to work.
 
-This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets unreleased format 17 with **Live View** telemetry. Published v16 firmware supports per-key idle colors and key-press **Rainbow** and uses the [frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
+This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 17 with **Live View** telemetry. Published v16 firmware supports per-key idle colors and key-press **Rainbow** and uses the [frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
 
 ## Index
 
@@ -154,7 +154,7 @@ Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
 and application. Buttons 4/5 often mean Back/Forward; those meanings are not
 guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
 may not observe buttons 6–8 even when another application can use them.
-Buttons 4–8 and down/up require v12 firmware. The bundled v16 release supports all eight buttons and these persistent
+Buttons 4–8 and down/up require v12 firmware. The bundled v17 release supports all eight buttons and these persistent
 actions; older firmware uses its matching frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
@@ -596,9 +596,9 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are supported by the [pre-built v16 release firmware](../README.md#how-to-compile-the-firmware)
-and its [matching v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/).
-V16 hardware validation is complete. Older firmware uses its matching archived
+Macros are supported by the [pre-built v17 release firmware](../README.md#how-to-compile-the-firmware)
+and its [matching configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
+V17 hardware validation is complete. Older firmware uses its matching archived
 editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add Macro**
@@ -793,10 +793,10 @@ without fresh data, live outlines disappear and stale-state messages appear.
 On disconnect, the saved shortcut reference remains visible. A changed saved
 profile is reloaded automatically when its checksum changes.
 
-The frozen v16 viewer retains the shortcut/layer reference without telemetry. The
-bundled v16 release does not provide the new live state; use its matching frozen
-editor/viewer until updating to v17. Back up before updating, then import or read
-the preserved profile and click **Save to Device** in the v17 editor. Settings
+The bundled v17 release provides the live state described above. The frozen v16
+viewer retains the shortcut/layer reference without telemetry; use that matching
+editor/viewer for v16 firmware until updating to v17. Back up before updating,
+then import or read the preserved profile and click **Save to Device** in the v17 editor. Settings
 retain their meanings, but actions stay inactive until the v17 profile is saved.
 Telemetry uses no additional configuration storage or user timer slot. A device with
 an invalid profile must first be repaired in the configurator.

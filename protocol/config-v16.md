@@ -21,7 +21,7 @@ transport. It includes independent per-key layer palettes, keypress and layer
 absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers and runtime LED controls. All action records
 remain two bytes. The frozen v16 configurator supports v16, including binary, JSON and draft migration.
-The pre-built v16 release uses source revision `780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and [six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The [frozen v16 configurator](../webapp/public/versions/format-v16/) matches these files. Hardware validation is complete. The outgoing v15 configurator is frozen at `webapp/public/versions/format-v15/`.
+The pre-built v16 release uses source revision `780fcc79`: [three-key](../webUploader/firmware-history/ch552-macropad-3-key-780fcc79.hex) and [six-key](../webUploader/firmware-history/ch552-macropad-6-key-780fcc79.hex). The [frozen v16 configurator](../webapp/public/versions/format-v16/) matches these files. Hardware validation is complete. The outgoing v15 configurator is frozen at `webapp/public/versions/format-v15/`.
 
 ## Version and Compatibility
 

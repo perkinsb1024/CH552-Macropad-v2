@@ -324,14 +324,13 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v16 firmware from revision
-`780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and
-[six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The
-[frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/)
-matches these hardware-validated releases. The active editor targets unreleased
-v17 with **Live View** telemetry. No v17 release is bundled, and v17 hardware
-validation remains pending. Older-firmware connections link to the matching
-archive and updater. The frozen v16 editor/viewer was built from finalized
+The release HEX files and bundled uploader use v17 firmware from revision
+`64fa750c`: [three-key](../releases/ch552-macropad-3-key-64fa750c.hex) and
+[six-key](../releases/ch552-macropad-6-key-64fa750c.hex). The
+[active editor](https://perkinsb1024.github.io/CH552-Macropad-v2/) matches these
+hardware-validated releases, including **Live View** telemetry and runtime
+**Rainbow** speed overrides for **LED Control** effects. Older-firmware connections
+link to the matching archive and updater. The frozen v16 editor/viewer was built from finalized
 release source `51db5e6`; all 746 tests and its production build passed.
 
 Back up profiles before updating firmware. V17 firmware leaves v16 DataFlash
@@ -471,7 +470,7 @@ analysis includes relative holds.
 
 The finalized v13 editor and live view are frozen at `public/versions/format-v13/`
 with source provenance and checksums. Published v13 firmware connects through
-that editor; the shared uploader offers v13 as a previous release and v16 as the latest release.
+that editor; the shared uploader offers v13 as a previous release and v17 as the latest release.
 
 ## Auto-Sleep (v15 and Later)
 
@@ -520,7 +519,7 @@ the saved timeout and wake policies in live view.
 The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
 outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
 and file checksums. Published v14 firmware routes there; the shared uploader
-bundles v16 as the latest release and preserves v15 and earlier releases under **Previous Release**.
+bundles v17 as the latest release and preserves v16 and earlier releases under **Previous Release**.
 
 
 ## Header and Chord Window
