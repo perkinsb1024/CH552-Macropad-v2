@@ -1,6 +1,7 @@
 #include "actions.h"
 #include "config.h"
 #include "led_control.h"
+#include "live_state.h"
 #include "userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
 
 #define MAX_INPUTS 7
@@ -9,6 +10,10 @@
 // Page-zero xRAM uses one-byte addresses without consuming internal stack RAM.
 // Together with ledSettings these must fit above USB DMA and below 0x100;
 // build_firmware.py checks the linked layout. Startup selects P2=0.
+// Telemetry counters wrap modulo 256 and survive action/layer resets.
+__xdata uint8_t liveBindings[13]; // Nine accepted-source counts, last source/action/sequence.
+__xdata uint8_t liveBindingLayer;
+
 __pdata uint8_t buttonFirst[MAX_INPUTS];
 __pdata uint8_t buttonSecond[MAX_INPUTS];
 __pdata uint8_t buttonPressed[MAX_INPUTS];
@@ -265,7 +270,7 @@ static FW_BIT flushOutputs(void) {
 static void updateLayer(void);
 static void resetLayerTimers(void);
 
-static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
+static ACTION_BIT applyAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
   uint8_t selectedLayer = baseLayer;
 #if CONFIG_SCROLL_ACCELERATION
@@ -290,7 +295,7 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       firmwareLedAction(second, first >> 4);
       break;
     case CONFIG_ACTION_NONE:
-      if (first) queueAction(first, second, rotation); // Text/Pause auxiliary values.
+      if (first) return queueAction(first, second, rotation); // Text/Pause auxiliary values.
       break;
     case CONFIG_ACTION_KEY_HOLD:
       break;
@@ -342,8 +347,47 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
       baseLayer = second;
       break;
     default:
-      queueAction(first, second, rotation);
-      break;
+      return queueAction(first, second, rotation);
+  }
+  return 1;
+}
+
+static void runAction(uint8_t first, uint8_t second, uint8_t rotation, uint8_t input) {
+  // Snapshot original bytes/layer: applying a relative or one-shot layer mutates them.
+  uint8_t layer = effectiveLayer;
+  uint8_t source = input;
+  if (input < 7) {
+    source = 1 << input;
+    if (input < 6 && chordPartner[input]) source |= 1 << (chordPartner[input] - 1);
+  } else source = 0x80 | input;
+  if (!applyAction(first, second, rotation, input)) return;
+  if (input < 9) liveBindings[input]++;
+  liveBindings[9] = source;
+  liveBindings[10] = first;
+  liveBindings[11] = second;
+  liveBindings[12]++;
+  liveBindingLayer = layer;
+}
+
+void actionsWriteLive(void) {
+  liveReply[0] = effectiveLayer;
+  liveReply[1] = baseLayer;
+  liveReply[2] = previousLayer;
+  liveReply[3] = oneShotReturnLayer;
+  liveReply[4] = pendingInput;
+  liveReply[5] = persistentMouse;
+  liveReply[6] = currentFirst;
+  liveReply[7] = macroNext;
+  liveReply[8] = eventUsed;
+  for (uint8_t i = 0; i < 5; i++) liveReply[(uint8_t)(17 + i)] = timedHigh[i];
+  liveReply[22] = liveBindingLayer;
+}
+
+void actionsWriteTimers(void) {
+  for (uint8_t i = 0; i < 5; i++) {
+    liveReply[i] = timedAge[i];
+    liveReply[(uint8_t)(5 + i)] = timedHigh[i];
+    liveReply[(uint8_t)(10 + i)] = timedFraction[i];
   }
 }
 
@@ -734,7 +778,7 @@ void actionsPoll(uint16_t now) {
       }
     } else if (type >= CONFIG_ACTION_MOUSE_TOGGLE) {
       // Held bindings never enter this queue; X/Y movement was handled above.
-      runAction(currentFirst, currentSecond, 0, 9);
+      runAction(currentFirst, currentSecond, 0, 14);
       currentFirst = 0;
       updateLayer();
     } else {

@@ -5,6 +5,12 @@
 #include "config_fixture.h"
 #include "../src/protocol_firmware.h"
 
+uint8_t liveBindings[13];
+void firmwareWriteInputs(void) {}
+void firmwareWriteLive(void) {}
+void actionsWriteLive(void) {}
+void actionsWriteTimers(void) {}
+
 static uint8_t flash[CONFIG_SIZE];
 static uint8_t original[CONFIG_SIZE];
 static uint8_t upload[CONFIG_SIZE];

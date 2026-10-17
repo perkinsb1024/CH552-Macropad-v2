@@ -13,6 +13,7 @@
 #include <WS2812.h>
 #include "src/actions.h"
 #include "src/led_control.h"
+#include "src/live_state.h"
 #include "src/config.h"
 #include "src/protocol_firmware.h"
 #include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
@@ -62,6 +63,8 @@ __xdata uint8_t ledData[NUM_BYTES];
 __xdata uint8_t rawState[7];
 __idata uint8_t stableState[7];
 __idata uint16_t rawChanged[7];
+__xdata uint8_t liveRotations[2];
+__xdata uint8_t liveGeneration;
 __pdata uint8_t encoderState;
 __pdata int8_t encoderMovement;
 __pdata uint8_t lastLayer;
@@ -446,17 +449,37 @@ void scanEncoder() {
     encoderMovement += movement;
     if (encoderMovement >= 4) {
       encoderMovement = 0;
+      liveRotations[0]++;
       if (!actionsTimedInput()) actionsRotate(1);
       updateLeds();
     } else if (encoderMovement <= -4) {
       encoderMovement = 0;
+      liveRotations[1]++;
       if (!actionsTimedInput()) actionsRotate(0);
       updateLeds();
     }
   }
 }
 
+void firmwareWriteInputs(void) {
+  uint8_t mask = 0;
+  for (uint8_t i = 0; i <= NUM_LEDS; i++) if (stableState[i]) mask |= 1 << i;
+  liveReply[7] = mask;
+  liveReply[8] = liveRotations[0];
+  liveReply[9] = liveRotations[1];
+}
+
+void firmwareWriteLive(void) {
+  liveReply[9] = ledSettings[2] | (ledSettings[3] << 2);
+  liveReply[10] = ledSettings[0] | (ledSettings[1] << 2);
+  liveReply[11] = previewOptions;
+  liveReply[12] = layerIndicatorPhasesLeft;
+  liveReply[13] = colorPreviewActive;
+  liveReply[16] = liveGeneration;
+}
+
 void firmwareApplyConfig(ACTION_BIT restartIndicator) {
+  liveGeneration++;
   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
   uint32_t clock = millis();
   uint16_t now = clock;
