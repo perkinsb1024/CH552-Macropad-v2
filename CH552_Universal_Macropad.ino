@@ -563,8 +563,9 @@ void loop() {
     scanButton(i, now);
   }
   scanEncoder();
+  // Color preview uses saved speed; LED effects follow the runtime override.
   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
-      rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
+      rainbowFrameMs[colorPreviewActive ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
   {
     if (rainbowAnimationActive) {
       rainbowChanged = (uint8_t)now;
