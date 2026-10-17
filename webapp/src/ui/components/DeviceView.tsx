@@ -9,6 +9,7 @@ import { connection, liveActivity, liveClock, canInsertSlot, canSwapSlots, dragg
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconRotate } from './Icons';
 import { ActionLabel } from './ActionLabel';
+import { liveLighting } from '../liveLighting';
 
 function sameSlot(a: Slot | null, b: Slot): boolean {
   return !!a && JSON.stringify(a) === JSON.stringify(b);
@@ -20,6 +21,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const layer = p.layers[li]!;
   const indicatorOn = layer.indicatorBehavior !== LayerIndicatorBehavior.None;
   const indicatorColor = layerIndicatorBackground(layer);
+  const lighting = readOnly ? liveLighting.value : null;
   const keys = keyCount(p.variant);
   const layerCount = p.layers.length;
   const chordKeys = new Set<number>();
@@ -167,9 +169,9 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     const slot: Slot = { kind: 'key', layer: li, index };
     const action = layer.keys[index]!;
     const problem = actionProblem(action, { layerCount, rotation: false });
-    const color = paletteHex(layer.leds[index]!);
-    const off = layer.leds[index] === 0;
-    const rainbow = layer.leds[index] === 15;
+    const color = lighting ? lighting.displayColors[index]! : paletteHex(layer.leds[index]!);
+    const off = readOnly ? color === '#000000' : layer.leds[index] === 0;
+    const rainbow = !readOnly && layer.leds[index] === 15;
     const dragged = readOnly ? null : draggedSlot.value;
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
     const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
@@ -217,7 +219,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
 
   return (
     <div class={`device device-${keys} ${readOnly ? "device-readonly" : ""}`}>
-      <div class={`device-shell ${indicatorOn ? 'indicator-glow' : ''}`}
+      <div class={`device-shell ${!readOnly && indicatorOn ? 'indicator-glow' : ''}`}
         style={`--indicator-color:${indicatorColor}; --indicator-opacity:${layer.indicatorFullBrightness ? 1 : 0.65}`}>
       <div class="device-body">
         <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={readOnly ? undefined : gridDragOver} onDrop={readOnly ? undefined : gridDrop}>

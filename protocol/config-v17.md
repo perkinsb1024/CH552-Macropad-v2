@@ -1403,8 +1403,9 @@ is the binding queue, not the USB report queue. Persistent mouse buttons report
 toggle/down latches rather than every host output currently held.
 
 The active viewer schedules status polls 50ms after the previous poll completes
-while visible, and reads runtime/timers when at least 250ms has elapsed since
-the last runtime sample. Hidden pages use 500ms status polling and suspend
+while visible, and reads runtime state after each status reply. It reads timers
+when at least 250ms has elapsed since the last timer sample, and immediately
+after an application/reset generation change. Hidden pages use 500ms status polling and suspend
 runtime/timer requests; the configurator uses 500ms status polling. Requests
 remain serial and polling pauses during that page's saves. These are polling
 intervals, not guaranteed sample rates. Telemetry requests do not count as

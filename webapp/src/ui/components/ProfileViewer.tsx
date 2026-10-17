@@ -11,6 +11,7 @@ import { Toasts } from './Toasts';
 import { SLEEP_TIMEOUT_LABELS, SLEEP_TIMEOUT_MINUTES, MAX_TIMED_ACTIONS, TIMED_TICK_SECONDS } from '../../model/constants';
 import { viewerSection } from '../viewerSections';
 import { IconChevron } from './Icons';
+import { rainbowAnimation, setRainbowAnimation, startLiveLighting } from '../liveLighting';
 
 export function ViewerChords() {
   const p = profile.value!;
@@ -147,6 +148,7 @@ export function ViewerExtras() {
 
 export function ProfileViewer() {
   useEffect(followDeviceLayer, []);
+  useEffect(startLiveLighting, []);
   useEffect(() => {
     const sim = new URLSearchParams(location.search).get('sim');
     if (sim === 'six') void connectSimulator(0);
@@ -178,9 +180,9 @@ export function ProfileViewer() {
           </div>
           {(mismatch || !knownLayer) && <div class="viewer-layer-status" aria-live="polite">
             {mismatch ? <div class="notice notice-warn" role="status">
-              Viewing {layerName(selectedLayer.value)}. Your macropad is on {layerName(deviceLayer!)}.
+              Viewing {layerName(selectedLayer.value)}. Your macropad is on {layerName(deviceLayer!)}. Showing saved layer colors only; these do not match the device's current LEDs.
               <button class="btn" onClick={() => { selectedLayer.value = deviceLayer!; }}>Follow Device</button>
-            </div> : <p class="muted">Device disconnected or layer unavailable. Showing the last loaded profile.</p>}
+            </div> : <p class="muted">Device disconnected or layer unavailable. Showing the last loaded profile and saved layer colors.</p>}
           </div>}
           <DeviceView readOnly />
           <details class="viewer-section viewer-saved-settings" {...viewerSection('layer-settings', false)}>
@@ -198,6 +200,16 @@ export function ProfileViewer() {
                   <div><dt>Layer Reminder</dt><dd>{p.showLayerIndicatorOnWake ? 'On' : 'Off'}</dd></div>
                 </> : <div><dt>Status</dt><dd>Disabled</dd></div>}
               </dl></section>
+            </div>
+            <div class="viewer-animation-setting">
+              <span id="rainbow-animation-label">Rainbow Animation Visualization</span>
+              <div class="segmented" role="group" aria-labelledby="rainbow-animation-label">
+                {(['always', 'brief', 'never'] as const).map(mode => <button type="button" key={mode}
+                  class={rainbowAnimation.value === mode ? 'is-selected' : ''}
+                  aria-pressed={rainbowAnimation.value === mode} onClick={() => setRainbowAnimation(mode)}>
+                  {mode === 'always' ? 'Always' : mode === 'brief' ? 'Brief' : 'Never'}
+                </button>)}
+              </div>
             </div>
           </details>
         </section>

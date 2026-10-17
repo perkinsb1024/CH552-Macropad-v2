@@ -26,8 +26,8 @@ export function LiveStatus() {
   const p = profile.value;
   if (c.kind !== 'connected' || !c.connection.status.live) return <p class="hint viewer-live-note">Connect firmware with Live View telemetry to see inputs and runtime state.</p>;
   if (!c.connection.status.flashValid) return <p class="notice notice-warn">Device profile is invalid. Live activity is unavailable.</p>;
-  const stale = !activity || now - activity.receivedAt > 1000;
   const stateStale = !runtime || now - runtime.receivedAt > 1000;
+  const stale = !activity || now - activity.receivedAt > 1000 || stateStale;
   const state = !stateStale ? runtime?.state : undefined;
   const latest = activity?.latest;
   const image = deviceFlash.value;

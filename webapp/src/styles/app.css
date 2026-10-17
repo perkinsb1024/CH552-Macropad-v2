@@ -2592,6 +2592,7 @@ output {
 .viewer-section > summary > svg { flex-shrink: 0; transition: transform 150ms ease; }
 .viewer-section[open] > summary { margin-bottom: 12px; }
 .viewer-section[open] > summary > svg { transform: rotate(180deg); }
+.viewer-animation-setting { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 1rem; font-size: 13px; }
 .viewer-saved-settings { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .profile-viewer .tab-badge { cursor: default; }
 .profile-viewer .tab-badge:hover { box-shadow: none; filter: none; }

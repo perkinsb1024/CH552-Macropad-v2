@@ -37,7 +37,7 @@ export function advanceActivity(previous: LiveActivity | null, sample: FastLiveS
     latest: delta ? sample : previous.latest, latestAt: delta ? now : previous.latestAt,
     bindingDelta: delta || previous.bindingDelta };
 }
-export interface LiveRuntime { state: RuntimeState; timers: TimerState; receivedAt: number }
+export interface LiveRuntime { state: RuntimeState; timers: TimerState; receivedAt: number; timersReceivedAt: number }
 export function timerRemaining(state: TimerState, slot: number, intervalTicks: number): number {
   const ticks = state.age[slot]! + ((state.high[slot]! & 56) << 5) + state.fraction[slot]! / 256;
   return Math.max(0, (intervalTicks - ticks) * 4.096);

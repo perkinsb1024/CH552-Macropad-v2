@@ -906,9 +906,12 @@ effect(() => {
         updateDeviceStatus(conn, status);
         if (viewing && status.live && status.flashValid && !hidden()) {
           const previous = liveRuntime.peek();
-          if (!previous || performance.now() - previous.receivedAt >= 250) {
+          {
             const state = await conn.client.getRuntime();
-            const timers = await conn.client.getTimers();
+            const receivedAt = performance.now();
+            const timersDue = !previous || previous.state.generation !== state.generation || receivedAt - previous.timersReceivedAt >= 250;
+            const timers = timersDue ? await conn.client.getTimers() : previous.timers;
+            const timersReceivedAt = timersDue ? performance.now() : previous.timersReceivedAt;
             if (stopped) return;
             const flash = deviceFlash.peek();
             const crc = flash ? flash[7]! | flash[8]! << 8 : -1;
@@ -918,7 +921,7 @@ effect(() => {
               return;
             }
             if (previous && previous.state.generation !== state.generation) liveActivity.value = advanceActivity(null, status.live, performance.now());
-            liveRuntime.value = { state, timers, receivedAt: performance.now() };
+            liveRuntime.value = { state, timers, receivedAt, timersReceivedAt };
           }
         }
       }

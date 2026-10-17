@@ -11,6 +11,8 @@ import { DeviceView } from '../src/ui/components/DeviceView';
 import { LiveStatus, countdown } from '../src/ui/components/LiveStatus';
 import { liveActivity, liveRuntime, liveClock, toasts } from '../src/ui/store';
 import { ProfileViewer, ViewerChords, ViewerMacros, ViewerTimers, tallestViewerSection } from '../src/ui/components/ProfileViewer';
+import { Toasts, liveTelemetryWarning } from '../src/ui/components/Toasts';
+import { liveLighting, liveRainbowFrame, rainbowAnimation, setRainbowAnimation, startLiveLighting } from '../src/ui/liveLighting';
 
 vi.mock('preact/hooks', async importOriginal => ({
   ...await importOriginal<typeof import('preact/hooks')>(),
@@ -89,6 +91,7 @@ it('keeps manual browsing through polls, warns persistently, then follows the ne
   await vi.advanceTimersByTimeAsync(1100);
   expect(selectedLayer.value).toBe(1);
   expect(text(ProfileViewer())).toContain('Your macropad is on Layer 1');
+  expect(text(ProfileViewer())).toContain('these do not match the device');
   const device = conn.transport as SimulatedDevice;
   device.active[2] = (device.active[2]! & ~112) | (1 << 4);
   await vi.advanceTimersByTimeAsync(510);
@@ -262,6 +265,241 @@ it('expires highlights and marks stale state while a status request is still in 
   expect(nodes(DeviceView({ readOnly: true })).some(node => String(node.props.class).includes('is-live-pressed'))).toBe(false);
   resolve(conn.status);
   await vi.advanceTimersByTimeAsync(1);
+});
+
+it('keeps a telemetry warning visible until both input and LED updates recover, even with activity collapsed', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  await vi.advanceTimersByTimeAsync(300);
+  expect(liveTelemetryWarning()).toBeNull();
+  const runtime = vi.spyOn(conn.client, 'getRuntime').mockRejectedValue(new Error('unavailable'));
+  await vi.advanceTimersByTimeAsync(1200);
+  expect(liveClock.value - liveActivity.value!.receivedAt).toBeLessThan(100);
+  expect(text(LiveStatus())).toContain('Updates Paused');
+  expect(text(Toasts())).toContain('Live updates are paused');
+  // No timeout or dismiss control can hide the warning while telemetry is lost.
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(text(Toasts())).toContain('LED colors may be out of date');
+  expect(nodes(Toasts()).some(n => n.type === 'button')).toBe(false);
+  runtime.mockRestore();
+  await vi.advanceTimersByTimeAsync(100);
+  expect(liveTelemetryWarning()).toBeNull();
+  const pending = disconnect();
+  await vi.advanceTimersByTimeAsync(20); await pending;
+  expect(text(Toasts())).toContain('Device disconnected');
+});
+
+it('samples LED state with foreground input polls while keeping timer reads slower', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  const runtime = vi.spyOn(conn.client, 'getRuntime');
+  const timers = vi.spyOn(conn.client, 'getTimers');
+  await vi.advanceTimersByTimeAsync(500);
+  expect(runtime.mock.calls.length).toBeGreaterThanOrEqual(8);
+  expect(timers.mock.calls.length).toBeLessThanOrEqual(3);
+  expect(timers).toHaveBeenCalled();
+});
+
+it('uses the blue physical outline state for LED feedback and saved colors when browsing another layer', async () => {
+  vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
+  const conn = await connect();
+  const p = structuredClone(profile.value!);
+  p.layers[0]!.indicatorColor = 10; p.layers[0]!.indicatorBehavior = 3; p.layers[0]!.indicatorFullBrightness = true;
+  p.layers[0]!.leds.fill(1);
+  p.layers[1]!.indicatorColor = 6; p.layers[1]!.indicatorFullBrightness = true;
+  profile.value = p;
+  const device = conn.transport as SimulatedDevice;
+  device.runtime[16] = 3; device.runtime[17] = 3;
+  device.liveStatus[1] = 1;
+  await vi.advanceTimersByTimeAsync(100);
+  expect(liveLighting.value?.colors.slice(0, 2)).toEqual(['#ff0000', '#0000ff']);
+  let keys = nodes(DeviceView({ readOnly: true })).filter(n => String(n.props['aria-label']).startsWith('Key '));
+  expect(keys[0]!.props.class).toContain('is-live-pressed');
+  expect(keys[0]!.props.style).toContain('--led:#ff0000');
+  expect(nodes(DeviceView({ readOnly: true })).some(n => String(n.props.class).includes('indicator-glow'))).toBe(false);
+  selectedLayer.value = 1;
+  expect(liveLighting.value?.colors.every(c => c === '#00ff00')).toBe(true);
+  keys = nodes(DeviceView({ readOnly: true })).filter(n => String(n.props['aria-label']).startsWith('Key '));
+  expect(keys[0]!.props.class).not.toContain('is-live-pressed');
+  expect(keys[0]!.props.style).toContain('--led:#00ff00');
+});
+
+it('keeps dim physical LEDs visibly colored on screen and preserves off and bright states', async () => {
+  await connect();
+  await vi.advanceTimersByTimeAsync(100);
+  const p = structuredClone(profile.value!);
+  p.layers[0]!.indicatorBehavior = 3;
+  p.layers[0]!.indicatorColor = 1;
+  profile.value = p;
+  const setBrightness = (indicatorPolicy: number) => {
+    liveRuntime.value = { ...liveRuntime.value!, state: { ...liveRuntime.value!.state,
+      indicatorPolicy, keyPolicy: 0, effect: 0, phases: 0 } };
+  };
+  const keyStyle = () => nodes(DeviceView({ readOnly: true }))
+    .find(n => String(n.props['aria-label']).startsWith('Key '))!.props.style;
+  setBrightness(1);
+  expect(liveLighting.value!.colors[0]).toBe('#0f0000');
+  expect(keyStyle()).toContain('--led:#800000');
+  expect(keyStyle()).toContain('--led-glow:#800000');
+  setBrightness(0);
+  expect(keyStyle()).toContain('--led:#000000');
+  expect(keyStyle()).toContain('--led-glow:transparent');
+  setBrightness(2);
+  expect(keyStyle()).toContain('--led:#ff0000');
+});
+
+async function rainbowHarness(reduced = false) {
+  await connect();
+  await vi.advanceTimersByTimeAsync(100);
+  const p = structuredClone(profile.value!);
+  p.layers[0]!.indicatorColor = 15; p.layers[0]!.indicatorBehavior = 3;
+  p.layers[1] = structuredClone(p.layers[0]!);
+  profile.value = p;
+  liveRuntime.value = { ...liveRuntime.value!, state: { ...liveRuntime.value!.state,
+    rainbowSpeed: 0, indicatorPolicy: 2, keyPolicy: 0, effect: 0, phases: 0 } };
+  const media = { matches: reduced };
+  vi.stubGlobal('window', { matchMedia: () => media });
+  vi.stubGlobal('document', { hidden: false });
+  const callbacks = new Map<number, FrameRequestCallback>();
+  let id = 0;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callbacks.set(++id, callback); return id; });
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => callbacks.delete(id));
+  let now = performance.now();
+  vi.spyOn(performance, 'now').mockImplementation(() => now);
+  dispose = startLiveLighting();
+  return {
+    callbacks, media,
+    tick(ms: number) {
+      now += ms;
+      const next = [...callbacks.entries()][0];
+      if (!next) throw new Error('No animation frame scheduled');
+      callbacks.delete(next[0]); next[1](now);
+    },
+    trigger(first: number, source = 0) {
+      const activity = liveActivity.value!;
+      liveActivity.value = { ...activity, sample: { ...activity.sample,
+        first, source, sequence: (activity.sample.sequence + 1) & 255 } };
+    },
+  };
+}
+
+it('animates continuously in Always, freezes in Never, and still updates lighting and stale state', async () => {
+  const { tick, callbacks } = await rainbowHarness();
+  expect(rainbowAnimation.value).toBe('always');
+  tick(20);
+  expect(liveRainbowFrame.value).toBe(5);
+  const color = liveLighting.value!.colors[0];
+  tick(3000);
+  expect(liveLighting.value!.colors[0]).not.toBe(color);
+  setRainbowAnimation('never');
+  const frame = liveRainbowFrame.value;
+  expect(callbacks.size).toBe(0);
+  expect(liveLighting.value!.colors.some(c => c !== '#000000')).toBe(true);
+  liveRuntime.value = { ...liveRuntime.value!, state: { ...liveRuntime.value!.state, indicatorPolicy: 0 } };
+  expect(liveLighting.value!.colors.every(c => c === '#000000')).toBe(true);
+  expect(liveRainbowFrame.value).toBe(frame);
+  setRainbowAnimation('always');
+  expect(callbacks.size).toBe(1);
+  liveRuntime.value = { ...liveRuntime.value!, state: { ...liveRuntime.value!.state, generation: 123 } };
+  expect(liveRainbowFrame.value).toBe(0);
+  liveClock.value = liveActivity.value!.receivedAt + 1001;
+  expect(callbacks.size).toBe(0);
+  liveClock.value = liveActivity.value!.receivedAt;
+  expect(callbacks.size).toBe(1);
+  dispose!(); dispose = undefined;
+  expect(callbacks.size).toBe(0);
+});
+
+it('defaults to Never for Reduce Motion and persists an explicit override across mounts', async () => {
+  const { callbacks, media } = await rainbowHarness(true);
+  expect(rainbowAnimation.value).toBe('never');
+  expect(callbacks.size).toBe(0);
+  setRainbowAnimation('brief');
+  expect(callbacks.size).toBe(1);
+  expect(storage.get('macropad.liveView.rainbowAnimation')).toBe('brief');
+  dispose!();
+  dispose = startLiveLighting();
+  expect(rainbowAnimation.value).toBe('brief');
+  expect(callbacks.size).toBe(1);
+  setRainbowAnimation('always');
+  media.matches = true;
+  dispose!(); dispose = startLiveLighting();
+  expect(rainbowAnimation.value).toBe('always');
+  expect(callbacks.size).toBe(1);
+  setRainbowAnimation('never');
+  media.matches = false;
+  dispose!(); dispose = startLiveLighting();
+  expect(rainbowAnimation.value).toBe('never');
+  expect(callbacks.size).toBe(0);
+});
+
+it('freezes Brief after exactly 2500ms and ignores unchanged polls and unrelated bindings', async () => {
+  const { tick, callbacks, trigger } = await rainbowHarness();
+  setRainbowAnimation('brief');
+  tick(2000);
+  expect(liveRainbowFrame.value).toBe(500);
+  liveRuntime.value = { ...liveRuntime.value!, receivedAt: performance.now() };
+  trigger(1); // A normal key tap with no LED feedback.
+  tick(1000); // A delayed frame must not animate beyond the deadline.
+  expect(liveRainbowFrame.value).toBe(625);
+  expect(callbacks.size).toBe(0);
+  expect(liveLighting.value!.colors.some(c => c !== '#000000')).toBe(true);
+});
+
+it.each([
+  ['self-referential layer selection', 0x0c, 0],
+  ['identical LED command', 0x0d, 0],
+  ['macro LED command', 0x0d, 0x8e],
+  ['wake with unchanged brightness', 0x0d, 0x89],
+] as const)('restarts Brief for %s even without a lighting-state difference', async (_, first, source) => {
+  const { tick, callbacks, trigger } = await rainbowHarness();
+  setRainbowAnimation('brief');
+  tick(2500);
+  expect(callbacks.size).toBe(0);
+  trigger(first, source);
+  expect(callbacks.size).toBe(1);
+  tick(2000);
+  trigger(first, source); // Repeating the same command renews the full window.
+  tick(2000);
+  expect(callbacks.size).toBe(1);
+  tick(500);
+  expect(callbacks.size).toBe(0);
+});
+
+it('restarts Brief for identical-color layers, runtime changes, and sleep/wake state changes', async () => {
+  const { tick, callbacks } = await rainbowHarness();
+  setRainbowAnimation('brief');
+  tick(2500);
+  selectedLayer.value = 1;
+  expect(callbacks.size).toBe(1);
+  tick(2500);
+  liveRuntime.value = { ...liveRuntime.value!, state: { ...liveRuntime.value!.state, layer: 1, rainbowPhase: 3 } };
+  expect(callbacks.size).toBe(1);
+  tick(2500);
+  const high = [...liveRuntime.value!.timers.high];
+  high[0] = 1;
+  liveRuntime.value = { ...liveRuntime.value!, timers: { ...liveRuntime.value!.timers, high } };
+  expect(callbacks.size).toBe(1);
+  tick(2500);
+  high[0] = 0;
+  liveRuntime.value = { ...liveRuntime.value!, timers: { ...liveRuntime.value!.timers, high: [...high] } };
+  expect(callbacks.size).toBe(1);
+});
+
+it('shows a persistent three-way rainbow toggle inside Layer Settings without a description', async () => {
+  await connect();
+  const elements = nodes(ProfileViewer());
+  const settings = elements.find(n => n.type === 'details' && String(n.props.class).includes('viewer-saved-settings'))!;
+  const toggle = nodes(settings).find(n => n.props['aria-labelledby'] === 'rainbow-animation-label')!;
+  const buttons = nodes(toggle).filter(n => n.type === 'button');
+  expect(buttons.map(n => text(n))).toEqual(['Always', 'Brief', 'Never']);
+  expect(nodes(settings).some(n => n.type === 'select')).toBe(false);
+  expect(text(settings)).not.toContain('Brief animates');
+  (buttons[1]!.props.onClick as () => void)();
+  expect(rainbowAnimation.value).toBe('brief');
+  expect(storage.get('macropad.liveView.rainbowAnimation')).toBe('brief');
+  const updated = nodes(ProfileViewer()).find(n => n.props['aria-labelledby'] === 'rainbow-animation-label')!;
+  expect(nodes(updated).filter(n => n.type === 'button').map(n => n.props['aria-pressed'])).toEqual([false, true, false]);
 });
 
 it('packs any tall Live View section beside the other two only when their heights are close', () => {
