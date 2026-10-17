@@ -25,10 +25,8 @@ export function liveLedColors(profile: Profile, layerIndex: number, state: Runti
   const overlay = state?.effect ?? 0;
   const preview = !!state?.colorPreview;
   const spacing = !state || preview ? profile.rainbowPhase : state.rainbowPhase;
-  // Firmware currently uses SAVED speed for every previewOptions overlay, including
-  // temporary LED effects. When firmware fixes effects to honor runtime speed,
-  // change `overlay` below to `preview`; color preview must retain saved speed.
-  const speed = !state || overlay ? profile.rainbowSpeed : state.rainbowSpeed;
+  // Color preview uses saved speed; temporary LED effects use runtime speed.
+  const speed = !state || preview ? profile.rainbowSpeed : state.rainbowSpeed;
   const behavior = overlay ? (overlay >> 2) & 3 : layer.indicatorBehavior;
   const policy = state?.indicatorPolicy ?? 3;
   const indicator = overlay ? 1 + (overlay & 1) : policy === 3 ? 1 + Number(layer.indicatorFullBrightness) : policy;

@@ -119,14 +119,14 @@ it.each([3, 6])('accumulates independent scattered drift across hue wraps for %s
   }
 });
 
-it('shares the rainbow clock across layer and key colors, using actual overlay speed behavior', () => {
+it('shares runtime rainbow settings across layers, keys and effects, keeping preview settings saved', () => {
   const p = defaultProfile(0); const layer = p.layers[0]!;
   layer.indicatorBehavior = 3; layer.indicatorColor = 15; layer.indicatorFullBrightness = true;
   layer.leds.fill(15); p.rainbowSpeed = 3; p.rainbowPhase = 0;
   const runtime = state({ rainbowSpeed: 0, rainbowPhase: 2 });
   expect(liveLedColors(p, 0, runtime, 1, 42).colors).toEqual(liveLedColors(p, 0, runtime, 0, 42).colors);
   expect(liveLedColors(p, 0, runtime).frameMs).toBe(4);
-  expect(liveLedColors(p, 0, { ...runtime, effect: 0xff }).frameMs).toBe(18);
+  expect(liveLedColors(p, 0, { ...runtime, effect: 0xff }).frameMs).toBe(4);
   expect(liveLedColors(p, 0, { ...runtime, effect: 0xff }, 0, 42).colors).toEqual(liveLedColors(p, 0, runtime, 0, 42).colors);
   const preview = liveLedColors(p, 0, { ...runtime, effect: 0xfd, colorPreview: true }, 0, 42);
   expect(new Set(preview.colors).size).toBe(1);

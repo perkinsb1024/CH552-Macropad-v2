@@ -1,0 +1,90 @@
+diff --git a/CH552_Universal_Macropad.ino b/CH552_Universal_Macropad.ino
+index ba78d6c..199f6d3 100644
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -563,8 +563,9 @@ void loop() {
+     scanButton(i, now);
+   }
+   scanEncoder();
++  // Color preview uses saved speed; LED effects follow the runtime override.
+   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
+-      rainbowFrameMs[previewOptions ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
++      rainbowFrameMs[colorPreviewActive ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
+   {
+     if (rainbowAnimationActive) {
+       rainbowChanged = (uint8_t)now;
+diff --git a/tests/input_test.c b/tests/input_test.c
+index 6d5f291..2518b8e 100644
+--- a/tests/input_test.c
++++ b/tests/input_test.c
+@@ -502,6 +502,62 @@ static void testRainbowPhaseSpacing(void) {
+     }
+ }
+ 
++static void testRainbowEffectOverrides(void) {
++    const uint8_t intervals[4] = {4, 6, 10, 18};
++    uint8_t expected[NUM_BYTES];
++    for (uint8_t savedPhase = 0; savedPhase < 4; savedPhase++)
++    for (uint8_t runtimePhase = 0; runtimePhase < 4; runtimePhase++)
++    for (uint8_t savedSpeed = 0; savedSpeed < 4; savedSpeed++)
++    for (uint8_t runtimeSpeed = 0; runtimeSpeed < 4; runtimeSpeed++)
++    for (uint8_t dim = 0; dim < 2; dim++)
++    for (uint8_t blinks = 0; blinks <= 8; blinks++) {
++        testLoadStarterProfile(PHYSICAL_VARIANT);
++        activeConfig[CONFIG_HEADER_LED] = 7 | (savedPhase << 4) | (savedSpeed << 6);
++        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | !dim;
++        activeConfigValid = 1;
++        P1 = P3 = 0xFF;
++        previewOptions = 0;
++        currentMs = 65520; // Both timer widths wrap during the speed checks.
++        firmwareApplyConfig(1);
++        firmwareLedAction(CONFIG_LED_PHASE_SET, runtimePhase);
++        firmwareLedAction(CONFIG_LED_SPEED_SET, runtimeSpeed);
++        rainbowHue = 42;
++        for (uint8_t i = 0; i < NUM_LEDS; i++) {
++            stableState[i] = 0;
++            rainbowDrift[i] = 19 * i;
++        }
++        // Capture the normal layer rainbow at the runtime phase and brightness.
++        updateLeds();
++        memcpy(expected, ledData, NUM_BYTES);
++        uint8_t command = CONFIG_LED_EFFECT_ON + blinks;
++        if (dim) command |= CONFIG_LED_EFFECT_DIM;
++        firmwareLedAction(command, 15);
++        assert(memcmp(expected, ledData, NUM_BYTES) == 0);
++        assert(!colorPreviewActive && (previewOptions & LED_EFFECT_FLAG));
++        tick(65520 + intervals[runtimeSpeed] - 1);
++        assert(rainbowHue == 42);
++        tick(65520 + intervals[runtimeSpeed]);
++        assert(rainbowHue == 43);
++        // Overrides issued while the effect is active take effect immediately.
++        uint8_t nextPhase = (runtimePhase + 1) & 3;
++        uint8_t nextSpeed = (runtimeSpeed + 1) & 3;
++        uint16_t changedAt = currentMs;
++        firmwareLedAction(CONFIG_LED_PHASE_SET, nextPhase);
++        firmwareLedAction(CONFIG_LED_SPEED_SET, nextSpeed);
++        uint8_t effectFrame[NUM_BYTES];
++        memcpy(effectFrame, ledData, NUM_BYTES);
++        firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
++        assert(memcmp(effectFrame, ledData, NUM_BYTES) == 0);
++        firmwareLedAction(command, 15);
++        tick(changedAt + intervals[nextSpeed] - 1);
++        assert(rainbowHue == 43);
++        tick(changedAt + intervals[nextSpeed]);
++        assert(rainbowHue == 44);
++        assert(activeConfig[CONFIG_HEADER_LED] == (7 | (savedPhase << 4) | (savedSpeed << 6)));
++        firmwareLedAction(CONFIG_LED_EFFECT_RESTORE, 0);
++    }
++}
++
+ static void testRainbowDrift(void) {
+     for (uint8_t phase = 0; phase < 4; phase++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+@@ -1281,6 +1337,7 @@ int main(void) {
+     testHeaderLedSettings();
+     testRainbowSpeed();
+     testRainbowPhaseSpacing();
++    testRainbowEffectOverrides();
+     testRainbowDrift();
+     testTransparencyAndRainbow();
+     testMomentaryIndicatorCancellation();

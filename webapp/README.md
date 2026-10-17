@@ -221,6 +221,7 @@ two positions apart in their four-setting cycles.
 Existing profiles with larger relative LED steps remain compatible; the editor
 shows their current value but only offers the steps above when changing it.
 Saved layer colors/visibility and global rainbow defaults remain independent.
+**Set All LEDs** with **Rainbow** follows runtime phase and speed overrides.
 Runtime overrides reset on configuration save or USB reset and bypass preview.
 Formats before v5 receive **Fast** speed and **60°** spacing; v5 rainbow settings survive
 migration unchanged. JSON and drafts retain semantic action names as action codes shift.

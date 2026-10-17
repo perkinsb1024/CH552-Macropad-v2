@@ -1,0 +1,151 @@
+{
+  "baseline_revision": "84f6f7a77682f7bdad995c450da91e2034436711",
+  "firmware_revision": "0da70dc4a551d4f832f0c8b9a226e423e55c88ec",
+  "branch": "experiment/v17-rainbow-always-use-overrides",
+  "date": "2026-10-17",
+  "toolchain": "CH55xDuino 0.0.25 / SDCC build.13407_4",
+  "clock_hz": 24000000,
+  "usb_bytes": 148,
+  "flash_limit": 14336,
+  "baseline_sources": {
+    "CH552_Universal_Macropad.ino": "c465a2222bef2dba82931fb4101d8e7d4a4ba569c7e7ca0dc8fb1bc7bf8ad566",
+    "pio-platform/__pycache__/build_firmware.cpython-311.pyc": "4b1c340a6aeb148471c8ef51fad6c4491afa896f4785c7ce56fc1a2135b17cc6",
+    "pio-platform/boards/ch552.json": "060866f1e918e11d25112d765fac3039aa21dbbe0386341a17bc0bccc68ca54e",
+    "pio-platform/bootloader.py": "453cb8f436099f30ee31ea0be55130cd20753ceb223790326673f1706573e858",
+    "pio-platform/build_firmware.py": "d46040f342211e85cd44e06c385ed9061451f5bb9bc628e83e1ebe17b3987ed0",
+    "pio-platform/builder/main.py": "cd27c9ed527b0633edbf4d9221793f18c06a6a9eb4e61ed5d904de8eb7406c86",
+    "pio-platform/erase_config.c": "9ecc207a4f12b3718370a6dda1026a26f64cc95af99b3e26c95f1b1c6beae733",
+    "pio-platform/platform.json": "5157a9e27313e65e8620c908ded8c8b464341d9e4d76a4e423782152a2bd6426",
+    "pio-platform/platform.py": "448ade458c7e98a392e3b3d6c7340478d81eade80d09373fbf2a6223745d6964",
+    "pio-platform/release_firmware.py": "b5839be20ff47a38d801fc95a810f1a976857cf7f2108f42d5de61795f229e40",
+    "pio-platform/requirements-hid.txt": "6e78c6c5a61dbebf36f570a14685c795efcdb3d8bb6b6118b6aa78dd0aca54d4",
+    "pio-platform/select_project_builder.py": "db8f1d950c300251a5c48c113ee398b7d3d54570622b03c365af3b18673ccea5",
+    "pio-platform/targets.py": "2d6db98b4291079d8c0f5b1b2418acdae447d3e8861b9556e4c918ffa41bdaac",
+    "platformio.ini": "74605f0cf98f19a0e48926165588f1d14caed113b11719327bb5e652aafbbbc8",
+    "src/actions.c": "b22655beb63dd34ce29f23ffa6cca36eca9f26ce240cfc4458d1e55c2722a5dc",
+    "src/actions.h": "2656fff42aae5125611eefb05167b5837658ff74ed7342458fc388e8aad0e522",
+    "src/config.c": "82f14a5593a7a230e4c53fb38465357c50a5d07d800c23115b63d728308592a4",
+    "src/config.h": "ae8fe1224a4df0953beb406a197a9ca2c42a85436ce7b5d83e15e3a61319a40a",
+    "src/firmware_types.h": "92416165593e7bf49e298506daee53fddc9f8b2a211f9e5aca386ad3faea7827",
+    "src/led_control.h": "97f05eb67d4ce059fb54e6b0f6fe693ec73353a16fb414e3f151b665d2654f3a",
+    "src/live_state.h": "b51b9f940f53f642ffedfa3a9ed549e02de05d7dedba9a55b3cd709eaced6993",
+    "src/main.c": "0f3fbfcbc086473d4e0c4db6dc914daf24abe0e1c750128cbbcc54a0957ce787",
+    "src/protocol_firmware.c": "45ca93fa6e59baa6b909283f6a6a27135151f7133f036fd704fa1766e7ae152b",
+    "src/protocol_firmware.h": "6081e0006a1bef8e09f4c77981bef146fece5549950e345166a17d4bd18b2dff",
+    "src/storage.c": "0a253b8248693afd559eb00630df536707d76e574f50901cd03e74b6478c2407",
+    "src/storage.h": "c5af32dfea4829041bc515a339a0a7c8ac43856ad4b224bdfb3f9fd494a4ce28",
+    "src/timed_actions.inc": "8cf52fe2a9e2561cccf9787290ea693111550fd4ac6c8a7a993fa7e72eefb5c0",
+    "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c": "ec5844e17edf6bb473117ec75708045c5efa77ccb92a24e5dfa128e366b39aca",
+    "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h": "f898e7a9b49645010d6817e2bb7c9af0d47f4c99abbe1a679ca40ec226255331",
+    "src/userUsbHidKeyboardMouse/USBconstant.c": "a449fbcc7b236353d30065e1a47560a3a3e4c8a387947cee53159001ec666f0c",
+    "src/userUsbHidKeyboardMouse/USBconstant.h": "646e209096d586f2e14b7c1f8a5bcd261ba4b2f695e88996c6fc60e93acd6360",
+    "src/userUsbHidKeyboardMouse/USBhandler.c": "60daa8e6f2f24d3811db45dca7bca2eba97b57a24d9a2a64126c0e7f5c91aa95",
+    "src/userUsbHidKeyboardMouse/USBhandler.h": "d923e0565b0423246fbb7faa3ebed9c70a48f6712fc7e3b63f7446470af9a189"
+  },
+  "runtime_sources": {
+    "CH552_Universal_Macropad.ino": "88c078f58b4e2e093e12ddb91c8f2c822a2c654718f4a05d59c50f1aa496786d",
+    "pio-platform/__pycache__/build_firmware.cpython-311.pyc": "4b1c340a6aeb148471c8ef51fad6c4491afa896f4785c7ce56fc1a2135b17cc6",
+    "pio-platform/boards/ch552.json": "060866f1e918e11d25112d765fac3039aa21dbbe0386341a17bc0bccc68ca54e",
+    "pio-platform/bootloader.py": "453cb8f436099f30ee31ea0be55130cd20753ceb223790326673f1706573e858",
+    "pio-platform/build_firmware.py": "d46040f342211e85cd44e06c385ed9061451f5bb9bc628e83e1ebe17b3987ed0",
+    "pio-platform/builder/main.py": "cd27c9ed527b0633edbf4d9221793f18c06a6a9eb4e61ed5d904de8eb7406c86",
+    "pio-platform/erase_config.c": "9ecc207a4f12b3718370a6dda1026a26f64cc95af99b3e26c95f1b1c6beae733",
+    "pio-platform/platform.json": "5157a9e27313e65e8620c908ded8c8b464341d9e4d76a4e423782152a2bd6426",
+    "pio-platform/platform.py": "448ade458c7e98a392e3b3d6c7340478d81eade80d09373fbf2a6223745d6964",
+    "pio-platform/release_firmware.py": "b5839be20ff47a38d801fc95a810f1a976857cf7f2108f42d5de61795f229e40",
+    "pio-platform/requirements-hid.txt": "6e78c6c5a61dbebf36f570a14685c795efcdb3d8bb6b6118b6aa78dd0aca54d4",
+    "pio-platform/select_project_builder.py": "db8f1d950c300251a5c48c113ee398b7d3d54570622b03c365af3b18673ccea5",
+    "pio-platform/targets.py": "2d6db98b4291079d8c0f5b1b2418acdae447d3e8861b9556e4c918ffa41bdaac",
+    "platformio.ini": "74605f0cf98f19a0e48926165588f1d14caed113b11719327bb5e652aafbbbc8",
+    "src/actions.c": "b22655beb63dd34ce29f23ffa6cca36eca9f26ce240cfc4458d1e55c2722a5dc",
+    "src/actions.h": "2656fff42aae5125611eefb05167b5837658ff74ed7342458fc388e8aad0e522",
+    "src/config.c": "82f14a5593a7a230e4c53fb38465357c50a5d07d800c23115b63d728308592a4",
+    "src/config.h": "ae8fe1224a4df0953beb406a197a9ca2c42a85436ce7b5d83e15e3a61319a40a",
+    "src/firmware_types.h": "92416165593e7bf49e298506daee53fddc9f8b2a211f9e5aca386ad3faea7827",
+    "src/led_control.h": "97f05eb67d4ce059fb54e6b0f6fe693ec73353a16fb414e3f151b665d2654f3a",
+    "src/live_state.h": "b51b9f940f53f642ffedfa3a9ed549e02de05d7dedba9a55b3cd709eaced6993",
+    "src/main.c": "0f3fbfcbc086473d4e0c4db6dc914daf24abe0e1c750128cbbcc54a0957ce787",
+    "src/protocol_firmware.c": "45ca93fa6e59baa6b909283f6a6a27135151f7133f036fd704fa1766e7ae152b",
+    "src/protocol_firmware.h": "6081e0006a1bef8e09f4c77981bef146fece5549950e345166a17d4bd18b2dff",
+    "src/storage.c": "0a253b8248693afd559eb00630df536707d76e574f50901cd03e74b6478c2407",
+    "src/storage.h": "c5af32dfea4829041bc515a339a0a7c8ac43856ad4b224bdfb3f9fd494a4ce28",
+    "src/timed_actions.inc": "8cf52fe2a9e2561cccf9787290ea693111550fd4ac6c8a7a993fa7e72eefb5c0",
+    "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c": "ec5844e17edf6bb473117ec75708045c5efa77ccb92a24e5dfa128e366b39aca",
+    "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h": "f898e7a9b49645010d6817e2bb7c9af0d47f4c99abbe1a679ca40ec226255331",
+    "src/userUsbHidKeyboardMouse/USBconstant.c": "a449fbcc7b236353d30065e1a47560a3a3e4c8a387947cee53159001ec666f0c",
+    "src/userUsbHidKeyboardMouse/USBconstant.h": "646e209096d586f2e14b7c1f8a5bcd261ba4b2f695e88996c6fc60e93acd6360",
+    "src/userUsbHidKeyboardMouse/USBhandler.c": "60daa8e6f2f24d3811db45dca7bca2eba97b57a24d9a2a64126c0e7f5c91aa95",
+    "src/userUsbHidKeyboardMouse/USBhandler.h": "d923e0565b0423246fbb7faa3ebed9c70a48f6712fc7e3b63f7446470af9a189"
+  },
+  "builds": {
+    "baseline-six": {
+      "directory": "/private/tmp/macropad-v17-rainbow-overrides/baseline-six",
+      "flash_bytes": 14331,
+      "paged_bytes": 107,
+      "xseg_bytes": 404,
+      "stack_reserve_bytes": 103,
+      "artifacts_sha256": {
+        "firmware.hex": "136543e5659c8e2f6ee7a2d556df33dd232807233258fc7e06eff39c0c187db1",
+        "firmware.map": "f469f2cbb61ec23f56fd4a782fd2b423e0dec0b1524d2e0a5befc9698196710c",
+        "firmware.mem": "b5be1d7082413897db3d2f45a22031cb959ef884d9a7caf482ffb6a20181e9b5",
+        "sketch.asm": "e71fe039244c07d0893608e88831e784e31774f561c050d1be33fae731e71956"
+      }
+    },
+    "baseline-three": {
+      "directory": "/private/tmp/macropad-v17-rainbow-overrides/baseline-three",
+      "flash_bytes": 14327,
+      "paged_bytes": 107,
+      "xseg_bytes": 395,
+      "stack_reserve_bytes": 106,
+      "artifacts_sha256": {
+        "firmware.hex": "7602a8232d18c1a28c3b26523fe10a7385759bf45c4f2535a8a0066cc4559ab4",
+        "firmware.map": "e57bd4a8652a44a76d2f86c0842a465579008f13d7984c1ea7d16d72ff07aca5",
+        "firmware.mem": "56fa34c4a840fcd8916c8bdf7d057d65a6840b1e72467737a3c43267e0d41ee1",
+        "sketch.asm": "d38034878edf03a5c796199a9e0dfad4684189204eea0c31cd79762c260a9099"
+      }
+    },
+    "runtime-six": {
+      "directory": "/private/tmp/macropad-v17-rainbow-overrides/runtime-six",
+      "flash_bytes": 14329,
+      "paged_bytes": 107,
+      "xseg_bytes": 404,
+      "stack_reserve_bytes": 103,
+      "artifacts_sha256": {
+        "firmware.hex": "4270fdef9ef210992c98d278f7733f3a84d6d8e678863d71b0e8ec1a216c6e88",
+        "firmware.map": "043959429c0e527c65cb895cb96e2f44fbcf31db689d18552ee57c02252a1cfc",
+        "firmware.mem": "6adf0ccd36480d760342b7cf15656ae0428c8e2888693ca8b65cf698e12bc1b4",
+        "sketch.asm": "b489a4caeb8aa829bd665831489fc9268ee4ca71c3e0469b5dcd1c7c419a8ba9"
+      }
+    },
+    "runtime-three": {
+      "directory": "/private/tmp/macropad-v17-rainbow-overrides/runtime-three",
+      "flash_bytes": 14325,
+      "paged_bytes": 107,
+      "xseg_bytes": 395,
+      "stack_reserve_bytes": 106,
+      "artifacts_sha256": {
+        "firmware.hex": "f819409d4118d745456682dcf00489f4ff6885ba28481e7baa9f6b994d8233e6",
+        "firmware.map": "617f5ad51dee60979c32a2faf36f3b5542969ffdcacffebd7103d72a47e13391",
+        "firmware.mem": "2e9db29fe6339cdcee045e491a3b4dba7ed47a3416f09a3880be3db38636d8b4",
+        "sketch.asm": "c72c635a296a9adf4e3e8ed4f70f759b5cfa893036c906710718e123ab505cbe"
+      }
+    }
+  },
+  "validation": {
+    "host_suites": "passed both geometries with normal preview support",
+    "override_cases_per_geometry": 4608,
+    "baseline_regression": "failed at speed deadline as expected",
+    "native_links_and_layout": "passed all four builds",
+    "deployment_gate": "passed on firmware checkpoint plus uncommitted Live View and documentation edits",
+    "uploader_tests": 93,
+    "frozen_archives": 15,
+    "hardware": "not performed"
+  },
+  "firmware_patch_sha256": "3c63641b61ba8443b572bd8d3e97b3426d574c47da948eb92ffcfeb47fa337d1",
+  "validated_web_sources_sha256": {
+    "webapp/src/model/liveLeds.ts": "670b81c0554b3702bfaf43b1c2149f312bb18a00ae257e1b4e8bd1c0f1414d17",
+    "webapp/tests/live-leds.test.ts": "db8066c8113689665c5b7e4d3e6f1fac081b78f87d43f28f94904047392c0bde",
+    "webapp/README.md": "49bf4a677708c9fe5429b63d8e2876bb3e4bee8caaf61f1be4144bba49576aec",
+    "protocol/config-v17.md": "2f8481a64fa018ae7d78cfc2c6107ff53eee2f5aa9c6f137bdf50c9ce2c0e8f6"
+  }
+}

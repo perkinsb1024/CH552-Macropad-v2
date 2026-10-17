@@ -628,7 +628,9 @@ indicator animation priority, allowing key feedback. Key **Off** removes the key
 allowing an always-on idle background. Both **Off** blacks out normal lighting.
 **Blink** dark phases remain black; dimming retains `(component >> 4) | (component != 0)`.
 Hardware preview, invalid-config feedback, and bootloader feedback bypass overrides;
-preview uses saved phase/speed. Common presets restore brightness only; Restore all
+preview uses saved phase/speed. **Set All LEDs** with **Rainbow** uses the current
+runtime phase and speed, including overrides issued while the effect is active.
+Common presets restore brightness only; Restore all
 also restores phase and speed.
 
 ## Palette
