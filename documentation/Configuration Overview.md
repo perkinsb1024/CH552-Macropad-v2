@@ -4,7 +4,7 @@ Using this macropad gives you quick access to the things you do most often: copy
 
 You configure it in your browser with the configurator tool. Once you click **Save to Device**, the settings stay on the macropad — even when you unplug it or use it on a different computer. You do not need to keep the configurator open for the macropad to work.
 
-This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 16. Published v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/); per-key idle colors and key-press rainbow require v16 firmware.
+This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 16. The bundled v16 firmware matches the active editor and supports per-key idle colors and key-press **Rainbow**. Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
 
 ## Index
 
@@ -153,7 +153,7 @@ Mouse actions offer **Left**, **Middle**, **Right** and **Button 4** through
 and application. Buttons 4/5 often mean Back/Forward; those meanings are not
 guaranteed. Browsers commonly expose at most five buttons, so **Scroll & Click Test**
 may not observe buttons 6–8 even when another application can use them.
-Buttons 4–8 and down/up require v12 firmware. The bundled v15 release supports all eight buttons and these persistent
+Buttons 4–8 and down/up require v12 firmware. The bundled v16 release supports all eight buttons and these persistent
 actions; older firmware uses its matching frozen configurator.
 
 **Custom** shows a 3–16 click-count slider. Its last count is remembered per action
@@ -312,7 +312,7 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 
 ### Chord Timing
 
-The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v15 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
+The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v16 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
 
 - A larger window makes chords easier to press but adds a small delay to individual keys that belong to a chord
 - A smaller window makes those individual keys respond sooner, but requires more nearly simultaneous presses
@@ -595,9 +595,9 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 
 ## Macros
 
-Macros are supported by the [pre-built v15 release firmware](../README.md#how-to-compile-the-firmware)
+Macros are supported by the [pre-built v16 release firmware](../README.md#how-to-compile-the-firmware)
 and its [matching configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
-V15 hardware validation is complete. Older firmware uses its matching archived
+V16 hardware validation is complete. Older firmware uses its matching archived
 editor; versions before v11 do not support macros.
 
 1. Open **Macros** and choose **Add Macro**
@@ -798,7 +798,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type Text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v15 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10–v16 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume This Input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

@@ -220,7 +220,7 @@ Return-path warnings explain that this target depends on runtime history.
 The protocol simulator accepts only valid v16 profiles and round-trips the new
 flags/effects. It models configuration transport, not timed HID or LED playback.
 Previous released firmware has been hardware tested on both geometries; see
-**Release Firmware Status** for published v15 coverage. Bundled `../profiles/*.json`
+**Release Firmware Status** for published v16 coverage. Bundled `../profiles/*.json`
 maximum-capacity starter files use v15 JSON (migrated on import) and are checked against the firmware parser in the regression suite.
 
 ## Consumer Hold and Held Scrolling (v8)
@@ -272,12 +272,12 @@ available. At each endpoint, the fading shadow clips to the card's rounded corne
 
 ## Release Firmware Status
 
-The release HEX files and bundled uploader use v15 firmware from revision
-`a91cb995`: [three-key](../releases/ch552-macropad-3-key-a91cb995.hex) and
-[six-key](../releases/ch552-macropad-6-key-a91cb995.hex). The
-[frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/) matches
-these releases, including **Auto-Sleep**. The active editor targets v16 source; no v16 release is bundled. The user has completed v15 firmware
-hardware validation. Automated tests and native builds pass on both geometries.
+The release HEX files and bundled uploader use v16 firmware from revision
+`780fcc79`: [three-key](../releases/ch552-macropad-3-key-780fcc79.hex) and
+[six-key](../releases/ch552-macropad-6-key-780fcc79.hex). The active editor matches
+these releases, including independent per-key idle colors, key-press **Rainbow**
+and runtime brightness restoration after **Auto-Sleep**. The user has completed
+v16 firmware hardware validation. Automated tests and native builds pass on both geometries.
 Older-firmware connections link to the matching archive and updater. Back up
 profiles, update firmware, then load/import and explicitly save in the active
 editor. Older imports preserve action semantics, macros, timer units and storage.
@@ -347,7 +347,7 @@ All **Mouse Toggle** actions share one global button state across physical input
 chords, timers and macros. Any toggle can undo another toggle for the same button;
 held actions retain their physical ownership. Layer-route analysis follows steps
 until cancellation.
-See [the complete v15 reference](../protocol/config-v16.md) and
+See [the complete v16 reference](../protocol/config-v16.md) and
 [implementation and optimization notes](../protocol/macros-implementation.md).
 
 ## Mouse Buttons and Persistent Actions (V12)
@@ -462,7 +462,7 @@ the saved timeout and wake policies in live view.
 The frozen v14 editor/live view is in `public/versions/format-v14/`, built from
 outgoing source `0fb6132` with 663 passing tests. Its manifest records provenance
 and file checksums. Published v14 firmware routes there; the shared uploader
-bundles v15 as the latest release and preserves v14 under **Previous Release**.
+bundles v16 as the latest release and preserves v15 and earlier releases under **Previous Release**.
 
 
 ## Header and Chord Window

@@ -65,7 +65,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
-| [v16](protocol/config-v16.md) (Unreleased) | - **Per-key** idle colors (custom background palettes)<br> - **Rainbow** is now available as a key press color (**Teal** is no longer available)<br> - Runtime brightness overrides persist after waking from **Auto-Sleep** |
+| [v16](protocol/config-v16.md) | - **Per-key** idle colors (custom background palettes)<br> - **Rainbow** is now available as a key press color (**Teal** is no longer available)<br> - Runtime brightness overrides persist after waking from **Auto-Sleep** |
 | [v15](protocol/config-v15.md) | - Optional **Auto-Sleep** after **15 Minutes**, **30 Minutes**, **1 Hour** or **2 Hours** of inactivity (can be enabled per-layer, can set LEDs to **dim** or **off**, and can optionally display layer indicator again on wake)  |
 | [v14](protocol/config-v14.md) | - **Media / System with Modifiers** now supports **Hold**<br> - Added support for **Relative Layer While Held**<br> *This version also reorganized action types to keep logical groups together* |
 | [v13](protocol/config-v13.md) | - Simultaneous X/Y mouse movement<br> - Modifier key support for 8-bit **Media / System** taps<br> - USB device names identify three-key and six-key macropads |
@@ -87,9 +87,9 @@ Below are the primary firmware features added with each version
 > [!NOTE]
 > Compiling the firmware is not necessary to install this project on your macropad.
 >
-> Pre-built v15 firmware files are available for [three-key](releases/ch552-macropad-3-key-a91cb995.hex) and [six-key](releases/ch552-macropad-6-key-a91cb995.hex) macropads, built from source revision `a91cb995`. This version adds per-layer **Auto-Sleep** with four timeout choices, dimmed or off lighting, optional wake-input consumption and a layer reminder on wake. No extra profile bytes or **Timed Action** slot are required. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
+> Pre-built v16 firmware files are available for [three-key](releases/ch552-macropad-3-key-780fcc79.hex) and [six-key](releases/ch552-macropad-6-key-780fcc79.hex) macropads, built from source revision `780fcc79`. This version adds independent per-key idle colors, key-press **Rainbow**, and runtime brightness overrides that persist after waking from **Auto-Sleep**. **Teal** is replaced by **Rainbow** in the palette. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Use the [frozen v15 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/) with these v15 release files. The active configurator targets format 16, with per-key idle colors and key-press **Rainbow**; no v16 release files have been generated. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware, including the [frozen v14 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v14/). Back up your profile before updating, then import it and click **Save to Device** to activate it in v15. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved. Older imports start with **Auto-Sleep** disabled.
+Use the [active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) with these v16 release files. [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) are available for older firmware, including the [frozen v15 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/). Back up your profile before updating, then import it and click **Save to Device** to activate it in v16. Firmware updates preserve older profiles in DataFlash but leave their actions inactive until a migrated profile is saved. Older **Teal** colors migrate to **Cyan** with brightness unchanged. Imports from before v15 start with **Auto-Sleep** disabled.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -148,7 +148,7 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current format 16 source at revision `ad9ecea`, with LED preview enabled, in bytes, with a 14,336-byte application flash limit:
+Memory in the v16 release source at revision `780fcc79`, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
@@ -280,7 +280,7 @@ Definitions allocate storage only when present: two bytes per step plus a one-by
 
 Configuration format 15 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to four **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 
-**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores awake lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. Format 16 firmware restores the indicator and key-press brightness policies selected before sleep, including manual overrides. Timed or macro LED commands do not end sleep or replace that selection. Published v15 firmware restores **Both as Configured**. The active editor targets format 16, while bundled firmware remains v15 and uses the frozen v15 editor.
+**Auto-Sleep** in **Layer Options** enables LED inactivity sleep per layer without extra storage or a timer slot. **Profile Settings** provides **Sleep Timeout** choices of **15 Minutes**, **30 Minutes**, **1 Hour** and **2 Hours**, plus **Consume Wake Input**, **Show Layer Indicator** and **Dim Instead of Off**. Defaults preserve a 30-minute timeout, LEDs off during sleep, a consumed wake input and the current layer reminder. Disable **Consume Wake Input** to wake and execute the first binding. Dimming uses the existing fixed brightness for layer indicators and pressed-key feedback. Physical presses and completed encoder turns restart the interval. Switching between enabled layers preserves elapsed time. Entering a disabled layer clears the timer and restores awake lighting if asleep, even when a timed action changes layers; returning to an enabled layer starts a full timeout. Format 16 firmware restores the indicator and key-press brightness policies selected before sleep, including manual overrides. Timed or macro LED commands do not end sleep or replace that selection. Published v15 firmware restores **Both as Configured**. The active editor and bundled firmware use format 16.
 
 As of firmware v16, **LED Control** brightness overrides persist after waking from auto-sleep. For example, selecting **Layers and Keys Dim** before sleep restores that same dim setting on wake, even when sleep turns the LEDs off. Indicator and key-press overrides are remembered independently.
 
@@ -384,5 +384,5 @@ For Linux WebHID permissions, see the [web app README](webapp/README.md#linux-de
 ## Further Documentation
 
 - [Web app development and usage](webapp/README.md)
-- [Configuration Format](protocol/config-v15.md)
+- [Configuration Format](protocol/config-v16.md)
 - [USB configuration protocol](protocol/hid-v1.md)

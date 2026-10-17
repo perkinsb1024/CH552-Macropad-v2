@@ -65,8 +65,11 @@ From the repository root:
 
 ```sh
 python3 tests/run_host_tests.py
-python3 tests/run_host_tests.py --no-preview
 ```
+
+LED color preview is a permanent firmware feature. Release validation uses the
+normal firmware configuration for both hardware variants; a preview-disabled
+build or host-test run is not required.
 
 Build both native variants into temporary directories with the real application
 flash limit using the current protocol reference's reproduction commands.
