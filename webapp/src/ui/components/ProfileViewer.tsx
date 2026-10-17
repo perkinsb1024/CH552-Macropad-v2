@@ -35,21 +35,22 @@ export function ViewerTimers() {
     <summary class="card-head"><h2>Timed Actions ({timers.length}/{MAX_TIMED_ACTIONS})</h2><IconChevron /></summary>
     {!timers.length && <p class="muted">No timed actions in this profile.</p>}
     <ul class="viewer-binding-list viewer-timers">
-      {timers.map((timer, index) => <li key={index}>
-        <div><strong>Timer {index + 1}</strong><span class={timer.layer === undefined ? 'tab-badge viewer-all-layers' : 'muted'}>{timer.layer === undefined ? 'All Layers' : layerName(timer.layer)}</span></div>
-        <p class="muted viewer-timer-interval">
-          {timer.resetOnInput ? 'After ' : 'Repeats every '}<span class="live-countdown">{countdown(timer.ticks * TIMED_TICK_SECONDS)}</span>{timer.resetOnInput ? ' of inactivity' : ''}
-        </p>
-        {liveRuntime.value && liveClock.value - liveRuntime.value.receivedAt < 1000 && <p class="viewer-timer-status">
-          <span>{timer.layer !== undefined && timer.layer !== liveRuntime.value.state.layer ? 'Paused Outside Its Layer' : <><span class="live-countdown">{countdown(timerRemaining(liveRuntime.value.timers, index, timer.ticks))}</span> Until Next Fire</>}</span>
-          {!!(liveRuntime.value.timers.high[index]! & 1) && <span>Next Input Action Armed{timer.consumeInput ? ' (Next Input Consumed)' : ''}</span>}
-        </p>}
-        <div><span class="muted">When Fired</span><ActionLabel action={timer.action} /></div>
-        {(timer.resumeAction.type !== 'none' || timer.consumeInput) && <div>
-          <span class="muted">Next Input</span><ActionLabel action={timer.resumeAction} />
-          {timer.consumeInput && <span class="tab-badge">consumed</span>}
-        </div>}
-      </li>)}
+      {timers.map((timer, index) => {
+        const runtime = liveRuntime.value;
+        const fresh = runtime && liveClock.value - runtime.receivedAt < 1000;
+        const paused = fresh && timer.layer !== undefined && timer.layer !== runtime.state.layer;
+        return <li key={index}>
+          <div class="viewer-item-heading"><h3>Timer {index + 1}</h3><span class={timer.layer === undefined ? 'tab-badge viewer-all-layers' : 'viewer-scope'}>{timer.layer === undefined ? 'All Layers' : layerName(timer.layer)}</span></div>
+          <dl class="viewer-facts">
+            <div><dt>Trigger</dt><dd>{timer.resetOnInput ? 'After ' : 'Every '}<span class="live-countdown">{countdown(timer.ticks * TIMED_TICK_SECONDS)}</span>{timer.resetOnInput ? ' of inactivity' : ''}</dd></div>
+            {fresh && <div><dt>Next Fire</dt><dd>{paused ? 'Paused Outside Its Layer' : <span class="live-countdown">{countdown(timerRemaining(runtime.timers, index, timer.ticks))}</span>}</dd></div>}
+            {fresh && !!(runtime.timers.high[index]! & 1) && <div><dt>Status</dt><dd>Next Input Action Armed</dd></div>}
+            <div><dt>When Fired</dt><dd><ActionLabel action={timer.action} /></dd></div>
+            {(timer.resumeAction.type !== 'none' || timer.consumeInput) && <div><dt>Next Input</dt><dd><ActionLabel action={timer.resumeAction} /></dd></div>}
+            {timer.consumeInput && <div><dt>Input Policy</dt><dd>Consumed</dd></div>}
+          </dl>
+        </li>;
+      })}
     </ul>
   </details>;
 }
@@ -68,7 +69,11 @@ export function ViewerMacros() {
   const triggeredMacros = new Set(triggers.filter(action => action.type === 'macro').map(action => action.macro));
   return <details class="card viewer-bindings viewer-section viewer-macros" {...viewerSection('macros')}><summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
     {!macros.length && <p class="muted">No macros in this profile.</p>}
-    {macros.map((macro, index) => <div style={{ opacity: triggeredMacros.has(index) ? 1 : 0.5 }}><h3>Macro {index + 1}</h3><ol>{macro.actions.map(action => <li><ActionLabel action={action} /></li>)}</ol></div>)}
+    {macros.map((macro, index) => <div class="viewer-macro" key={index}>
+      <div class="viewer-item-heading"><h3>Macro {index + 1}</h3><span class="viewer-meta">{macro.actions.length} {macro.actions.length === 1 ? 'Step' : 'Steps'}</span></div>
+      {!triggeredMacros.has(index) && <p class="viewer-meta viewer-macro-usage">Not Used on This Layer</p>}
+      <ol>{macro.actions.map((action, step) => <li key={step}><ActionLabel action={action} /></li>)}</ol>
+    </div>)}
   </details>;
 }
 
@@ -180,14 +185,20 @@ export function ProfileViewer() {
           <DeviceView readOnly />
           <details class="viewer-section viewer-saved-settings" {...viewerSection('layer-settings', false)}>
             <summary class="card-head"><h2>Layer Settings</h2><IconChevron /></summary>
-          <dl class="viewer-settings" aria-label="Layer Settings">
-            <div><dt>Layer Indicator</dt><dd>{indicatorMode}<span class="live-detail">{viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</span></dd></div>
-            <div><dt>Auto-Sleep</dt><dd>{viewedLayer?.autoSleep ? <>
-              {SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]} ({p.dimInsteadOfOff ? 'Dim' : 'Off'})
-              <span class="live-detail">{p.consumeWakeInput ? 'Wake Input Consumed' : 'Wake and Execute'}</span>
-              <span class="live-detail">Layer Reminder {p.showLayerIndicatorOnWake ? 'On' : 'Off'}</span>
-            </> : 'Disabled'}</dd></div>
-          </dl>
+            <div class="viewer-settings-grid" aria-label="Layer Settings">
+              <section class="viewer-stat-group"><h3>Layer Indicator</h3><dl class="viewer-facts">
+                <div><dt>Mode</dt><dd>{indicatorMode}</dd></div>
+                <div><dt>Brightness</dt><dd>{viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</dd></div>
+              </dl></section>
+              <section class="viewer-stat-group"><h3>Auto-Sleep</h3><dl class="viewer-facts">
+                {viewedLayer?.autoSleep ? <>
+                  <div><dt>Timeout</dt><dd>{SLEEP_TIMEOUT_LABELS[SLEEP_TIMEOUT_MINUTES.findIndex(minutes => minutes === p.sleepTimeoutMinutes)]}</dd></div>
+                  <div><dt>LEDs</dt><dd>{p.dimInsteadOfOff ? 'Dim' : 'Off'}</dd></div>
+                  <div><dt>Wake Input</dt><dd>{p.consumeWakeInput ? 'Consumed' : 'Wake and Execute'}</dd></div>
+                  <div><dt>Layer Reminder</dt><dd>{p.showLayerIndicatorOnWake ? 'On' : 'Off'}</dd></div>
+                </> : <div><dt>Status</dt><dd>Disabled</dd></div>}
+              </dl></section>
+            </div>
           </details>
         </section>
         <ViewerExtras />

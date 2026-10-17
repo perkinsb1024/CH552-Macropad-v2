@@ -149,7 +149,7 @@ it('filters local chords with the viewed layer and keeps global chords and all t
     expect(chords).toHaveLength(2);
     expect(text(chords[0])).toContain(layer === 0 ? '1+2' : '3+4');
     expect(text(chords[1])).toContain('All Layers');
-    expect(text(ViewerTimers())).toContain('consumed');
+    expect(text(ViewerTimers())).toContain('Consumed');
     expect(nodes(ViewerTimers()).some(n => ['input', 'button', 'select'].includes(String(n.type)))).toBe(false);
   }
   expect(encodeProfile(p)).toHaveLength(128);
@@ -171,9 +171,9 @@ it('shows the saved sleep timeout and wake policies for enabled layers', async (
   profile.value.consumeWakeInput = false;
   profile.value.showLayerIndicatorOnWake = false;
   profile.value.dimInsteadOfOff = true;
-  expect(text(ProfileViewer())).toContain('Auto-Sleep2 Hours (Dim)Wake and ExecuteLayer Reminder Off');
+  expect(text(ProfileViewer())).toContain('Auto-SleepTimeout2 HoursLEDsDimWake InputWake and ExecuteLayer ReminderOff');
   profile.value.layers[0]!.autoSleep = false;
-  expect(text(ProfileViewer())).toContain('Auto-SleepDisabled');
+  expect(text(ProfileViewer())).toContain('Auto-SleepStatusDisabled');
 });
 
 it('shows brief accepted bindings, physical holds and independent consumed encoder activity', async () => {
@@ -219,8 +219,8 @@ it('reports sleep independently from brightness and marks stale telemetry', asyn
   await vi.advanceTimersByTimeAsync(300);
   const content = text(LiveStatus());
   expect(content).toContain('Asleep');
-  expect(content).toContain('Layers Bright');
-  expect(content).toContain('Keys Dim');
+  expect(content).toContain('LayersBright');
+  expect(content).toContain('KeysDim');
   vi.spyOn(conn.client, 'getStatus').mockRejectedValue(new Error('unavailable'));
   await vi.advanceTimersByTimeAsync(1200);
   expect(text(LiveStatus())).toContain('Updates Paused');
