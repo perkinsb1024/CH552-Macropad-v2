@@ -427,7 +427,7 @@ async function rainbowHarness(reduced = false) {
   let id = 0;
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callbacks.set(++id, callback); return id; });
   vi.stubGlobal('cancelAnimationFrame', (id: number) => callbacks.delete(id));
-  let now = performance.now();
+  let now = 0;
   vi.spyOn(performance, 'now').mockImplementation(() => now);
   dispose = startLiveLighting();
   return {
@@ -448,6 +448,7 @@ async function rainbowHarness(reduced = false) {
 
 it('animates continuously in Always, freezes in Never, and still updates lighting and stale state', async () => {
   const { tick, callbacks } = await rainbowHarness();
+  setRainbowAnimation('always');
   expect(rainbowAnimation.value).toBe('always');
   tick(20);
   expect(liveRainbowFrame.value).toBe(5);
@@ -496,9 +497,9 @@ it('defaults to Never for Reduce Motion and persists an explicit override across
   expect(callbacks.size).toBe(0);
 });
 
-it('freezes Brief after exactly 2500ms and ignores unchanged polls and unrelated bindings', async () => {
+it('defaults to Temporary, freezes after exactly 2500ms, and ignores unchanged polls and unrelated bindings', async () => {
   const { tick, callbacks, trigger } = await rainbowHarness();
-  setRainbowAnimation('brief');
+  expect(rainbowAnimation.value).toBe('brief');
   tick(2000);
   expect(liveRainbowFrame.value).toBe(500);
   liveRuntime.value = { ...liveRuntime.value!, receivedAt: performance.now() };
@@ -532,6 +533,41 @@ it.each([0, 1] as const)('restarts Brief when any Live View key is clicked on va
   setRainbowAnimation('never');
   (keys[0]!.props.onClick as () => void)();
   expect(callbacks.size).toBe(0);
+});
+
+it('animates Temporary throughout device-body hover while preserving timed triggers and Never', async () => {
+  const { tick, callbacks } = await rainbowHarness();
+  setRainbowAnimation('brief');
+  tick(2500);
+  expect(callbacks.size).toBe(0);
+  const body = nodes(DeviceView({ readOnly: true })).find(n => n.props.class === 'device-body')!;
+  const enter = body.props.onMouseEnter as () => void;
+  const leave = body.props.onMouseLeave as () => void;
+  enter();
+  const frame = liveRainbowFrame.value;
+  tick(5000);
+  expect(liveRainbowFrame.value).toBeGreaterThan(frame);
+  expect(callbacks.size).toBe(1);
+  leave();
+  expect(callbacks.size).toBe(0);
+
+  enter();
+  const key = nodes(DeviceView({ readOnly: true })).find(n => n.type === 'button' && String(n.props.class).startsWith('keycap '))!;
+  (key.props.onClick as () => void)();
+  tick(1000);
+  leave();
+  tick(1000);
+  expect(callbacks.size).toBe(1);
+  tick(500);
+  expect(callbacks.size).toBe(0);
+
+  setRainbowAnimation('never');
+  enter();
+  expect(callbacks.size).toBe(0);
+  leave();
+  const editorBody = nodes(DeviceView()).find(n => n.props.class === 'device-body')!;
+  expect(editorBody.props.onMouseEnter).toBeUndefined();
+  expect(editorBody.props.onMouseLeave).toBeUndefined();
 });
 
 it.each([
@@ -580,7 +616,7 @@ it('shows a persistent three-way rainbow toggle inside Layer Settings without a 
   const settings = elements.find(n => n.type === 'details' && String(n.props.class).includes('viewer-saved-settings'))!;
   const toggle = nodes(settings).find(n => n.props['aria-labelledby'] === 'rainbow-animation-label')!;
   const buttons = nodes(toggle).filter(n => n.type === 'button');
-  expect(buttons.map(n => text(n))).toEqual(['Always', 'Brief', 'Never']);
+  expect(buttons.map(n => text(n))).toEqual(['Always', 'Temporary', 'Never']);
   expect(nodes(settings).some(n => n.type === 'select')).toBe(false);
   expect(text(settings)).not.toContain('Brief animates');
   (buttons[1]!.props.onClick as () => void)();

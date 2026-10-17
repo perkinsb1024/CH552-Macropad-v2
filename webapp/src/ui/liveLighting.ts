@@ -4,10 +4,15 @@ import { connection, liveActivity, liveClock, liveRuntime, profile, selectedLaye
 
 export const liveRainbowFrame = signal(0);
 export type RainbowAnimation = 'always' | 'brief' | 'never';
-export const rainbowAnimation = signal<RainbowAnimation>('always');
+export const rainbowAnimation = signal<RainbowAnimation>('brief');
 const animationKey = 'macropad.liveView.rainbowAnimation';
 const briefDuration = 2500;
 const briefRestart = signal(0);
+const deviceHovered = signal(false);
+
+export function setLiveDeviceHovered(hovered: boolean): void {
+  deviceHovered.value = hovered;
+}
 
 export function restartBriefRainbowAnimation(): void {
   if (rainbowAnimation.peek() === 'brief') briefRestart.value = briefRestart.peek() + 1;
@@ -23,7 +28,7 @@ function loadRainbowAnimation(): void {
   let saved: string | null = null;
   try { saved = localStorage.getItem(animationKey); } catch { /* Use the default. */ }
   rainbowAnimation.value = saved === 'always' || saved === 'brief' || saved === 'never' ? saved
-    : window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'never' : 'always';
+    : window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'never' : 'brief';
 }
 
 export const liveLighting = computed(() => {
@@ -95,13 +100,13 @@ export function startLiveLighting(): () => void {
     const fresh = activity && runtime && liveClock.value - activity.receivedAt <= 1000 &&
       liveClock.value - runtime.receivedAt <= 1000;
     const mode = rainbowAnimation.value;
-    const enabled = mode === 'always' || mode === 'brief' && briefActive.value;
+    const enabled = mode === 'always' || mode === 'brief' && (briefActive.value || deviceHovered.value);
     return enabled && session.value && fresh && lighting?.animating ? lighting.frameMs : 0;
   });
   const animate = effect(() => {
     const interval = cadence.value;
     if (!interval) return;
-    const until = rainbowAnimation.value === 'brief' ? briefUntil.value : Infinity;
+    const until = rainbowAnimation.value === 'brief' && !deviceHovered.value ? briefUntil.value : Infinity;
     let previous = performance.now();
     let request = 0;
     const tick = (now: number) => {
@@ -122,5 +127,5 @@ export function startLiveLighting(): () => void {
     request = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(request);
   });
-  return () => { animate(); changes(); reset(); };
+  return () => { animate(); changes(); reset(); deviceHovered.value = false; };
 }

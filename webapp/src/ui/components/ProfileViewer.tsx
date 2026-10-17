@@ -214,7 +214,7 @@ export function ProfileViewer() {
                 {(['always', 'brief', 'never'] as const).map(mode => <button type="button" key={mode}
                   class={rainbowAnimation.value === mode ? 'is-selected' : ''}
                   aria-pressed={rainbowAnimation.value === mode} onClick={() => setRainbowAnimation(mode)}>
-                  {mode === 'always' ? 'Always' : mode === 'brief' ? 'Brief' : 'Never'}
+                  {mode === 'always' ? 'Always' : mode === 'brief' ? 'Temporary' : 'Never'}
                 </button>)}
               </div>
             </div>

@@ -9,7 +9,7 @@ import { connection, liveActivity, liveClock, canInsertSlot, canSwapSlots, dragg
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconRotate } from './Icons';
 import { ActionLabel } from './ActionLabel';
-import { liveLighting, restartBriefRainbowAnimation } from '../liveLighting';
+import { liveLighting, restartBriefRainbowAnimation, setLiveDeviceHovered } from '../liveLighting';
 
 function sameSlot(a: Slot | null, b: Slot): boolean {
   return !!a && JSON.stringify(a) === JSON.stringify(b);
@@ -219,7 +219,9 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     <div class={`device device-${keys} ${readOnly ? "device-readonly" : ""}`}>
       <div class={`device-shell ${!readOnly && indicatorOn ? 'indicator-glow' : ''}`}
         style={`--indicator-color:${indicatorColor}; --indicator-opacity:${layer.indicatorFullBrightness ? 1 : 0.65}`}>
-      <div class="device-body">
+      <div class="device-body"
+        onMouseEnter={readOnly ? () => setLiveDeviceHovered(true) : undefined}
+        onMouseLeave={readOnly ? () => setLiveDeviceHovered(false) : undefined}>
         <div class="keygrid" style={`--cols:${keys === 6 ? 3 : 3}`} onDragOver={readOnly ? undefined : gridDragOver} onDrop={readOnly ? undefined : gridDrop}>
           {Array.from({ length: keys }, (_, i) => renderKeyCap(i))}
         </div>

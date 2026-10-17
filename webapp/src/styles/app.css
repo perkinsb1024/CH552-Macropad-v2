@@ -2331,6 +2331,10 @@ output {
 .device-readonly .keycap:active { transform: none; box-shadow: 0 4px 0 var(--key-lip), 0 6px 14px -6px rgb(0 0 0 / 0.5), 0 0 22px -4px var(--led-glow); }
 
 /* Size against the available preview width, including narrow editor columns. */
+@container (min-width: 740px) {
+  .encoder { flex-direction: row; }
+  .knob { flex-shrink: 0; }
+}
 @container (max-width: 660px) {
   .device-shell { width: 100%; max-width: 580px; --device-radius: 18px; }
   .device-body, .device-3 .device-body { width: 100%; padding: 18px 16px; gap: 16px; border-radius: 18px; }
