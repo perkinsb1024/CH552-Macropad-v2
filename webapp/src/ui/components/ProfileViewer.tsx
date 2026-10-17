@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { connection, connectSimulator, layerName, liveClock, liveRuntime, profile, selectedLayer } from '../store';
+import { connection, connectSimulator, deviceDecode, layerName, liveClock, liveRuntime, profile, selectedLayer } from '../store';
 import { followDeviceLayer } from '../profileViewer';
 import { ActionLabel } from './ActionLabel';
 import { ArchivedFirmwareNotice } from './ArchivedFirmwareNotice';
@@ -157,6 +157,10 @@ export function ProfileViewer() {
   }, []);
   const p = profile.value;
   const c = connection.value;
+  // A saved profile cannot tell us which lighting overrides are active. Wait
+  // for the first runtime sample before rendering the connected device.
+  const loading = c.kind === 'connecting' || c.kind === 'connected' &&
+    (!deviceDecode.value || !!p && c.connection.status.flashValid && !!c.connection.status.live && !liveRuntime.value);
   const deviceLayer = c.kind === 'connected' && c.connection.status.flashValid ? c.connection.status.currentLayer : null;
   const knownLayer = deviceLayer !== null && p && deviceLayer >= 0 && deviceLayer < p.layers.length;
   const mismatch = knownLayer && selectedLayer.value !== deviceLayer;
@@ -166,9 +170,12 @@ export function ProfileViewer() {
     <TopBar readOnly />
     <ArchivedFirmwareNotice />
     <main class="viewer-workspace">
-      {!p ? <section class="card viewer-empty"><h2>Learn Your Macropad Profile</h2>
-        <p class="muted">Connect your macropad to display its saved shortcuts and follow layer changes.</p>
-        {c.kind === 'connected' && <p class="warn">There is no valid saved profile to display. Open the configurator to repair it.</p>}
+      {loading || !p ? <section class="card viewer-empty"><h2>{loading ? 'Loading Your Macropad Profile' : 'Learn Your Macropad Profile'}</h2>
+        <p class="muted" role={loading ? 'status' : undefined}>{loading
+          ? 'Reading the saved profile and current device state…'
+          : 'Connect your macropad to display its saved shortcuts and follow layer changes.'}</p>
+        {!loading && c.kind === 'connected' && deviceDecode.value && (!deviceDecode.value.ok || !c.connection.status.flashValid) &&
+          <p class="warn">There is no valid saved profile to display. Open the configurator to repair it.</p>}
       </section> : <>
         <section class="card card-device">
           <div class="tabs" role="tablist" aria-label="Layers">

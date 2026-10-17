@@ -9,7 +9,7 @@ import { connection, liveActivity, liveClock, canInsertSlot, canSwapSlots, dragg
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconRotate } from './Icons';
 import { ActionLabel } from './ActionLabel';
-import { liveLighting } from '../liveLighting';
+import { liveLighting, restartBriefRainbowAnimation } from '../liveLighting';
 
 function sameSlot(a: Slot | null, b: Slot): boolean {
   return !!a && JSON.stringify(a) === JSON.stringify(b);
@@ -182,10 +182,8 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)}
         class={`keycap ${pressed(index) ? 'is-live-pressed' : ''} ${fired(index) ? 'is-live-fired' : ''} ${rainbow ? 'keycap-rainbow' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-strip:${rainbow ? RAINBOW_GRADIENT : `linear-gradient(${color}, ${color})`}; --led-glow:${off ? 'transparent' : rainbow ? '#8000ff' : color}`}
-        onClick={readOnly ? undefined : () => select(slot)}
+        onClick={readOnly ? restartBriefRainbowAnimation : () => select(slot)}
         draggable={!readOnly}
-        tabIndex={readOnly ? -1 : undefined}
-        aria-disabled={readOnly || undefined}
         onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)}
         onDragEnd={readOnly ? undefined : dragEnd}
         onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'horizontal')}

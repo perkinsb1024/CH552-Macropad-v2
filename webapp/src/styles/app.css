@@ -1540,7 +1540,7 @@ output {
   cursor: pointer;
   transition: background 120ms;
 }
-.enc-part:hover {
+.device:not(.device-readonly) .enc-part:hover {
   background: rgb(255 255 255 / 0.12);
 }
 .enc-part.is-selected {
@@ -2234,10 +2234,12 @@ output {
   z-index: 60;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
-  max-width: min(380px, calc(100vw - 32px));
+  width: min(380px, calc(100vw - 32px));
 }
 .toast {
+  max-width: 100%;
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -2327,7 +2329,6 @@ output {
 .viewer-empty p { margin-top: 10px; }
 .device-readonly .keycap, .device-readonly .enc-part { cursor: default; }
 .device-readonly .keycap:active { transform: none; box-shadow: 0 4px 0 var(--key-lip), 0 6px 14px -6px rgb(0 0 0 / 0.5), 0 0 22px -4px var(--led-glow); }
-.device-readonly .enc-part:hover { border-color: var(--line); }
 
 /* Size against the available preview width, including narrow editor columns. */
 @container (max-width: 660px) {

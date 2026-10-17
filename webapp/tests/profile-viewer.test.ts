@@ -3,6 +3,7 @@ import { isLiveViewPath } from '../src/site';
 import { defaultProfile } from '../src/model/defaults';
 import { encodeProfile } from '../src/codec/encode';
 import { SimulatedDevice } from '../src/protocol/simulator';
+import { ConfigClient } from '../src/protocol/client';
 import { draftKey, storeDraft } from '../src/io/drafts';
 import { connection, connectSimulator, disconnect, dialog, profile, selectedLayer, viewerMode } from '../src/ui/store';
 import { followDeviceLayer } from '../src/ui/profileViewer';
@@ -124,6 +125,67 @@ it('never displays starter shortcuts as if they were saved on a blank device', a
   expect(profile.value).toBeNull();
   expect(text(ProfileViewer())).toContain('no valid saved profile');
 });
+it.each([false, true])('waits for profile validation before warning, including after a blank device (blank=%s)', async blank => {
+  await connect(true);
+  const closing = disconnect();
+  await vi.advanceTimersByTimeAsync(20);
+  await closing;
+  toasts.value = [];
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const readFlash = ConfigClient.prototype.readFlash;
+  vi.spyOn(ConfigClient.prototype, 'readFlash').mockImplementationOnce(async function (this: ConfigClient) {
+    await held;
+    return readFlash.call(this);
+  });
+  const pending = connectSimulator(0, blank);
+  await vi.advanceTimersByTimeAsync(20);
+  expect(connection.value.kind).toBe('connected');
+  expect(profile.value).toBeNull();
+  expect(text(ProfileViewer())).not.toContain('no valid saved profile');
+  expect(toasts.value).toEqual([]);
+  release();
+  await vi.advanceTimersByTimeAsync(100);
+  await pending;
+  expect(text(ProfileViewer()).includes('no valid saved profile')).toBe(blank);
+  expect(toasts.value.some(toast => toast.text.includes('no valid saved profile'))).toBe(blank);
+  expect(profile.value === null).toBe(blank);
+});
+it.each([false, true])('waits for current LED overrides before displaying the device (reconnect=%s)', async reconnect => {
+  if (reconnect) {
+    await connect();
+    const closing = disconnect();
+    await vi.advanceTimersByTimeAsync(20);
+    await closing;
+  }
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const getRuntime = ConfigClient.prototype.getRuntime;
+  const request = vi.spyOn(ConfigClient.prototype, 'getRuntime').mockImplementationOnce(async function (this: ConfigClient) {
+    await held;
+    return getRuntime.call(this);
+  });
+  const pending = connectSimulator(0);
+  expect(text(ProfileViewer())).toContain('Reading the saved profile and current device state');
+  expect(nodes(ProfileViewer()).some(node => node.type === DeviceView)).toBe(false);
+  await vi.advanceTimersByTimeAsync(100);
+  await pending;
+  expect(profile.value).not.toBeNull();
+  expect(request).toHaveBeenCalled();
+  expect(liveRuntime.value).toBeNull();
+  expect(nodes(ProfileViewer()).some(node => node.type === DeviceView)).toBe(false);
+  const c = connection.peek();
+  if (c.kind !== 'connected') throw new Error('connection failed');
+  (c.connection.transport as SimulatedDevice).runtime[16] = 0; // Override the configured layer indicator to off.
+  (c.connection.transport as SimulatedDevice).runtime[17] = 0; // Override the configured key LEDs to off.
+  release();
+  await vi.advanceTimersByTimeAsync(100);
+  expect(nodes(ProfileViewer()).some(node => node.type === DeviceView)).toBe(true);
+  expect(text(ProfileViewer())).not.toContain('Reading the saved profile and current device state');
+  expect(liveLighting.value!.colors.every(color => color === '#000000')).toBe(true);
+  const keys = nodes(DeviceView({ readOnly: true })).filter(node => String(node.props.class).startsWith('keycap '));
+  expect(keys.every(key => String(key.props.style).includes('--led:#000000'))).toBe(true);
+});
 it('renders the existing device without edit, clipboard or drag targets', () => {
   profile.value = defaultProfile(0);
   const buttons = nodes(DeviceView({ readOnly: true })).filter(n => n.type === 'button');
@@ -131,7 +193,8 @@ it('renders the existing device without edit, clipboard or drag targets', () => 
   for (const button of buttons) {
     expect(button.props.draggable).toBe(false);
     expect(button.props['data-clipboard-target']).toBeUndefined();
-    for (const handler of ['onClick', 'onDragStart', 'onDragEnd', 'onDragOver', 'onDrop']) {
+    expect(typeof button.props.onClick).toBe(String(button.props.class).startsWith('keycap ') ? 'function' : 'undefined');
+    for (const handler of ['onDragStart', 'onDragEnd', 'onDragOver', 'onDrop']) {
       expect(button.props[handler]).toBeUndefined();
     }
   }
@@ -192,7 +255,7 @@ it('shows brief accepted bindings, physical holds and independent consumed encod
   expect(first.props.class).toContain('is-live-fired');
   expect(text(LiveStatus())).toContain('Latest Trigger');
   const triggerToast = toasts.value.find(toast => toast.key === 'live-trigger')!;
-  expect(triggerToast.text).toContain('Latest Trigger: Key 1 (Layer 1)');
+  expect(triggerToast.text).toMatch(/^Key 1 \(Layer 1\) - /);
   await vi.advanceTimersByTimeAsync(60);
   expect(toasts.value.filter(toast => toast.key === 'live-trigger')).toEqual([triggerToast]);
   device.liveStatus[16] = 2;
@@ -444,6 +507,31 @@ it('freezes Brief after exactly 2500ms and ignores unchanged polls and unrelated
   expect(liveRainbowFrame.value).toBe(625);
   expect(callbacks.size).toBe(0);
   expect(liveLighting.value!.colors.some(c => c !== '#000000')).toBe(true);
+});
+
+it.each([0, 1] as const)('restarts Brief when any Live View key is clicked on variant %s', async variant => {
+  const { tick, callbacks } = await rainbowHarness();
+  profile.value = { ...profile.value!, variant };
+  setRainbowAnimation('brief');
+  tick(2500);
+  expect(callbacks.size).toBe(0);
+  const keys = nodes(DeviceView({ readOnly: true })).filter(n => n.type === 'button' && String(n.props.class).startsWith('keycap '));
+  expect(keys).toHaveLength(variant === 0 ? 6 : 3);
+  for (const key of keys) {
+    (key.props.onClick as () => void)();
+    expect(callbacks.size).toBe(1);
+    const frame = liveRainbowFrame.value;
+    tick(2000);
+    expect(liveRainbowFrame.value).toBeGreaterThan(frame);
+    (key.props.onClick as () => void)();
+    tick(2000);
+    expect(callbacks.size).toBe(1);
+    tick(500);
+    expect(callbacks.size).toBe(0);
+  }
+  setRainbowAnimation('never');
+  (keys[0]!.props.onClick as () => void)();
+  expect(callbacks.size).toBe(0);
 });
 
 it.each([

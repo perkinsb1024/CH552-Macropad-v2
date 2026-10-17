@@ -870,7 +870,7 @@ function updateDeviceStatus(conn: Connection, status: DeviceStatus): void {
         const action = image ? decodeLiveAction(image, latest.first, latest.second) : null;
         const slots = profile.peek()?.timedActions?.length ?? 0;
         const description = action ? summarize(action) : runtimeAction(latest.source, latest.second, slots);
-        notify('info', `Latest Trigger: ${liveSource(latest.source, conn.info.keyCount, slots)} (${layerName(latest.bindingLayer)}) - ${description}`, 3000, 'live-trigger');
+        notify('info', `${liveSource(latest.source, conn.info.keyCount, slots)} (${layerName(latest.bindingLayer)}) - ${description}`, 3000, 'live-trigger');
       }
     }
     else liveActivity.value = null;
@@ -937,6 +937,7 @@ effect(() => {
 
 async function attach(transport: Transport, label: string): Promise<void> {
   archivedFirmware.value = null;
+  deviceDecode.value = null;
   connection.value = { kind: 'connecting', label };
   const client = new ConfigClient(transport);
   try {

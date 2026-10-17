@@ -7,6 +7,11 @@ export type RainbowAnimation = 'always' | 'brief' | 'never';
 export const rainbowAnimation = signal<RainbowAnimation>('always');
 const animationKey = 'macropad.liveView.rainbowAnimation';
 const briefDuration = 2500;
+const briefRestart = signal(0);
+
+export function restartBriefRainbowAnimation(): void {
+  if (rainbowAnimation.peek() === 'brief') briefRestart.value = briefRestart.peek() + 1;
+}
 
 export function setRainbowAnimation(value: RainbowAnimation): void {
   rainbowAnimation.value = value;
@@ -50,6 +55,7 @@ export function startLiveLighting(): () => void {
   let previousSession: typeof session.value;
   let previousSignature = '';
   let previousSequence: number | undefined;
+  let previousRestart = briefRestart.peek();
   const changes = effect(() => {
     const connected = session.value;
     const runtime = liveRuntime.value;
@@ -58,6 +64,7 @@ export function startLiveLighting(): () => void {
     const p = profile.value;
     const layer = selectedLayer.value;
     const mode = rainbowAnimation.value;
+    const restart = briefRestart.value;
     const sample = activity?.sample;
     // Include dispatches as well as state: selecting the same layer or issuing
     // an identical LED command must still open a new animation window.
@@ -71,13 +78,14 @@ export function startLiveLighting(): () => void {
       runtime && p ? runtime.timers.high[p.timedActions?.length ?? 0]! & 1 : 0,
       p?.layers[layer], p?.rainbowPhase, p?.rainbowSpeed, p?.transparentBlack,
       p ? liveLedColors(p, layer, state?.layer === layer ? state : null, sample?.pressed ?? 0, 0).colors : null]);
-    if (connected !== previousSession || signature !== previousSignature || lightingTrigger) {
+    if (connected !== previousSession || signature !== previousSignature || lightingTrigger || restart !== previousRestart) {
       briefUntil.value = performance.now() + briefDuration;
       briefActive.value = true;
     }
     previousSession = connected;
     previousSignature = signature;
     previousSequence = sample?.sequence;
+    previousRestart = restart;
   });
   // A primitive keeps the animation loop running across unchanged telemetry polls.
   const cadence = computed(() => {
