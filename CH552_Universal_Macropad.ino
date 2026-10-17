@@ -62,7 +62,7 @@ __xdata uint8_t ledData[NUM_BYTES];
 // Stable levels and debounce times remain private to this main-loop scanner.
 __xdata uint8_t rawState[7];
 __idata uint8_t stableState[7];
-__idata uint16_t rawChanged[7];
+__xdata uint16_t rawChanged[7];
 __xdata uint8_t liveRotations[2];
 __xdata uint8_t liveGeneration;
 __pdata uint8_t encoderState;
@@ -463,19 +463,19 @@ void scanEncoder() {
 
 void firmwareWriteInputs(void) {
   uint8_t mask = 0;
-  for (uint8_t i = 0; i <= NUM_LEDS; i++) if (stableState[i]) mask |= 1 << i;
+  uint8_t i = NUM_LEDS + 1;
+  do { mask = (mask << 1) | stableState[--i]; } while (i);
   liveReply[7] = mask;
   liveReply[8] = liveRotations[0];
   liveReply[9] = liveRotations[1];
 }
 
 void firmwareWriteLive(void) {
-  liveReply[9] = ledSettings[2] | (ledSettings[3] << 2);
-  liveReply[10] = ledSettings[0] | (ledSettings[1] << 2);
-  liveReply[11] = previewOptions;
-  liveReply[12] = layerIndicatorPhasesLeft;
-  liveReply[13] = colorPreviewActive;
-  liveReply[16] = liveGeneration;
+  uint8_t i = 4;
+  do { --i; liveReply[(uint8_t)(14 + i)] = ledSettings[i]; } while (i);
+  liveReply[18] = previewOptions;
+  liveReply[19] = layerIndicatorPhasesLeft;
+  liveReply[21] = liveGeneration;
 }
 
 void firmwareApplyConfig(ACTION_BIT restartIndicator) {

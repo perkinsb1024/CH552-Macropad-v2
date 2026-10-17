@@ -5,6 +5,7 @@
 extern __xdata uint8_t protocolReply[32];
 #define liveReply (protocolReply + 9)
 extern __xdata uint8_t liveBindings[13];
+extern __xdata uint8_t liveBindingLayer;
 void firmwareWriteLive(void);
 void firmwareWriteInputs(void);
 void actionsWriteLive(void);

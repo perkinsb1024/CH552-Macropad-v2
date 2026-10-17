@@ -97,7 +97,7 @@ __idata uint8_t scrollFraction;
 
 static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
   if (eventUsed == EVENT_COUNT ||
-      ((rotation & 1) && eventUsed >= EVENT_COUNT - MAX_INPUTS)) {
+      ((rotation & 1) && eventUsed != 0)) {
     if (rotation & 1) {
       if (droppedRotation != 255) {
         droppedRotation++;
@@ -270,8 +270,11 @@ static FW_BIT flushOutputs(void) {
 static void updateLayer(void);
 static void resetLayerTimers(void);
 
-static ACTION_BIT applyAction(uint8_t first, uint8_t second, uint8_t rotation,
+static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
+  __xdata uint8_t requestedSecond = second;
+  __xdata uint8_t layer = effectiveLayer;
+  uint8_t source;
   uint8_t selectedLayer = baseLayer;
 #if CONFIG_SCROLL_ACCELERATION
   if (input >= 9) rotation = 2;
@@ -290,105 +293,89 @@ static ACTION_BIT applyAction(uint8_t first, uint8_t second, uint8_t rotation,
     // Clear the old layer's playback before queuing the selected action.
     updateLayer();
   }
-  switch (actionType(first)) {
-    case CONFIG_ACTION_LED_CONTROL:
-      firmwareLedAction(second, first >> 4);
-      break;
-    case CONFIG_ACTION_NONE:
-      if (first) return queueAction(first, second, rotation); // Text/Pause auxiliary values.
-      break;
-    case CONFIG_ACTION_KEY_HOLD:
-      break;
-    case CONFIG_ACTION_CONSUMER_MODIFIED_HOLD:
-    case CONFIG_ACTION_CONSUMER_MODIFIED:
-    case CONFIG_ACTION_CONSUMER:
-    case CONFIG_ACTION_CONSUMER_HOLD:
-      // Consumers share one latest-wins lane, independent of queued key taps.
-      consumerFirst = first;
-      consumerSecond = second;
-      // Modified output releases before a replacement changes its modifiers.
-      // A modified hold preserves an ordinary tap's pending release too.
-      // Only types 8/9/A/B reach here; bit 0 distinguishes holds from taps.
-      if (actionType(first) == CONFIG_ACTION_CONSUMER_HOLD && !consumerModifiers)
-        consumerReleasePending = 0;
-      else if (consumerModifiers || consumerOwner) consumerReleasePending = 1;
-      consumerOwner = 0;
-      if (first & 1) consumerOwner = input + 1;
-      break;
-    case CONFIG_ACTION_MOUSE_TOGGLE:
-      if (first == CONFIG_ACTION_MOUSE_HOLD) break;
-      // Down clears then XORs to set; up only clears; toggle only XORs.
-      if (first & 0x30) persistentMouse &= ~second;
-      if (!(first & 0x20)) persistentMouse ^= second;
-      break;
-    case CONFIG_ACTION_SET_LAYER:
-      layerSelectionPending = 1;
-      if (first & CONFIG_LAYER_RELATIVE) {
-        uint8_t layers = configLayerCount();
-        // Bias by a multiple of the layer count to wrap signed offsets (-6..6).
-        // Resolve relative to the selected layer, before consuming a one-shot.
-        second = selectedLayer + second + (layers << 3);
-        while (second >= layers) second -= layers;
-      }
-      if (first & CONFIG_LAYER_HOLD) {
-        // Snapshot a relative hold's target once; layer recomputation must not
-        // reinterpret its offset after other layer changes.
-        buttonFirst[input] = CONFIG_ACTION_MOMENTARY_LAYER;
-        buttonSecond[input] = second;
-        break;
-      }
-      if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
-      if (first & 0x10) {
-        oneShotReturnLayer = baseLayer;
-      } else {
-        selectedLayer = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
-        if (second != selectedLayer) previousLayer = selectedLayer;
-      }
-      baseLayer = second;
-      break;
-    default:
-      return queueAction(first, second, rotation);
+  // This sparse dispatch avoids a 14-entry jump table; holds and no-op remain immediate.
+  uint8_t type = actionType(first);
+  if (type == CONFIG_ACTION_LED_CONTROL) {
+    firmwareLedAction(second, first >> 4);
+    goto liveRecord;
+  } else if ((type & 12) == 8) {
+    // Consumers share one latest-wins lane, independent of queued key taps.
+    consumerFirst = first;
+    consumerSecond = second;
+    // Modified output releases before a replacement changes its modifiers.
+    // A modified hold preserves an ordinary tap's pending release too.
+    // Only types 8/9/A/B reach here; bit 0 distinguishes holds from taps.
+    if (actionType(first) == CONFIG_ACTION_CONSUMER_HOLD && !consumerModifiers)
+      consumerReleasePending = 0;
+    else if (consumerModifiers || consumerOwner) consumerReleasePending = 1;
+    consumerOwner = 0;
+    if (first & 1) consumerOwner = input + 1;
+    goto liveRecord;
+  } else if (type == CONFIG_ACTION_MOUSE_TOGGLE) {
+    if (first == CONFIG_ACTION_MOUSE_HOLD) goto liveRecord;
+    // Down clears then XORs to set; up only clears; toggle only XORs.
+    if (first & 0x30) persistentMouse &= ~second;
+    if (!(first & 0x20)) persistentMouse ^= second;
+    goto liveRecord;
+  } else if (type == CONFIG_ACTION_SET_LAYER) {
+    layerSelectionPending = 1;
+    if (first & CONFIG_LAYER_RELATIVE) {
+      uint8_t layers = configLayerCount();
+      // Bias by a multiple of the layer count to wrap signed offsets (-6..6).
+      // Resolve relative to the selected layer, before consuming a one-shot.
+      second = selectedLayer + second + (layers << 3);
+      while (second >= layers) second -= layers;
+    }
+    if (first & CONFIG_LAYER_HOLD) {
+      // Snapshot a relative hold's target once; layer recomputation must not
+      // reinterpret its offset after other layer changes.
+      buttonFirst[input] = CONFIG_ACTION_MOMENTARY_LAYER;
+      buttonSecond[input] = second;
+      goto liveRecord;
+    }
+    if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
+    if (first & 0x10) {
+      oneShotReturnLayer = baseLayer;
+    } else {
+      selectedLayer = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
+      if (second != selectedLayer) previousLayer = selectedLayer;
+    }
+    baseLayer = second;
+    goto liveRecord;
+  } else if (first && type != CONFIG_ACTION_KEY_HOLD) {
+    if (!queueAction(first, second, rotation)) return;
   }
-  return 1;
-}
-
-static void runAction(uint8_t first, uint8_t second, uint8_t rotation, uint8_t input) {
-  // Snapshot original bytes/layer: applying a relative or one-shot layer mutates them.
-  uint8_t layer = effectiveLayer;
-  uint8_t source = input;
-  if (input < 7) {
-    source = 1 << input;
-    if (input < 6 && chordPartner[input]) source |= 1 << (chordPartner[input] - 1);
-  } else source = 0x80 | input;
-  if (!applyAction(first, second, rotation, input)) return;
+liveRecord:
+  source = input;
+  if (input < 6) source |= chordPartner[input] << 4;
+  if (input >= 7) source |= 0x80;
   if (input < 9) liveBindings[input]++;
   liveBindings[9] = source;
   liveBindings[10] = first;
-  liveBindings[11] = second;
+  liveBindings[11] = requestedSecond;
   liveBindings[12]++;
   liveBindingLayer = layer;
 }
 
+static const __idata uint8_t * const __code liveInternal[] = {
+  &effectiveLayer, &baseLayer, &previousLayer, &oneShotReturnLayer,
+  &currentFirst, &macroNext, &eventUsed
+};
 void actionsWriteLive(void) {
-  liveReply[0] = effectiveLayer;
-  liveReply[1] = baseLayer;
-  liveReply[2] = previousLayer;
-  liveReply[3] = oneShotReturnLayer;
-  liveReply[4] = pendingInput;
-  liveReply[5] = persistentMouse;
-  liveReply[6] = currentFirst;
-  liveReply[7] = macroNext;
-  liveReply[8] = eventUsed;
-  for (uint8_t i = 0; i < 5; i++) liveReply[(uint8_t)(17 + i)] = timedHigh[i];
-  liveReply[22] = liveBindingLayer;
+  uint8_t i = 7;
+  do { --i; liveReply[i] = *liveInternal[i]; } while (i);
+  liveReply[12] = pendingInput;
+  liveReply[13] = persistentMouse;
 }
 
 void actionsWriteTimers(void) {
-  for (uint8_t i = 0; i < 5; i++) {
+  uint8_t i = 5;
+  do {
+    --i;
     liveReply[i] = timedAge[i];
     liveReply[(uint8_t)(5 + i)] = timedHigh[i];
     liveReply[(uint8_t)(10 + i)] = timedFraction[i];
-  }
+  } while (i);
 }
 
 static void resolvePending(void) {

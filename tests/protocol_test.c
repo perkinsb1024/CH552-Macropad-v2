@@ -6,6 +6,7 @@
 #include "../src/protocol_firmware.h"
 
 uint8_t liveBindings[13];
+uint8_t liveBindingLayer;
 void firmwareWriteInputs(void) {}
 void firmwareWriteLive(void) {}
 void actionsWriteLive(void) {}

@@ -132,20 +132,21 @@ static uint8_t processRequest(void) {
       protocolReply[12] = uploadState;
       protocolReply[13] = actionsDropped(0);
       protocolReply[14] = actionsDropped(1);
-      liveReply[6] = 1; // Extension schema; legacy status prefix is unchanged.
+      liveReply[6] = liveBindingLayer; // Layer at accepted dispatch; legacy prefix is unchanged.
       firmwareWriteInputs();
-      for (i = 0; i < 13; i++) liveReply[(uint8_t)(10 + i)] = liveBindings[i];
+      i = 13;
+      do { --i; liveReply[(uint8_t)(10 + i)] = liveBindings[i]; } while (i);
       break;
     case PROTOCOL_GET_LIVE:
       protocolReply[7] = 23;
       actionsWriteLive();
       firmwareWriteLive();
-      liveReply[14] = activeConfig[CONFIG_HEADER_CRC];
-      liveReply[15] = activeConfig[CONFIG_HEADER_CRC + 1];
       break;
     case PROTOCOL_GET_TIMERS:
-      protocolReply[7] = 15;
+      protocolReply[7] = 17;
       actionsWriteTimers();
+      liveReply[15] = activeConfig[CONFIG_HEADER_CRC];
+      liveReply[16] = activeConfig[CONFIG_HEADER_CRC + 1];
       break;
     case PROTOCOL_READ_FLASH:
     case PROTOCOL_READ_ACTIVE:
@@ -244,9 +245,8 @@ void protocolPoll(uint16_t now) {
     return;
   }
   if (protocolState == 1) {
-    for (i = 0; i < 32; i++) {
-      protocolReply[i] = 0;
-    }
+    i = 32;
+    do { protocolReply[--i] = 0; } while (i);
     protocolReply[0] = 4;
     protocolReply[1] = 'U';
     protocolReply[2] = 'M';

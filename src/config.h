@@ -195,6 +195,6 @@ uint8_t configLayerPaletteOffset(uint8_t layer);
 uint8_t configLedColorAt(uint8_t offset, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
 FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
-uint8_t configStringChar(uint8_t offset, __xdata uint8_t index);
+uint8_t configStringChar(uint8_t offset, uint8_t index);
 
 #endif

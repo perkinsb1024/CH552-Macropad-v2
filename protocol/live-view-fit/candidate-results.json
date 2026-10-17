@@ -1,0 +1,357 @@
+[
+  {
+    "ledger": "probe-results.json",
+    "candidates": [
+      {
+        "name": "config-narrow",
+        "rc": 0,
+        "flash": 14790,
+        "stack": 88
+      },
+      {
+        "name": "flat",
+        "rc": 0,
+        "flash": 14878,
+        "stack": 90
+      },
+      {
+        "name": "flat-xdata",
+        "rc": 0,
+        "flash": 14876,
+        "stack": 91
+      },
+      {
+        "name": "mask",
+        "rc": 0,
+        "flash": 14856,
+        "stack": 88
+      },
+      {
+        "name": "timer-index",
+        "rc": 0,
+        "flash": 14866,
+        "stack": 88
+      },
+      {
+        "name": "allocator",
+        "rc": 0,
+        "flash": 14874,
+        "stack": 88
+      }
+    ]
+  },
+  {
+    "ledger": "probe10-results.json",
+    "candidates": [
+      {
+        "name": "dispatch-chain",
+        "rc": 0,
+        "flash": 14359,
+        "stack": 103
+      },
+      {
+        "name": "dispatch-merge",
+        "rc": 0,
+        "flash": 14383,
+        "stack": 103
+      },
+      {
+        "name": "timer-pdata",
+        "rc": 0,
+        "flash": 14399,
+        "stack": 103
+      },
+      {
+        "name": "source-before",
+        "rc": 0,
+        "flash": 14369,
+        "stack": 103
+      }
+    ]
+  },
+  {
+    "ledger": "probe11-results.json",
+    "candidates": [
+      {
+        "name": "reverse-serialization",
+        "rc": 0,
+        "flash": 14341,
+        "stack": 103
+      },
+      {
+        "name": "reverse-callee",
+        "rc": 0,
+        "flash": 14331,
+        "stack": 103
+      }
+    ]
+  },
+  {
+    "ledger": "probe2-results.json",
+    "candidates": [
+      {
+        "name": "combined",
+        "rc": 0,
+        "flash": 14766,
+        "stack": 91
+      },
+      {
+        "name": "crc-fast",
+        "rc": 0,
+        "flash": 14780,
+        "stack": 91
+      },
+      {
+        "name": "tables",
+        "rc": 0,
+        "flash": 14728,
+        "stack": 91
+      },
+      {
+        "name": "queue-test",
+        "rc": 0,
+        "flash": 14760,
+        "stack": 91
+      }
+    ]
+  },
+  {
+    "ledger": "probe3-results.json",
+    "candidates": [
+      {
+        "name": "data-events",
+        "rc": 0,
+        "flash": 14718,
+        "stack": 89
+      },
+      {
+        "name": "data-mouse",
+        "rc": 0,
+        "flash": 14720,
+        "stack": 90
+      },
+      {
+        "name": "idata-counters",
+        "rc": 0,
+        "flash": 14740,
+        "stack": 92
+      },
+      {
+        "name": "short-source",
+        "rc": 0,
+        "flash": 14666,
+        "stack": 91
+      },
+      {
+        "name": "pointer-serialization",
+        "rc": 0,
+        "flash": 14728,
+        "stack": 91
+      }
+    ]
+  },
+  {
+    "ledger": "probe4-results.json",
+    "candidates": [
+      {
+        "name": "packed-full",
+        "rc": 0,
+        "flash": 14692,
+        "stack": 91
+      },
+      {
+        "name": "essential",
+        "rc": 0,
+        "flash": 14508,
+        "stack": 91
+      },
+      {
+        "name": "essential-data",
+        "rc": 0,
+        "flash": 14528,
+        "stack": 102
+      }
+    ]
+  },
+  {
+    "ledger": "probe5-results.json",
+    "candidates": [
+      {
+        "name": "callee-small",
+        "rc": 0,
+        "flash": 14682,
+        "stack": 91
+      },
+      {
+        "name": "callee-config",
+        "rc": 0,
+        "flash": 14746,
+        "stack": 91
+      },
+      {
+        "name": "peep-return",
+        "rc": 0,
+        "flash": 14692,
+        "stack": 91
+      },
+      {
+        "name": "callee-more",
+        "rc": 0,
+        "flash": 14690,
+        "stack": 91
+      }
+    ]
+  },
+  {
+    "ledger": "probe6-results.json",
+    "candidates": [
+      {
+        "name": "usb-value",
+        "rc": 0,
+        "flash": 14592,
+        "stack": 91
+      },
+      {
+        "name": "usb-cache",
+        "rc": 0,
+        "flash": 14516,
+        "stack": 102
+      },
+      {
+        "name": "usb-cache-idata",
+        "rc": 0,
+        "flash": 14548,
+        "stack": 102
+      },
+      {
+        "name": "usb-narrow",
+        "rc": 0,
+        "flash": 14666,
+        "stack": 91
+      },
+      {
+        "name": "config-more",
+        "rc": 0,
+        "flash": 14666,
+        "stack": 92
+      }
+    ]
+  },
+  {
+    "ledger": "probe7-results.json",
+    "candidates": [
+      {
+        "name": "combined-usb",
+        "rc": 0,
+        "flash": 14464,
+        "stack": 103
+      },
+      {
+        "name": "usb-merge",
+        "rc": 0,
+        "flash": 14442,
+        "stack": 103
+      },
+      {
+        "name": "usb-strings",
+        "rc": 0,
+        "flash": 14456,
+        "stack": 103
+      },
+      {
+        "name": "usb-class",
+        "rc": 0,
+        "flash": 14448,
+        "stack": 103
+      },
+      {
+        "name": "direct-scratch",
+        "rc": 0,
+        "flash": 14466,
+        "stack": 102
+      },
+      {
+        "name": "idata-scratch",
+        "rc": 0,
+        "flash": 14488,
+        "stack": 102
+      }
+    ]
+  },
+  {
+    "ledger": "probe8-results.json",
+    "candidates": [
+      {
+        "name": "near-fit",
+        "rc": 0,
+        "flash": 14401,
+        "stack": 103
+      },
+      {
+        "name": "near-data",
+        "rc": 1,
+        "flash": 14387,
+        "stack": 111
+      },
+      {
+        "name": "near-walk",
+        "rc": 0,
+        "flash": 14423,
+        "stack": 103
+      },
+      {
+        "name": "near-callee",
+        "rc": 0,
+        "flash": 14393,
+        "stack": 103
+      }
+    ]
+  },
+  {
+    "ledger": "probe9-results.json",
+    "candidates": [
+      {
+        "name": "cache-without-setupType",
+        "rc": 0,
+        "flash": 14461,
+        "stack": 105
+      },
+      {
+        "name": "cache-without-valueLow",
+        "rc": 0,
+        "flash": 14481,
+        "stack": 104
+      },
+      {
+        "name": "cache-without-valueHigh",
+        "rc": 0,
+        "flash": 14433,
+        "stack": 104
+      },
+      {
+        "name": "cache-without-indexLow",
+        "rc": 0,
+        "flash": 14411,
+        "stack": 104
+      },
+      {
+        "name": "cache-without-indexHigh",
+        "rc": 0,
+        "flash": 14405,
+        "stack": 104
+      },
+      {
+        "name": "paged-counters",
+        "rc": 0,
+        "flash": 14389,
+        "stack": 91
+      },
+      {
+        "name": "flat-reply",
+        "rc": 0,
+        "flash": 14415,
+        "stack": 103
+      }
+    ]
+  }
+]
