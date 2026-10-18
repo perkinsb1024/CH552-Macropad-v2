@@ -1,0 +1,27 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -235,9 +235,9 @@
+     offset += paletteBytes;
+     for (i = 0; i < chords; i++) {
+         id = validationImage[offset];
+-        if (((id >> 4) & 7) >= validationLayers ||
++        if ((id >> 4) > validationLayers ||
+             (id & 15) >= pairCount(variant) ||
+-            (i && id <= previous) ||
++            (i && (uint8_t)(id - 16) <= (uint8_t)(previous - 16)) ||
+             !actionValid(offset + 1, 0)) {
+             return 0;
+         }
+@@ -343,10 +343,10 @@
+         firstKey = secondKey;
+         secondKey = swap;
+     }
+-    id = layer << 4 | pairIndex(firstKey, secondKey, keys);
++    id = (layer + 1) << 4 | pairIndex(firstKey, secondKey, keys);
+     for (i = 0; i < count; i++, offset += 3) {
+         if (activeConfig[offset] == id ||
+-            (activeConfig[offset] & 0x8F) == (0x80 | (id & 15))) {
++            activeConfig[offset] == (id & 15)) {
+             *first = activeConfig[(uint8_t)(offset + 1)];
+             *second = activeConfig[(uint8_t)(offset + 2)];
+             return 1;

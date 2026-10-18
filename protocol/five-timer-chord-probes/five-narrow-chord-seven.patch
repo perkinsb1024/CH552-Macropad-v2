@@ -1,0 +1,122 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -369,12 +369,12 @@
+ }
+
+ void actionsWriteTimers(void) {
+-  uint8_t i = 5;
++  uint8_t i = 6;
+   do {
+     --i;
+     liveReply[i] = timedAge[i];
+-    liveReply[(uint8_t)(5 + i)] = timedHigh[i];
+-    liveReply[(uint8_t)(10 + i)] = timedFraction[i];
++    liveReply[(uint8_t)(6 + i)] = timedHigh[i];
++    liveReply[(uint8_t)(12 + i)] = timedFraction[i];
+   } while (i);
+ }
+
+@@ -765,7 +765,7 @@
+       }
+     } else if (type >= CONFIG_ACTION_MOUSE_TOGGLE) {
+       // Held bindings never enter this queue; X/Y movement was handled above.
+-      runAction(currentFirst, currentSecond, 0, 14);
++      runAction(currentFirst, currentSecond, 0, 15);
+       currentFirst = 0;
+       updateLayer();
+     } else {
+--- a/src/config.c
++++ b/src/config.c
+@@ -210,10 +210,10 @@
+         offset += size;
+     }
+     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
+-#if CONFIG_TIMED_MAX <= 4
+-    // Validated counts cap metadata at 251 bytes; only adding the pool can exceed 255.
++#if CONFIG_TIMED_MAX <= 5
++    // Fixed records <=242; pool plus palettes <=142. Widen only their sum.
+     end = (uint8_t)(9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+-          (uint8_t)(CONFIG_TIMED_SIZE * timers) + paletteBytes) + (uint16_t)validationUsed;
++          (uint8_t)(CONFIG_TIMED_SIZE * timers)) + (uint16_t)(uint8_t)(validationUsed + paletteBytes);
+ #else
+     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed + paletteBytes;
+@@ -235,7 +235,7 @@
+     offset += paletteBytes;
+     for (i = 0; i < chords; i++) {
+         id = validationImage[offset];
+-        if (((id >> 4) & 7) >= validationLayers ||
++        if (((id >> 4) != 7 && (id >> 4) >= validationLayers) ||
+             (id & 15) >= pairCount(variant) ||
+             (i && id <= previous) ||
+             !actionValid(offset + 1, 0)) {
+@@ -346,7 +346,7 @@
+     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
+     for (i = 0; i < count; i++, offset += 3) {
+         if (activeConfig[offset] == id ||
+-            (activeConfig[offset] & 0x8F) == (0x80 | (id & 15))) {
++            activeConfig[offset] == (0x70 | (id & 15))) {
+             *first = activeConfig[(uint8_t)(offset + 1)];
+             *second = activeConfig[(uint8_t)(offset + 2)];
+             return 1;
+--- a/src/config.h
++++ b/src/config.h
+@@ -43,7 +43,7 @@
+ #define CONFIG_TIMED_CONSUME 0x40
+ #define CONFIG_LAYER_PREVIOUS 0xFF
+ #ifndef CONFIG_TIMED_MAX
+-#define CONFIG_TIMED_MAX 4
++#define CONFIG_TIMED_MAX 5
+ #endif
+ #ifndef CONFIG_TIMED_ALL_RESET
+ #define CONFIG_TIMED_ALL_RESET 0
+--- a/src/protocol_firmware.c
++++ b/src/protocol_firmware.c
+@@ -143,10 +143,10 @@
+       firmwareWriteLive();
+       break;
+     case PROTOCOL_GET_TIMERS:
+-      protocolReply[7] = 17;
++      protocolReply[7] = 20;
+       actionsWriteTimers();
+-      liveReply[15] = activeConfig[CONFIG_HEADER_CRC];
+-      liveReply[16] = activeConfig[CONFIG_HEADER_CRC + 1];
++      liveReply[18] = activeConfig[CONFIG_HEADER_CRC];
++      liveReply[19] = activeConfig[CONFIG_HEADER_CRC + 1];
+       break;
+     case PROTOCOL_READ_FLASH:
+     case PROTOCOL_READ_ACTIVE:
+--- a/tests/header_repacking_test.c
++++ b/tests/header_repacking_test.c
+@@ -71,7 +71,7 @@
+             seal(activeConfig);
+             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (count <= capacity));
+         }
+-        for (unsigned timers = 0; timers <= 4; timers++) {
++        for (unsigned timers = 0; timers <= CONFIG_TIMED_MAX; timers++) {
+             unsigned pool = 9 + size * layers + 6 * timers;
+             if (pool > 128) continue;
+             testLoadStarterProfile(PHYSICAL_VARIANT);
+--- a/tests/live_state_test.c
++++ b/tests/live_state_test.c
+@@ -84,14 +84,14 @@
+ #if ENABLE_COLOR_PREVIEW
+     firmwarePreviewColor(0xFD); snapshot(11); assert(protocolReply[27] == 0xFD);
+ #endif
+-    for (uint8_t i = 0; i < 5; i++) { timedAge[i] = 17 + i; timedHigh[i] = 9 + i; timedFraction[i] = 123 + i; }
+-    snapshot(12); assert(protocolReply[7] == 17);
+-    for (uint8_t i = 0; i < 5; i++) {
++    for (uint8_t i = 0; i < 6; i++) { timedAge[i] = 17 + i; timedHigh[i] = 9 + i; timedFraction[i] = 123 + i; }
++    snapshot(12); assert(protocolReply[7] == 20);
++    for (uint8_t i = 0; i < 6; i++) {
+         assert(protocolReply[9 + i] == 17 + i);
+-        assert(protocolReply[14 + i] == 9 + i);
+-        assert(protocolReply[19 + i] == 123 + i);
++        assert(protocolReply[15 + i] == 9 + i);
++        assert(protocolReply[21 + i] == 123 + i);
+     }
+-    assert(protocolReply[24] == activeConfig[7] && protocolReply[25] == activeConfig[8]);
++    assert(protocolReply[27] == activeConfig[7] && protocolReply[28] == activeConfig[8]);
+ }
+ static void testChordAndRejectedActions(void) {
+     initLive();
