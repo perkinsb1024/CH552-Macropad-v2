@@ -1,0 +1,17 @@
+[
+  {
+    "candidate": "header-count",
+    "tests": "header-count",
+    "exact_reapplication": true
+  },
+  {
+    "candidate": "independent",
+    "tests": "independent",
+    "exact_reapplication": true
+  },
+  {
+    "candidate": "unified-chords",
+    "tests": "chords",
+    "exact_reapplication": true
+  }
+]

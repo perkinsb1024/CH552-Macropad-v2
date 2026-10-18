@@ -1,0 +1,195 @@
+{
+  "rows": [
+    {
+      "suite": "alternatives-asan-ubsan-0",
+      "returncode": 0,
+      "output": "Alternative sparse=0 single=0 fixed=0 board=0: 238880 cases passed\n",
+      "error": ""
+    },
+    {
+      "suite": "alternatives-asan-ubsan-1",
+      "returncode": 0,
+      "output": "Alternative sparse=0 single=0 fixed=0 board=1: 237474 cases passed\n",
+      "error": ""
+    },
+    {
+      "suite": "alternative_integration-asan-ubsan-0",
+      "returncode": 0,
+      "output": "Alternative real scanner sparse=0 single=0 board=0: 112 cases passed\n",
+      "error": ""
+    },
+    {
+      "suite": "alternative_integration-asan-ubsan-1",
+      "returncode": 0,
+      "output": "Alternative real scanner sparse=0 single=0 board=1: 106 cases passed\n",
+      "error": ""
+    },
+    {
+      "suite": "actions-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "protocol-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "protocol-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "modified_hold-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "modified_hold-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "layer_encoding-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "layer_encoding-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "macros-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "macros-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "timed_actions-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "timed_actions-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "timed_capacity-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "timed_capacity-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "input-normal-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "input-normal-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "sleep_integration-normal-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "sleep_integration-normal-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "live_state-normal-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "live_state-normal-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "per_key_palette-normal-0",
+      "returncode": 0,
+      "output": "Passed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\n",
+      "error": ""
+    },
+    {
+      "suite": "per_key_palette-normal-1",
+      "returncode": 0,
+      "output": "Passed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\n",
+      "error": ""
+    },
+    {
+      "suite": "usb-asan-ubsan-0",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    },
+    {
+      "suite": "usb-asan-ubsan-1",
+      "returncode": 0,
+      "output": "",
+      "error": ""
+    }
+  ],
+  "omitted_chord_dependent_cases": [
+    "actions_test.c:testConsumerHolds",
+    "actions_test.c:testScrollHold",
+    "actions_test.c:testOneShot",
+    "actions_test.c:testOneShotGlobalLayerChord",
+    "actions_test.c:testPointerHold",
+    "actions_test.c:chordProfile",
+    "actions_test.c:testChords",
+    "actions_test.c:testChordWindow",
+    "actions_test.c:testChordWindowPresets",
+    "actions_test.c:testBriefHolds",
+    "actions_test.c:testChordLayers",
+    "actions_test.c:testMultipleChords",
+    "actions_test.c:testLedDispatch",
+    "actions_test.c:testConsumeWake",
+    "macros_test.c:testQueueAndChords",
+    "macros_test.c:testGlobalToggleSources",
+    "macros_test.c:testCombinedPointerSources",
+    "macros_test.c:testMouseSources",
+    "macros_test.c:testModifiedConsumerMacrosAndSources",
+    "layer_encoding_test.c:testRelativeHoldRetention",
+    "input_test.c:testStartupWarningDismissal",
+    "input_test.c:testRainbowSpeed",
+    "input_test.c:testRainbowPhaseSpacing",
+    "input_test.c:testOneShotChordIndicator",
+    "live_state_test.c:testChordAndRejectedActions",
+    "per_key_palette_test.c:testMovedSections",
+    "modified_hold_test.c:testHoldLifecycle chord-only section"
+  ]
+}

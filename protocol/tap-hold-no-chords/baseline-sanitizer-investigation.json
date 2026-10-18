@@ -1,0 +1,37 @@
+[
+  {
+    "command": [
+      "cc",
+      "-std=c99",
+      "-O1",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-Wno-unknown-pragmas",
+      "-Wno-bitwise-op-parentheses",
+      "-Wno-pointer-to-int-cast",
+      "-D__data=",
+      "-D__idata=",
+      "-D__pdata=",
+      "-D__xdata=",
+      "-D__code=",
+      "-Itests/stubs",
+      "-IwebUploader/upstream/ch55xduino/ch55x/variants/ch552",
+      "-IwebUploader/upstream/ch55xduino/ch55x/cores/ch55xduino",
+      "-DPHYSICAL_VARIANT=0",
+      "-fsanitize=address,undefined",
+      "-fno-sanitize-recover=all",
+      "tests/input_test.c",
+      "src/config.c",
+      "src/actions.c",
+      "-o",
+      "/private/tmp/macropad-tap-hold-no-chords/baseline/baseline-input-sanitized"
+    ],
+    "returncode": 0,
+    "error": ""
+  },
+  {
+    "returncode": -6,
+    "error": "tests/../CH552_Universal_Macropad.ino:238:65: runtime error: left shift of negative value -1\nSUMMARY: UndefinedBehaviorSanitizer: undefined-behavior tests/../CH552_Universal_Macropad.ino:238:65 \n"
+  }
+]

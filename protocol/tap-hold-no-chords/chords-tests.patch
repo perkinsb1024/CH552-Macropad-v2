@@ -1,0 +1,50 @@
+--- a/tests/config_fixture.h
++++ b/tests/config_fixture.h
+@@ -10,6 +10,7 @@
+ /* Canonical target-header setters; unrelated fields are retained. */
+ static inline void testSetVariant(uint8_t variant) {
+     activeConfig[CONFIG_HEADER_LAYERS] = (activeConfig[CONFIG_HEADER_LAYERS] & ~1) | variant;
++    activeConfig[CONFIG_HEADER_POOL] = (activeConfig[CONFIG_HEADER_POOL] & ~1) | CONFIG_ALTERNATE_HOLDS;
+ }
+ static inline void testSetTimedCount(uint8_t count) {
+     activeConfig[CONFIG_HEADER_COUNTS] = (activeConfig[CONFIG_HEADER_COUNTS] & ~7) | count;
+@@ -33,7 +34,7 @@
+     activeConfig[CONFIG_HEADER_COUNTS] = (activeConfig[CONFIG_HEADER_COUNTS] & 7) | (count << 3);
+ }
+ static inline void testSetStringLength(uint8_t length) {
+-    activeConfig[CONFIG_HEADER_POOL] = length << 1;
++    activeConfig[CONFIG_HEADER_POOL] = (length << 1) | CONFIG_ALTERNATE_HOLDS;
+ }
+ 
+ /* Test-only profile fixture; firmware has no built-in profile fallback. */
+--- a/tests/header_repacking_test.c
++++ b/tests/header_repacking_test.c
+@@ -42,8 +42,8 @@
+     activeConfig[2] |= 128; seal(activeConfig);
+     assert(configValid(activeConfig, PHYSICAL_VARIANT));
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+-    activeConfig[3] |= 1; seal(activeConfig);
+-    assert(configValid(activeConfig, PHYSICAL_VARIANT));
++    activeConfig[3] ^= 1; seal(activeConfig);
++    assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+     for (unsigned marker = 0; marker < 256; marker++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+         activeConfig[0] = marker; seal(activeConfig);
+--- a/tests/per_key_palette_test.c
++++ b/tests/per_key_palette_test.c
+@@ -376,11 +376,13 @@
+     for (uint8_t bits = 0; bits < 32; bits++) {
+         memcpy(activeConfig, image, CONFIG_SIZE);
+         activeConfig[2] |= (bits & 1) << 7;
+-        activeConfig[3] |= (bits >> 1) & 1;
++        activeConfig[3] ^= (bits >> 1) & 1;
+         activeConfig[6] |= (bits >> 2) << 5;
+         if (bits) assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+         sealImage();
+-        assert(configValid(activeConfig, PHYSICAL_VARIANT));
++        assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == !(bits & 2));
++        activeConfig[3] = (activeConfig[3] & ~1) | CONFIG_ALTERNATE_HOLDS;
++        sealImage();
+         firmwareApplyConfig(1);
+         assert(memcmp(ledData, expected, NUM_BYTES) == 0);
+         assert(configLayerCount() == 2 && configStartupLayer() == 0);

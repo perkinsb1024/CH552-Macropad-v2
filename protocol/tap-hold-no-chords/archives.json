@@ -1,0 +1,14 @@
+[
+  {
+    "file": "header-count-tested-sources.tar.gz",
+    "sha256": "3350741d99a4f79f8c41bd82f3fa3de0b74b662cc4ad4e8c75541bf2e35d1790"
+  },
+  {
+    "file": "independent-tested-sources.tar.gz",
+    "sha256": "b9596c6c66d55cf9629cffb0e3b361711926e92120d5d188bcecbd3ea7feca4d"
+  },
+  {
+    "file": "unified-chords-tested-sources.tar.gz",
+    "sha256": "211d93d8c04c1d4991fdd97530b12ff675db56b9929e517cc21a6fc9ec33ee5f"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "src/config.h": true,
+  "src/config.c": true,
+  "src/actions.h": true,
+  "src/actions.c": true,
+  "CH552_Universal_Macropad.ino": true,
+  "src/protocol_firmware.c": true,
+  "platformio.ini": true
+}
