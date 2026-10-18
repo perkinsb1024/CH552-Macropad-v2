@@ -1,0 +1,34 @@
+{
+  "any-layer": [
+    {
+      "suite": "enter-sleep-asan-ubsan",
+      "variant": 0,
+      "returncode": 0
+    },
+    {
+      "suite": "enter-sleep-asan-ubsan",
+      "variant": 1,
+      "returncode": 0
+    },
+    {
+      "suite": "normal-host-runner",
+      "returncode": 0
+    }
+  ],
+  "enabled-only": [
+    {
+      "suite": "enter-sleep-asan-ubsan",
+      "variant": 0,
+      "returncode": 0
+    },
+    {
+      "suite": "enter-sleep-asan-ubsan",
+      "variant": 1,
+      "returncode": 0
+    },
+    {
+      "suite": "normal-host-runner",
+      "returncode": 0
+    }
+  ]
+}

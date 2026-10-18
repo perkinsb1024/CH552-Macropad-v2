@@ -1,0 +1,16 @@
+{
+  "any-layer": [
+    {
+      "suite": "enter-sleep-asan-ubsan",
+      "variant": 0,
+      "returncode": -6
+    }
+  ],
+  "enabled-only": [
+    {
+      "suite": "enter-sleep-asan-ubsan",
+      "variant": 0,
+      "returncode": -6
+    }
+  ]
+}

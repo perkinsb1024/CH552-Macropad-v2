@@ -1,0 +1,19 @@
+--- a/tests/config_test.c
++++ b/tests/config_test.c
+@@ -445,6 +445,7 @@
+                 else if (command == 10) expected = 1;
+                 else if (command == 11) expected = value <= 4;
+                 else if (command == 13) expected = value >= 1 && value <= 4;
++                else if (command == CONFIG_LED_ENTER_SLEEP) expected = 1;
+                 else if (command == CONFIG_LED_EFFECT_RESTORE) expected = 1;
+                 else if (command >= CONFIG_LED_EFFECT_ON && command <= CONFIG_LED_EFFECT_BLINK_8) expected = 1;
+                 else if (command >= (CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM) &&
+@@ -464,7 +465,7 @@
+                 activeConfig[rotation] = CONFIG_ACTION_SCROLL; activeConfig[rotation + 1] = 1;
+             }
+         }
+-        assert(accepted == 435);
++        assert(accepted == 451); // Sixteen ignored values for Enter Auto-Sleep.
+     }
+ }
+ 

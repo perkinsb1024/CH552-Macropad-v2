@@ -1,0 +1,84 @@
+{
+  "baseline_revision": "07b68ba9ee01860ed1c37a2fc78df03bd23026b0",
+  "baseline_status": "?? protocol/enter-auto-sleep-investigation/\n",
+  "rows": [
+    {
+      "candidate": "baseline",
+      "variant": 0,
+      "flash": 14205,
+      "paged": 108,
+      "external": 404,
+      "stack": 102,
+      "code_limit": 14336,
+      "returncode": 0,
+      "artifacts": "/private/tmp/macropad-enter-auto-sleep/baseline/six",
+      "free": 131,
+      "firmware_sha256": "89ae69e4fd8727ec059ae80709dbf69d2a35604a9d2c8c0d2438a0d20c8b1d1f"
+    },
+    {
+      "candidate": "baseline",
+      "variant": 1,
+      "flash": 14201,
+      "paged": 108,
+      "external": 395,
+      "stack": 105,
+      "code_limit": 14336,
+      "returncode": 0,
+      "artifacts": "/private/tmp/macropad-enter-auto-sleep/baseline/three",
+      "free": 135,
+      "firmware_sha256": "b96e53d8facb343e443fc3bff4ec4ddbaae396e68e6ace40786119f6fc72d4b8"
+    },
+    {
+      "candidate": "any-layer",
+      "variant": 0,
+      "flash": 14279,
+      "paged": 108,
+      "external": 404,
+      "stack": 102,
+      "code_limit": 14336,
+      "returncode": 0,
+      "artifacts": "/private/tmp/macropad-enter-auto-sleep/any-layer/six",
+      "free": 57,
+      "firmware_sha256": "b4185bbb457c6238470cbf70e6e79ccd646143f29de2e48cd9bf10bd1de4cea9"
+    },
+    {
+      "candidate": "any-layer",
+      "variant": 1,
+      "flash": 14275,
+      "paged": 108,
+      "external": 395,
+      "stack": 105,
+      "code_limit": 14336,
+      "returncode": 0,
+      "artifacts": "/private/tmp/macropad-enter-auto-sleep/any-layer/three",
+      "free": 61,
+      "firmware_sha256": "22169afb32cbb57f65c58ec9e514a2f6f2c1384b0da1195dfd1fce5a38ff2c7a"
+    },
+    {
+      "candidate": "enabled-only",
+      "variant": 0,
+      "flash": 14291,
+      "paged": 108,
+      "external": 404,
+      "stack": 102,
+      "code_limit": 14336,
+      "returncode": 0,
+      "artifacts": "/private/tmp/macropad-enter-auto-sleep/enabled-only/six",
+      "free": 45,
+      "firmware_sha256": "1086c25a272a257a6d943a188bf2ced41436240f89b0791f8028e8fe11a4c464"
+    },
+    {
+      "candidate": "enabled-only",
+      "variant": 1,
+      "flash": 14287,
+      "paged": 108,
+      "external": 395,
+      "stack": 105,
+      "code_limit": 14336,
+      "returncode": 0,
+      "artifacts": "/private/tmp/macropad-enter-auto-sleep/enabled-only/three",
+      "free": 49,
+      "firmware_sha256": "e2095df816f0641d7019ae5fb03a60923735e7a8f5ef93287fabd0f90b3388f8"
+    }
+  ]
+}

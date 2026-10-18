@@ -1,0 +1,82 @@
+--- a/src/config.h
++++ b/src/config.h
+@@ -140,6 +140,8 @@
+ #define CONFIG_LED_PRESET_SET      0x0B
+ #define CONFIG_LED_PRESET_RELATIVE 0x0C
+ #define CONFIG_LED_PRESET_TOGGLE   0x0D
++// Provisional investigation encoding; not a published format allocation.
++#define CONFIG_LED_ENTER_SLEEP     0x10
+ #define CONFIG_LED_EFFECT_RESTORE  0x80
+ #define CONFIG_LED_EFFECT_ON       0x81
+ #define CONFIG_LED_EFFECT_BLINK_1  0x82
+--- a/src/config.c
++++ b/src/config.c
+@@ -106,6 +106,7 @@
+                 return (uint8_t)(param - CONFIG_LED_EFFECT_ON) <=
+                        CONFIG_LED_EFFECT_BLINK_8 - CONFIG_LED_EFFECT_ON;
+             }
++            if (param == CONFIG_LED_ENTER_SLEEP) return 1; // Value ignored.
+             if (param > CONFIG_LED_PRESET_TOGGLE) return 0;
+             if (param == CONFIG_LED_RESTORE) return 1; // Value is ignored by restore.
+             if (param == CONFIG_LED_PRESET_TOGGLE) {
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -269,6 +269,7 @@
+ 
+ static void updateLayer(void);
+ static void resetLayerTimers(void);
++static void enterAutoSleep(void);
+ 
+ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
+                       uint8_t input) {
+@@ -296,7 +297,8 @@
+   // This sparse dispatch avoids a 14-entry jump table; holds and no-op remain immediate.
+   uint8_t type = actionType(first);
+   if (type == CONFIG_ACTION_LED_CONTROL) {
+-    firmwareLedAction(second, first >> 4);
++    if (second == CONFIG_LED_ENTER_SLEEP) enterAutoSleep();
++    else firmwareLedAction(second, first >> 4);
+     goto liveRecord;
+   } else if ((type & 12) == 8) {
+     // Consumers share one latest-wins lane, independent of queued key taps.
+@@ -326,6 +328,15 @@
+       second = selectedLayer + second + (layers << 3);
+       while (second >= layers) second -= layers;
+     }
++    if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
++    if (second == effectiveLayer &&
++        !(configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP)) {
++      uint8_t slot = configTimedCount();
++      if (timedHigh[slot] & 1) {
++        timedHigh[slot] = 0;
++        firmwareLedAction(LED_SLEEP_RESTORE, 0);
++      }
++    }
+     if (first & CONFIG_LAYER_HOLD) {
+       // Snapshot a relative hold's target once; layer recomputation must not
+       // reinterpret its offset after other layer changes.
+@@ -333,7 +344,6 @@
+       buttonSecond[input] = second;
+       goto liveRecord;
+     }
+-    if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
+     if (first & 0x10) {
+       oneShotReturnLayer = baseLayer;
+     } else {
+--- a/src/timed_actions.inc
++++ b/src/timed_actions.inc
+@@ -26,6 +26,14 @@
+     timedHigh[i] = 0;
+     timedFraction[i] = 0;
+   }
++}
++
++static void enterAutoSleep(void) {
++  uint8_t slot = configTimedCount();
++  timedAge[slot] = 0;
++  timedHigh[slot] = 1;
++  timedFraction[slot] = 0;
++  firmwareLedAction(LED_SLEEP_CAPTURE, activeConfig[CONFIG_SIZE + 1] >> 4);
+ }
+ 
+ static ACTION_BIT timedEvent(uint8_t tick) {
