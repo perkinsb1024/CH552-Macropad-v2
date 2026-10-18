@@ -1,0 +1,32 @@
+[
+  {
+    "candidate": "complete-small",
+    "patches_reapply": true,
+    "exact_files": 59
+  },
+  {
+    "candidate": "complete-stack",
+    "patches_reapply": true,
+    "exact_files": 59
+  },
+  {
+    "candidate": "complete-combined",
+    "patches_reapply": true,
+    "exact_files": 61
+  },
+  {
+    "candidate": "complete-small-combined",
+    "patches_reapply": true,
+    "exact_files": 61
+  },
+  {
+    "incremental": "hid-on-complete-small",
+    "patches_reapply": true,
+    "exact_files": 61
+  },
+  {
+    "incremental": "hid-on-complete-stack",
+    "patches_reapply": true,
+    "exact_files": 61
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "suite": "tap_hold-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Tap-hold 0: 495997 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Tap-hold 1: 494669 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold_integration-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Tap-hold real scanner 0: 115 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold_integration-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Tap-hold real scanner 1: 109 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "input_layer-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Input-style HID layer cases: 330133\n",
+    "error": ""
+  },
+  {
+    "suite": "input_layer-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Input-style HID layer cases: 461205\n",
+    "error": ""
+  }
+]

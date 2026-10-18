@@ -1,0 +1,23 @@
+[
+  {
+    "suite": "tap_hold-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Tap-hold 0: 295996 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Tap-hold 1: 294668 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold_integration-asan-ubsan",
+    "variant": 0,
+    "returncode": 1,
+    "output": "",
+    "error": "In file included from tests/tap_hold_integration_test.c:6:\nIn file included from tests/input_test.c:814:\ntests/led_input_cases.h:275:21: error: too few arguments to function call, expected 2, have 1\n  275 |     actionsRelease(0);\n      |     ~~~~~~~~~~~~~~  ^\ntests/../src/actions.h:18:6: note: 'actionsRelease' declared here\n   18 | void actionsRelease(uint8_t input, __xdata uint16_t now);\n      |      ^              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nIn file included from tests/tap_hold_integration_test.c:6:\nIn file included from tests/input_test.c:814:\ntests/led_input_cases.h:278:21: error: too few arguments to function call, expected 2, have 1\n  278 |     actionsRelease(1);\n      |     ~~~~~~~~~~~~~~  ^\ntests/../src/actions.h:18:6: note: 'actionsRelease' declared here\n   18 | void actionsRelease(uint8_t input, __xdata uint16_t now);\n      |      ^              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n2 errors generated.\n"
+  }
+]

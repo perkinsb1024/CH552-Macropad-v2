@@ -1,0 +1,36 @@
+[
+  {
+    "suite": "tap_hold-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Tap-hold 0: 495997 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Tap-hold 1: 494669 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold_integration-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Tap-hold real scanner 0: 115 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap_hold_integration-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Tap-hold real scanner 1: 109 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\nInput-style HID layer cases: 330133\nPassed input_layer [0]\nInput-style HID layer cases: 461205\nPassed input_layer [1]\nTap-hold 0: 495997 assertions/cases plus runtime matrices passed\nPassed tap_hold [0]\nTap-hold 1: 494669 assertions/cases plus runtime matrices passed\nPassed tap_hold [1]\nTap-hold real scanner 0: 112 cases passed\nPassed tap_hold_integration [0]\nTap-hold real scanner 1: 106 cases passed\nPassed tap_hold_integration [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "In file included from tests/tap_hold_test.c:7:\ntests/config_fixture.h:40:13: warning: unused function 'testLoadStarterProfile' [-Wunused-function]\n   40 | static void testLoadStarterProfile(uint8_t variant) {\n      |             ^~~~~~~~~~~~~~~~~~~~~~\n1 warning generated.\nIn file included from tests/tap_hold_test.c:7:\ntests/config_fixture.h:40:13: warning: unused function 'testLoadStarterProfile' [-Wunused-function]\n   40 | static void testLoadStarterProfile(uint8_t variant) {\n      |             ^~~~~~~~~~~~~~~~~~~~~~\n1 warning generated.\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.009s\n\nOK\n"
+  }
+]

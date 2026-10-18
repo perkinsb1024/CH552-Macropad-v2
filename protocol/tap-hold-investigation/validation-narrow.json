@@ -1,0 +1,22 @@
+[
+  {
+    "suite": "tap-hold-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Tap-hold 0: 295996 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "tap-hold-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Tap-hold 1: 294668 assertions/cases plus runtime matrices passed\n",
+    "error": ""
+  },
+  {
+    "suite": "normal-host-runner",
+    "returncode": 1,
+    "output": "",
+    "error": "Assertion failed: (!configValid(activeConfig, variant)), function testTypeZeroAndReserved, file config_test.c, line 617.\nTraceback (most recent call last):\n  File \"/private/tmp/macropad-tap-hold/narrow/source/tests/run_host_tests.py\", line 33, in <module>\n    subprocess.run([binary], check=True)\n  File \"/Users/benperkins/.platformio/python3/lib/python3.11/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['/var/folders/g4/ryjh4prx2h5c6hpmzmtypm400000gn/T/macropad-tests-fdmfh26a/config[]']' died with <Signals.SIGABRT: 6>.\n"
+  }
+]

@@ -1,0 +1,262 @@
+[
+  {
+    "candidate": "baseline",
+    "parent": null,
+    "reason": "Unchanged active firmware.",
+    "flash_delta": [
+      0,
+      0
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "initial",
+    "parent": "baseline",
+    "reason": "First complete wrapper/block implementation; direct parameter and validator storage fails internal RAM allocation.",
+    "flash_delta": [
+      584,
+      584
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "ram",
+    "parent": "initial",
+    "reason": "Move new helper parameters to xdata; still fails internal RAM due to validator spills; reject.",
+    "flash_delta": [
+      54,
+      54
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "shared-clock",
+    "parent": "initial",
+    "reason": "Share a decision clock between release/poll; idata validator metadata; still fails internal RAM.",
+    "flash_delta": [
+      14,
+      14
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "narrow",
+    "parent": "shared-clock",
+    "reason": "Byte-cast alignment subtraction and bounded block arithmetic; simplify threshold shifts. First valid RAM layout.",
+    "flash_delta": [
+      -38,
+      -38
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "combined-loop",
+    "parent": "narrow",
+    "reason": "Validate alternating tap/hold records in one two-byte loop instead of two calls per four-byte record.",
+    "flash_delta": [
+      -38,
+      -38
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "fixed-clock",
+    "parent": "narrow",
+    "reason": "Diagnostic fixed 200ms threshold; changes new-feature behavior, not selected or validated.",
+    "flash_delta": [
+      -24,
+      -24
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "external-state",
+    "parent": "combined-loop",
+    "reason": "Move decision clock, validator metadata and branch parameter to xdata; spills defeat internal layout; reject.",
+    "flash_delta": [
+      42,
+      42
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "precheck",
+    "parent": "external-state",
+    "reason": "Resolve due decisions before physical scanning; parent layout still invalid.",
+    "flash_delta": [
+      30,
+      30
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "direct-state",
+    "parent": "combined-loop",
+    "reason": "Direct validator metadata with xdata release argument saves flash without adding internal storage.",
+    "flash_delta": [
+      -10,
+      -10
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "precheck-good",
+    "parent": "direct-state",
+    "reason": "Extract due-input resolution and call it before scanning and during output polling; correct same-frame layer dispatch.",
+    "flash_delta": [
+      32,
+      32
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "inline-expiry",
+    "parent": "precheck-good",
+    "reason": "Inline expiry predicate at both call sites; grows flash; reject.",
+    "flash_delta": [
+      22,
+      22
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "stack-safe",
+    "parent": "precheck-good",
+    "reason": "Structured reference checks and external helper state recover three stack bytes, still two below baseline.",
+    "flash_delta": [
+      50,
+      50
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "one-loop",
+    "parent": "precheck-good",
+    "reason": "Combine pair-body and macro-tail validation in one scan with separate contexts.",
+    "flash_delta": [
+      -18,
+      -18
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "stack-final",
+    "parent": "one-loop",
+    "reason": "Try external state plus local prefix cursor and four/seven timestamps; validator spills fail RAM layout; reject.",
+    "flash_delta": [
+      30,
+      30
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "byte-count",
+    "parent": "one-loop",
+    "reason": "Bound prefix end with byte arithmetic: original end<=128, optional span<=65, sum<=193; use four timestamps on three-key pad.",
+    "flash_delta": [
+      -30,
+      -30
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "split-clock",
+    "parent": "one-loop",
+    "reason": "Compare elapsed>>5 with selector; exact integer equivalence, no timing precision loss. Four/seven timestamps.",
+    "flash_delta": [
+      -2,
+      -2
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "dispatch-type",
+    "parent": "one-loop",
+    "reason": "Reuse decoded type in runAction; zero flash saving; no reason to retain.",
+    "flash_delta": [
+      0,
+      0
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "end-aligned",
+    "parent": "byte-count",
+    "reason": "Use block end for four-byte alignment and tap/hold parity; eliminate stored pair-start byte.",
+    "flash_delta": [
+      2,
+      2
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "end-aligned-stack",
+    "parent": "end-aligned",
+    "reason": "External decision clock, branch argument and single validator end restore full baseline stack.",
+    "flash_delta": [
+      36,
+      36
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "end-aligned-small",
+    "parent": "end-aligned",
+    "reason": "Retain exact elapsed>>5 comparison; save two flash bytes.",
+    "flash_delta": [
+      -2,
+      -2
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "final-combined",
+    "parent": "end-aligned-stack",
+    "reason": "Earlier composition probe with optional-input HID layer patch; superseded by complete-combined.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "complete-small",
+    "parent": "end-aligned-small",
+    "reason": "Recompute effective layer inside branch resolution before release cleanup; no flash-size change.",
+    "flash_delta": [
+      0,
+      0
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "complete-stack",
+    "parent": "end-aligned-stack",
+    "reason": "Same release-boundary correction, preserving baseline stack.",
+    "flash_delta": [
+      0,
+      0
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "complete-combined",
+    "parent": "complete-stack",
+    "reason": "Apply optional-input HID layer command, adapt conflicting header context and old test release calls.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "complete-small-combined",
+    "parent": "complete-small",
+    "reason": "Same HID composition using the smaller, four-byte-lower-stack variant.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  }
+]
