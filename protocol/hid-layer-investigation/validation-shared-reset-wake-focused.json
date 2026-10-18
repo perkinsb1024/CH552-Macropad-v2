@@ -1,0 +1,16 @@
+[
+  {
+    "suite": "hid-layer-asan-ubsan",
+    "variant": 0,
+    "returncode": 0,
+    "output": "HID layer cases: 332042\n",
+    "error": ""
+  },
+  {
+    "suite": "hid-layer-asan-ubsan",
+    "variant": 1,
+    "returncode": 0,
+    "output": "HID layer cases: 463114\n",
+    "error": ""
+  }
+]

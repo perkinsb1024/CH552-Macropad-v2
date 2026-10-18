@@ -1,0 +1,124 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -267,8 +267,15 @@
+   return 1;
+ }
+ 
++static void selectBaseLayer(uint8_t layer) {
++  uint8_t previous = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
++  if (layer != previous) previousLayer = previous;
++  baseLayer = layer;
++}
++
+ static void updateLayer(void);
+ static void resetLayerTimers(void);
++static void wakeAutoSleep(uint8_t slot);
+ 
+ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
+                       uint8_t input) {
+@@ -336,11 +343,8 @@
+     if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
+     if (first & 0x10) {
+       oneShotReturnLayer = baseLayer;
+-    } else {
+-      selectedLayer = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
+-      if (second != selectedLayer) previousLayer = selectedLayer;
+-    }
+-    baseLayer = second;
++      baseLayer = second;
++    } else selectBaseLayer(second);
+     goto liveRecord;
+   } else if (first && type != CONFIG_ACTION_KEY_HOLD) {
+     if (!queueAction(first, second, rotation)) return;
+@@ -428,6 +432,15 @@
+     // Pending singles belong to the layer on which they were pressed.
+     resolvePending();
+   } while (1);
++}
++
++void actionsSetLayer(uint8_t options) {
++  uint8_t layer = options & 0x7F;
++  selectBaseLayer(layer);
++  oneShotReturnLayer = 0xFF;
++  layerSelectionPending = 1;
++  updateLayer();
++  if (options & 0x80) wakeAutoSleep(configTimedCount());
+ }
+ 
+ void actionsInit(void) {
+--- a/src/actions.h
++++ b/src/actions.h
+@@ -20,6 +20,7 @@
+ void actionsPoll(uint16_t now);
+ void actionsClear(void);
+ uint8_t actionsLayer(void);
++void actionsSetLayer(uint8_t options);
+ // Consume indication requests from explicit layer selections or auto-sleep wake.
+ uint8_t actionsTakeLayerSelection(void);
+ uint8_t actionsDropped(uint8_t rotation);
+--- a/src/protocol_firmware.c
++++ b/src/protocol_firmware.c
+@@ -20,6 +20,7 @@
+ #define PROTOCOL_ENTER_BOOTLOADER 10
+ #define PROTOCOL_GET_LIVE 11
+ #define PROTOCOL_GET_TIMERS 12
++#define PROTOCOL_SET_LAYER 13
+ 
+ #define PROTOCOL_OK 0
+ #define PROTOCOL_BAD_VERSION 1
+@@ -111,12 +112,18 @@
+     if (!length || offset > (uint8_t)(CONFIG_SIZE - length)) {
+       return PROTOCOL_BAD_RANGE;
+     }
+-  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
++  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR && opcode != PROTOCOL_SET_LAYER) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
+     return PROTOCOL_BAD_RANGE;
+   }
+   // Validated lengths keep payload indices below 32 and image indices below 128.
+   // Narrow the sums so SDCC does not emit unnecessary 16-bit address arithmetic.
+   switch (opcode) {
++    case PROTOCOL_SET_LAYER:
++      if (!activeConfigValid) return PROTOCOL_BAD_CONFIG;
++      i = configLayerCount();
++      if ((uint8_t)(offset & 0x7F) >= i) return PROTOCOL_BAD_RANGE;
++      actionsSetLayer(offset);
++      break;
+     case PROTOCOL_ENTER_BOOTLOADER:
+       break; // Main loop enters only after the successful reply is queued.
+     case PROTOCOL_GET_INFO:
+--- a/src/timed_actions.inc
++++ b/src/timed_actions.inc
+@@ -91,6 +91,14 @@
+ #endif
+ }
+ 
++static void wakeAutoSleep(uint8_t slot) {
++  uint8_t pending = timedHigh[slot] & 1;
++  timedAge[slot] = 0;
++  timedFraction[slot] = 0;
++  timedHigh[slot] = 0;
++  if (pending) firmwareLedAction(LED_SLEEP_RESTORE, 0);
++}
++
+ static void resetLayerTimers(void) {
+   // Point directly at each user timer's scope byte (inside the saved image).
+   uint8_t offset = configTimedOffset() + 5;
+@@ -98,16 +106,11 @@
+   for (uint8_t i = 0; i <= count; i++, offset += CONFIG_TIMED_SIZE) {
+     if (i == count) {
+       // Enabled layers preserve sleep time and any pending physical wake.
+-      if (configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP) return;
++      if (!(configLayerOptions(effectiveLayer) & CONFIG_LAYER_OPT_AUTO_SLEEP)) wakeAutoSleep(count);
++      return;
+     } else if (!(activeConfig[offset] & 7)) continue;
+     timedAge[i] = 0;
+     timedHigh[i] &= 1;
+     timedFraction[i] = 0;
+   }
+-  // The shared reset retained only the pending bit; clear it before restoring
+-  // lighting so this transition cannot consume the next physical input.
+-  if (timedHigh[count]) {
+-    timedHigh[count] = 0;
+-    firmwareLedAction(LED_SLEEP_RESTORE, 0);
+-  }
+ }
