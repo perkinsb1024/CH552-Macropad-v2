@@ -1,0 +1,3543 @@
+--- a/tests/actions_test.c
++++ b/tests/actions_test.c
+@@ -127,70 +127,70 @@
+ 
+ static void testConsumerHolds(void) {
+     reset();
+-    activeConfig[9] = 0xF0 | CONFIG_ACTION_CONSUMER_HOLD;
+-    activeConfig[10] = 0xFF;
+-    activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[12] = 0xEA;
++    activeConfig[CONFIG_HEADER_SIZE] = 0xF0 | CONFIG_ACTION_CONSUMER_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFF;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 3] = 0xEA;
+     actionsPress(0, 0); actionsPoll(0); assert(lastConsumer() == 0xFFF);
+     actionsPress(1, 1); actionsPoll(1); assert(lastConsumer() == 0xEA);
+     uint8_t before = count;
+-    actionsRelease(0); actionsPoll(2); assert(count == before);
+-    actionsRelease(1); actionsPoll(3); actionsPoll(4); assert(lastConsumer() == 0);
++    actionsRelease(0, 0); actionsPoll(2); assert(count == before);
++    actionsRelease(1, 0); actionsPoll(3); actionsPoll(4); assert(lastConsumer() == 0);
+ 
+     // Authorized compact policy: no restoration, equally for hold/tap winners.
+-    reset(); activeConfig[9] = activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD;
+-    activeConfig[10] = 0xE9; activeConfig[12] = 0xEA;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_CONSUMER_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9; activeConfig[CONFIG_HEADER_SIZE + 3] = 0xEA;
+     actionsPress(0, 0); actionsPoll(0);
+     actionsPress(1, 1); actionsPoll(1);
+-    actionsRelease(1); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
++    actionsRelease(1, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+     before = count; actionsPoll(100); assert(count == before);
+-    actionsRelease(0); actionsPoll(101); assert(count == before);
+-
+-    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+-    activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;
++    actionsRelease(0, 0); actionsPoll(101); assert(count == before);
++
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_CONSUMER; activeConfig[CONFIG_HEADER_SIZE + 3] = 0xE9;
+     actionsPress(0, 0); actionsPoll(0);
+-    actionsPress(1, 1); actionsRelease(1); actionsPoll(1);
++    actionsPress(1, 1); actionsRelease(1, 0); actionsPoll(1);
+     assert(reports[count - 2][1] == 0 && lastConsumer() == 0xE9);
+     actionsPoll(2); assert(lastConsumer() == 0);
+-    actionsRelease(0); actionsPoll(3); assert(lastConsumer() == 0);
++    actionsRelease(0, 0); actionsPoll(3); assert(lastConsumer() == 0);
+     // Repeated same-usage taps each contain a release/press edge.
+-    actionsPress(1, 4); actionsRelease(1); actionsPoll(4);
++    actionsPress(1, 4); actionsRelease(1, 0); actionsPoll(4);
+     assert(lastConsumer() == 0xE9); actionsPoll(5); assert(lastConsumer() == 0);
+ 
+     // An older pending tap cannot override a newer physical hold under pressure.
+-    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER; activeConfig[10] = 0xE9;
+-    activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[12] = 0xEA;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 3] = 0xEA;
+     blocked = 1; actionsPress(0, 0); actionsPoll(0);
+     actionsPress(1, 1); actionsPoll(1); assert(!count);
+     blocked = 0; actionsPoll(2); assert(lastConsumer() == 0xEA);
+     actionsPoll(3); assert(lastConsumer() == 0xEA);
+ 
+     // A brief hold preserves its press and release through rejected reports.
+-    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+-    blocked = 1; actionsPress(0, 0); actionsRelease(0); actionsPoll(0);
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
++    blocked = 1; actionsPress(0, 0); actionsRelease(0, 0); actionsPoll(0);
+     assert(!count); blocked = 0; actionsPoll(1); assert(lastConsumer() == 0xE9);
+     blocked = 1; actionsPoll(2); assert(lastConsumer() == 0xE9);
+     blocked = 0; actionsPoll(3); assert(lastConsumer() == 0);
+ 
+     // Binding remains owned across a layer change, like keyboard holds.
+     reset(); testSetLayout(2, 0, 0);
+-    activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     actionsPress(0, 0); actionsPoll(0);
+     actionsPress(1, 1); actionsPoll(1); assert(lastConsumer() == 0xE9);
+-    actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+-
+-    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
++    actionsRelease(0, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
++
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
+     actionsPress(0, 0); actionsPoll(0);
+     count = 0; generation++; actionsPoll(1); assert(lastConsumer() == 0xE9);
+-    actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
++    actionsRelease(0, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+ 
+     // Either chord member releases the hold; reset clears all output.
+     reset(); testSetChordCount(1);
+-    activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_CONSUMER_HOLD;
+-    activeConfig[33] = 0xE9;
++    activeConfig[CONFIG_HEADER_SIZE + 22] = 0; activeConfig[CONFIG_HEADER_SIZE + 23] = CONFIG_ACTION_CONSUMER_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 24] = 0xE9;
+     actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
+     assert(lastConsumer() == 0xE9);
+-    actionsRelease(1); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
++    actionsRelease(1, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+     actionsClear(); assert(lastConsumer() == 0);
+ }
+ 
+@@ -208,22 +208,22 @@
+     assert(0); return 0;
+ }
+ static int16_t scrollTap(uint16_t now) {
+-    actionsPress(0, now); actionsRelease(0);
++    actionsPress(0, now); actionsRelease(0, 0);
+     return drainScroll(now);
+ }
+ static void testScrollAcceleration(void) {
+-    reset(); activeConfig[9] = 0x10 | CONFIG_ACTION_SCROLL; activeConfig[10] = 2;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_SCROLL; activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
+     assert(scrollTap(0) == 2);
+     assert(scrollTap(150) == 2 + (1 / CONFIG_SCROLL_SLOW_Y) * CONFIG_SCROLL_SLOW_X);
+     assert(scrollTap(300) == 2 + (2 / CONFIG_SCROLL_SLOW_Y) * CONFIG_SCROLL_SLOW_X);
+     assert(scrollTap(500) == 2); // Exactly 200 ms resets.
+     // Non-scroll no-op triggers and mode/base changes reset independently.
+-    activeConfig[11] = activeConfig[12] = 0;
+-    actionsPress(1, 501); actionsRelease(1); assert(scrollTap(502) == 2);
+-    activeConfig[9] = 0x20 | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = activeConfig[CONFIG_HEADER_SIZE + 3] = 0;
++    actionsPress(1, 501); actionsRelease(1, 0); assert(scrollTap(502) == 2);
++    activeConfig[CONFIG_HEADER_SIZE] = 0x20 | CONFIG_ACTION_SCROLL;
+     assert(scrollTap(503) == 2);
+     assert(scrollTap(650) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+-    activeConfig[10] = (uint8_t)-2; assert(scrollTap(800) == -2);
++    activeConfig[CONFIG_HEADER_SIZE + 1] = (uint8_t)-2; assert(scrollTap(800) == -2);
+     assert(scrollTap(950) == -(2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X));
+     // Counter and signed magnitude saturate, never wrap or produce -128.
+     for (uint16_t n = 2; n < 1100; n++) {
+@@ -232,29 +232,29 @@
+         assert(scrollTap((uint16_t)(800 + n * 150)) == -expected);
+     }
+     // A fine timestamp wrap preserves a short continuous sequence.
+-    actionsInit(); activeConfig[10] = 2;
++    actionsInit(); activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
+     assert(scrollTap(65520) == 2);
+     assert(scrollTap(134) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+     actionsPoll(334); assert(scrollTap(335) == 2);
+     // Opposite physical detents reset even if mapped to identical scroll signs.
+-    reset(); activeConfig[23] = activeConfig[25] = 0x20 | CONFIG_ACTION_SCROLL;
+-    activeConfig[24] = activeConfig[26] = 2;
++    reset(); activeConfig[CONFIG_HEADER_SIZE + 14] = activeConfig[CONFIG_HEADER_SIZE + 16] = 0x20 | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 15] = activeConfig[CONFIG_HEADER_SIZE + 17] = 2;
+     actionsInputNow = 0; actionsRotate(1); assert(drainScroll(0) == 2);
+     actionsInputNow = 150; actionsRotate(1);
+     assert(drainScroll(150) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+     actionsInputNow = 300; actionsRotate(0); assert(drainScroll(300) == 2);
+     // Off terminates the stream. Dropped detents never add gain; reversal still
+     // terminates it when a waiting keyboard action consumes rotation capacity.
+-    activeConfig[25] = CONFIG_ACTION_SCROLL; actionsInputNow = 450;
++    activeConfig[CONFIG_HEADER_SIZE + 16] = CONFIG_ACTION_SCROLL; actionsInputNow = 450;
+     actionsRotate(0); assert(drainScroll(450) == 2);
+     actionsInputNow = 600; actionsRotate(1); assert(drainScroll(600) == 2);
+-    activeConfig[9] = CONFIG_ACTION_KEY_TAP; activeConfig[10] = 4;
+-    actionsPress(0, 601); actionsRelease(0);
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_TAP; activeConfig[CONFIG_HEADER_SIZE + 1] = 4;
++    actionsPress(0, 601); actionsRelease(0, 0);
+     actionsInputNow = 602; actionsRotate(0); assert(actionsDropped(1) == 1);
+     drainScroll(602);
+     actionsInputNow = 750; actionsRotate(1); assert(drainScroll(750) == 2);
+     // Timed scroll output is isolated from the physical stream.
+-    reset(); activeConfig[9] = 0x20 | CONFIG_ACTION_SCROLL; activeConfig[10] = 2;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = 0x20 | CONFIG_ACTION_SCROLL; activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
+     assert(scrollTap(0) == 2);
+     testSetLayout(1, 0, 1);
+     uint8_t timer = configTimedOffset(); activeConfig[timer] = 0;
+@@ -264,49 +264,49 @@
+     assert(drainScroll(50) == 2);
+     assert(scrollTap(150) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+     // Scroll-hold repeats accelerate, and either release stops future repeats.
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | 0x20 | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 1;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | 0x20 | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     actionsPress(0, 0); assert(drainScroll(0) == 1);
+     assert(drainScroll(8) == 1 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
+-    actionsRelease(0); assert(drainScroll(30) == 0);
++    actionsRelease(0, 0); assert(drainScroll(30) == 0);
+ }
+ #endif
+ 
+ static void testScrollHold(void) {
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = (uint8_t)-2;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = (uint8_t)-2;
+     actionsPress(0, 0); actionsPoll(0); actionsPoll(1);
+     assert(count == 2 && reports[0][4] == 255 && reports[1][4] == 255);
+     for (uint16_t now = 2; now <= 100; now++) actionsPoll(now);
+     assert(count == 2); // Delay starts after the complete two-report step.
+     for (uint16_t now = 101; now <= 110; now++) actionsPoll(now);
+     assert(count == 4);
+-    actionsRelease(0); actionsPoll(220); assert(count == 4);
+-    actionsPress(0, 221); actionsRelease(0); actionsPoll(221); actionsPoll(222);
++    actionsRelease(0, 0); actionsPoll(220); assert(count == 4);
++    actionsPress(0, 221); actionsRelease(0, 0); actionsPoll(221); actionsPoll(222);
+     assert(count == 6); actionsPoll(330); assert(count == 6);
+ 
+     // A chord scroll holds until either member releases.
+     reset(); testSetChordCount(1);
+-    activeConfig[31] = 0; activeConfig[32] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[33] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 22] = 0; activeConfig[CONFIG_HEADER_SIZE + 23] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 24] = 1;
+     actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
+     for (uint16_t now = 2; now <= 100; now++) actionsPoll(now);
+     assert(count == 1);
+     for (uint16_t now = 101; now <= 110; now++) actionsPoll(now);
+     assert(count == 2);
+-    actionsRelease(1); actionsPoll(220); assert(count == 2);
++    actionsRelease(1, 0); actionsPoll(220); assert(count == 2);
+ 
+     // A one-second hold produces about ten steps, without changing tap behavior.
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 1;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     actionsPress(0, 0);
+     for (uint16_t now = 0; now < 1000; now++) actionsPoll(now);
+     assert(count == 10);
+-    actionsRelease(0); actionsPoll(1100); assert(count == 10);
++    actionsRelease(0, 0); actionsPoll(1100); assert(count == 10);
+ 
+     // Completion times survive low-byte and 16-bit millisecond wrap.
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 1;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     actionsPress(0, 65520); actionsPoll(65520);
+     for (uint16_t elapsed = 1; elapsed < 100; elapsed++) actionsPoll((uint16_t)(65520 + elapsed));
+     assert(count == 1);
+@@ -314,16 +314,16 @@
+     assert(count == 2);
+ 
+     // Pointer movement still repeats on its original 8 ms clock.
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 1; activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
+-    activeConfig[12] = 1; testSetChordCount(0); // No chord window.
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1; activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
++    activeConfig[CONFIG_HEADER_SIZE + 3] = 1; testSetChordCount(0); // No chord window.
+     actionsPress(0, 0); actionsPress(1, 0);
+     for (uint16_t now = 0; now <= 9; now++) actionsPoll(now);
+     assert(count == 3 && reports[0][4] == 1 && reports[1][2] == 1 && reports[2][2] == 1);
+ 
+     // No catch-up burst after USB backpressure: one step, then a new delay.
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 1;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     actionsPress(0, 0); actionsPoll(0); assert(count == 1);
+     blocked = 1;
+     for (uint16_t now = 1; now < 500; now++) actionsPoll(now);
+@@ -334,9 +334,9 @@
+     actionsClear(); uint8_t before = count; actionsPoll(700); assert(count == before);
+ 
+     // Initial queued step survives a short release under transport pressure.
+-    reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 1; blocked = 1;
+-    actionsPress(0, 0); actionsRelease(0); actionsPoll(0); assert(!count);
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1; blocked = 1;
++    actionsPress(0, 0); actionsRelease(0, 0); actionsPoll(0); assert(!count);
+     blocked = 0; actionsPoll(1); assert(count == 1 && reports[0][4] == 1);
+     actionsPoll(100); assert(count == 1); actionsClear();
+     before = count; actionsPoll(200); assert(count == before);
+@@ -348,8 +348,8 @@
+     // acceptance times, rather than only the number of reports produced.
+     for (uint16_t phase = 0; phase < 512; phase++) {
+         reset();
+-        activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL | (phase & 256 ? CONFIG_SCROLL_HORIZONTAL : 0);
+-        activeConfig[10] = phase & 1 ? (uint8_t)-1 : 1;
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL | (phase & 256 ? CONFIG_SCROLL_HORIZONTAL : 0);
++        activeConfig[CONFIG_HEADER_SIZE + 1] = phase & 1 ? (uint8_t)-1 : 1;
+         uint16_t start = (uint16_t)(65500 + phase);
+         actionsPress(0, start);
+         for (uint16_t elapsed = 0; elapsed < 1100; elapsed += 1 + phase % 13) {
+@@ -359,17 +359,17 @@
+         }
+         assert(count >= 6 && count <= 11);
+         for (uint8_t i = 0; i < count; i++) {
+-            assert(reports[i][0] == 2 && reports[i][phase & 256 ? 5 : 4] == activeConfig[10]);
++            assert(reports[i][0] == 2 && reports[i][phase & 256 ? 5 : 4] == activeConfig[CONFIG_HEADER_SIZE + 1]);
+             assert(reports[i][phase & 256 ? 4 : 5] == 0);
+             if (i) assert((uint16_t)(reportTimes[i] - reportTimes[i - 1]) >= 100);
+         }
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+     }
+ }
+ 
+ // Drive the real CCW binding path, preserving ordinary one-shot consumption.
+ static void selectLayer(uint8_t target, uint8_t oneShot) {
+-    uint8_t offset = 9 + 22 * actionsLayer() + 16;
++    uint8_t offset = CONFIG_HEADER_SIZE + 22 * actionsLayer() + 16;
+     activeConfig[offset] = CONFIG_ACTION_SET_LAYER | (oneShot ? 0x10 : 0);
+     activeConfig[offset + 1] = target;
+     actionsRotate(0);
+@@ -383,7 +383,7 @@
+     previous(); assert(actionsLayer() == 1);
+     previous(); assert(actionsLayer() == 0);
+     // Relative persistent selection also populates history.
+-    activeConfig[25] = CONFIG_ACTION_RELATIVE_LAYER; activeConfig[26] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 16] = CONFIG_ACTION_RELATIVE_LAYER; activeConfig[CONFIG_HEADER_SIZE + 17] = 1;
+     actionsRotate(0); assert(actionsLayer() == 1);
+     previous(); assert(actionsLayer() == 0);
+     // Initialization/config application resets history to startup layer.
+@@ -392,16 +392,16 @@
+     reset(); testSetLayout(2, 0, 0);
+     selectLayer(1, 0);
+     selectLayer(CONFIG_LAYER_PREVIOUS, 1); assert(actionsLayer() == 0);
+-    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
++    actionsPress(3, 0); actionsRelease(3, 0); assert(actionsLayer() == 1);
+     previous(); assert(actionsLayer() == 0);
+     previous(); assert(actionsLayer() == 1);
+     // Momentary layers overlay the base; visiting/releasing them is not history.
+     reset(); testSetLayout(2, 0, 0); testSetLayout(3, 0, 0); // Three layers.
+     selectLayer(1, 0); selectLayer(0, 0); // Previous persistent layer is 1.
+-    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[10] = 2;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
+     actionsPress(0, 0); assert(actionsLayer() == 2);
+     previous(); assert(actionsLayer() == 2); // Held momentary layer keeps priority.
+-    actionsRelease(0); assert(actionsLayer() == 1);
++    actionsRelease(0, 0); assert(actionsLayer() == 1);
+     previous(); assert(actionsLayer() == 0);
+     // History is one entry, not a stack of every visited layer.
+     reset(); testSetLayout(3, 0, 0);
+@@ -411,7 +411,7 @@
+     // Ordinary one-shot visits and their automatic return do not enter history.
+     reset(); testSetLayout(3, 0, 0);
+     selectLayer(1, 0); selectLayer(2, 1); assert(actionsLayer() == 2);
+-    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
++    actionsPress(3, 0); actionsRelease(3, 0); assert(actionsLayer() == 1);
+     previous(); assert(actionsLayer() == 0);
+     // A timed reminder can revert to wherever the persistent user selection was.
+     reset(); testSetLayout(2, 0, 0);
+@@ -435,7 +435,7 @@
+     // A timer next-input action sees the remembered base (1), not visit (0).
+     activeConfig[timer + 3] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 4] = CONFIG_LAYER_PREVIOUS;
+     actionsTimedInput(); assert(actionsLayer() == 1);
+-    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
++    actionsPress(3, 0); actionsRelease(3, 0); assert(actionsLayer() == 1);
+ }
+ 
+ static void testDefaults(void) {
+@@ -445,7 +445,7 @@
+     assert(count == 1 && reports[0][0] == 1 && reports[0][3] == 0x29);
+     actionsPoll(10);
+     assert(count == 2 && reports[1][3] == 0);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(11);
+     actionsRotate(1);
+     actionsPoll(20);
+@@ -461,12 +461,12 @@
+ static void testLayerAndOwnership(void) {
+     reset();
+     testSetLayout(2, 0, 0); // Two layers
+-    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[31 + 2] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[31 + 3] = 0x04;
+-    activeConfig[31 + 4] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[31 + 5] = 0x04;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 2] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 3] = 0x04;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 4] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 5] = 0x04;
+     actionsInit();
+     actionsPress(0, 0);
+     assert(actionsLayer() == 1);
+@@ -474,14 +474,14 @@
+     actionsPress(2, 0);
+     actionsPoll(0);
+     assert(count == 1 && reports[0][3] == 0x04);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     actionsPoll(1);
+     assert(reports[count - 1][3] == 0x04); // The second owner retains A.
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     assert(actionsLayer() == 0);
+     actionsPoll(2);
+     assert(reports[count - 1][3] == 0x04); // Held key keeps its binding.
+-    actionsRelease(2);
++    actionsRelease(2, 0);
+     actionsPoll(3);
+     assert(reports[count - 1][3] == 0);
+ }
+@@ -492,36 +492,36 @@
+     int8_t target;
+     reset();
+     testSetLayout(4, 0, 0); // Four layers, starting at layer 1.
+-    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[10] = 2;
+-    activeConfig[9 + 22 * 2 + 2] = CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[9 + 22 * 2 + 3] = 0xFF;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
++    activeConfig[CONFIG_HEADER_SIZE + 22 * 2 + 2] = CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 22 * 2 + 3] = 0xFF;
+     actionsInit();
+     actionsPress(0, 0);
+     assert(actionsLayer() == 2); // Layer 1 + 2 = layer 3.
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPress(1, 1);
+     assert(actionsLayer() == 1); // Layer 3 - 1 = layer 2.
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+ 
+     reset();
+     testSetLayout(4, 0, 0);
+-    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[10] = 0xFF;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFF;
+     actionsInit();
+     actionsPress(0, 0);
+     assert(actionsLayer() == 3); // Layer 1 - 1 wraps to layer 4.
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+ 
+     reset();
+     testSetLayout(1, 0, 0); // One layer still accepts the full offset range.
+-    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[10] = 0xFD;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFD;
+     actionsInit();
+     actionsPress(0, 0);
+     assert(actionsLayer() == 0);
+-    actionsRelease(0);
+-    activeConfig[10] = 0;
++    actionsRelease(0, 0);
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+     actionsPress(0, 1);
+     assert(actionsLayer() == 0); // Existing zero-byte records are no-ops.
+ 
+@@ -529,11 +529,11 @@
+         for (uint8_t start = 0; start < layers; start++) {
+             for (offset = -6; offset <= 6; offset++) {
+                 reset();
+-                memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++                memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+                 testSetVariant(CONFIG_THREE_KEYS);
+                 testSetLayout(layers, start, 0);
+-                activeConfig[9 + 15 * start] = CONFIG_ACTION_RELATIVE_LAYER;
+-                activeConfig[10 + 15 * start] = (uint8_t)offset;
++                activeConfig[CONFIG_HEADER_SIZE + 15 * start] = CONFIG_ACTION_RELATIVE_LAYER;
++                activeConfig[CONFIG_HEADER_SIZE + 1 + 15 * start] = (uint8_t)offset;
+                 actionsInit();
+                 assert(actionsLayer() == start);
+                 actionsPress(0, 0);
+@@ -553,13 +553,13 @@
+         type = layerTypes[index];
+         reset();
+         testSetLayout(2, 0, 0);
+-        activeConfig[9] = 0x10 | type;
+-        activeConfig[10] = 1;
+-        activeConfig[31 + 2] = CONFIG_ACTION_KEY_TAP;
+-        activeConfig[31 + 3] = 4;
++        activeConfig[CONFIG_HEADER_SIZE] = 0x10 | type;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++        activeConfig[CONFIG_HEADER_SIZE + 22 + 2] = CONFIG_ACTION_KEY_TAP;
++        activeConfig[CONFIG_HEADER_SIZE + 22 + 3] = 4;
+         actionsInit();
+         actionsPress(0, 0);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+         assert(actionsLayer() == 1);
+         actionsPress(1, 1);
+         assert(actionsLayer() == 0);
+@@ -570,10 +570,10 @@
+ 
+         reset();
+         testSetLayout(2, 0, 0);
+-        activeConfig[9] = 0x10 | type;
+-        activeConfig[10] = 1;
+-        activeConfig[31 + 14] = CONFIG_ACTION_SCROLL;
+-        activeConfig[31 + 15] = 2;
++        activeConfig[CONFIG_HEADER_SIZE] = 0x10 | type;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++        activeConfig[CONFIG_HEADER_SIZE + 22 + 14] = CONFIG_ACTION_SCROLL;
++        activeConfig[CONFIG_HEADER_SIZE + 22 + 15] = 2;
+         actionsInit();
+         actionsPress(0, 0);
+         actionsRotate(1);
+@@ -588,16 +588,16 @@
+     testSetLayout(2, 0, 0);
+     testSetChordCount(1); // One chord on layer 1: keys 1 and 2.
+     activeConfig[CONFIG_HEADER_LED] = 2; // 40 ms chord window.
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[31 + 2] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[31 + 3] = 4;
+-    activeConfig[53] = 0x15; // Pair (1, 2) on layer 1.
+-    activeConfig[54] = CONFIG_ACTION_KEY_TAP;
+-    activeConfig[55] = 7;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 2] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 3] = 4;
++    activeConfig[CONFIG_HEADER_SIZE + 44] = 0x15; // Pair (1, 2) on layer 1.
++    activeConfig[CONFIG_HEADER_SIZE + 45] = CONFIG_ACTION_KEY_TAP;
++    activeConfig[CONFIG_HEADER_SIZE + 46] = 7;
+     actionsInit();
+     actionsPress(0, 0);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPress(1, 1);
+     actionsPoll(1);
+     assert(actionsLayer() == 1 && count == 0); // Keep waiting for the chord.
+@@ -608,15 +608,15 @@
+     // The same one-shot binding becomes a single held key on timeout.
+     actionsPoll(11);
+     actionsPoll(12);
+-    actionsRelease(1);
+-    actionsRelease(2);
++    actionsRelease(1, 0);
++    actionsRelease(2, 0);
+     count = 0;
+     actionsPress(0, 20);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPress(1, 21);
+     actionsPoll(61);
+     assert(actionsLayer() == 0 && count == 1 && reports[0][3] == 4);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     actionsPoll(62);
+     assert(count == 2 && reports[1][3] == 0);
+ 
+@@ -625,7 +625,7 @@
+         actionsInit();
+         count = 0;
+         actionsPress(0, 0);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+         actionsPress(1, 1);
+         if (type) actionsRotate(1);
+         else actionsPress(6, 2);
+@@ -642,33 +642,33 @@
+     for (start = 0; start < 2; start++) {
+         for (first = 3; first <= 4; first++) {
+             reset();
+-            memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++            memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+             testSetLayout(2, start, 0);
+             testSetChordCount(1);
+             activeConfig[CONFIG_HEADER_LED] = 3; // 50 ms.
+-            activeConfig[9] = activeConfig[31] = 0x10 | CONFIG_ACTION_SET_LAYER;
+-            activeConfig[10] = 1;
+-            activeConfig[53] = 0x7C; // Global keys 3+4.
+-            activeConfig[54] = CONFIG_ACTION_RELATIVE_LAYER;
+-            activeConfig[55] = 1;
++            activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 22] = 0x10 | CONFIG_ACTION_SET_LAYER;
++            activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++            activeConfig[CONFIG_HEADER_SIZE + 44] = 0x7C; // Global keys 3+4.
++            activeConfig[CONFIG_HEADER_SIZE + 45] = CONFIG_ACTION_RELATIVE_LAYER;
++            activeConfig[CONFIG_HEADER_SIZE + 46] = 1;
+             actionsInit();
+             actionsPress(3, 0);
+             actionsPress(4, 1);
+             assert(actionsLayer() == (start ^ 1));
+-            actionsRelease(3);
+-            actionsRelease(4);
++            actionsRelease(3, 0);
++            actionsRelease(4, 0);
+             actionsPress(0, 10);
+-            actionsRelease(0);
++            actionsRelease(0, 0);
+             assert(actionsLayer() == start);
+             actionsPress(first, 2000);
+             assert(actionsLayer() == start); // Await the complete chord.
+             actionsPress(first == 3 ? 4 : 3, 2049);
+             assert(actionsLayer() == (start ^ 1));
+-            actionsRelease(3);
+-            actionsRelease(4);
++            actionsRelease(3, 0);
++            actionsRelease(4, 0);
+             actionsPress(1, 2050); // The chord consumed the one-shot.
+             assert(actionsLayer() == (start ^ 1));
+-            actionsRelease(1);
++            actionsRelease(1, 0);
+             actionsPress(3, 2060);
+             actionsPress(4, 2061);
+             assert(actionsLayer() == start);
+@@ -680,8 +680,8 @@
+     uint8_t i;
+     reset();
+     for (i = 0; i < 7; i++) {
+-        activeConfig[9 + 2 * i] = CONFIG_ACTION_KEY_HOLD;
+-        activeConfig[10 + 2 * i] = 0x04 + i;
++        activeConfig[CONFIG_HEADER_SIZE + 2 * i] = CONFIG_ACTION_KEY_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * i] = 0x04 + i;
+     }
+     actionsInit();
+     for (i = 0; i < 7; i++) {
+@@ -689,13 +689,13 @@
+     }
+     actionsPoll(0);
+     assert(reports[0][8] == 0x09); // Six distinct usages fit.
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(1);
+     assert(reports[count - 1][8] == 0x0A); // Seventh enters the free slot.
+ 
+     reset();
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_CONSUMER; // Consumer usage 0x1E9
+-    activeConfig[10] = 0xE9;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_CONSUMER; // Consumer usage 0x1E9
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
+     actionsPress(0, 0);
+     actionsPoll(0);
+     assert(reports[0][0] == 5 && reports[0][1] == 0xE9 && reports[0][2] == 1);
+@@ -703,11 +703,11 @@
+     assert(reports[1][0] == 5 && reports[1][1] == 0 && reports[1][2] == 0);
+ 
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_STRING;
+-    activeConfig[10] = 0;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_STRING;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+     testSetStringLength(2);
+-    activeConfig[31] = 'A';
+-    activeConfig[32] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 22] = 'A';
++    activeConfig[CONFIG_HEADER_SIZE + 23] = 0;
+     actionsPress(0, 0);
+     actionsPoll(0);
+     assert(reports[0][0] == 1 && reports[0][1] == 2 && reports[0][3] == 4);
+@@ -717,14 +717,14 @@
+ 
+ static void testRotationOptions(void) {
+     reset();
+-    activeConfig[30] |= 1; // Full LED brightness does not change scrolling.
++    activeConfig[CONFIG_HEADER_SIZE + 21] |= 1; // Full LED brightness does not change scrolling.
+     actionsRotate(1);
+     actionsPoll(0);
+     assert(reports[0][4] == 0xFF);
+ 
+     reset();
+-    activeConfig[23] = CONFIG_ACTION_MOUSE_TOGGLE;
+-    activeConfig[24] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 14] = CONFIG_ACTION_MOUSE_TOGGLE;
++    activeConfig[CONFIG_HEADER_SIZE + 15] = 1;
+     actionsRotate(1);
+     actionsPoll(0);
+     assert(reports[0][0] == 2 && reports[0][1] == 1);
+@@ -740,8 +740,8 @@
+     for (type = CONFIG_ACTION_MOUSE_AXIS; type <= (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y); type += CONFIG_MOUSE_AXIS_Y) {
+         for (i = 0; i < sizeof(deltas); i++) {
+             reset();
+-            activeConfig[9] = type;
+-            activeConfig[10] = (uint8_t)deltas[i];
++            activeConfig[CONFIG_HEADER_SIZE] = type;
++            activeConfig[CONFIG_HEADER_SIZE + 1] = (uint8_t)deltas[i];
+             actionsPress(0, 0);
+             actionsPoll(0);
+             assert(count == 1 && reports[0][0] == 2);
+@@ -749,18 +749,18 @@
+             assert((int8_t)reports[0][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? deltas[i] : 0));
+             actionsPoll(1); // Holding the key must not repeat the step.
+             assert(count == 1);
+-            actionsRelease(0);
++            actionsRelease(0, 0);
+             actionsPoll(2);
+             assert(count == 1);
+             actionsPress(0, 3);
+-            actionsRelease(0); // A quick tap still sends exactly one step.
++            actionsRelease(0, 0); // A quick tap still sends exactly one step.
+             actionsPoll(3);
+             actionsPoll(4);
+             assert(count == 2);
+ 
+             reset();
+-            activeConfig[23] = type; // Encoder clockwise binding.
+-            activeConfig[24] = (uint8_t)deltas[i];
++            activeConfig[CONFIG_HEADER_SIZE + 14] = type; // Encoder clockwise binding.
++            activeConfig[CONFIG_HEADER_SIZE + 15] = (uint8_t)deltas[i];
+             actionsRotate(1);
+             blocked = 1;
+             actionsPoll(0);
+@@ -786,8 +786,8 @@
+             if (signs & 1) x = -x;
+             if (signs & 2) y = -y;
+             reset();
+-            activeConfig[9] = CONFIG_ACTION_MOUSE_XY | (signs << 5);
+-            activeConfig[10] = value;
++            activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_XY | (signs << 5);
++            activeConfig[CONFIG_HEADER_SIZE + 1] = value;
+             actionsPress(0, 0);
+             blocked = 1;
+             actionsPoll(0);
+@@ -798,11 +798,11 @@
+             assert((int8_t)reports[0][2] == x && (int8_t)reports[0][3] == y);
+             actionsPoll(9);
+             assert(count == 1);
+-            actionsRelease(0);
++            actionsRelease(0, 0);
+ 
+             reset();
+-            activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | (signs << 5);
+-            activeConfig[10] = value;
++            activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | (signs << 5);
++            activeConfig[CONFIG_HEADER_SIZE + 1] = value;
+             actionsPress(0, 0);
+             actionsPoll(0);
+             actionsPoll(7);
+@@ -816,14 +816,14 @@
+             blocked = 0;
+             actionsPoll(24);
+             assert(count == 3);
+-            actionsRelease(0);
++            actionsRelease(0, 0);
+             actionsPoll(32);
+             assert(count == 3);
+         }
+     }
+     reset();
+-    activeConfig[23] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE;
+-    activeConfig[24] = 0xF1;
++    activeConfig[CONFIG_HEADER_SIZE + 14] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_X_NEGATIVE;
++    activeConfig[CONFIG_HEADER_SIZE + 15] = 0xF1;
+     actionsRotate(1);
+     actionsPoll(0);
+     assert(count == 1 && (int8_t)reports[0][2] == -8 && reports[0][3] == 64);
+@@ -834,8 +834,8 @@
+     uint8_t released;
+     for (type = CONFIG_ACTION_MOUSE_AXIS; type <= (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y); type += CONFIG_MOUSE_AXIS_Y) {
+         reset();
+-        activeConfig[9] = type | CONFIG_MOUSE_MOVE_HOLD;
+-        activeConfig[10] = 0xFF;
++        activeConfig[CONFIG_HEADER_SIZE] = type | CONFIG_MOUSE_MOVE_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFF;
+         actionsPress(0, 0);
+         actionsPoll(0);
+         actionsPoll(7);
+@@ -846,13 +846,13 @@
+         assert(reports[1][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? 0xFF : 0));
+         actionsPoll(16);
+         assert(count == 3);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+         actionsPoll(24);
+         actionsPoll(100);
+         assert(count == 3);
+ 
+         actionsPress(0, 101);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+         actionsPoll(101);
+         actionsPoll(109);
+         assert(count == 4); // A quick hold-mode tap still moves once.
+@@ -867,15 +867,15 @@
+         blocked = 0;
+         actionsPoll(12);
+         assert(count == 6); // Resume after backpressure across timer wrap.
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+     }
+ 
+     // Both axes repeat independently, and unrelated key taps can still finish.
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
+-    activeConfig[10] = 1;
+-    activeConfig[11] = (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) | CONFIG_MOUSE_MOVE_HOLD;
+-    activeConfig[12] = 2;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) | CONFIG_MOUSE_MOVE_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 3] = 2;
+     actionsPress(0, 0);
+     actionsPress(1, 0);
+     actionsPoll(0);
+@@ -883,29 +883,29 @@
+     actionsPoll(9);
+     assert(count == 4 && reports[2][2] == 1 && reports[3][3] == 2);
+     actionsPress(2, 10);
+-    actionsRelease(2);
++    actionsRelease(2, 0);
+     actionsPoll(10);
+     assert(count == 5 && reports[4][0] == 1 && reports[4][3] == 0x21);
+     actionsPoll(18);
+     actionsPoll(19);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(27);
+     assert(reports[count - 1][2] == 0 && reports[count - 1][3] == 2);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+ 
+     // Either chord key ending its hold must stop repetition.
+     for (released = 0; released < 2; released++) {
+         reset();
+         testSetChordCount(1);
+-        activeConfig[31] = 0;
+-        activeConfig[32] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
+-        activeConfig[33] = 3;
++        activeConfig[CONFIG_HEADER_SIZE + 22] = 0;
++        activeConfig[CONFIG_HEADER_SIZE + 23] = CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_MOVE_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 24] = 3;
+         actionsPress(0, 100);
+         actionsPress(1, 101);
+         actionsPoll(101);
+         actionsPoll(109);
+         assert(count == 2 && reports[1][2] == 3);
+-        actionsRelease(released);
++        actionsRelease(released, 0);
+         actionsPoll(117);
+         assert(count == 2);
+     }
+@@ -914,10 +914,10 @@
+ static void testLayerCancelsConsumer(void) {
+     reset();
+     testSetLayout(2, 0, 0);
+-    activeConfig[9] = CONFIG_ACTION_CONSUMER;
+-    activeConfig[10] = 0xE9;
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER;
+-    activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     actionsInit();
+     actionsPress(0, 0);
+     actionsPoll(0);
+@@ -932,10 +932,10 @@
+     for (uint8_t clicks = 1; clicks <= 16; clicks++) {
+         for (uint8_t pressure = 0; pressure < 2; pressure++) {
+             reset();
+-            activeConfig[9] = ((clicks - 1) << 4) | CONFIG_ACTION_MOUSE_CLICK;
+-            activeConfig[10] = 7;
++            activeConfig[CONFIG_HEADER_SIZE] = ((clicks - 1) << 4) | CONFIG_ACTION_MOUSE_CLICK;
++            activeConfig[CONFIG_HEADER_SIZE + 1] = 7;
+             actionsPress(0, 0);
+-            actionsRelease(0); // Playback completes even after a brief physical press.
++            actionsRelease(0, 0); // Playback completes even after a brief physical press.
+             for (uint16_t now = 0; now < 5000; now++) {
+                 blocked = pressure && now % 300 < 25;
+                 actionsPoll(now);
+@@ -952,24 +952,24 @@
+ 
+ static void testMouseAndLayerOrder(void) {
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_HOLD;
+-    activeConfig[10] = 1;
+-    activeConfig[11] = CONFIG_ACTION_MOUSE_HOLD;
+-    activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     actionsPress(0, 0);
+     actionsPress(1, 0);
+     actionsPoll(0);
+     assert(reports[count - 1][1] == 1);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(1);
+     assert(reports[count - 1][1] == 1);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     actionsPoll(2);
+     assert(reports[count - 1][1] == 0);
+ 
+     reset();
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_MOUSE_CLICK;
+-    activeConfig[10] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_MOUSE_CLICK;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     actionsPress(0, 0);
+     actionsPoll(0);
+     actionsPoll(10);
+@@ -982,22 +982,22 @@
+ 
+     reset();
+     testSetLayout(3, 0, 0); // Three layers
+-    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[31 + 2] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[31 + 3] = 2;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 2] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 22 + 3] = 2;
+     actionsInit();
+     actionsPress(0, 0);
+     actionsPress(1, 0);
+     assert(actionsLayer() == 2);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     assert(actionsLayer() == 2);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     assert(actionsLayer() == 0);
+ }
+ 
+ static void chordProfile(uint8_t variant, uint8_t action) {
+-    uint8_t offset = variant ? 24 : 31;
++    uint8_t offset = variant ? CONFIG_HEADER_SIZE + 15 : CONFIG_HEADER_SIZE + 22;
+     uint16_t crc;
+     reset();
+     testLoadStarterProfile(variant);
+@@ -1024,14 +1024,14 @@
+             actionsPress(first ^ 1, 139);
+             actionsPoll(139);
+             assert(count == 1 && reports[0][3] == 4);
+-            actionsRelease(released);
++            actionsRelease(released, 0);
+             actionsPoll(140);
+             assert(count == 2 && reports[1][3] == 0);
+             actionsPress(released, 141);
+             actionsPoll(141);
+             assert(count == 2); // The other chord key is still down.
+-            actionsRelease(released ^ 1);
+-            actionsRelease(released);
++            actionsRelease(released ^ 1, 0);
++            actionsRelease(released, 0);
+             actionsPress(first, 150);
+             actionsPress(first ^ 1, 160);
+             actionsPoll(160);
+@@ -1044,7 +1044,7 @@
+     actionsPress(1, 1);
+     actionsPoll(1);
+     assert(reports[0][0] == 2 && reports[0][1] == 1);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     actionsPoll(2);
+     assert(reports[1][1] == 0);
+ 
+@@ -1122,7 +1122,7 @@
+                 }
+                 chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
+                 activeConfig[CONFIG_HEADER_LED] = selector;
+-                actionsPress(0, start); actionsRelease(0);
++                actionsPress(0, start); actionsRelease(0, 0);
+                 actionsPoll(start);
+                 assert(count == 1 && reports[0][3] == 0x29);
+                 chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
+@@ -1142,16 +1142,16 @@
+ static void testBriefHolds(void) {
+     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
+     actionsPress(0, 100);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(101);
+     assert(count == 1 && reports[0][3] == 0x29);
+     actionsPoll(110);
+     assert(count == 2 && reports[1][3] == 0);
+ 
+     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
+-    activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_HOLD;
+     actionsPress(0, 100);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     blocked = 1;
+     actionsPoll(101);
+     assert(count == 0);
+@@ -1162,14 +1162,14 @@
+     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
+     actionsPress(0, 100);
+     actionsPress(1, 101);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     actionsPoll(102);
+     assert(count == 2 && reports[0][3] == 4 && reports[1][3] == 0);
+ 
+     chordProfile(0, CONFIG_ACTION_MOUSE_HOLD);
+     actionsPress(0, 100);
+     actionsPress(1, 101);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     reportLimit = 1; // Accept the press, then block its release.
+     actionsPoll(102);
+     assert(count == 1 && reports[0][0] == 2 && reports[0][1] == 1);
+@@ -1183,29 +1183,29 @@
+     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
+     // Move the chord table past a second layer.
+     testSetLayout(2, 0, 0);
+-    activeConfig[31] = 0;
+-    activeConfig[32] = 0;
+-    activeConfig[33] = 0;
+-    activeConfig[53] = 0;
+-    activeConfig[54] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[55] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 22] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 23] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 24] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 44] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 45] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 46] = 1;
+     actionsPress(0, 100);
+     actionsPress(1, 101);
+     assert(actionsLayer() == 1);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     assert(actionsLayer() == 0);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+ 
+     // An encoder layer action resolves the captured pending single.
+-    activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[23] = CONFIG_ACTION_SET_LAYER;
+-    activeConfig[24] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 14] = CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 15] = 1;
+     actionsPress(0, 200);
+     actionsRotate(1);
+     assert(actionsLayer() == 1);
+     actionsPoll(201);
+     assert(count == 1 && reports[0][3] == 0x29);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(202);
+     assert(reports[count - 1][3] == 0);
+ }
+@@ -1213,19 +1213,19 @@
+ static void testMultipleChords(void) {
+     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
+     testSetChordCount(2);
+-    activeConfig[34] = 9; // Pair 2+3 follows pair 0+1.
+-    activeConfig[35] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[36] = 5;
++    activeConfig[CONFIG_HEADER_SIZE + 25] = 9; // Pair 2+3 follows pair 0+1.
++    activeConfig[CONFIG_HEADER_SIZE + 26] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 27] = 5;
+     actionsPress(0, 0);
+     actionsPress(1, 1);
+     actionsPress(2, 2);
+     actionsPress(3, 3);
+     actionsPoll(3);
+     assert(count == 1 && reports[0][3] == 4 && reports[0][4] == 5);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     actionsPoll(4);
+     assert(reports[count - 1][3] == 5);
+-    actionsRelease(2);
++    actionsRelease(2, 0);
+     actionsPoll(5);
+     assert(reports[count - 1][3] == 0);
+ }
+@@ -1249,18 +1249,18 @@
+     uint32_t i;
+     reset();
+     testSetLayout(3, 0, 0);
+-    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[33] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[34] = 2;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 24] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 25] = 2;
+     actionsPress(0, 0);
+     for (i = 0; i < 70000; i++) {
+         actionsPress(1, 0);
+         assert(actionsLayer() == 2);
+-        actionsRelease(1);
++        actionsRelease(1, 0);
+         assert(actionsLayer() == 1);
+     }
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     assert(actionsLayer() == 0);
+ }
+ 
+@@ -1268,19 +1268,19 @@
+     uint8_t i;
+     reset();
+     for (i = 0; i < 6; i++) {
+-        activeConfig[9 + 2 * i] = CONFIG_ACTION_KEY_HOLD;
+-        activeConfig[10 + 2 * i] = 4 + i;
++        activeConfig[CONFIG_HEADER_SIZE + 2 * i] = CONFIG_ACTION_KEY_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * i] = 4 + i;
+         actionsPress(i, 0);
+     }
+-    activeConfig[21] = CONFIG_ACTION_KEY_TAP;
+-    activeConfig[22] = 10;
++    activeConfig[CONFIG_HEADER_SIZE + 12] = CONFIG_ACTION_KEY_TAP;
++    activeConfig[CONFIG_HEADER_SIZE + 13] = 10;
+     actionsPoll(0);
+     actionsPress(6, 1);
+-    actionsRelease(6);
++    actionsRelease(6, 0);
+     actionsPoll(1);
+     actionsPoll(100);
+     assert(count == 1); // The tap waits while all six slots belong to holds.
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(101);
+     assert(reports[count - 1][8] == 10);
+     actionsPoll(110);
+@@ -1288,14 +1288,14 @@
+ 
+     reset();
+     for (i = 0; i < 7; i++) {
+-        activeConfig[9 + 2 * i] = CONFIG_ACTION_KEY_HOLD;
+-        activeConfig[10 + 2 * i] = 4 + i;
++        activeConfig[CONFIG_HEADER_SIZE + 2 * i] = CONFIG_ACTION_KEY_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * i] = 4 + i;
+         actionsPress(i, 0);
+     }
+-    actionsRelease(6);
++    actionsRelease(6, 0);
+     actionsPoll(0);
+     assert(count == 1 && reports[0][8] == 9);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(1);
+     actionsPoll(2);
+     assert(reports[1][8] == 10); // Even a released seventh hold gets a press.
+@@ -1305,8 +1305,8 @@
+ static void testClearAndOverflow(void) {
+     unsigned i;
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[10] = 4;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 4;
+     actionsPress(0, 0);
+     actionsPoll(0);
+     blocked = 1;
+@@ -1318,7 +1318,7 @@
+     reset();
+     for (i = 0; i < 300; i++) {
+         actionsPress(0, 0);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+         actionsRotate(1);
+     }
+     assert(actionsDropped(0) == 255 && actionsDropped(1) == 255);
+@@ -1332,14 +1332,14 @@
+         uint8_t size = variant ? 15 : 22;
+         for (uint8_t mode = 0; mode < 3; mode++) {
+             reset();
+-            memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++            memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+             testSetVariant(variant);
+             testSetLayout(count, 0, 0);
+-            activeConfig[9] = mode == 2 ? CONFIG_ACTION_MOMENTARY_LAYER :
++            activeConfig[CONFIG_HEADER_SIZE] = mode == 2 ? CONFIG_ACTION_MOMENTARY_LAYER :
+                 CONFIG_ACTION_SET_LAYER | (mode ? 0x10 : 0);
+-            activeConfig[10] = count - 1;
+-            activeConfig[9 + size * (count - 1) + 2] = CONFIG_ACTION_KEY_TAP;
+-            activeConfig[9 + size * (count - 1) + 3] = 4;
++            activeConfig[CONFIG_HEADER_SIZE + 1] = count - 1;
++            activeConfig[CONFIG_HEADER_SIZE + size * (count - 1) + 2] = CONFIG_ACTION_KEY_TAP;
++            activeConfig[CONFIG_HEADER_SIZE + size * (count - 1) + 3] = 4;
+             actionsInit();
+             actionsPress(0, 0);
+             assert(actionsLayer() == count - 1);
+@@ -1347,8 +1347,8 @@
+             assert(actionsLayer() == (mode == 1 ? 0 : count - 1));
+             actionsPoll(1);
+             assert(reports[0][3] == 4); // Selected high-layer binding executed.
+-            actionsRelease(1);
+-            actionsRelease(0);
++            actionsRelease(1, 0);
++            actionsRelease(0, 0);
+             assert(actionsLayer() == (mode ? 0 : count - 1));
+         }
+     }
+@@ -1356,36 +1356,36 @@
+ 
+ static void testLedDispatch(void) {
+     reset();
+-    activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[10] = CONFIG_LED_PRESET_RELATIVE;
+-    activeConfig[23] = (0x90 | CONFIG_ACTION_LED_CONTROL); activeConfig[24] = CONFIG_LED_PHASE_RELATIVE;
+-    activeConfig[25] = (0x70 | CONFIG_ACTION_LED_CONTROL); activeConfig[26] = CONFIG_LED_SPEED_RELATIVE;
++    activeConfig[CONFIG_HEADER_SIZE] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[CONFIG_HEADER_SIZE + 1] = CONFIG_LED_PRESET_RELATIVE;
++    activeConfig[CONFIG_HEADER_SIZE + 14] = (0x90 | CONFIG_ACTION_LED_CONTROL); activeConfig[CONFIG_HEADER_SIZE + 15] = CONFIG_LED_PHASE_RELATIVE;
++    activeConfig[CONFIG_HEADER_SIZE + 16] = (0x70 | CONFIG_ACTION_LED_CONTROL); activeConfig[CONFIG_HEADER_SIZE + 17] = CONFIG_LED_SPEED_RELATIVE;
+     blocked = 1;
+     actionsPress(0, 0);
+     assert(ledCalls == 1 && ledCommand == CONFIG_LED_PRESET_RELATIVE && ledValue == 1 && count == 0);
+     actionsPress(0, 1); // A held key does not retrigger.
+     actionsPoll(100);
+     assert(ledCalls == 1 && count == 0);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     for (uint8_t i = 0; i < 100; i++) actionsRotate(i & 1);
+     assert(ledCalls == 101 && count == 0 && actionsDropped(1) == 0);
+     assert(ledCommand == CONFIG_LED_PHASE_RELATIVE && ledValue == 9);
+ 
+     // A chord on the selected one-shot layer consumes it before applying policy.
+     reset();
+-    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++    memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+     testSetLayout(2, 0, 0); testSetChordCount(1); activeConfig[CONFIG_HEADER_LED] = 2;
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
+-    activeConfig[53] = 0x15; // Keys 1+2, layer 1.
+-    activeConfig[54] = 0xF0 | CONFIG_ACTION_LED_CONTROL; activeConfig[55] = CONFIG_LED_BOTH_SET;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 44] = 0x15; // Keys 1+2, layer 1.
++    activeConfig[CONFIG_HEADER_SIZE + 45] = 0xF0 | CONFIG_ACTION_LED_CONTROL; activeConfig[CONFIG_HEADER_SIZE + 46] = CONFIG_LED_BOTH_SET;
+     actionsInit(); actionsTimedReset(0);
+     blocked = 1;
+-    actionsPress(0, 0); actionsRelease(0);
++    actionsPress(0, 0); actionsRelease(0, 0);
+     assert(actionsLayer() == 1);
+     actionsPress(1, 1);
+     assert(ledCalls == 0 && actionsLayer() == 1);
+     actionsPress(2, 2);
+     assert(ledCalls == 1 && ledValue == 15 && ledCommand == CONFIG_LED_BOTH_SET && ledLayer == 0);
+-    actionsRelease(1); actionsRelease(2); actionsPoll(100);
++    actionsRelease(1, 0); actionsRelease(2, 0); actionsPoll(100);
+     assert(ledCalls == 1 && count == 0 && actionsLayer() == 0);
+ }
+ 
+@@ -1398,17 +1398,17 @@
+     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+     activeConfig[timer + 2] = CONFIG_LED_RESTORE;
+     // Consume even with a None resume action; no state should be created for a hold.
+-    activeConfig[9] = CONFIG_ACTION_KEY_HOLD; activeConfig[10] = 4;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 4;
+     actionsTimedReset(0);
+     actionsTimedPoll(1);
+     assert(actionsTimedInput());
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(0);
+     assert(count == 0);
+     assert(!actionsTimedInput());
+     actionsPress(0, 1); actionsPoll(1);
+     assert(count == 1 && reports[0][3] == 4);
+-    actionsRelease(0); actionsPoll(2);
++    actionsRelease(0, 0); actionsPoll(2);
+     assert(reports[count - 1][3] == 0);
+     // One completed encoder detent is consumed, subsequent detents work normally.
+     actionsTimedPoll(2);
+@@ -1423,7 +1423,7 @@
+     reset();
+     testSetChordCount(1);
+     timer = configTimedOffset();
+-    activeConfig[31] = 0; activeConfig[32] = CONFIG_ACTION_KEY_TAP; activeConfig[33] = 6;
++    activeConfig[CONFIG_HEADER_SIZE + 22] = 0; activeConfig[CONFIG_HEADER_SIZE + 23] = CONFIG_ACTION_KEY_TAP; activeConfig[CONFIG_HEADER_SIZE + 24] = 6;
+     testSetLayout(1, 0, 1);
+     activeConfig[timer] = 0; activeConfig[timer + 5] = 128;
+     activeConfig[timer + 5] |= CONFIG_TIMED_CONSUME;
+@@ -1433,10 +1433,10 @@
+     actionsPress(1, 0); // Pending single, awaiting key 0.
+     actionsTimedPoll(1);
+     assert(actionsTimedInput());
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPoll(100);
+     assert(count && reports[0][3] == 0x2C); // Single key, not chord usage 6.
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     // All armed timers resume once; any one may request consuming the event.
+     reset();
+     testSetLayout(1, 0, 2);
+@@ -1452,16 +1452,16 @@
+     // Consuming the wake binding must not consume an already-armed one-shot layer.
+     reset();
+     testSetLayout(2, 0, 1);
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
+-    activeConfig[33] = CONFIG_ACTION_KEY_TAP; activeConfig[34] = 4;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 24] = CONFIG_ACTION_KEY_TAP; activeConfig[CONFIG_HEADER_SIZE + 25] = 4;
+     timer = configTimedOffset();
+     activeConfig[timer + 5] = CONFIG_TIMED_CONSUME;
+     actionsInit(); actionsTimedReset(0);
+-    actionsPress(0, 0); actionsRelease(0);
++    actionsPress(0, 0); actionsRelease(0, 0);
+     assert(actionsLayer() == 1);
+     actionsTimedPoll(1);
+     assert(actionsTimedInput());
+-    actionsRelease(1); // The consumed press created no action state.
++    actionsRelease(1, 0); // The consumed press created no action state.
+     assert(actionsLayer() == 1);
+     assert(!actionsTimedInput());
+     actionsPress(1, 1);
+@@ -1527,11 +1527,11 @@
+     // Timer execution must not consume an armed one-shot layer.
+     reset();
+     testSetLayout(2, 0, 1); // Two layers, one timer.
+-    memset(activeConfig + 31, 0, 22);
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[33] = CONFIG_ACTION_KEY_TAP;
+-    activeConfig[34] = 4;
++    memset(activeConfig + CONFIG_HEADER_SIZE + 22, 0, 22);
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 24] = CONFIG_ACTION_KEY_TAP;
++    activeConfig[CONFIG_HEADER_SIZE + 25] = 4;
+     timer = configTimedOffset();
+     activeConfig[timer] = 0;
+     activeConfig[timer + 1] = CONFIG_ACTION_LED_CONTROL;
+--- a/tests/config_fixture.h
++++ b/tests/config_fixture.h
+@@ -19,7 +19,7 @@
+     uint8_t size = (activeConfig[CONFIG_HEADER_LAYERS] & 1) ? 15 : 22;
+     uint8_t layers = ((activeConfig[CONFIG_HEADER_LAYERS] >> 1) & 7) + 1;
+     for (uint8_t layer = 0; layer < layers; layer++) {
+-        uint16_t options = 9 + (uint16_t)size * (layer + 1) - 1;
++        uint16_t options = CONFIG_HEADER_SIZE + (uint16_t)size * (layer + 1) - 1;
+         if (options < CONFIG_SIZE && !(activeConfig[options] & 0xF0)) activeConfig[options] |= 0x10;
+     }
+ }
+@@ -43,7 +43,7 @@
+     static const uint8_t usages[6] = {0x29, 0x2C, 0x21, 0x50, 0x52, 0x4F};
+     static const uint8_t modifiers[6] = {0, 4, 11, 1, 1, 1};
+     uint8_t i;
+-    uint8_t offset = 9;
++    uint8_t offset = CONFIG_HEADER_SIZE;
+     uint16_t crc;
+ 
+     for (i = 0; i < CONFIG_SIZE; i++) activeConfig[i] = 0;
+--- a/tests/config_test.c
++++ b/tests/config_test.c
+@@ -29,7 +29,7 @@
+     assert(configKeyCount() == (variant ? 3 : 6));
+     assert(configChordWindowMs() == 0);
+     assert(configLayerOptions(0) == 0x10);
+-    activeConfig[9 + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
++    activeConfig[CONFIG_HEADER_SIZE + (variant ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_FULL_BRIGHTNESS;
+     seal();
+     assert(configValid(activeConfig, variant));
+     assert(configLayerOptions(0) & CONFIG_LAYER_OPT_FULL_BRIGHTNESS);
+@@ -55,7 +55,7 @@
+     uint8_t layerSize = variant ? 15 : 22;
+     testSetLayout(2, 0, 0); // Two layers, starting on layer zero.
+     for (uint8_t layer = 0; layer < 2; layer++) {
+-        uint8_t expected = 9 + layer * layerSize + 2 * (keys + 3);
++        uint8_t expected = CONFIG_HEADER_SIZE + layer * layerSize + 2 * (keys + 3);
+         uint8_t offset = configLedColorOffset(layer);
+         assert(offset == expected);
+         // Every nibble value must decode correctly on both sides of a byte.
+@@ -74,16 +74,16 @@
+     seal();
+     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
+     activeConfig[CONFIG_HEADER_LED] = 2;
+-    activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[10] = 0xE0;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE0;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+     testLoadStarterProfile(CONFIG_SIX_KEYS);
+-    activeConfig[23] = CONFIG_ACTION_MOUSE_HOLD; // Clockwise rotation
++    activeConfig[CONFIG_HEADER_SIZE + 14] = CONFIG_ACTION_MOUSE_HOLD; // Clockwise rotation
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+     testLoadStarterProfile(CONFIG_SIX_KEYS);
+-    activeConfig[31] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 22] = 1;
+     seal();
+     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
+     testLoadStarterProfile(CONFIG_SIX_KEYS);
+@@ -120,9 +120,9 @@
+     for (layers = 1; layers <= (variant ? 7 : 5); layers++) {
+         testLoadStarterProfile(variant);
+         testSetLayout(layers, 0, 0);
+-        pool = 9 + size * layers;
++        pool = CONFIG_HEADER_SIZE + size * layers;
+         remaining = CONFIG_SIZE - pool;
+-        assert(remaining == (variant ? 119 - 15 * layers : 119 - 22 * layers));
++        assert(remaining == (variant ? CONFIG_SIZE - CONFIG_HEADER_SIZE - 15 * layers : CONFIG_SIZE - CONFIG_HEADER_SIZE - 22 * layers));
+         // Extra layers contain canonical empty actions and LED colors.
+         testSetStringLength(remaining);
+         activeConfig[pool + remaining - 1] = 0;
+@@ -133,10 +133,10 @@
+         assert(!configValid(activeConfig, variant));
+     }
+     testLoadStarterProfile(variant);
+-    pool = 9 + size;
++    pool = CONFIG_HEADER_SIZE + size;
+     testSetStringLength(4);
+-    activeConfig[9] = CONFIG_ACTION_STRING;
+-    activeConfig[10] = 0;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_STRING;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+     activeConfig[pool] = 'A';
+     activeConfig[pool + 1] = 0;
+     activeConfig[pool + 2] = 'B';
+@@ -146,10 +146,10 @@
+     assert(configStringChar(2, 0) == 'B');
+     assert(configStringChar(255, 3) == 0); // Must reject an 8-bit address wrap.
+     assert(configStringChar(2, 255) == 0);
+-    activeConfig[10] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     seal();
+     assert(!configValid(activeConfig, variant));
+-    activeConfig[10] = 2;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
+     seal();
+     assert(configValid(activeConfig, variant));
+ }
+@@ -158,15 +158,15 @@
+ static void testStringBoundaries(void) {
+     for (uint8_t variant = 0; variant < 2; variant++) {
+         testLoadStarterProfile(variant);
+-        uint8_t pool = 9 + (variant ? 15 : 22);
++        uint8_t pool = CONFIG_HEADER_SIZE + (variant ? 15 : 22);
+         testSetStringLength(8);
+-        activeConfig[9] = CONFIG_ACTION_STRING;
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_STRING;
+         for (uint8_t mask = 0; mask < 128; mask++) {
+             for (uint8_t i = 0; i < 7; i++)
+                 activeConfig[pool + i] = mask & (1 << i) ? 'A' : 0;
+             activeConfig[pool + 7] = 0;
+             for (uint8_t position = 0; position <= 8; position++) {
+-                activeConfig[10] = position;
++                activeConfig[CONFIG_HEADER_SIZE + 1] = position;
+                 seal();
+                 uint8_t expected = position < 8 &&
+                     (!position || activeConfig[pool + position - 1] == 0);
+@@ -181,21 +181,21 @@
+     uint8_t second;
+     testLoadStarterProfile(CONFIG_THREE_KEYS);
+     testSetVariant(1); testSetChordCount(2);
+-    activeConfig[24] = 0;
+-    activeConfig[25] = CONFIG_ACTION_KEY_TAP;
+-    activeConfig[26] = 0x04;
+-    activeConfig[27] = 2;
+-    activeConfig[28] = CONFIG_ACTION_KEY_TAP;
+-    activeConfig[29] = 0x05;
++    activeConfig[CONFIG_HEADER_SIZE + 15] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 16] = CONFIG_ACTION_KEY_TAP;
++    activeConfig[CONFIG_HEADER_SIZE + 17] = 0x04;
++    activeConfig[CONFIG_HEADER_SIZE + 18] = 2;
++    activeConfig[CONFIG_HEADER_SIZE + 19] = CONFIG_ACTION_KEY_TAP;
++    activeConfig[CONFIG_HEADER_SIZE + 20] = 0x05;
+     seal();
+     assert(configValid(activeConfig, CONFIG_THREE_KEYS));
+     assert(configChord(0, 1, 0, &first, &second));
+     assert(first == CONFIG_ACTION_KEY_TAP && second == 0x04);
+     assert(!configChord(0, 0, 2, &first, &second));
+-    activeConfig[27] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 18] = 0;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_THREE_KEYS));
+-    activeConfig[27] = 3;
++    activeConfig[CONFIG_HEADER_SIZE + 18] = 3;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_THREE_KEYS));
+ }
+@@ -206,8 +206,8 @@
+         for (uint8_t action = 0; action < sizeof(types); action++) {
+             for (uint16_t buttons = 0; buttons < 256; buttons++) {
+                 testLoadStarterProfile(variant);
+-                activeConfig[9] = types[action];
+-                activeConfig[10] = buttons;
++                activeConfig[CONFIG_HEADER_SIZE] = types[action];
++                activeConfig[CONFIG_HEADER_SIZE + 1] = buttons;
+                 seal();
+                 assert(configValid(activeConfig, variant) == (buttons >= 1));
+             }
+@@ -247,8 +247,8 @@
+         for (uint8_t aux = 0; aux < 16; aux++) {
+             for (uint8_t slot = 0; slot < 6; slot++) {
+                 testLoadStarterProfile(variant);
+-                uint8_t offset = 9;
+-                if (slot == 1) offset = 9 + (variant ? 8 : 14);
++                uint8_t offset = CONFIG_HEADER_SIZE;
++                if (slot == 1) offset = CONFIG_HEADER_SIZE + (variant ? 8 : 14);
+                 if (slot == 2) {
+                     testSetChordCount(1);
+                     offset = configTimedOffset() - 2;
+@@ -280,13 +280,13 @@
+ 
+ static void testMultiClick(void) {
+     for (uint8_t variant = 0; variant < 2; variant++) {
+-        uint8_t rotation = 9 + (variant ? 8 : 14);
++        uint8_t rotation = CONFIG_HEADER_SIZE + (variant ? 8 : 14);
+         for (uint8_t aux = 0; aux < 16; aux++) {
+             for (uint8_t buttons = 0; buttons < 9; buttons++) {
+                 // Key, encoder rotation, chord, expiry and next-input slots.
+                 for (uint8_t slot = 0; slot < 5; slot++) {
+                     testLoadStarterProfile(variant);
+-                    uint8_t offset = 9;
++                    uint8_t offset = CONFIG_HEADER_SIZE;
+                     if (slot == 1) offset = rotation;
+                     if (slot == 2) {
+                         testSetChordCount(1);
+@@ -322,13 +322,13 @@
+                 uint8_t valid = type == CONFIG_ACTION_MOUSE_AXIS ?
+                     value != 0x80 : 1;
+                 testLoadStarterProfile(CONFIG_SIX_KEYS);
+-                activeConfig[9] = (aux << 4) | type;
+-                activeConfig[10] = value;
++                activeConfig[CONFIG_HEADER_SIZE] = (aux << 4) | type;
++                activeConfig[CONFIG_HEADER_SIZE + 1] = value;
+                 seal();
+                 assert(configValid(activeConfig, CONFIG_SIX_KEYS) == valid);
+-                activeConfig[9] = activeConfig[10] = 0;
+-                activeConfig[23] = (aux << 4) | type;
+-                activeConfig[24] = value;
++                activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
++                activeConfig[CONFIG_HEADER_SIZE + 14] = (aux << 4) | type;
++                activeConfig[CONFIG_HEADER_SIZE + 15] = value;
+                 seal();
+                 assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (valid && !(aux & 1)));
+             }
+@@ -348,49 +348,49 @@
+             param = 1;
+         } else if (type == CONFIG_ACTION_CONSUMER || type == CONFIG_ACTION_CONSUMER_HOLD || type == CONFIG_ACTION_CONSUMER_MODIFIED_HOLD) {
+             param = 0xE9;
+-            activeConfig[9] = 0x08; // Volume up
++            activeConfig[CONFIG_HEADER_SIZE] = 0x08; // Volume up
+         } else if (type == CONFIG_ACTION_STRING) {
+             testSetStringLength(1);
+         }
+-        if (type == CONFIG_ACTION_LED_CONTROL) { activeConfig[9] = 0; param = CONFIG_LED_PHASE_SET; }
+-        activeConfig[9] = (activeConfig[9] & 0xF0) | type;
+-        activeConfig[10] = param;
++        if (type == CONFIG_ACTION_LED_CONTROL) { activeConfig[CONFIG_HEADER_SIZE] = 0; param = CONFIG_LED_PHASE_SET; }
++        activeConfig[CONFIG_HEADER_SIZE] = (activeConfig[CONFIG_HEADER_SIZE] & 0xF0) | type;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = param;
+         seal();
+         assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO && type != CONFIG_ACTION_RESERVED));
+     }
+         testLoadStarterProfile(CONFIG_SIX_KEYS);
+-    activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 14] = CONFIG_ACTION_MOMENTARY_LAYER;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+     testLoadStarterProfile(CONFIG_SIX_KEYS);
+-    activeConfig[9] = CONFIG_ACTION_SCROLL;
+-    activeConfig[10] = 0x80;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SCROLL;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0x80;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+     testLoadStarterProfile(CONFIG_SIX_KEYS);
+-    activeConfig[9] = CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[10] = 6;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 6;
+     seal();
+     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
+-    activeConfig[10] = 0xFA;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFA;
+     seal();
+     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
+-    activeConfig[10] = 7;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 7;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+-    activeConfig[10] = 0xF9;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xF9;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+-    activeConfig[9] = 0x10 | CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[10] = 0;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+     seal();
+     assert(configValid(activeConfig, CONFIG_SIX_KEYS));
+-    activeConfig[9] = 0x30 | CONFIG_ACTION_SET_LAYER;
+-    activeConfig[23] = CONFIG_ACTION_NONE;
++    activeConfig[CONFIG_HEADER_SIZE] = 0x30 | CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 14] = CONFIG_ACTION_NONE;
+     seal();
+     assert(!configValid(activeConfig, CONFIG_SIX_KEYS));
+     testLoadStarterProfile(CONFIG_THREE_KEYS);
+-    activeConfig[22] = 0xF2;
++    activeConfig[CONFIG_HEADER_SIZE + 13] = 0xF2;
+     seal();
+     assert(configValid(activeConfig, CONFIG_THREE_KEYS));
+ }
+@@ -399,7 +399,7 @@
+     uint8_t count = variant ? 7 : 5;
+     uint8_t size = variant ? 15 : 22;
+     uint8_t first, second;
+-    uint8_t chord = 9 + size * count;
++    uint8_t chord = CONFIG_HEADER_SIZE + size * count;
+     for (uint8_t startup = 0; startup < count; startup++) {
+         testLoadStarterProfile(variant);
+         testSetLayout(count, startup, 0);
+@@ -410,7 +410,7 @@
+         activeConfig[chord + 3] = 0x70;
+         activeConfig[chord + 4] = CONFIG_ACTION_SET_LAYER;
+         activeConfig[chord + 5] = 0;
+-        uint8_t base = 9 + size * (count - 1);
++        uint8_t base = CONFIG_HEADER_SIZE + size * (count - 1);
+         activeConfig[base] = CONFIG_ACTION_MOMENTARY_LAYER;
+         activeConfig[base + 1] = count - 1;
+         activeConfig[base + size - 1] = 0xA9;
+@@ -450,13 +450,13 @@
+                 else if (command >= (CONFIG_LED_EFFECT_ON | CONFIG_LED_EFFECT_DIM) &&
+                          command <= (CONFIG_LED_EFFECT_BLINK_8 | CONFIG_LED_EFFECT_DIM)) expected = 1;
+                 else expected = 0;
+-                activeConfig[9] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
+-                activeConfig[10] = command;
++                activeConfig[CONFIG_HEADER_SIZE] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
++                activeConfig[CONFIG_HEADER_SIZE + 1] = command;
+                 seal();
+                 assert(configValid(activeConfig, variant) == expected);
+                 accepted += expected;
+-                uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
+-                activeConfig[9] = 0; activeConfig[10] = 0;
++                uint8_t rotation = CONFIG_HEADER_SIZE + 2 * ((variant ? 3 : 6) + 1);
++                activeConfig[CONFIG_HEADER_SIZE] = 0; activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+                 activeConfig[rotation] = (value << 4) | CONFIG_ACTION_LED_CONTROL;
+                 activeConfig[rotation + 1] = command;
+                 seal();
+@@ -473,15 +473,15 @@
+         for (uint8_t version = 6; version <= CONFIG_VERSION; version++) {
+             testLoadStarterProfile(variant); activeConfig[CONFIG_HEADER_VERSION] = version;
+             for (uint8_t aux = 0; aux < 3; aux++) {
+-                activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4);
++                activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SET_LAYER | (aux << 4);
+                 for (uint16_t target = 0; target < 256; target++) {
+-                    activeConfig[10] = target; seal();
++                    activeConfig[CONFIG_HEADER_SIZE + 1] = target; seal();
+                     assert(configValid(activeConfig, variant) == (version == CONFIG_VERSION && aux <= 2 &&
+                         (target < configLayerCount() || (aux <= 1 && target == CONFIG_LAYER_PREVIOUS))));
+                 }
+             }
+-            activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+-            activeConfig[10] = CONFIG_LAYER_PREVIOUS; seal();
++            activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER;
++            activeConfig[CONFIG_HEADER_SIZE + 1] = CONFIG_LAYER_PREVIOUS; seal();
+             assert(!configValid(activeConfig, variant));
+         }
+     }
+@@ -489,16 +489,16 @@
+ 
+ static void testConsumerHoldEncoding(void) {
+     for (uint8_t variant = 0; variant < 2; variant++) {
+-        uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
++        uint8_t rotation = CONFIG_HEADER_SIZE + 2 * ((variant ? 3 : 6) + 1);
+         const uint8_t consumerTypes[] = {CONFIG_ACTION_CONSUMER, CONFIG_ACTION_CONSUMER_HOLD};
+         for (uint8_t index = 0; index < 2; index++) {
+             uint8_t type = consumerTypes[index];
+             testLoadStarterProfile(variant);
+             for (uint16_t usage = 0; usage < 4096; usage++) {
+-                activeConfig[9] = type | ((usage >> 8) << 4);
+-                activeConfig[10] = usage;
++                activeConfig[CONFIG_HEADER_SIZE] = type | ((usage >> 8) << 4);
++                activeConfig[CONFIG_HEADER_SIZE + 1] = usage;
+                 seal(); assert(!!configValid(activeConfig, variant) == !!usage);
+-                activeConfig[9] = activeConfig[10] = 0;
++                activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+                 activeConfig[rotation] = type | ((usage >> 8) << 4);
+                 activeConfig[rotation + 1] = usage;
+                 seal(); assert(!!configValid(activeConfig, variant) ==
+@@ -512,7 +512,7 @@
+         uint8_t pool = configTimedOffset();
+         activeConfig[pool] = 'A'; activeConfig[pool + 1] = 0;
+         for (uint8_t aux = 0; aux < 16; aux++) {
+-            activeConfig[9] = aux << 4; activeConfig[10] = 0;
++            activeConfig[CONFIG_HEADER_SIZE] = aux << 4; activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+             seal(); assert(!!configValid(activeConfig, variant) == (aux <= (CONFIG_MACRO_PAUSE ? 2 : 1)));
+         }
+         testSetLayout(1, 0, 1);
+@@ -523,7 +523,7 @@
+         seal(); assert(!configValid(activeConfig, variant));
+         // Legacy bytes must never be interpreted using the v8 type allocation.
+         testLoadStarterProfile(variant); activeConfig[CONFIG_HEADER_VERSION] = 7;
+-        activeConfig[9] = 9; activeConfig[10] = 0xE9;
++        activeConfig[CONFIG_HEADER_SIZE] = 9; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xE9;
+         seal(); assert(!configValid(activeConfig, variant));
+     }
+ }
+@@ -531,11 +531,11 @@
+ static void testScrollHoldValidation(void) {
+     for (uint8_t variant = 0; variant < 2; variant++) {
+         testLoadStarterProfile(variant);
+-        activeConfig[9] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
+-        activeConfig[10] = 1; seal(); assert(configValid(activeConfig, variant));
+-        activeConfig[10] = 0x80; seal(); assert(!configValid(activeConfig, variant));
+-        activeConfig[9] = activeConfig[10] = 0;
+-        uint8_t rotation = 9 + 2 * ((variant ? 3 : 6) + 1);
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = 1; seal(); assert(configValid(activeConfig, variant));
++        activeConfig[CONFIG_HEADER_SIZE + 1] = 0x80; seal(); assert(!configValid(activeConfig, variant));
++        activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
++        uint8_t rotation = CONFIG_HEADER_SIZE + 2 * ((variant ? 3 : 6) + 1);
+         activeConfig[rotation] = CONFIG_ACTION_SCROLL | CONFIG_SCROLL_HOLD;
+         activeConfig[rotation + 1] = 1;
+         seal(); assert(!configValid(activeConfig, variant));
+@@ -553,10 +553,10 @@
+ #if CONFIG_SCROLL_ACCELERATION
+         testLoadStarterProfile(variant);
+         for (uint8_t aux = 0; aux < 16; aux++) {
+-            activeConfig[9] = CONFIG_ACTION_SCROLL | (aux << 4);
+-            activeConfig[10] = 1;
++            activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SCROLL | (aux << 4);
++            activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+             seal(); assert(!!configValid(activeConfig, variant) == (aux < 7 && (aux & 3) != 3));
+-            activeConfig[9] = activeConfig[10] = 0;
++            activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+             activeConfig[rotation] = CONFIG_ACTION_SCROLL | (aux << 4);
+             activeConfig[rotation + 1] = 1;
+             seal(); assert(!!configValid(activeConfig, variant) == (aux < 3));
+@@ -571,7 +571,7 @@
+         for (uint8_t aux = 0; aux < 16; aux++) {
+             for (uint8_t rotation = 0; rotation < 2; rotation++) {
+                 testLoadStarterProfile(variant);
+-                uint8_t offset = rotation ? 9 + 2 * ((variant ? 3 : 6) + 1) : 9;
++                uint8_t offset = rotation ? CONFIG_HEADER_SIZE + 2 * ((variant ? 3 : 6) + 1) : CONFIG_HEADER_SIZE;
+                 activeConfig[offset] = CONFIG_ACTION_SCROLL | (aux << 4);
+                 activeConfig[offset + 1] = 1;
+                 seal();
+@@ -598,7 +598,7 @@
+             for (uint8_t aux = 0; aux < 16; aux++) {
+                 for (unsigned param = 0; param < 256; param++) {
+                     testLoadStarterProfile(variant);
+-                    uint8_t offset = 9;
++                    uint8_t offset = CONFIG_HEADER_SIZE;
+                     if (slot == 1) offset += 2 * (configKeyCount() + 1);
+                     if (slot == 2) {
+                         offset = configTimedOffset() + 1;
+@@ -611,7 +611,7 @@
+                     uint8_t pool = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
+                     testSetStringLength(4);
+                     memcpy(activeConfig + pool, "A\0B", 4);
+-                    if (slot == 5) offset = pool + 4;
++                    if (slot == 5) offset = pool + 5; // Type F is only a prefix at the section start.
+                     activeConfig[offset] = (aux << 4) | CONFIG_ACTION_RESERVED;
+                     activeConfig[offset + 1] = param;
+                     seal(); assert(!configValid(activeConfig, variant));
+@@ -640,7 +640,7 @@
+                 testLoadStarterProfile(variant);
+                 testSetLayout(layers, 0, 0);
+                 testSetChordCount(1);
+-                uint8_t offset = 9 + size * layers;
++                uint8_t offset = CONFIG_HEADER_SIZE + size * layers;
+                 activeConfig[offset] = id;
+                 seal();
+                 uint8_t scope = id >> 4;
+@@ -709,7 +709,7 @@
+         assert(configValid(activeConfig, variant) && configTimedCount() == 1);
+         testLoadStarterProfile(variant);
+         activeConfig[CONFIG_HEADER_VERSION] = CONFIG_VERSION;
+-        testSetStringLength(CONFIG_SIZE - (9 + (variant ? 15 : 22)));
++        testSetStringLength(CONFIG_SIZE - (CONFIG_HEADER_SIZE + (variant ? 15 : 22)));
+         seal();
+         assert(configValid(activeConfig, variant)); // Full string-pool budget.
+         for (uint8_t version = CONFIG_VERSION + 1; version <= CONFIG_VERSION + 2; version++) {
+--- a/tests/header_repacking_test.c
++++ b/tests/header_repacking_test.c
+@@ -55,15 +55,15 @@
+     const unsigned size = PHYSICAL_VARIANT ? 15 : 22;
+     const unsigned pairs = PHYSICAL_VARIANT ? 3 : 15;
+     for (unsigned layers = 1; layers <= CONFIG_MAX_LAYERS; layers++) {
+-        unsigned capacity = (119 - size * layers) / 3;
++        unsigned capacity = (CONFIG_SIZE - CONFIG_HEADER_SIZE - size * layers) / 3;
+         if (capacity > pairs * (layers + 1)) capacity = pairs * (layers + 1);
+         assert(capacity <= 30);
+         for (unsigned count = 0; count <= 31; count++) {
+             testLoadStarterProfile(PHYSICAL_VARIANT);
+-            memset(activeConfig + 9, 0, 119);
++            memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+             testSetLayout(layers, layers - 1, 0);
+             testSetChordCount(count);
+-            unsigned offset = 9 + size * layers;
++            unsigned offset = CONFIG_HEADER_SIZE + size * layers;
+             for (unsigned c = 0; c < count && offset + 3 <= 128; c++, offset += 3) {
+                 activeConfig[offset] = c < pairs * layers ?
+                     ((c / pairs) << 4) | (c % pairs) : 0x70 | (c % pairs);
+@@ -72,15 +72,15 @@
+             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (count <= capacity));
+         }
+         for (unsigned timers = 0; timers <= CONFIG_TIMED_MAX; timers++) {
+-            unsigned pool = 9 + size * layers + 6 * timers;
++            unsigned pool = CONFIG_HEADER_SIZE + size * layers + 6 * timers;
+             if (pool > 128) continue;
+             testLoadStarterProfile(PHYSICAL_VARIANT);
+-            memset(activeConfig + 9, 0, 119);
++            memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+             testSetLayout(layers, 0, timers);
+             testSetStringLength(128 - pool);
+             seal(activeConfig);
+             assert(configValid(activeConfig, PHYSICAL_VARIANT));
+-            assert(configTimedOffset() == 9 + size * layers);
++            assert(configTimedOffset() == CONFIG_HEADER_SIZE + size * layers);
+             assert(configTimedCount() == timers);
+             activeConfig[3] += 2; seal(activeConfig);
+             assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+--- a/tests/input_test.c
++++ b/tests/input_test.c
+@@ -191,10 +191,10 @@
+             for (uint8_t e = 0; e < sizeof(enumerationTimes) / sizeof(enumerationTimes[0]); e++) {
+                 testLoadStarterProfile(PHYSICAL_VARIANT);
+                 for (uint8_t i = 1; i < CONFIG_MAX_LAYERS; i++) {
+-                    memcpy(activeConfig + 9 + size * i, activeConfig + 9, size);
++                    memcpy(activeConfig + CONFIG_HEADER_SIZE + size * i, activeConfig + CONFIG_HEADER_SIZE, size);
+                 }
+                 testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
+-                activeConfig[9 + size * (layer + 1) - 1] =
++                activeConfig[CONFIG_HEADER_SIZE + size * (layer + 1) - 1] =
+                     (4 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                     (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+                 saveStartupProfile();
+@@ -246,10 +246,10 @@
+     for (uint8_t dark = 0; dark < 2; dark++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+-        memcpy(activeConfig + 9 + size, activeConfig + 9, size);
++        memcpy(activeConfig + CONFIG_HEADER_SIZE + size, activeConfig + CONFIG_HEADER_SIZE, size);
+         testSetLayout(2, 0, 0); // Two layers; key 1 selects the second layer.
+-        activeConfig[9] = CONFIG_ACTION_SET_LAYER;
+-        activeConfig[10] = 1;
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SET_LAYER;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+         saveStartupProfile();
+         currentMs = 65500;
+         setup();
+@@ -312,7 +312,7 @@
+ 
+ static void testStartupRainbowEnumeration(void) {
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+-    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
++    activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+     saveStartupProfile(); setup();
+     assertBlack();
+     tick(100); assertBlack();
+@@ -334,7 +334,7 @@
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     for (uint8_t layer = 1; layer < CONFIG_MAX_LAYERS; layer++) {
+-        memcpy(activeConfig + 9 + size * layer, activeConfig + 9, size);
++        memcpy(activeConfig + CONFIG_HEADER_SIZE + size * layer, activeConfig + CONFIG_HEADER_SIZE, size);
+     }
+     activeConfigValid = 1;
+     P1 = P3 = 0xFF;
+@@ -344,7 +344,7 @@
+         for (uint8_t behavior = CONFIG_LAYER_INDICATOR_NONE;
+              behavior <= CONFIG_LAYER_INDICATOR_ALWAYS_ON; behavior++) {
+             for (uint8_t full = 0; full < 2; full++) {
+-                activeConfig[9 + size * (layer + 1) - 1] =
++                activeConfig[CONFIG_HEADER_SIZE + size * (layer + 1) - 1] =
+                     (4 << CONFIG_LAYER_OPT_COLOR_SHIFT) |
+                     (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) | full;
+                 currentMs = 65500;
+@@ -421,7 +421,7 @@
+                     (speed << CONFIG_HEADER_RAINBOW_SPEED_SHIFT);
+                 testSetChordCount(1);
+                 assert(configChordWindowMs() == 90);
+-                activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
++                activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+                 activeConfigValid = 1;
+                 P1 = P3 = 0xFF;
+ #if ENABLE_COLOR_PREVIEW
+@@ -465,7 +465,7 @@
+ #endif
+     firmwareApplyConfig(1);
+     for (uint8_t full = 0; full < 2; full++) {
+-        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | full;
++        activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | full;
+         for (uint8_t phase = 0; phase < 4; phase++) {
+             // All chord-window bits set: they must not affect phase extraction.
+             activeConfig[CONFIG_HEADER_LED] = 7 | (phase << CONFIG_HEADER_RAINBOW_PHASE_SHIFT);
+@@ -513,7 +513,7 @@
+     for (uint8_t blinks = 0; blinks <= 8; blinks++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+         activeConfig[CONFIG_HEADER_LED] = 7 | (savedPhase << 4) | (savedSpeed << 6);
+-        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | !dim;
++        activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFC | !dim;
+         activeConfigValid = 1;
+         P1 = P3 = 0xFF;
+         previewOptions = 0;
+@@ -562,7 +562,7 @@
+     for (uint8_t phase = 0; phase < 4; phase++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+         activeConfig[CONFIG_HEADER_LED] = (phase << 4) | 0x40; // Fast.
+-        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
++        activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xFD;
+         activeConfigValid = 1;
+         P1 = P3 = 0xFF;
+ #if ENABLE_COLOR_PREVIEW
+@@ -620,8 +620,8 @@
+ 
+ static void testTransparencyAndRainbow(void) {
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+-    uint8_t colorOffset = 9 + 2 * (NUM_LEDS + 3);
+-    uint8_t optionsOffset = 9 + size - 1;
++    uint8_t colorOffset = CONFIG_HEADER_SIZE + 2 * (NUM_LEDS + 3);
++    uint8_t optionsOffset = CONFIG_HEADER_SIZE + size - 1;
+     uint8_t before[NUM_BYTES];
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     activeConfigValid = 1;
+@@ -706,12 +706,12 @@
+ static void testMomentaryIndicatorCancellation(void) {
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+-    memcpy(activeConfig + 9 + size, activeConfig + 9, size);
++    memcpy(activeConfig + CONFIG_HEADER_SIZE + size, activeConfig + CONFIG_HEADER_SIZE, size);
+     testSetLayout(2, 0, 0); // Two layers, starting on zero.
+-    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[9 + size - 1] = 0x4C; // Always-on amber beneath the momentary layer.
+-    activeConfig[9 + 2 * size - 1] = 0xF4; // Timed Rainbow on the momentary layer.
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + size - 1] = 0x4C; // Always-on amber beneath the momentary layer.
++    activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] = 0xF4; // Timed Rainbow on the momentary layer.
+     activeConfigValid = 1;
+     P1 = P3 = 0xFF;
+     currentMs = 8000;
+@@ -724,7 +724,7 @@
+     assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 6);
+     P1 |= 0x02;
+     rawState[0] = stableState[0] = 0;
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     tick(8050);
+     assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 0);
+     assertIndicatorLeds(0, 1, 0);
+@@ -739,9 +739,9 @@
+         0x10 | CONFIG_ACTION_RELATIVE_LAYER};
+     for (uint8_t i = 0; i < sizeof(types); i++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+-        memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
+-        activeConfig[9] = types[i];
+-        activeConfig[9 + size - 1] = 0x45; // Timed full-brightness amber.
++        memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
++        activeConfig[CONFIG_HEADER_SIZE] = types[i];
++        activeConfig[CONFIG_HEADER_SIZE + size - 1] = 0x45; // Timed full-brightness amber.
+         activeConfigValid = 1;
+         P1 = P3 = 0xFF;
+         currentMs = 10000;
+@@ -750,7 +750,7 @@
+         tick(10000);
+         assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
+         assertIndicatorLeds(1, 1, 0);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+         tick(10250);
+         tick(10500);
+         tick(10750);
+@@ -763,7 +763,7 @@
+         tick(11600);
+         assert(layerIndicatorPhasesLeft == 6);
+         assertIndicatorLeds(1, 1, 0);
+-        actionsRelease(0);
++        actionsRelease(0, 0);
+     }
+ }
+ 
+@@ -772,23 +772,23 @@
+     uint8_t first = PHYSICAL_VARIANT ? 1 : 3;
+     uint8_t second = first + 1;
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+-    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++    memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+     testSetLayout(2, 0, 0);
+     testSetChordCount(1);
+     activeConfig[CONFIG_HEADER_LED] = 3;
+-    activeConfig[9] = activeConfig[9 + size] = 0x10 | CONFIG_ACTION_SET_LAYER;
+-    activeConfig[10] = 1;
+-    activeConfig[9 + size - 1] = 0x87; // Timed cyan.
+-    activeConfig[9 + 2 * size - 1] = 0xD7; // Timed pink.
+-    activeConfig[9 + 2 * size] = PHYSICAL_VARIANT ? 0x72 : 0x7C;
+-    activeConfig[10 + 2 * size] = CONFIG_ACTION_RELATIVE_LAYER;
+-    activeConfig[11 + 2 * size] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + size] = 0x10 | CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + size - 1] = 0x87; // Timed cyan.
++    activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] = 0xD7; // Timed pink.
++    activeConfig[CONFIG_HEADER_SIZE + 2 * size] = PHYSICAL_VARIANT ? 0x72 : 0x7C;
++    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * size] = CONFIG_ACTION_RELATIVE_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 2 + 2 * size] = 1;
+     activeConfigValid = 1;
+     P1 = P3 = 0xFF;
+     currentMs = 20000;
+     firmwareApplyConfig(1);
+     actionsPress(0, 20000);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     tick(20000);
+     assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 6);
+     assert(ledData[1] == 255 && ledData[2] == 72); // Pink.
+@@ -806,8 +806,8 @@
+     tick(21649);
+     assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
+     assert(ledData[0] == 255 && ledData[1] == 0 && ledData[2] == 200); // Cyan.
+-    actionsRelease(first);
+-    actionsRelease(second);
++    actionsRelease(first, 0);
++    actionsRelease(second, 0);
+ }
+ 
+ 
+@@ -925,7 +925,7 @@
+ 
+ static void initAutoSleep(void) {
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+-    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] =
++    activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] =
+         CONFIG_LAYER_OPT_AUTO_SLEEP | CONFIG_LAYER_OPT_FULL_BRIGHTNESS |
+         (CONFIG_LAYER_INDICATOR_ALWAYS_ON << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
+         (4 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+@@ -944,7 +944,7 @@
+         advanceSleep(interval - 1); assert(ledSettings[2] == 3);
+         advanceSleep(1); assertBlack();
+         assert(ledSettings[2] == 0 && ledSettings[3] == 0);
+-        if (input == 2) activeConfig[9] = activeConfig[10] = 0; // Unbound key wakes too.
++        if (input == 2) activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0; // Unbound key wakes too.
+         uint8_t index = input == 1 ? NUM_LEDS : 0;
+         if (input == 1) P3 &= ~8; else P1 &= ~2;
+         scanButton(index, currentMs);
+@@ -982,7 +982,7 @@
+     }
+     initAutoSleep();
+     // A held no-op key and its release do not keep the timer awake.
+-    activeConfig[9] = activeConfig[10] = 0;
++    activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+     P1 &= ~2; scanButton(0, 0); scanButton(0, DEBOUNCE_MS);
+     advanceSleep(interval); assertBlack();
+     P1 |= 2; scanButton(0, currentMs); scanButton(0, currentMs + DEBOUNCE_MS);
+@@ -1000,8 +1000,8 @@
+             testSetLayout(2, 0, 1);
+             activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME |
+                 CONFIG_SLEEP_INDICATOR | (dim ? CONFIG_SLEEP_DIM : 0);
+-            activeConfig[9 + 2 * size - 1] =
+-                activeConfig[9 + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP;
++            activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] =
++                activeConfig[CONFIG_HEADER_SIZE + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP;
+             uint8_t timer = configTimedOffset();
+             // Switch just before or just after the 15-minute sleep timeout.
+             activeConfig[timer] = afterSleep ? 220 : 218;
+@@ -1025,8 +1025,8 @@
+             advanceSleep(interval * 2);
+             assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+             // Return without physical input; a full fresh timeout must elapse.
+-            activeConfig[9 + size + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
+-            activeConfig[10 + size + 2 * (NUM_LEDS + 2)] = 0;
++            activeConfig[CONFIG_HEADER_SIZE + size + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
++            activeConfig[CONFIG_HEADER_SIZE + 1 + size + 2 * (NUM_LEDS + 2)] = 0;
+             actionsRotate(0);
+             assert(actionsLayer() == 0);
+             activeConfig[timer + 1] = CONFIG_ACTION_NONE;
+@@ -1045,12 +1045,12 @@
+                 for (uint8_t input = 0; input < 4; input++) {
+                   for (uint8_t show = 0; show < 2; show++) {
+                     initAutoSleep();
+-                    memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++                    memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+                     testSetLayout(CONFIG_MAX_LAYERS, layer, 0);
+                     activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+-                    memset(activeConfig + 9 + size * layer + 2 * (NUM_LEDS + 3),
++                    memset(activeConfig + CONFIG_HEADER_SIZE + size * layer + 2 * (NUM_LEDS + 3),
+                            0, (NUM_LEDS + 1) / 2); // Suppress held-key feedback.
+-                    activeConfig[9 + size * (layer + 1) - 1] =
++                    activeConfig[CONFIG_HEADER_SIZE + size * (layer + 1) - 1] =
+                         CONFIG_LAYER_OPT_AUTO_SLEEP | full |
+                         (behavior << CONFIG_LAYER_OPT_INDICATOR_SHIFT) |
+                         (4 << CONFIG_LAYER_OPT_COLOR_SHIFT);
+@@ -1132,8 +1132,8 @@
+             // Every physical wake binding sets key feedback to Dim, proving
+             // wake restores configured policies before executing the binding.
+             uint8_t slot = input ? NUM_LEDS + input - 1 : 0;
+-            activeConfig[9 + 2 * slot] = 0x10 | CONFIG_ACTION_LED_CONTROL;
+-            activeConfig[10 + 2 * slot] = CONFIG_LED_KEY_SET;
++            activeConfig[CONFIG_HEADER_SIZE + 2 * slot] = 0x10 | CONFIG_ACTION_LED_CONTROL;
++            activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * slot] = CONFIG_LED_KEY_SET;
+             firmwareApplyConfig(1);
+             advanceSleep((uint32_t)intervals[settings & 3] * 256);
+             assert(ledSettings[2] == ((settings & CONFIG_SLEEP_DIM) ? 1 : 0));
+@@ -1161,11 +1161,11 @@
+         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+         testSetLayout(2, 0, 0);
+         activeConfig[CONFIG_HEADER_SLEEP] = consume ? CONFIG_SLEEP_CONSUME : 0;
+-        activeConfig[9] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[10] = 1;
+-        activeConfig[9 + size] = CONFIG_ACTION_KEY_HOLD; activeConfig[10 + size] = 4;
+-        activeConfig[9 + 2 * size - 1] = 0x10 | CONFIG_LAYER_OPT_AUTO_SLEEP;
++        activeConfig[CONFIG_HEADER_SIZE] = 0x10 | CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++        activeConfig[CONFIG_HEADER_SIZE + size] = CONFIG_ACTION_KEY_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1 + size] = 4;
++        activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] = 0x10 | CONFIG_LAYER_OPT_AUTO_SLEEP;
+         firmwareApplyConfig(1);
+-        actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
++        actionsPress(0, 0); actionsRelease(0, 0); assert(actionsLayer() == 1);
+         advanceSleep(220UL * 256); frameCount = 0;
+         wakeSleepInput(0);
+         assert(actionsLayer() == (consume ? 1 : 0));
+@@ -1191,8 +1191,8 @@
+                     initAutoSleep();
+                     activeConfig[CONFIG_HEADER_SLEEP] = settings;
+                     uint8_t slot = input ? NUM_LEDS + input - 1 : 0;
+-                    activeConfig[9 + 2 * slot] = 0x20 | CONFIG_ACTION_LED_CONTROL;
+-                    activeConfig[10 + 2 * slot] = CONFIG_LED_KEY_SET;
++                    activeConfig[CONFIG_HEADER_SIZE + 2 * slot] = 0x20 | CONFIG_ACTION_LED_CONTROL;
++                    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * slot] = CONFIG_LED_KEY_SET;
+                     firmwareApplyConfig(1);
+                     firmwareLedAction(CONFIG_LED_INDICATOR_SET, indicator == 3 ? 15 : indicator);
+                     firmwareLedAction(CONFIG_LED_KEY_SET, key == 3 ? 15 : key);
+@@ -1216,8 +1216,8 @@
+         initAutoSleep();
+         testSetLayout(2, 0, 1);
+         activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME;
+-        activeConfig[9 + 2 * size - 1] =
+-            (activeConfig[9 + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP) |
++        activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] =
++            (activeConfig[CONFIG_HEADER_SIZE + size - 1] & ~CONFIG_LAYER_OPT_AUTO_SLEEP) |
+             (enabled ? CONFIG_LAYER_OPT_AUTO_SLEEP : 0);
+         uint8_t timer = configTimedOffset();
+         activeConfig[timer] = 220;
+@@ -1404,8 +1404,8 @@
+     assert(ledData[0] == 0 && ledData[1] == 0 && ledData[2] == 0);
+ 
+     // An active profile change suppresses a key already held on the device.
+-    activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
+-    activeConfig[10] = 0x04;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_KEY_HOLD;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0x04;
+     P1 &= ~0x02;
+     firmwareApplyConfig(1);
+     tick(32);
+@@ -1465,7 +1465,7 @@
+     firmwarePreviewColor(0xFC);
+     for (uint8_t i = 0; i < NUM_BYTES; i++) assert(ledData[i] <= 15);
+     // Even a debounced no-op press/release or a partial encoder turn cancels.
+-    activeConfig[9] = activeConfig[10] = 0;
++    activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+     firmwarePreviewColor(5);
+     P1 &= ~0x02;
+     tick(5010);
+@@ -1503,7 +1503,7 @@
+     for (uint8_t valid = 0; valid < 2; valid++) {
+         if (valid) {
+             testLoadStarterProfile(PHYSICAL_VARIANT);
+-            activeConfig[30] &= ~CONFIG_LAYER_OPT_AUTO_SLEEP;
++            activeConfig[CONFIG_HEADER_SIZE + 21] &= ~CONFIG_LAYER_OPT_AUTO_SLEEP;
+             memcpy(flash, activeConfig, CONFIG_SIZE);
+         } else {
+             memset(flash, 0xFF, sizeof(flash));
+--- a/tests/layer_encoding_test.c
++++ b/tests/layer_encoding_test.c
+@@ -4,14 +4,14 @@
+ #undef main
+ 
+ static void setupLayers(uint8_t layers, uint8_t initial) {
+-    reset(); memset(activeConfig + 9, 0, CONFIG_SIZE - 9);
++    reset(); memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
+     testSetLayout(layers, initial, 0);
+     actionsInit();
+ }
+ static void layerBinding(uint8_t layer, uint8_t input, uint8_t aux, uint8_t param) {
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+-    activeConfig[9 + size * layer + 2 * input] = CONFIG_ACTION_SET_LAYER | (aux << 4);
+-    activeConfig[10 + size * layer + 2 * input] = param;
++    activeConfig[CONFIG_HEADER_SIZE + size * layer + 2 * input] = CONFIG_ACTION_SET_LAYER | (aux << 4);
++    activeConfig[CONFIG_HEADER_SIZE + 1 + size * layer + 2 * input] = param;
+ }
+ static void testUnifiedLayerValidation(void) {
+     for (uint8_t rotation = 0; rotation < 2; rotation++) {
+@@ -55,7 +55,7 @@
+                     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+                     actionsPress(0, 0); assert(actionsLayer() == target);
+                     pump(0, 10); assert(actionsLayer() == target);
+-                    actionsRelease(0);
++                    actionsRelease(0, 0);
+                     assert(actionsLayer() == (mode == 2 ? initial : target));
+                     if (mode == 1) {
+                         actionsPress(1, 10); assert(actionsLayer() == initial);
+@@ -71,23 +71,23 @@
+     setupLayers(3, 0); layerBinding(0, 0, 6, 1); layerBinding(1, 1, 0, 2);
+     actionsPress(0, 0); assert(actionsLayer() == 1);
+     actionsPress(1, 1); assert(actionsLayer() == 1);
+-    actionsRelease(0); assert(actionsLayer() == 2);
++    actionsRelease(0, 0); assert(actionsLayer() == 2);
+     // Relative holds follow existing relative actions: resolve from base layer.
+     setupLayers(3, 0); layerBinding(0, 0, 6, 1); layerBinding(1, 1, 6, 2);
+     actionsPress(0, 0); actionsPress(1, 1); assert(actionsLayer() == 2);
+-    actionsRelease(1); assert(actionsLayer() == 1);
+-    actionsRelease(0); assert(actionsLayer() == 0);
++    actionsRelease(1, 0); assert(actionsLayer() == 1);
++    actionsRelease(0, 0); assert(actionsLayer() == 0);
+     // Consuming a one-shot resolves relative to that selected base before return.
+     setupLayers(3, 0); layerBinding(0, 0, 1, 1); layerBinding(1, 1, 6, 1);
+-    actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
++    actionsPress(0, 0); actionsRelease(0, 0); assert(actionsLayer() == 1);
+     actionsPress(1, 1); assert(actionsLayer() == 2);
+-    actionsRelease(1); assert(actionsLayer() == 0);
++    actionsRelease(1, 0); assert(actionsLayer() == 0);
+     // Either chord key releases the resolved hold.
+     setupLayers(3, 0); uint8_t tail = configTimedOffset(); testSetChordCount(1);
+     activeConfig[tail] = 0; activeConfig[tail + 1] = (0x60 | CONFIG_ACTION_SET_LAYER); activeConfig[tail + 2] = 2;
+     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+     actionsPress(0, 0); actionsPress(1, 1); assert(actionsLayer() == 2);
+-    actionsRelease(1); assert(actionsLayer() == 0);
++    actionsRelease(1, 0); assert(actionsLayer() == 0);
+ }
+ #endif
+ int main(void) {
+--- a/tests/led_input_cases.h
++++ b/tests/led_input_cases.h
+@@ -14,9 +14,9 @@
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     uint8_t offset = configTimedOffset();
+     testSetLayout(1, 0, 1);
+-    activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); // The waking key explicitly selects dim key feedback.
+-    activeConfig[10] = CONFIG_LED_KEY_SET;
+-    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
++    activeConfig[CONFIG_HEADER_SIZE] = (0x10 | CONFIG_ACTION_LED_CONTROL); // The waking key explicitly selects dim key feedback.
++    activeConfig[CONFIG_HEADER_SIZE + 1] = CONFIG_LED_KEY_SET;
++    activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
+     activeConfig[offset] = 0; activeConfig[offset + 5] = 128; // Inactivity, one coarse tick.
+     activeConfig[offset + 1] = (0x30 | CONFIG_ACTION_LED_CONTROL);
+     activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
+@@ -100,8 +100,8 @@
+     activeConfig[offset + 2] = CONFIG_LED_PRESET_SET;
+     activeConfig[offset + 3] = (0xF0 | CONFIG_ACTION_LED_CONTROL);
+     activeConfig[offset + 4] = CONFIG_LED_BOTH_SET;
+-    activeConfig[9] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[10] = CONFIG_LED_KEY_SET;
+-    uint8_t encoder = 9 + 2 * NUM_LEDS;
++    activeConfig[CONFIG_HEADER_SIZE] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[CONFIG_HEADER_SIZE + 1] = CONFIG_LED_KEY_SET;
++    uint8_t encoder = CONFIG_HEADER_SIZE + 2 * NUM_LEDS;
+     activeConfig[encoder] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[encoder + 1] = CONFIG_LED_KEY_SET;
+     activeConfig[encoder + 2] = (0x10 | CONFIG_ACTION_LED_CONTROL); activeConfig[encoder + 3] = CONFIG_LED_KEY_SET;
+     P1 = P3 = 0xFF;
+@@ -153,7 +153,7 @@
+     for (uint8_t behavior = 0; behavior < 4; behavior++) {
+         testLoadStarterProfile(PHYSICAL_VARIANT);
+         uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+-        activeConfig[9 + size - 1] = 0x11 | (behavior << 2); // Bright red.
++        activeConfig[CONFIG_HEADER_SIZE + size - 1] = 0x11 | (behavior << 2); // Bright red.
+         P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
+         startLayerIndicator(0, currentMs);
+         assert(layerIndicatorPhasesLeft == (behavior == CONFIG_LAYER_INDICATOR_TIMED_ON ? 6 :
+@@ -231,8 +231,8 @@
+     }
+     // Pressed-key feedback overrides always-on, but not blinking effects.
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+-    activeConfig[9] = activeConfig[10] = 0;
+-    activeConfig[9 + 2 * (NUM_LEDS + 3)] = 10; // Key 0: blue.
++    activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 2 * (NUM_LEDS + 3)] = 10; // Key 0: blue.
+     P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
+     firmwareLedAction(CONFIG_LED_EFFECT_ON, 1); // Bright red.
+     P1 &= ~2; currentMs = 1; loop(); currentMs = 11; loop();
+@@ -266,16 +266,16 @@
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+     testSetLayout(2, 0, 0);
+-    activeConfig[9] = CONFIG_ACTION_SET_LAYER; activeConfig[10] = 0;
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
+-    activeConfig[9 + 2 * size - 1] = 0xAD; // Bright blue, always-on.
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] = 0xAD; // Bright blue, always-on.
+     P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
+     firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
+     actionsPress(0, 0); loop(); assert(previewOptions & LED_EFFECT_FLAG);
+-    actionsRelease(0);
++    actionsRelease(0, 0);
+     actionsPress(1, 1); loop();
+     assert(!previewOptions && actionsLayer() == 1 && ledData[2] == 255);
+-    actionsRelease(1);
++    actionsRelease(1, 0);
+     // A timer may start an alert; its resume restores the same layer, consuming wake.
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     testSetLayout(1, 0, 1);
+@@ -358,7 +358,7 @@
+     assert(memcmp(image, activeConfig, CONFIG_SIZE) == 0);
+     // Matrix: every visibility mode, brightness policy, held-key state and blink phase.
+     for (uint8_t mode = 0; mode < 4; mode++) for (uint8_t full = 0; full < 2; full++) {
+-        activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xE0 | mode << 2 | full;
++        activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xE0 | mode << 2 | full;
+         for (uint8_t ind = 0; ind < 4; ind++) for (uint8_t key = 0; key < 4; key++) {
+             ledSettings[2] = ind; ledSettings[3] = key;
+             for (uint8_t held = 0; held < 2; held++) for (uint8_t dark = 0; dark < 2; dark++) {
+@@ -380,7 +380,7 @@
+     // Key-off permits the idle background; indicator-off permits the key overlay.
+     layerIndicatorPhasesLeft = 0;
+     stableState[0] = 1;
+-    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
++    activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] = 0xED;
+     firmwareLedAction(CONFIG_LED_KEY_SET, 0);
+     firmwareLedAction(CONFIG_LED_INDICATOR_SET, 2);
+     assert(ledData[0] == 255 && ledData[1] == 255);
+@@ -413,17 +413,17 @@
+     testLoadStarterProfile(PHYSICAL_VARIANT);
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+     testSetLayout(2, 0, 0); // Two layers with opposite configured brightnesses.
+-    memcpy(activeConfig + 9 + size, activeConfig + 9, size);
+-    activeConfig[9 + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
+-    activeConfig[10 + 2 * (NUM_LEDS + 2)] = 1;
++    memcpy(activeConfig + CONFIG_HEADER_SIZE + size, activeConfig + CONFIG_HEADER_SIZE, size);
++    activeConfig[CONFIG_HEADER_SIZE + 2 * (NUM_LEDS + 2)] = CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * (NUM_LEDS + 2)] = 1;
+     activeConfigValid = 1;
+     P1 = P3 = 0xFF;
+     previewOptions = 0;
+     currentMs = 200;
+     for (uint8_t full = 0; full < 2; full++) {
+         for (uint8_t mode = 0; mode < 4; mode++) {
+-            activeConfig[9 + size - 1] = 0x10 | !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+-            activeConfig[9 + 2 * size - 1] = 0x10 | full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
++            activeConfig[CONFIG_HEADER_SIZE + size - 1] = 0x10 | !full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
++            activeConfig[CONFIG_HEADER_SIZE + 2 * size - 1] = 0x10 | full | (mode << CONFIG_LAYER_OPT_INDICATOR_SHIFT);
+             firmwareApplyConfig(1);
+             actionsRotate(0); // Resolve configured brightness from the current layer.
+             assert(actionsLayer() == 1);
+--- a/tests/live_state_test.c
++++ b/tests/live_state_test.c
+@@ -47,7 +47,7 @@
+     currentMs++; scanButton(0, currentMs); snapshot(2);
+     assert(protocolReply[16] == 1 && liveBindings[0] == 1);
+     assert(protocolReply[19] == 1 && protocolReply[28] == 0); // Counter and Key 1 source.
+-    assert(protocolReply[29] == activeConfig[9] && protocolReply[30] == activeConfig[10]);
++    assert(protocolReply[29] == activeConfig[CONFIG_HEADER_SIZE] && protocolReply[30] == activeConfig[CONFIG_HEADER_SIZE + 1]);
+     button(0, 0); snapshot(2); assert(protocolReply[16] == 0 && liveBindings[0] == 1);
+     button(NUM_LEDS, 1); snapshot(2); assert(protocolReply[16] == (1 << NUM_LEDS));
+     button(NUM_LEDS, 0);
+@@ -103,10 +103,10 @@
+     actionsPress(1, 1); snapshot(2);
+     assert(liveBindings[12] == 1 && liveBindings[9] == 0x20);
+     assert(liveBindings[10] == CONFIG_ACTION_KEY_TAP && liveBindings[11] == 4);
+-    actionsRelease(0); actionsRelease(1); actionsClear(); frameCount = 0;
++    actionsRelease(0, 0); actionsRelease(1, 0); actionsClear(); frameCount = 0;
+     // Fill the action queue without polling. Dropped bindings must not claim dispatch.
+     uint8_t before = liveBindings[12];
+-    for (uint8_t i = 0; i < 12; i++) { actionsPress(2, i); actionsRelease(2); }
++    for (uint8_t i = 0; i < 12; i++) { actionsPress(2, i); actionsRelease(2, 0); }
+     assert((uint8_t)(liveBindings[12] - before) == 8);
+     assert(actionsDropped(0) == 4);
+     snapshot(11); assert(protocolReply[15] == 8); // Queue depth.
+@@ -115,18 +115,18 @@
+     initLive();
+     testSetLayout(3, 0, 0);
+     const uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+-    memset(activeConfig + 9, 0, size * 3);
++    memset(activeConfig + CONFIG_HEADER_SIZE, 0, size * 3);
+     testUniformLayers();
+-    activeConfig[9] = (CONFIG_ACTION_SET_LAYER | 0x10); activeConfig[10] = 2;
++    activeConfig[CONFIG_HEADER_SIZE] = (CONFIG_ACTION_SET_LAYER | 0x10); activeConfig[CONFIG_HEADER_SIZE + 1] = 2;
+     actionsClear(); frameCount = 0;
+     actionsPress(0, 0); snapshot(11);
+     assert(protocolReply[9] == 2 && protocolReply[10] == 2 && protocolReply[12] == 0);
+     assert(liveBindingLayer == 0 && liveBindings[11] == 2); // Preserve original target bytes.
+-    actionsRelease(0); actionsPress(1, 1); snapshot(11);
++    actionsRelease(0, 0); actionsPress(1, 1); snapshot(11);
+     assert(protocolReply[9] == 0 && protocolReply[12] == 255);
+-    actionsRelease(1); actionsClear(); frameCount = 0;
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 5;
+-    actionsPress(0, 2); actionsRelease(0); snapshot(11);
++    actionsRelease(1, 0); actionsClear(); frameCount = 0;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 1] = 5;
++    actionsPress(0, 2); actionsRelease(0, 0); snapshot(11);
+     assert(protocolReply[22] == 5); // Persistent buttons survive physical release.
+     uint8_t packet[32] = {3, 'U', 'M', 1, 11, 1, 1};
+     assert(protocolReceive(packet)); protocolPoll(currentMs); assert(protocolReply[8] == 3);
+--- a/tests/macros_test.c
++++ b/tests/macros_test.c
+@@ -47,15 +47,15 @@
+     actionsInit(); actionsTimedReset(0);
+ }
+ static void bind(uint8_t input, uint8_t macro, uint8_t repeat) {
+-    activeConfig[9 + 2 * input] = CONFIG_ACTION_MACRO | ((repeat - 1) << 4);
+-    activeConfig[10 + 2 * input] = macro;
++    activeConfig[CONFIG_HEADER_SIZE + 2 * input] = CONFIG_ACTION_MACRO | ((repeat - 1) << 4);
++    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * input] = macro;
+ }
+ static uint8_t define(uint8_t offset, const uint8_t *bytes, uint8_t steps) {
+     memcpy(activeConfig + offset, bytes, 2 * steps);
+     if (offset + 2 * steps < CONFIG_SIZE) activeConfig[offset + 2 * steps] = 0;
+     return offset + 2 * steps + 1;
+ }
+-static void press(uint8_t key, uint16_t now) { actionsPress(key, now); actionsRelease(key); }
++static void press(uint8_t key, uint16_t now) { actionsPress(key, now); actionsRelease(key, 0); }
+ static void pump(uint16_t first, uint16_t end) {
+     for (uint16_t now = first; now < end; now++) actionsPoll(now);
+ }
+@@ -70,7 +70,7 @@
+     activeConfig[CONFIG_HEADER_LED] |= CONFIG_HEADER_TRANSPARENT_BLACK;
+     for (unsigned ref = 0; ref < 256; ref++) {
+         for (uint8_t aux = 0; aux < 16; aux++) {
+-            activeConfig[9] = CONFIG_ACTION_MACRO | (aux << 4); activeConfig[10] = ref; seal();
++            activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MACRO | (aux << 4); activeConfig[CONFIG_HEADER_SIZE + 1] = ref; seal();
+             uint8_t expected;
+             expected = ref >= start && ref < CONFIG_SIZE &&
+                        ref != start + 1 && ref != start + 3 &&
+@@ -132,7 +132,7 @@
+     for (uint8_t repeat = 1; repeat <= (CONFIG_MACRO_REPEAT ? 16 : 1); repeat++) {
+         reset(); const uint8_t pair[] = {0x81, 0x2C, 1, 0x28};
+         define(start, pair, 2); bind(0, start, repeat);
+-        activeConfig[11] = 1; activeConfig[12] = 6;
++        activeConfig[CONFIG_HEADER_SIZE + 2] = 1; activeConfig[CONFIG_HEADER_SIZE + 3] = 6;
+         press(0, 0); press(1, 1);
+         pending = 1; pump(0, 50); assert(count == 0);
+         pending = 0; blocked = 1; pump(50, 100); assert(count == 0);
+@@ -169,7 +169,7 @@
+         reset();
+         memcpy(activeConfig + start, text, sizeof text);
+         testSetStringLength(sizeof text);
+-        activeConfig[9] = CONFIG_ACTION_STRING; activeConfig[10] = 0;
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_STRING; activeConfig[CONFIG_HEADER_SIZE + 1] = 0;
+         seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+         uint16_t origin = wrap ? 65520 : 0;
+         unsigned presses = 0, lastRelease = 0;
+@@ -206,9 +206,9 @@
+     reset();
+     // Actual layer transitions abort playback and queued macro invocations.
+     testSetLayout(2, 0, 0); start = configTimedOffset();
+-    memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0, PHYSICAL_VARIANT ? 15 : 22);
++    memset(activeConfig + CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22), 0, PHYSICAL_VARIANT ? 15 : 22);
+     define(start, pair, 2); bind(0, start, 1);
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     press(0, 0); pump(0, 2); press(1, 2); pump(2, 100);
+     assert(actionsLayer() == 1 && !keyPresses(5));
+ }
+@@ -224,18 +224,18 @@
+     activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MACRO;
+     activeConfig[chord + 2] = start; define(start, pair, 2);
+     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+-    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
++    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0, 0); actionsRelease(1, 0);
+     pump(5, 100); assert(keyPresses(4) == 1 && keyPresses(5) == 1);
+ }
+ static void testHeldPointer(void) {
+     reset(); const uint8_t pair[] = {1, 4, 1, 5}; define(start, pair, 2); bind(0, start, 1);
+-    activeConfig[11] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
+-    activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_MOUSE_MOVE_HOLD | CONFIG_ACTION_MOUSE_AXIS;
++    activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     actionsPress(1, 0); actionsPoll(0); press(0, 1); pump(1, 20);
+     unsigned moves = 0;
+     for (unsigned i = 0; i < count; i++) if (reports[i][0] == 2 && reports[i][2]) moves++;
+     assert(moves == 1 && keyPresses(4) == 1 && keyPresses(5) == 1);
+-    actionsRelease(1); pump(20, 100);
++    actionsRelease(1, 0); pump(20, 100);
+ }
+ static void testPause(void) {
+ #if CONFIG_MACRO_PAUSE
+@@ -258,7 +258,7 @@
+ static void testImmediateSteps(void) {
+     reset(); const uint8_t toggle[] = {CONFIG_ACTION_MOUSE_TOGGLE, 1, CONFIG_ACTION_LED_CONTROL, CONFIG_LED_RESTORE};
+     define(start, toggle, 2); bind(0, start, 1);
+-    activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 2;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 3] = 2;
+     press(1, 0); press(0, 1); pump(0, 80);
+     assert(ledCalls == 1 && ledCommand == CONFIG_LED_RESTORE && ledValue == 0);
+     assert(reports[count - 1][1] == 3); // Different button bits combine in the shared toggle state.
+@@ -277,31 +277,31 @@
+     // The reported physical-key/macro case, in both directions.
+     reset(); const uint8_t toggle[] = {CONFIG_ACTION_MOUSE_TOGGLE, 1};
+     define(start, toggle, 1); bind(0, start, 1);
+-    activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     press(1, 0); pump(0, 50); assert(latestMouse() == 1);
+     press(0, 50); pump(50, 100); assert(latestMouse() == 0);
+     press(0, 100); pump(100, 150); assert(latestMouse() == 1);
+     press(1, 150); pump(150, 200); assert(latestMouse() == 0);
+     // Another physical binding shares the state too.
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     press(0, 200); pump(200, 250); assert(latestMouse() == 1);
+     press(1, 250); pump(250, 300); assert(latestMouse() == 0);
+     // Toggle-off must not release an independently held button.
+     bind(0, start, 1);
+-    activeConfig[13] = CONFIG_ACTION_MOUSE_HOLD; activeConfig[14] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 4] = CONFIG_ACTION_MOUSE_HOLD; activeConfig[CONFIG_HEADER_SIZE + 5] = 1;
+     actionsPress(2, 300); pump(300, 350); assert(latestMouse() == 1);
+     press(1, 350); pump(350, 400); assert(latestMouse() == 1);
+     press(0, 400); pump(400, 450); assert(latestMouse() == 1);
+-    actionsRelease(2); pump(450, 500); assert(latestMouse() == 0);
++    actionsRelease(2, 0); pump(450, 500); assert(latestMouse() == 0);
+     // Clear/reset removes toggles.
+     press(0, 500); pump(500, 550); assert(latestMouse() == 1);
+     actionsClear(); pump(550, 600); assert(latestMouse() == 0);
+     // Effective layer changes remove toggles.
+     reset(); testSetLayout(2, 0, 0); start = configTimedOffset();
+-    memset(activeConfig + 9 + (PHYSICAL_VARIANT ? 15 : 22), 0,
++    memset(activeConfig + CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22), 0,
+            PHYSICAL_VARIANT ? 15 : 22);
+     define(start, toggle, 1); bind(0, start, 1);
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     press(0, 0); pump(0, 50); assert(latestMouse() == 1);
+     press(1, 50); pump(50, 100);
+     assert(actionsLayer() == 1 && latestMouse() == 0);
+@@ -312,14 +312,14 @@
+     reset();
+     const uint8_t toggle[] = {CONFIG_ACTION_MOUSE_TOGGLE, 3};
+     define(start, toggle, 1); bind(0, start, 1);
+-    activeConfig[11] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     press(1, 0); pump(0, 50); assert(latestMouse() == 1);
+     press(0, 50); pump(50, 100); assert(latestMouse() == 2);
+     press(0, 100); pump(100, 150); assert(latestMouse() == 1);
+     // Encoder rotation shares the physical key's state.
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 1;
+-    uint8_t clockwise = 9 + 2 * (configKeyCount() + 1);
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
++    uint8_t clockwise = CONFIG_HEADER_SIZE + 2 * (configKeyCount() + 1);
+     activeConfig[clockwise] = CONFIG_ACTION_MOUSE_TOGGLE;
+     activeConfig[clockwise + 1] = 1;
+     press(0, 0); pump(0, 50); assert(latestMouse() == 1);
+@@ -330,10 +330,10 @@
+     activeConfig[chord] = 0;
+     activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_TOGGLE;
+     activeConfig[chord + 2] = 1;
+-    activeConfig[13] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[14] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 4] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 5] = 1;
+     press(2, 0); pump(0, 50); assert(latestMouse() == 1);
+     actionsPress(0, 50); actionsPress(1, 55);
+-    actionsRelease(0); actionsRelease(1);
++    actionsRelease(0, 0); actionsRelease(1, 0);
+     pump(55, 100); assert(latestMouse() == 0);
+     // Timer expiry and its follow-up share the macro's toggle state.
+     reset();
+@@ -357,9 +357,9 @@
+ static void testPersistentMouse(void) {
+     for (unsigned mask = 1; mask < 256; mask++) {
+         reset();
+-        activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = mask;
+-        activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = mask;
+-        activeConfig[13] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[14] = mask;
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[CONFIG_HEADER_SIZE + 1] = mask;
++        activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_UP; activeConfig[CONFIG_HEADER_SIZE + 3] = mask;
++        activeConfig[CONFIG_HEADER_SIZE + 4] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[CONFIG_HEADER_SIZE + 5] = mask;
+         press(0, 0); pump(0, 10); assert(latestMouse() == mask && count == 1);
+         press(0, 10); pump(10, 20); assert(count == 1); // Idempotent; no second edge.
+         press(1, 20); pump(20, 30); assert(latestMouse() == 0 && count == 2);
+@@ -367,28 +367,28 @@
+         press(2, 40); pump(40, 50); assert(latestMouse() == mask);
+         press(0, 50); press(1, 51); pump(51, 60); assert(latestMouse() == 0);
+         // Persistent up cannot release a physical hold.
+-        activeConfig[13] = CONFIG_ACTION_MOUSE_HOLD;
++        activeConfig[CONFIG_HEADER_SIZE + 4] = CONFIG_ACTION_MOUSE_HOLD;
+         actionsPress(2, 60); pump(60, 70); assert(latestMouse() == mask);
+         press(0, 70); press(1, 71); pump(71, 80); assert(latestMouse() == mask);
+-        actionsRelease(2); pump(80, 90); assert(latestMouse() == 0);
++        actionsRelease(2, 0); pump(80, 90); assert(latestMouse() == 0);
+         press(0, 90); pump(90, 100); actionsClear(); pump(100, 110); assert(latestMouse() == 0);
+     }
+-    reset(); activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0xFF;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFF;
+     press(0, 0); pump(0, 10); count = 0; generation++;
+     blocked = 1; pump(10, 20); assert(count == 0);
+     blocked = 0; pump(20, 30); assert(latestMouse() == 0xFF); // Reassert all buttons after USB generation change.
+     // Different selected bits remain independent, including button 8.
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0xFF;
+-    activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = 0x55;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xFF;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_UP; activeConfig[CONFIG_HEADER_SIZE + 3] = 0x55;
+     press(0, 0); press(1, 1); pump(1, 10); assert(latestMouse() == 0xAA);
+     // Clicks are independent from persistent state.
+-    activeConfig[13] = CONFIG_ACTION_MOUSE_CLICK; activeConfig[14] = 0x55;
++    activeConfig[CONFIG_HEADER_SIZE + 4] = CONFIG_ACTION_MOUSE_CLICK; activeConfig[CONFIG_HEADER_SIZE + 5] = 0x55;
+     press(2, 10); pump(10, 30); assert(latestMouse() == 0xAA);
+     assert(reports[count - 2][1] == 0xFF);
+     // Effective-layer transition clears all eight bits.
+     testSetLayout(2, 0, 0);
+-    activeConfig[13] = CONFIG_ACTION_SET_LAYER; activeConfig[14] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 4] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 5] = 1;
+     press(2, 30); pump(30, 40); assert(latestMouse() == 0);
+ }
+ 
+@@ -425,7 +425,7 @@
+     // Macro completion retains a persistent press for a separate input to clear.
+     reset(); const uint8_t down[] = {CONFIG_ACTION_MOUSE_DOWN, 0xF8};
+     define(start, down, 1); bind(0, start, 2);
+-    activeConfig[11] = CONFIG_ACTION_MOUSE_UP; activeConfig[12] = 0xF8;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MOUSE_UP; activeConfig[CONFIG_HEADER_SIZE + 3] = 0xF8;
+     press(0, 0); pump(0, 30); assert(latestMouse() == 0xF8 && count == 1);
+     press(1, 30); pump(30, 40); assert(latestMouse() == 0);
+ }
+@@ -439,17 +439,17 @@
+         activeConfig[start + 2] = 0xF1;
+         actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
+         assert(count == 2 && reports[1][2] == 8 && (int8_t)reports[1][3] == -64);
+-        actionsRelease(released); pump(10, 30); assert(count == 2);
++        actionsRelease(released, 0); pump(10, 30); assert(count == 2);
+     }
+     // Resolved pointer holds retain their axes and signs across layer changes.
+     reset(); testSetLayout(2, 0, 0);
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_X_NEGATIVE;
+-    activeConfig[10] = 0xF1;
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | CONFIG_MOUSE_X_NEGATIVE;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = 0xF1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
+     assert(actionsLayer() == 1 && count == 2);
+     assert((int8_t)reports[1][2] == -8 && reports[1][3] == 64);
+-    actionsRelease(0); pump(10, 30); assert(count == 2);
++    actionsRelease(0, 0); pump(10, 30); assert(count == 2);
+ 
+     // Both timer slots use the same dispatcher and preserve blocked tap reports.
+     reset(); uint8_t timer = start; testSetLayout(1, 0, 1);
+@@ -474,13 +474,13 @@
+ 
+ static void testMouseSources(void) {
+     reset();
+-    activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0x80;
+-    uint8_t cw = 9 + 2 * (configKeyCount() + 1);
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[CONFIG_HEADER_SIZE + 1] = 0x80;
++    uint8_t cw = CONFIG_HEADER_SIZE + 2 * (configKeyCount() + 1);
+     activeConfig[cw] = CONFIG_ACTION_MOUSE_UP; activeConfig[cw + 1] = 0x80;
+     press(0, 0); pump(0, 10); actionsRotate(1); pump(10, 20); assert(latestMouse() == 0);
+     reset(); uint8_t chord = start; testSetChordCount(1);
+     activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[chord + 2] = 0xF8;
+-    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
++    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0, 0); actionsRelease(1, 0);
+     pump(5, 20); assert(latestMouse() == 0xF8);
+     reset(); uint8_t timer = start; testSetLayout(1, 0, 1);
+     memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
+@@ -507,8 +507,8 @@
+ static void testModifiedConsumer(void) {
+     // Every mask, including zero, with low/high 8-bit usage boundaries.
+     for (uint8_t mask = 0; mask <= 15; mask++) for (uint16_t usage = 1; usage <= 255; usage += 254) {
+-        reset(); activeConfig[9] = (mask << 4) | CONFIG_ACTION_CONSUMER_MODIFIED;
+-        activeConfig[10] = usage;
++        reset(); activeConfig[CONFIG_HEADER_SIZE] = (mask << 4) | CONFIG_ACTION_CONSUMER_MODIFIED;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = usage;
+         press(0, 0); pump(0, 20);
+         assert(count == (mask ? 4 : 2));
+         unsigned index = 0;
+@@ -521,30 +521,30 @@
+     const uint8_t consumerTypes[] = {CONFIG_ACTION_CONSUMER, CONFIG_ACTION_CONSUMER_HOLD};
+     for (uint8_t aux = 0; aux < 16; aux++) for (uint8_t index = 0; index < 2; index++) {
+         uint8_t type = consumerTypes[index];
+-        reset(); activeConfig[9] = (aux << 4) | type; activeConfig[10] = 0x24;
++        reset(); activeConfig[CONFIG_HEADER_SIZE] = (aux << 4) | type; activeConfig[CONFIG_HEADER_SIZE + 1] = 0x24;
+         actionsPress(0, 0); actionsPoll(0);
+         assert(count == 1); assertConsumer(0, ((uint16_t)aux << 8) | 0x24);
+-        actionsRelease(0); pump(1, 20);
++        actionsRelease(0, 0); pump(1, 20);
+         assert(count == 2); assertConsumer(1, 0); assert(!latestModifiers());
+     }
+     // Removing temporary ownership preserves physical keys and modifiers.
+-    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
+-    activeConfig[11] = 0x22; activeConfig[12] = 4;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = 0x22; activeConfig[CONFIG_HEADER_SIZE + 3] = 4;
+     actionsPress(1, 0); pump(0, 2);
+     press(0, 2); pump(2, 10);
+     assert(count == 5); assertModifiers(1, 6); assertConsumer(2, 0x6f);
+     assertConsumer(3, 0); assertModifiers(4, 2); assert(reports[4][3] == 4);
+-    actionsRelease(1); pump(10, 20); assert(!latestModifiers());
++    actionsRelease(1, 0); pump(10, 20); assert(!latestModifiers());
+     // Direct modified consumers overlap temporary keyboard taps too.
+-    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x70;
+-    activeConfig[11] = 0x91; activeConfig[12] = 5;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x70;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = 0x91; activeConfig[CONFIG_HEADER_SIZE + 3] = 5;
+     press(1, 0); actionsPoll(0); press(0, 1); actionsPoll(1);
+     assertModifiers(1, 15); assertConsumer(2, 0x70);
+     actionsPoll(2); assertConsumer(3, 0); assertModifiers(4, 9);
+     assert(reports[4][3] == 5); pump(3, 30); assert(!latestModifiers());
+ }
+ static void testModifiedConsumerBackpressure(void) {
+-    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
+     blocked = 1; press(0, 0); pump(0, 10); assert(!count);
+     // Fill the queue after each report, forcing retries at every boundary.
+     blocked = 0; reportLimit = 1; actionsPoll(10);
+@@ -556,7 +556,7 @@
+     pump(31, 40); assert(count == 3);
+     reportLimit = 4; actionsPoll(40); assert(count == 4); assertModifiers(3, 0);
+     // Generation invalidation reasserts the mask while release is rejected.
+-    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
+     press(0, 0); actionsPoll(0); generation++; blocked = 1;
+     actionsPoll(1); assert(count == 2 && latestModifiers() == 6);
+     blocked = 0; pump(2, 10); assert(!latestModifiers());
+@@ -564,30 +564,30 @@
+ static void testModifiedConsumerReplacement(void) {
+     // Latest-wins replacement releases the old consumer before changing masks.
+     for (uint8_t replacement = 0; replacement < 3; replacement++) {
+-        reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
+-        activeConfig[11] = replacement == 0 ? CONFIG_ACTION_CONSUMER :
++        reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
++        activeConfig[CONFIG_HEADER_SIZE + 2] = replacement == 0 ? CONFIG_ACTION_CONSUMER :
+                            replacement == 1 ? CONFIG_ACTION_CONSUMER_HOLD : (0x90 | CONFIG_ACTION_CONSUMER_MODIFIED);
+-        activeConfig[12] = replacement == 2 ? 0x70 : 0xE9;
++        activeConfig[CONFIG_HEADER_SIZE + 3] = replacement == 2 ? 0x70 : 0xE9;
+         press(0, 0); actionsPoll(0); assert(count == 2);
+         blocked = 1; actionsPress(1, 1); actionsPoll(1);
+         assert(count == 2 && latestModifiers() == 6);
+         blocked = 0; actionsPoll(2);
+         assertConsumer(2, 0); assertModifiers(3, replacement == 2 ? 9 : 0);
+         assertConsumer(4, replacement == 2 ? 0x70 : 0xE9);
+-        actionsRelease(1); pump(3, 20); assert(!latestModifiers());
++        actionsRelease(1, 0); pump(3, 20); assert(!latestModifiers());
+         assertConsumer(count - (replacement == 2 ? 2 : 1), 0);
+     }
+     // A modified tap interrupts a held 12-bit usage, without restoring it.
+-    reset(); activeConfig[9] = 0x20 | CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0x24;
+-    activeConfig[11] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[12] = 0x6f;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = 0x20 | CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 0x24;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 3] = 0x6f;
+     actionsPress(0, 0); actionsPoll(0); assertConsumer(0, 0x224);
+     press(1, 1); actionsPoll(1);
+     assertConsumer(1, 0); assertModifiers(2, 6); assertConsumer(3, 0x6f);
+     pump(2, 10); assertConsumer(4, 0); assertModifiers(5, 0);
+-    actionsRelease(0); pump(10, 20); assert(count == 6);
++    actionsRelease(0, 0); pump(10, 20); assert(count == 6);
+     // An unsent modified action can be replaced without emitting its usage.
+-    reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
+-    activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_CONSUMER; activeConfig[CONFIG_HEADER_SIZE + 3] = 0xE9;
+     blocked = 1; press(0, 0); actionsPoll(0); press(1, 1);
+     blocked = 0; pump(2, 20); assert(!latestModifiers());
+     for (unsigned i = 0; i < count; i++)
+@@ -608,7 +608,7 @@
+     assert(!latestModifiers());
+     for (unsigned i = 0; i < count; i++) if (reports[i][0] == 1 && reports[i][3]) assert(!reports[i][1]);
+ 
+-    reset(); uint8_t cw = 9 + 2 * (configKeyCount() + 1);
++    reset(); uint8_t cw = CONFIG_HEADER_SIZE + 2 * (configKeyCount() + 1);
+     activeConfig[cw] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[cw + 1] = 0x70;
+     actionsRotate(1); pump(0, 20); assert(count == 4 && !latestModifiers());
+     reset(); testSetChordCount(1);
+@@ -625,8 +625,8 @@
+ }
+ static void testModifiedConsumerCleanup(void) {
+     for (uint8_t layer = 0; layer < 2; layer++) {
+-        reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
+-        activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++        reset(); activeConfig[CONFIG_HEADER_SIZE] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
++        activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+         press(0, 0); actionsPoll(0); assert(count == 2);
+         blocked = 1;
+         if (layer) press(1, 1); else actionsClear();
+--- a/tests/modified_hold_test.c
++++ b/tests/modified_hold_test.c
+@@ -3,8 +3,8 @@
+ #undef main
+ 
+ static void holdBinding(uint8_t input, uint8_t mask, uint8_t usage) {
+-    activeConfig[9 + 2 * input] = CONFIG_ACTION_CONSUMER_MODIFIED_HOLD | (mask << 4);
+-    activeConfig[10 + 2 * input] = usage;
++    activeConfig[CONFIG_HEADER_SIZE + 2 * input] = CONFIG_ACTION_CONSUMER_MODIFIED_HOLD | (mask << 4);
++    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * input] = usage;
+ }
+ 
+ static void testHoldEncoding(void) {
+@@ -36,36 +36,36 @@
+         assert(count == (mask ? 2 : 1));
+         if (mask) assertModifiers(0, mask);
+         assertConsumer(count - 1, 0xff);
+-        actionsRelease(0); pump(100, 110);
++        actionsRelease(0, 0); pump(100, 110);
+         assertConsumer(count - (mask ? 2 : 1), 0);
+         assert(!latestModifiers());
+     }
+     // A short press gets both edges through backpressure at every boundary.
+     for (unsigned limit = 0; limit <= 4; limit++) {
+         reset(); holdBinding(0, 6, 0x6f); reportLimit = limit;
+-        actionsPress(0, 0); actionsRelease(0); pump(0, 10);
++        actionsPress(0, 0); actionsRelease(0, 0); pump(0, 10);
+         assert(count == limit);
+         reportLimit = 1024; pump(10, 20); assert(count == 4);
+         assertModifiers(0, 6); assertConsumer(1, 0x6f);
+         assertConsumer(2, 0); assertModifiers(3, 0);
+     }
+     // Consumer cleanup preserves ordinary keys and modifiers from another hold.
+-    reset(); activeConfig[9] = 0x12; activeConfig[10] = 4;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = 0x12; activeConfig[CONFIG_HEADER_SIZE + 1] = 4;
+     holdBinding(1, 6, 0x6f); actionsPress(0, 0); actionsPoll(0);
+     actionsPress(1, 1); actionsPoll(1); assertModifiers(1, 7);
+-    actionsRelease(1); pump(2, 10); assertConsumer(3, 0);
++    actionsRelease(1, 0); pump(2, 10); assertConsumer(3, 0);
+     assertModifiers(4, 1); assert(reports[4][3] == 4);
+     // Holds retain their original binding across a layer change.
+     reset(); testSetLayout(2, 0, 0); holdBinding(0, 6, 0x6f);
+-    activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_SET_LAYER; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
+     actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
+     assert(count == 2 && latestModifiers() == 6);
+-    actionsRelease(0); pump(10, 20); assert(count == 4 && !latestModifiers());
++    actionsRelease(0, 0); pump(10, 20); assert(count == 4 && !latestModifiers());
+     // Either chord member releases the composite output.
+     reset(); testSetChordCount(1);
+     activeConfig[start] = 0; activeConfig[start + 1] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD); activeConfig[start + 2] = 0x6f;
+     actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
+-    assert(count == 2); actionsRelease(1); pump(10, 20);
++    assert(count == 2); actionsRelease(1, 0); pump(10, 20);
+     assert(count == 4 && !latestModifiers());
+     // A report-generation change reasserts the winning modified hold.
+     reset(); holdBinding(0, 6, 0x6f); actionsPress(0, 0); actionsPoll(0);
+@@ -76,15 +76,15 @@
+ 
+ static void testHoldReplacement(void) {
+     // Includes an unmodified hold followed by a modified hold: release first.
+-    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xe9;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[CONFIG_HEADER_SIZE + 1] = 0xe9;
+     holdBinding(1, 6, 0x6f); actionsPress(0, 0); actionsPoll(0);
+     actionsPress(1, 1); actionsPoll(1);
+     assertConsumer(0, 0xe9); assertConsumer(1, 0);
+     assertModifiers(2, 6); assertConsumer(3, 0x6f);
+-    actionsRelease(0); pump(2, 10); assert(count == 4);
+-    actionsRelease(1); pump(10, 20); assertConsumer(4, 0); assertModifiers(5, 0);
++    actionsRelease(0, 0); pump(2, 10); assert(count == 4);
++    actionsRelease(1, 0); pump(10, 20); assertConsumer(4, 0); assertModifiers(5, 0);
+     // Keep an unmodified tap's pending release before applying hold modifiers.
+-    reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER; activeConfig[10] = 0x6f;
++    reset(); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_CONSUMER; activeConfig[CONFIG_HEADER_SIZE + 1] = 0x6f;
+     holdBinding(1, 6, 0x6f); actionsPress(0, 0); actionsPoll(0);
+     actionsPress(1, 1); actionsPoll(1);
+     assertConsumer(0, 0x6f); assertConsumer(1, 0);
+@@ -95,12 +95,12 @@
+                                     0x90 | CONFIG_ACTION_CONSUMER_MODIFIED_HOLD};
+     for (unsigned k = 0; k < sizeof replacements; k++) {
+         reset(); holdBinding(0, 6, 0x6f);
+-        activeConfig[11] = replacements[k]; activeConfig[12] = 0x70;
++        activeConfig[CONFIG_HEADER_SIZE + 2] = replacements[k]; activeConfig[CONFIG_HEADER_SIZE + 3] = 0x70;
+         actionsPress(0, 0); actionsPoll(0);
+         blocked = 1; actionsPress(1, 1); pump(1, 10); assert(count == 2);
+         blocked = 0; actionsPoll(10); assertConsumer(2, 0);
+         assertModifiers(3, k >= 2 ? 9 : 0); assertConsumer(4, 0x70);
+-        actionsRelease(0); actionsRelease(1); pump(11, 30);
++        actionsRelease(0, 0); actionsRelease(1, 0); pump(11, 30);
+         assert(!latestModifiers()); unsigned before = count;
+         pump(30, 100); assert(count == before);
+     }
+--- a/tests/per_key_palette_test.c
++++ b/tests/per_key_palette_test.c
+@@ -34,9 +34,9 @@
+     testSetLayout(layers, 0, 0);
+     activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_DEFAULT;
+     activeConfig[CONFIG_HEADER_LED] = (2 << 4) | (1 << 6);
+-    uint16_t end = 9 + layers * size;
++    uint16_t end = CONFIG_HEADER_SIZE + layers * size;
+     for (uint8_t layer = 0; layer < layers; layer++) {
+-        activeConfig[9 + (layer+1)*size - 1] = (mask & (1 << layer)) ? 13 : 29;
++        activeConfig[CONFIG_HEADER_SIZE + (layer+1)*size - 1] = (mask & (1 << layer)) ? 13 : 29;
+         for (uint8_t key = 0; key < NUM_LEDS; key++)
+             packedColor(configLedColorOffset(layer), key, 1);
+         if (mask & (1 << layer)) {
+@@ -70,7 +70,7 @@
+             uint16_t expected = fresh(layers, mask);
+             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (expected <= CONFIG_SIZE));
+             if (expected > CONFIG_SIZE) continue;
+-            uint16_t cursor = 9 + layers * size;
++            uint16_t cursor = CONFIG_HEADER_SIZE + layers * size;
+             for (uint8_t layer = 0; layer < layers; layer++) {
+                 assert(configLayerPaletteOffset(layer) == cursor);
+                 if (mask & (1 << layer)) cursor += width;
+@@ -79,7 +79,7 @@
+             assert(configLayerPaletteOffset(layers) == expected);
+             assert(configTimedOffset() == expected);
+             if (NUM_LEDS == 3 && mask) {
+-                uint8_t first = 9 + layers*size;
++                uint8_t first = CONFIG_HEADER_SIZE + layers*size;
+                 activeConfig[first+1] |= 0x10;
+                 sealImage();
+                 assert(configValid(activeConfig, PHYSICAL_VARIANT));
+@@ -131,10 +131,10 @@
+     activeConfig[timer+6] = 'A';
+     activeConfig[timer+7] = 0;
+     uint8_t macro = timer+8;
+-    activeConfig[9+2*NUM_LEDS] = CONFIG_ACTION_MACRO;
+-    activeConfig[10+2*NUM_LEDS] = macro;
+-    activeConfig[9+2*(NUM_LEDS+1)] = CONFIG_ACTION_STRING;
+-    activeConfig[10+2*(NUM_LEDS+1)] = 0;
++    activeConfig[CONFIG_HEADER_SIZE+2*NUM_LEDS] = CONFIG_ACTION_MACRO;
++    activeConfig[CONFIG_HEADER_SIZE + 1+2*NUM_LEDS] = macro;
++    activeConfig[CONFIG_HEADER_SIZE+2*(NUM_LEDS+1)] = CONFIG_ACTION_STRING;
++    activeConfig[CONFIG_HEADER_SIZE + 1+2*(NUM_LEDS+1)] = 0;
+     activeConfig[macro] = CONFIG_ACTION_KEY_TAP;
+     activeConfig[macro+1] = 5;
+     activeConfig[macro+2] = 0;
+@@ -152,7 +152,7 @@
+     for (uint8_t i = 0; i < frameCount; i++)
+         if (frames[i][0] == 1 && frames[i][3] == 5) found = 1;
+     assert(found);
+-    actionsRelease(NUM_LEDS);
++    actionsRelease(NUM_LEDS, 0);
+     actionsClear();
+     actionsTimedReset(0);
+     actionsTimedPoll(255);
+@@ -161,7 +161,7 @@
+     actionsTimedInput();
+     assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+     // Macro pointer must track the moved pool boundary, not the old v15 tail.
+-    activeConfig[10+2*NUM_LEDS] = start;
++    activeConfig[CONFIG_HEADER_SIZE + 1+2*NUM_LEDS] = start;
+     sealImage();
+     assert(!configValid(activeConfig, PHYSICAL_VARIANT));
+ }
+@@ -185,7 +185,7 @@
+ }
+ 
+ static void testRendererMatrix(void) {
+-    const uint8_t option = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
++    const uint8_t option = CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+     for (uint8_t custom = 0; custom < 2; custom++) {
+         fresh(1, custom);
+         activate();
+@@ -237,7 +237,7 @@
+ }
+ 
+ static void testSchedulerAndOverrides(void) {
+-    const uint8_t option = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
++    const uint8_t option = CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+     for (uint8_t keySource = 0; keySource < 2; keySource++) {
+         fresh(1, !keySource);
+         activate();
+@@ -313,8 +313,8 @@
+     }
+     packedColor(configLedColorOffset(0), 0, 0);
+     packedColor(configLedColorOffset(1), 0, 0);
+-    activeConfig[9+2*NUM_LEDS] = CONFIG_ACTION_SET_LAYER;
+-    activeConfig[10+2*NUM_LEDS] = 1;
++    activeConfig[CONFIG_HEADER_SIZE+2*NUM_LEDS] = CONFIG_ACTION_SET_LAYER;
++    activeConfig[CONFIG_HEADER_SIZE + 1+2*NUM_LEDS] = 1;
+     sealImage(); activate();
+     for (uint8_t k = 0; k < NUM_LEDS; k++) {
+         uint8_t expected[3];
+@@ -403,12 +403,12 @@
+         uint8_t original[32][9], originalCount = 0;
+         for (uint8_t dirty = 0; dirty < 2; dirty++) {
+             fresh(1, 0);
+-            activeConfig[9] = firsts[f] | (dirty ? ((firsts[f] & 1) ? 0x80 : 0xC0) : 0);
+-            activeConfig[10] = 3;
++            activeConfig[CONFIG_HEADER_SIZE] = firsts[f] | (dirty ? ((firsts[f] & 1) ? 0x80 : 0xC0) : 0);
++            activeConfig[CONFIG_HEADER_SIZE + 1] = 3;
+             sealImage(); activate();
+             actionsPress(0, currentMs);
+             for (uint8_t elapsed = 0; elapsed < 24; elapsed++) actionsPoll(currentMs+elapsed);
+-            actionsRelease(0);
++            actionsRelease(0, 0);
+             actionsPoll(currentMs+24);
+             if (!dirty) { originalCount = frameCount; memcpy(original, frames, sizeof original); }
+             else {
+@@ -421,30 +421,30 @@
+         if ((aux & 3) == 3) continue;
+         for (uint8_t dirty = 0; dirty < 2; dirty++) {
+             fresh(2, 0);
+-            activeConfig[9] = CONFIG_ACTION_SET_LAYER | (aux << 4) | (dirty ? 0x80 : 0);
+-            activeConfig[10] = 1;
++            activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_SET_LAYER | (aux << 4) | (dirty ? 0x80 : 0);
++            activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+             sealImage(); activate();
+             actionsPress(0, currentMs); assert(actionsLayer() == 1);
+-            actionsRelease(0); assert(actionsLayer() == ((aux & 2) ? 0 : 1));
++            actionsRelease(0, 0); assert(actionsLayer() == ((aux & 2) ? 0 : 1));
+         }
+     }
+     for (uint16_t value = 0; value < 256; value++) {
+-        fresh(1, 0); activeConfig[9] = CONFIG_ACTION_NONE; activeConfig[10] = value;
++        fresh(1, 0); activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_NONE; activeConfig[CONFIG_HEADER_SIZE + 1] = value;
+         sealImage(); activate();
+-        actionsPress(0, currentMs); actionsRelease(0); assert(actionsLayer() == 0);
++        actionsPress(0, currentMs); actionsRelease(0, 0); assert(actionsLayer() == 0);
+     }
+     for (uint8_t value = 0; value < 16; value++) {
+         fresh(1, 0);
+-        activeConfig[9] = CONFIG_ACTION_LED_CONTROL | (value << 4);
+-        activeConfig[10] = CONFIG_LED_RESTORE;
++        activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_LED_CONTROL | (value << 4);
++        activeConfig[CONFIG_HEADER_SIZE + 1] = CONFIG_LED_RESTORE;
+         sealImage(); activate();
+         firmwareLedAction(CONFIG_LED_BOTH_SET, 0);
+         actionsPress(0, currentMs);
+         assert(ledSettings[2] == 3 && ledSettings[3] == 3);
+-        activeConfig[10] = CONFIG_LED_EFFECT_RESTORE;
++        activeConfig[CONFIG_HEADER_SIZE + 1] = CONFIG_LED_EFFECT_RESTORE;
+         sealImage(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+         firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
+-        actionsRelease(0); actionsPress(0, currentMs);
++        actionsRelease(0, 0); actionsPress(0, currentMs);
+         assert(!previewOptions && !layerIndicatorPhasesLeft);
+     }
+ }
+--- a/tests/run_host_tests.py
++++ b/tests/run_host_tests.py
+@@ -25,6 +25,8 @@
+     suites += [("sleep_integration", ["src/config.c", "src/actions.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+     suites += [("live_state", ["src/config.c", "src/actions.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+     suites += [("per_key_palette", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
++    suites += [("tap_hold", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
++    suites += [("tap_hold_integration", ["src/config.c", "src/actions.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+     for suite in suites:
+         name, sources, *variant = suite
+         options = [f"-DPHYSICAL_VARIANT={variant[0]}"] if variant else []
+--- a/tests/sleep_integration_test.c
++++ b/tests/sleep_integration_test.c
+@@ -31,7 +31,7 @@
+     testSetLayout(2, layer, 0);
+     activeConfig[CONFIG_HEADER_SLEEP] = timeout | CONFIG_SLEEP_CONSUME | CONFIG_SLEEP_INDICATOR;
+     for (uint8_t i = 0; i < 2; i++) {
+-        uint8_t base = 9 + i * size;
++        uint8_t base = CONFIG_HEADER_SIZE + i * size;
+         memset(activeConfig + base, 0, size);
+ #if CONFIG_VERSION == 15
+         // V15 uses palette index 15 for Off in pressed-key colors.
+--- /dev/null
++++ b/tests/tap_hold_integration_test.c
+@@ -0,0 +1,143 @@
++/* Real scanner, renderer, actions, protocol and storage; only hardware is stubbed. */
++#include <stdio.h>
++#define TEST_REAL_PROTOCOL 1
++#include "../src/protocol_firmware.h"
++#define main inputRegressionMain
++#include "input_test.c"
++#undef main
++extern uint8_t buttonFirst[], buttonSecond[], buttonPressed[], liveBindings[];
++extern uint8_t timedHigh[], timedAge[], timedFraction[], baseLayer;
++static unsigned cases, flashWrites;
++static const uint8_t stride = PHYSICAL_VARIANT ? 15 : 22;
++static uint8_t pair;
++void eeprom_write_byte(uint8_t offset, uint8_t value) { flash[offset] = value; flashWrites++; }
++
++static void initTap(uint8_t timers) {
++    initAutoSleep();
++    memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE);
++    testSetLayout(2, 0, timers); testSetChordCount(0); testSetStringLength(0);
++    activeConfig[CONFIG_HEADER_SLEEP] = CONFIG_SLEEP_CONSUME;
++    for (uint8_t layer = 0; layer < 2; layer++) activeConfig[CONFIG_HEADER_SIZE + stride * (layer + 1) - 1] = 0x1F;
++    uint8_t block = configTimedOffset() + timers * 6;
++    pair = block + 1; activeConfig[block] = 0x0F;
++    activeConfig[CONFIG_HEADER_SIZE] = activeConfig[CONFIG_HEADER_SIZE + 2 * NUM_LEDS] = 0x0F;
++    activeConfig[CONFIG_HEADER_SIZE + 1] = activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * NUM_LEDS] = pair;
++    activeConfig[pair] = 0x1D; activeConfig[pair + 1] = CONFIG_LED_PHASE_SET;
++    activeConfig[pair + 2] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[pair + 3] = 1;
++    // Layer 1 key 1 provides a visible test of scan ordering after the deadline.
++    activeConfig[CONFIG_HEADER_SIZE + stride + 2] = 0x2D; activeConfig[CONFIG_HEADER_SIZE + 1 + stride + 2] = CONFIG_LED_PHASE_SET;
++    uint16_t crc = configCrc(activeConfig); activeConfig[7] = crc; activeConfig[8] = crc >> 8;
++    assert(configValid(activeConfig, PHYSICAL_VARIANT));
++    memcpy(flash, activeConfig, CONFIG_SIZE); protocolInit(); firmwareApplyConfig(1);
++    frameCount = flashWrites = 0; memset(liveBindings, 0, 13);
++}
++static void pin(uint8_t input, uint8_t down) {
++    if (input == NUM_LEDS) { if (down) P3 &= ~8; else P3 |= 8; }
++    else if (input == 5) { if (down) P3 &= ~4; else P3 |= 4; }
++    else { if (down) P1 &= ~KEY_MASK[input]; else P1 |= KEY_MASK[input]; }
++}
++static uint16_t edge(uint8_t input, uint8_t down, uint16_t start) {
++    currentMs = start; pin(input, down); scanButton(input, currentMs);
++    currentMs += DEBOUNCE_MS; scanButton(input, currentMs); return currentMs;
++}
++static void testScanner(void) {
++    for (uint8_t input = 0; input <= NUM_LEDS; input++) {
++        initTap(0);
++        activeConfig[CONFIG_HEADER_SIZE + 2 * input] = 0x0F; activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * input] = pair;
++        uint16_t origin = edge(input, 1, 65520);
++        assert(!liveBindings[12] && actionsLayer() == 0);
++        edge(input, 0, origin + 1); // 11ms accepted duration, below 32ms.
++        assert(ledSettings[0] == 1 && liveBindings[12] == 1 && actionsLayer() == 0);
++        cases++;
++        initTap(0); activeConfig[CONFIG_HEADER_SIZE + 2 * input] = 0x0F; activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * input] = pair;
++        origin = edge(input, 1, 65520);
++        // No intervening output poll; the accepted release still chooses Hold at exactly 32ms.
++        actionsTakeLayerSelection();
++        edge(input, 0, origin + 32 - DEBOUNCE_MS);
++        assert(actionsTakeLayerSelection());
++        assert(liveBindings[12] == 1 && liveBindings[10] == CONFIG_ACTION_MOMENTARY_LAYER);
++        assert(actionsLayer() == 0); // Momentary branch is activated and then released.
++        cases++;
++    }
++    initTap(0);
++    uint16_t origin = edge(0, 1, 100);
++    // Stage another key's accepted press for exactly the hold deadline.
++    currentMs = origin + 32 - DEBOUNCE_MS; pin(1, 1); loop();
++    currentMs = origin + 32; loop();
++    assert(actionsLayer() == 1 && ledSettings[0] == 2);
++    edge(0, 0, currentMs + 1); assert(actionsLayer() == 0);
++    assert(!flashWrites);
++    cases++;
++}
++static void testWakeAndTimers(void) {
++    for (uint8_t settings = 0; settings < 32; settings++)
++        for (uint8_t input = 0; input < 2; input++) {
++            initTap(0); uint8_t key = input ? NUM_LEDS : 0;
++            activeConfig[CONFIG_HEADER_SLEEP] = settings;
++            actionsTimedReset(0);
++            // Exercise the actual shared sleep pending/restoration path without a long idle loop.
++            firmwareLedAction(LED_SLEEP_CAPTURE, activeConfig[CONFIG_SIZE + 1] >> 4);
++            timedHigh[0] = 1;
++            uint16_t origin = edge(key, 1, 10);
++            assert(!sleepBrightnessPending);
++            unsigned before = liveBindings[12]; // Wake restoration itself is an accepted timer action.
++            currentMs = origin + 32; loop();
++            edge(key, 0, currentMs + 1);
++            if (settings & CONFIG_SLEEP_CONSUME) assert(liveBindings[12] == before);
++            else assert(liveBindings[12] == before + 1 && liveBindings[10] == CONFIG_ACTION_MOMENTARY_LAYER);
++            assert(actionsLayer() == 0 && !flashWrites);
++            cases++;
++        }
++    for (uint8_t mask = 0; mask < 32; mask++) {
++        initTap(5);
++        uint8_t timer = configTimedOffset();
++        for (uint8_t i = 0; i < 5; i++, timer += 6) {
++            activeConfig[timer + 3] = 0x1D; activeConfig[timer + 4] = CONFIG_LED_SPEED_RELATIVE;
++            activeConfig[timer + 5] = 128 | ((mask & (1 << i)) ? 64 : 0);
++            timedHigh[i] = 1;
++        }
++        uint16_t origin = edge(0, 1, 10);
++        assert(liveBindings[12] == 5);
++        currentMs = origin + 32; actionsPoll(currentMs);
++        edge(0, 0, currentMs + 1);
++        assert(liveBindings[12] == (mask ? 5 : 6));
++        assert(actionsLayer() == 0 && !flashWrites);
++        cases++;
++    }
++    initTap(0); uint16_t origin = edge(0, 1, 10);
++    // A reset/profile reapplication cancels pending decisions and their later releases.
++    protocolReset(); currentMs = origin + 1; protocolPoll(currentMs);
++    unsigned before = liveBindings[12];
++    currentMs = origin + 100; loop(); edge(0, 0, currentMs + 1);
++    assert(liveBindings[12] == before && actionsLayer() == 0 && !flashWrites);
++    cases++;
++}
++#ifdef TAP_HOLD_COMBINED
++static void hostLayer(uint8_t options) {
++    uint8_t packet[32] = {3, 'U', 'M', 1, 13, 42};
++    packet[6] = options; assert(protocolReceive(packet)); protocolPoll(currentMs);
++    assert(protocolReply[8] == 0 && !protocolState);
++}
++static void testHostLayer(void) {
++    initTap(0); uint16_t origin = edge(0, 1, 10);
++    hostLayer(1); assert(actionsLayer() == 1);
++    edge(0, 0, origin + 1); // Pair captured on layer 0 survives host selection.
++    assert(ledSettings[0] == 1 && actionsLayer() == 1);
++    initTap(0); origin = edge(0, 1, 10);
++    currentMs = origin + 32; loop(); assert(actionsLayer() == 1);
++    hostLayer(0); assert(actionsLayer() == 1); // Physical momentary hold wins.
++    edge(0, 0, currentMs + 1); assert(actionsLayer() == 0);
++    initTap(0); origin = edge(0, 1, 10);
++    currentMs = origin + 32; loop(); hostLayer(1);
++    edge(0, 0, currentMs + 1); assert(actionsLayer() == 1);
++    assert(!flashWrites); cases += 3;
++}
++#endif
++int main(void) {
++    testScanner(); testWakeAndTimers();
++#ifdef TAP_HOLD_COMBINED
++    testHostLayer();
++#endif
++    printf("Tap-hold real scanner %u: %u cases passed\n", PHYSICAL_VARIANT, cases);
++    return 0;
++}
+--- /dev/null
++++ b/tests/tap_hold_test.c
+@@ -0,0 +1,301 @@
++/* Isolated encoding/dispatch regression; actual config.c/actions.c, hardware stubs only. */
++#include <assert.h>
++#include <stdio.h>
++#include <stdint.h>
++#include <string.h>
++#include "../src/actions.h"
++#include "config_fixture.h"
++
++static uint8_t reports[2048][9];
++static unsigned count, ledCalls, cases;
++static uint8_t blocked, generation, ledValue;
++extern uint8_t buttonFirst[], buttonSecond[], buttonPressed[], pendingInput;
++extern uint8_t liveBindings[], baseLayer, oneShotReturnLayer;
++static const uint8_t stride = PHYSICAL_VARIANT ? 15 : 22;
++static uint8_t block, pair;
++uint8_t USB_queueKeyboard(const uint8_t *keys) {
++    if (blocked) return 0;
++    assert(count < 2048); reports[count][0] = 1;
++    memcpy(reports[count++] + 1, keys, 8); return 1;
++}
++uint8_t USB_queueMousePacked(uint8_t buttons, int8_t x, int8_t y, uint8_t scroll) {
++    if (blocked) return 0;
++    assert(count < 2048); uint8_t *r = reports[count++];
++    r[0] = 2; r[1] = buttons; r[2] = x; r[3] = y; r[4] = scroll; return 1;
++}
++uint8_t USB_queueConsumer(uint16_t usage) {
++    if (blocked) return 0;
++    assert(count < 2048); reports[count][0] = 5;
++    reports[count][1] = usage; reports[count++][2] = usage >> 8; return 1;
++}
++uint8_t USB_reportsPending(void) { return 0; }
++void USB_discardReports(void) {}
++uint8_t USB_reportGeneration(void) { return generation; }
++uint8_t USB_asciiUsage(uint8_t c) { return c & 127; }
++void firmwareLedAction(uint8_t command, uint8_t value) {
++    (void)command; ledCalls++; ledValue = value;
++}
++static void seal(void) {
++    uint16_t crc = configCrc(activeConfig); activeConfig[7] = crc; activeConfig[8] = crc >> 8;
++}
++static uint8_t valid(void) { seal(); cases++; return !!configValid(activeConfig, PHYSICAL_VARIANT); }
++static void reset(uint8_t layers, uint8_t timers, uint8_t chords, uint8_t pairs) {
++    memset(activeConfig, 0, CONFIG_ACTIVE_SIZE);
++    activeConfig[0] = CONFIG_MARKER; activeConfig[1] = CONFIG_VERSION;
++    testSetVariant(PHYSICAL_VARIANT); testSetLayout(layers, 0, timers);
++    testSetChordCount(chords);
++    activeConfig[CONFIG_HEADER_LED] = 2; // 40ms chord window.
++    block = configTimedOffset() + timers * 6;
++    pair = block + 1;
++    if (pairs) activeConfig[block] = ((pairs - 1) << 4) | 15;
++    count = ledCalls = blocked = 0;
++    memset(liveBindings, 0, 13);
++    actionsInit(); actionsTimedReset(0);
++}
++static void bind(uint8_t input, uint8_t selector) {
++    activeConfig[CONFIG_HEADER_SIZE + 2 * input] = (selector << 4) | 15;
++    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * input] = pair;
++}
++static void define(uint8_t tf, uint8_t ts, uint8_t hf, uint8_t hs) {
++    activeConfig[pair] = tf; activeConfig[pair + 1] = ts;
++    activeConfig[pair + 2] = hf; activeConfig[pair + 3] = hs;
++}
++static void ledPair(void) { define(0x1D, CONFIG_LED_PHASE_SET, 0x2D, CONFIG_LED_PHASE_SET); }
++static void poll(uint16_t now) { actionsPoll(now); }
++static void pump(uint16_t now, unsigned duration) {
++    for (unsigned i = 0; i < duration; i++) poll(now + i);
++}
++static unsigned usageReports(uint8_t kind, uint16_t usage) {
++    unsigned found = 0;
++    for (unsigned i = 0; i < count; i++) {
++        uint16_t value = kind == 1 ? reports[i][3] : reports[i][1] | ((uint16_t)reports[i][2] << 8);
++        if (reports[i][0] == kind && value == usage) found++;
++    }
++    return found;
++}
++
++static void testThresholds(void) {
++    const uint16_t origins[] = {0, 31, 255, 65500, 65535};
++    for (uint8_t input = 0; input <= (PHYSICAL_VARIANT ? 3 : 6); input++)
++        for (uint8_t selector = 0; selector < 16; selector++)
++            for (unsigned o = 0; o < sizeof origins / sizeof origins[0]; o++)
++                for (int delta = -1; delta <= 1; delta++)
++                    for (uint8_t polling = 0; polling < 2; polling++) {
++                        reset(1, 0, 0, 1); bind(input, selector); ledPair(); assert(valid());
++                        uint16_t origin = origins[o], threshold = (selector + 1) * 32;
++                        actionsPress(input, origin); assert(!ledCalls && !liveBindings[12]);
++                        actionsPress(input, origin + 1); // Duplicate press cannot restart the timer.
++                        uint16_t release = origin + threshold + delta;
++                        if (polling) { poll(origin + threshold - 1); assert(!ledCalls); poll(release); }
++                        actionsRelease(input, release);
++                        assert(ledCalls == 1 && ledValue == (delta < 0 ? 1 : 2));
++                        assert(liveBindings[12] == 1 && liveBindings[10] == ((delta < 0 ? 1 : 2) << 4 | 13));
++                        pump(release, 20); assert(ledCalls == 1);
++                        actionsRelease(input, release + 50); assert(ledCalls == 1);
++                    }
++}
++
++static void testConcurrentAndLayers(void) {
++    reset(2, 0, 0, 2); bind(0, 5); bind(1, 0);
++    ledPair();
++    activeConfig[pair + 4] = 0x3D; activeConfig[pair + 5] = CONFIG_LED_PHASE_SET;
++    activeConfig[pair + 6] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[pair + 7] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 3] = pair + 4;
++    assert(valid());
++    actionsPress(0, 65000); actionsPress(1, 65010);
++    poll(65042); assert(actionsLayer() == 1 && !ledCalls);
++    // Pending key 0 retains its pair even though layer 1 has no binding for it.
++    actionsRelease(0, 65060); assert(ledCalls == 1 && ledValue == 1);
++    actionsRelease(1, 65061); assert(actionsLayer() == 0 && ledCalls == 1);
++    reset(2, 0, 0, 1); bind(0, 0); define(0x1D, 0, CONFIG_ACTION_RELATIVE_LAYER | CONFIG_LAYER_HOLD, 1);
++    assert(valid()); actionsPress(0, 0); poll(32); assert(actionsLayer() == 1);
++    poll(64); assert(actionsLayer() == 1); actionsRelease(0, 65); assert(actionsLayer() == 0);
++    // One-shot consumption is deferred until a branch executes.
++    reset(2, 0, 0, 1); bind(0, 0); ledPair();
++    activeConfig[CONFIG_HEADER_SIZE + 2] = 0x1C; activeConfig[CONFIG_HEADER_SIZE + 3] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + stride] = 15; activeConfig[CONFIG_HEADER_SIZE + 1 + stride] = pair;
++    actionsPress(1, 0); actionsRelease(1, 1); assert(actionsLayer() == 1 && oneShotReturnLayer == 0);
++    actionsPress(0, 2); assert(actionsLayer() == 1 && oneShotReturnLayer == 0);
++    actionsRelease(0, 3); assert(actionsLayer() == 0 && oneShotReturnLayer == 255 && ledCalls == 1);
++    // Every physical input may wait concurrently, with independent deadlines.
++    reset(1, 0, 0, 1); ledPair();
++    uint8_t inputs = (PHYSICAL_VARIANT ? 3 : 6) + 1;
++    for (uint8_t i = 0; i < inputs; i++) { bind(i, i); actionsPress(i, 65500 + i); }
++    for (uint8_t i = 0; i < inputs; i++) {
++        poll(65500 + i + (i + 1) * 32); assert(ledCalls == i + 1);
++    }
++    for (uint8_t i = 0; i < inputs; i++) actionsRelease(i, 1000);
++    assert(ledCalls == inputs);
++}
++
++static void testChords(void) {
++    for (uint8_t chordRole = 0; chordRole < 2; chordRole++) {
++        reset(2, 0, 1, 1); bind(0, 3); ledPair();
++        uint8_t c = configLayerPaletteOffset(2);
++        activeConfig[c] = 0x70; // Global keys 0+1.
++        activeConfig[c + 1] = chordRole ? 0x0F : 0x3D;
++        activeConfig[c + 2] = chordRole ? pair : CONFIG_LED_PHASE_SET;
++        assert(valid());
++        actionsPress(0, 0); assert(pendingInput == 1);
++        actionsPress(1, 39); assert(!pendingInput);
++        if (chordRole) {
++            poll(70); assert(!ledCalls); poll(71); assert(ledCalls == 1 && ledValue == 2);
++        } else assert(ledCalls == 1 && ledValue == 3);
++        actionsRelease(1, 72); actionsRelease(0, 73); assert(ledCalls == 1);
++    }
++    // Chord window does not restart the single key's original threshold.
++    reset(1, 0, 1, 1); bind(0, 0); ledPair();
++    uint8_t c = configLayerPaletteOffset(1);
++    activeConfig[c] = 0x70; activeConfig[c + 1] = 0x3D;
++    poll(0); actionsPress(0, 0); poll(32); assert(!ledCalls); // Chord still has precedence.
++    poll(40); assert(ledCalls == 1 && ledValue == 2);
++    actionsRelease(0, 41); assert(ledCalls == 1);
++    reset(1, 0, 1, 1); bind(0, 3); ledPair();
++    c = configLayerPaletteOffset(1); activeConfig[c] = 0x70; activeConfig[c + 1] = 0x3D;
++    actionsPress(0, 100); actionsRelease(0, 101); assert(ledCalls == 1 && ledValue == 1);
++    // A chord's tap resolves on its first release and never runs a constituent tap.
++    reset(1, 0, 1, 1); bind(0, 0); ledPair();
++    c = configLayerPaletteOffset(1); activeConfig[c] = 0x70;
++    activeConfig[c + 1] = 0x0F; activeConfig[c + 2] = pair;
++    actionsPress(0, 0); actionsPress(1, 10); actionsRelease(1, 11);
++    assert(ledCalls == 1 && ledValue == 1); actionsRelease(0, 40); assert(ledCalls == 1);
++}
++
++static void testOutputsAndReset(void) {
++    const uint8_t holds[] = {CONFIG_ACTION_KEY_HOLD, CONFIG_ACTION_MOUSE_HOLD,
++        CONFIG_ACTION_CONSUMER_HOLD, CONFIG_ACTION_CONSUMER_MODIFIED_HOLD | 0x60};
++    for (unsigned h = 0; h < sizeof holds; h++) {
++        reset(1, 0, 0, 1); bind(0, 0); define(1, 5, holds[h], 4); assert(valid());
++        blocked = 1; actionsPress(0, 0); actionsRelease(0, 32); pump(32, 20); assert(!count);
++        blocked = 0; pump(60, 100);
++        assert(buttonPressed[0] == 0);
++        uint8_t kind = h == 0 ? 1 : h == 1 ? 2 : 5;
++        assert(usageReports(kind, 4) >= 1 && usageReports(kind, 0) >= 1);
++        assert(!usageReports(1, 5));
++    }
++    reset(1, 0, 0, 1); bind(0, 0); define(1, 5, 0x62, 4);
++    actionsPress(0, 0); poll(32); assert(usageReports(1, 4));
++    unsigned before = count; generation++; poll(33); assert(count > before);
++    actionsRelease(0, 34); pump(34, 20);
++    reset(1, 0, 0, 1); bind(0, 15); ledPair(); actionsPress(0, 0);
++    actionsClear(); poll(1000); actionsRelease(0, 1000); assert(!ledCalls);
++    // Both tap and hold may invoke a macro; references start beyond the pair block.
++    for (uint8_t held = 0; held < 2; held++) {
++        reset(1, 0, 0, 1); bind(0, 0);
++        uint8_t macro = pair + 4;
++        define(CONFIG_ACTION_MACRO, macro, CONFIG_ACTION_MACRO, macro);
++        activeConfig[macro] = 1; activeConfig[macro + 1] = 4;
++        assert(valid()); actionsPress(0, 0); actionsRelease(0, held ? 32 : 1); pump(33, 100);
++        assert(usageReports(1, 4) == 1);
++    }
++    // Pending wrappers do not interfere with ordinary output.
++    reset(1, 0, 0, 1); bind(0, 3); ledPair();
++    activeConfig[CONFIG_HEADER_SIZE + 2] = 1; activeConfig[CONFIG_HEADER_SIZE + 3] = 4;
++    actionsPress(0, 0); actionsPress(1, 1); actionsRelease(1, 2); pump(2, 50);
++    assert(usageReports(1, 4) == 1 && !ledCalls);
++    actionsRelease(0, 52); assert(ledCalls == 1 && ledValue == 1);
++}
++
++static void testTraceModel(void) {
++    uint32_t random = 0x12345678;
++    uint8_t inputs = (PHYSICAL_VARIANT ? 3 : 6) + 1;
++    for (unsigned trace = 0; trace < 2000; trace++) {
++        reset(1, 0, 0, 1); ledPair();
++        uint8_t down[7] = {0}, waiting[7] = {0}, selectors[7];
++        uint16_t since[7] = {0}, now = (uint16_t)random;
++        unsigned expected = 0;
++        uint8_t last = 0;
++        for (uint8_t i = 0; i < inputs; i++) { selectors[i] = (trace + i) & 15; bind(i, selectors[i]); }
++        for (unsigned event = 0; event < 100; event++) {
++            random = random * 1664525u + 1013904223u;
++            now += (random >> 24) & 63;
++            uint8_t key = (random >> 8) % inputs, op = (random >> 16) % 3;
++            if (!op) {
++                if (!down[key]) { down[key] = waiting[key] = 1; since[key] = now; }
++                actionsPress(key, now);
++            } else if (op == 1) {
++                if (down[key] && waiting[key]) {
++                    last = (uint16_t)(now - since[key]) >= (selectors[key] + 1) * 32 ? 2 : 1;
++                    expected++; waiting[key] = 0;
++                }
++                down[key] = 0; actionsRelease(key, now);
++            } else {
++                for (uint8_t i = 0; i < inputs; i++) if (waiting[i] &&
++                    (uint16_t)(now - since[i]) >= (selectors[i] + 1) * 32) {
++                    last = 2; expected++; waiting[i] = 0;
++                }
++                poll(now);
++            }
++            assert(ledCalls == expected && (!expected || ledValue == last)); cases++;
++        }
++    }
++}
++
++static void testStringsAndPalettes(void) {
++    reset(2, 0, 0, 0);
++    activeConfig[CONFIG_HEADER_SIZE + stride - 1] &= 15; // Optional per-key palette on layer 0.
++    uint8_t pool = configTimedOffset();
++    testSetStringLength(4); memcpy(activeConfig + pool, "A\0B", 4);
++    block = pool + 4; pair = block + 1;
++    activeConfig[block] = 15; bind(0, 0);
++    define(CONFIG_ACTION_STRING, 0, CONFIG_ACTION_STRING, 2);
++    assert(valid()); actionsPress(0, 0); actionsRelease(0, 1); pump(1, 40);
++    assert(usageReports(1, 'A') == 1);
++    actionsPress(0, 50); poll(82); actionsRelease(0, 83); pump(83, 40);
++    assert(usageReports(1, 'B') == 1);
++}
++
++static void testValidation(void) {
++    // All wrapper selectors/addresses across physical, rotation, chord, timers and macro.
++    for (uint8_t context = 0; context < 7; context++) {
++        reset(1, 1, 1, 2); ledPair();
++        uint8_t chord = configLayerPaletteOffset(1), timer = configTimedOffset();
++        uint8_t slot = context < 3 ? 9 + 2 * (context == 0 ? 0 : (PHYSICAL_VARIANT ? 3 : 6) + context - 1) :
++            context == 3 ? chord + 1 : context == 4 ? timer + 1 : context == 5 ? timer + 3 : pair + 8;
++        for (uint8_t t = 0; t < 16; t++) for (unsigned address = 0; address < 256; address++) {
++            activeConfig[slot] = (t << 4) | 15; activeConfig[slot + 1] = address;
++            uint8_t expected = context < 2 || context == 3;
++            expected &= address == pair || address == pair + 4;
++            assert(valid() == expected);
++        }
++    }
++    // Every two-byte action is validated identically to its ordinary execution context.
++    for (uint8_t branch = 0; branch < 2; branch++) {
++        reset(2, 0, 0, 1);
++        uint8_t ordinary = 9 + 2 * (branch ? 1 : (PHYSICAL_VARIANT ? 3 : 6) + 1);
++        bind(0, 0);
++        for (unsigned first = 0; first < 256; first++) for (unsigned second = 0; second < 256; second++) {
++            memset(activeConfig + pair, 0, 4);
++            activeConfig[ordinary] = first; activeConfig[ordinary + 1] = second;
++            uint8_t expected = valid() && (first & 15) != 15;
++            activeConfig[ordinary] = activeConfig[ordinary + 1] = 0;
++            activeConfig[pair + 2 * branch] = first; activeConfig[pair + 2 * branch + 1] = second;
++            assert(valid() == expected);
++        }
++    }
++    // Section-count bounds, including a block exactly ending at byte 128.
++    for (unsigned start = (PHYSICAL_VARIANT ? 24 : 31); start < 128; start++)
++        for (uint8_t n = 1; n <= 16; n++) {
++            reset(1, 0, 0, 0);
++            testSetStringLength(start - block); // Empty strings are permitted.
++            activeConfig[start] = ((n - 1) << 4) | 15;
++            activeConfig[CONFIG_HEADER_SIZE] = 15; activeConfig[CONFIG_HEADER_SIZE + 1] = start + 1;
++            assert(valid() == (start + 1 + 4 * n <= 128));
++        }
++    reset(1, 0, 0, 1); bind(0, 0); ledPair();
++    uint8_t macro = pair + 4;
++    activeConfig[CONFIG_HEADER_SIZE + 2] = CONFIG_ACTION_MACRO;
++    for (unsigned address = 0; address < 256; address++) {
++        activeConfig[CONFIG_HEADER_SIZE + 3] = address; assert(valid() == (address >= macro && address < 128));
++    }
++    activeConfig[CONFIG_HEADER_SIZE + 3] = macro; assert(valid()); activeConfig[7] ^= 1;
++    assert(!configValid(activeConfig, PHYSICAL_VARIANT));
++    // An image with no optional tail bytes must not read beyond the saved image.
++    reset(1, 0, 0, 0); testSetStringLength(128 - block); assert(valid());
++}
++
++int main(void) {
++    testThresholds(); testConcurrentAndLayers(); testChords(); testOutputsAndReset(); testTraceModel(); testStringsAndPalettes(); testValidation();
++    printf("Tap-hold %u: %u assertions/cases plus runtime matrices passed\n", PHYSICAL_VARIANT, cases);
++    return 0;
++}
+--- a/tests/timed_actions_test.c
++++ b/tests/timed_actions_test.c
+@@ -26,7 +26,7 @@
+ static void probeLayer(uint8_t layer) {
+     uint8_t size = PHYSICAL_VARIANT ? 15 : 22;
+     uint8_t keys = PHYSICAL_VARIANT ? 3 : 6;
+-    uint8_t offset = 9 + size * actionsLayer() + 2 * (keys + 2);
++    uint8_t offset = CONFIG_HEADER_SIZE + size * actionsLayer() + 2 * (keys + 2);
+     activeConfig[offset] = CONFIG_ACTION_SET_LAYER;
+     activeConfig[offset + 1] = layer;
+     actionsRotate(0);
+@@ -109,7 +109,7 @@
+         for (uint8_t scope = 0; scope < 8; scope++) {
+             probeInit(1);
+             testSetLayout(layers, 0, 1);
+-            memset(activeConfig + 9, 0, CONFIG_SIZE - 9); testUniformLayers();
++            memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE); testUniformLayers();
+             setScope(0, scope); probeSeal();
+             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) ==
+                    (!PROBE_SCOPED || scope <= layers));
+@@ -126,7 +126,7 @@
+     assert(configStringChar(0, 0) == 'A' && configStringChar(0, 1) == 0);
+     // A full string pool fits exactly, then one extra byte is rejected.
+     probeInit(1); testSetLayout(1, 0, 1);
+-    memset(activeConfig + 9, 0, CONFIG_SIZE - 9); testUniformLayers();
++    memset(activeConfig + CONFIG_HEADER_SIZE, 0, CONFIG_SIZE - CONFIG_HEADER_SIZE); testUniformLayers();
+     pool = configTimedOffset() + CONFIG_TIMED_SIZE;
+     testSetStringLength(CONFIG_SIZE - pool);
+     probeSeal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
+@@ -251,21 +251,21 @@
+     assert(!!actionsTimedInput() == !PROBE_RESET);
+     // Held momentary layers use the effective layer as well.
+     probeInit(1); setScope(0, 2);
+-    activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[10] = 1;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[CONFIG_HEADER_SIZE + 1] = 1;
+     actionsPress(0, 0); assert(actionsLayer() == 1);
+     advanceFine(256); assert(ledCalls == 1);
+-    actionsRelease(0); assert(actionsLayer() == 0);
++    actionsRelease(0, 0); assert(actionsLayer() == 0);
+     advanceFine(256); assert(ledCalls == 1);
+     // Timers and a consumed wake input must preserve an armed one-shot layer.
+     // The next ordinary physical binding consumes it and resets interval state.
+     probeInit(1); setScope(0, 2); setFlags(0, 192);
+     uint8_t keys = PHYSICAL_VARIANT ? 3 : 6;
+-    activeConfig[9 + 2 * (keys + 2)] = CONFIG_ACTION_SET_LAYER | 0x10;
+-    activeConfig[10 + 2 * (keys + 2)] = 1;
++    activeConfig[CONFIG_HEADER_SIZE + 2 * (keys + 2)] = CONFIG_ACTION_SET_LAYER | 0x10;
++    activeConfig[CONFIG_HEADER_SIZE + 1 + 2 * (keys + 2)] = 1;
+     actionsRotate(0); assert(actionsLayer() == 1);
+     advanceFine(256); assert(ledCalls == 1 && actionsLayer() == 1);
+     assert(actionsTimedInput()); assert(actionsLayer() == 1 && ledCalls == 2);
+-    assert(!actionsTimedInput()); actionsPress(0, 0); actionsRelease(0);
++    assert(!actionsTimedInput()); actionsPress(0, 0); actionsRelease(0, 0);
+     assert(actionsLayer() == 0);
+     // All four selectors are decoded independently, including the second byte.
+     probeInit(4);
+@@ -277,7 +277,7 @@
+ 
+ static void autoSleep(void) {
+     const uint32_t interval = 440UL * 256;
+-    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
++    uint8_t options = CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+     probeInit(0);
+     advanceFine(interval * 2); assert(ledCalls == 0);
+     assert(!actionsTimedInput());
+@@ -354,7 +354,7 @@
+ }
+ 
+ static void disabledLayerUserResumes(void) {
+-    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
++    uint8_t options = CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+     for (uint8_t count = 0; count <= CONFIG_TIMED_MAX; count++) {
+         probeInit(count);
+         activeConfig[options] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+@@ -376,7 +376,7 @@
+ 
+ static void sleepSettings(void) {
+     static const uint16_t ticks[] = {220, 440, 879, 1758};
+-    uint8_t options = 9 + (PHYSICAL_VARIANT ? 15 : 22) - 1;
++    uint8_t options = CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1;
+     for (uint8_t settings = 0; settings < 32; settings++) {
+         probeInit(0);
+         activeConfig[CONFIG_HEADER_SLEEP] = settings;
+--- a/tests/timed_capacity_test.c
++++ b/tests/timed_capacity_test.c
+@@ -30,16 +30,16 @@
+     assert(!actionsTimedInput());
+     // Long user timers leave the sixth runtime slot available for Auto-Sleep.
+     for (unsigned i = 0; i < 5; i++) { activeConfig[start + 6 * i] = 255; activeConfig[start + 6 * i + 5] = 56; }
+-    activeConfig[9 + (PHYSICAL_VARIANT ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
++    activeConfig[CONFIG_HEADER_SIZE + (PHYSICAL_VARIANT ? 15 : 22) - 1] |= CONFIG_LAYER_OPT_AUTO_SLEEP;
+     actionsTimedReset(0); fine = 0; ledCalls = 0;
+     advance(440); assert(ledCalls == 1 && liveBindings[9] == 0x8E);
+     assert(actionsTimedInput()); assert(ledCalls == 2 && liveBindings[9] == 0x8E);
+     // Macro dispatch has a distinct source after moving the sleep slot to ID 14.
+     unsigned macro = start + 30;
+-    activeConfig[9] = CONFIG_ACTION_MACRO; activeConfig[10] = macro;
++    activeConfig[CONFIG_HEADER_SIZE] = CONFIG_ACTION_MACRO; activeConfig[CONFIG_HEADER_SIZE + 1] = macro;
+     activeConfig[macro] = CONFIG_ACTION_LED_CONTROL; activeConfig[macro + 1] = CONFIG_LED_KEY_SET;
+     activeConfig[macro + 2] = 0;
+-    actionsPress(0, 0); actionsRelease(0);
++    actionsPress(0, 0); actionsRelease(0, 0);
+     for (unsigned i = 0; i < 20; i++) actionsPoll(i);
+     assert(liveBindings[9] == 0x8F);
+     return 0;

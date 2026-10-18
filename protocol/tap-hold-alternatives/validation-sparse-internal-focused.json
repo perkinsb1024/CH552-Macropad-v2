@@ -1,0 +1,9 @@
+[
+  {
+    "suite": "alternatives",
+    "variant": 0,
+    "returncode": -6,
+    "output": "",
+    "error": "Assertion failed: (macroStart<=128), function thFinish, file alternative_fixture.h, line 48.\n"
+  }
+]

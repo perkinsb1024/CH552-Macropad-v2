@@ -1,0 +1,44 @@
+[
+  {
+    "suite": "alternatives",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative sparse=1 single=1 fixed=1 board=0: 235672 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternatives",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative sparse=1 single=1 fixed=1 board=1: 235464 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternative_integration",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative real scanner sparse=1 single=1 board=0: 116 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternative_integration",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative real scanner sparse=1 single=1 board=1: 110 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "input_layer",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Input-style HID layer cases: 330133\n",
+    "error": ""
+  },
+  {
+    "suite": "input_layer",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Input-style HID layer cases: 461205\n",
+    "error": ""
+  }
+]

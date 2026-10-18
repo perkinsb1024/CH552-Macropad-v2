@@ -1,0 +1,352 @@
+[
+  {
+    "candidate": "baseline",
+    "parent": null,
+    "reason": "Unchanged active firmware.",
+    "flash_delta": [
+      0,
+      0
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-external",
+    "parent": "baseline",
+    "reason": "Previous small wrapper, exclude chord actions and remove the unnecessary chord-owner timestamp.",
+    "flash_delta": [
+      484,
+      484
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal",
+    "parent": "wrapper-external",
+    "reason": "Place pending timestamps and release parameter in internal RAM.",
+    "flash_delta": [
+      -24,
+      -24
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed",
+    "parent": "wrapper-internal",
+    "reason": "Fixed 200ms threshold; per-binding selectors are ignored in this diagnostic format.",
+    "flash_delta": [
+      -20,
+      -20
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-internal",
+    "parent": "baseline",
+    "reason": "Ten-byte header, three-byte hold records, independent deadlines and cached ordinary taps. Initial internal layout fails.",
+    "flash_delta": [
+      698,
+      698
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "sparse-narrow",
+    "parent": "sparse-internal",
+    "reason": "Byte-bound metadata subtotals, indirect validator temporaries and lookup argument restore a valid layout.",
+    "flash_delta": [
+      -32,
+      -32
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed",
+    "parent": "sparse-narrow",
+    "reason": "Fixed 200ms threshold instead of eight profile-wide threshold choices.",
+    "flash_delta": [
+      -32,
+      -32
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-single",
+    "parent": "sparse-narrow",
+    "reason": "One pending dual-role input; chord matching before interruption promotion; ordinary chord state remains separate.",
+    "flash_delta": [
+      14,
+      14
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-single-fixed",
+    "parent": "sparse-single",
+    "reason": "Fixed 200ms threshold for the single-pending comparison.",
+    "flash_delta": [
+      -30,
+      -30
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-tag",
+    "parent": "sparse-narrow",
+    "reason": "Internal runtime marker replaces the per-input hold-reference array; resolve normal tap through saved assignment ID.",
+    "flash_delta": [
+      -22,
+      -22
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-tag-fixed",
+    "parent": "sparse-tag",
+    "reason": "Fixed 200ms threshold for the runtime-marker comparison.",
+    "flash_delta": [
+      -30,
+      -30
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-raw",
+    "parent": "wrapper-internal-fixed",
+    "reason": "Move raw input levels into internal RAM.",
+    "flash_delta": [
+      -24,
+      -24
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-temps",
+    "parent": "wrapper-internal-fixed",
+    "reason": "Try internal telemetry temporaries; compiler spills fail direct RAM allocation.",
+    "flash_delta": [
+      24,
+      24
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-maxram",
+    "parent": "wrapper-internal-fixed",
+    "reason": "Raw levels, telemetry temporaries/layer and error clock in internal RAM; layout fails.",
+    "flash_delta": [
+      -2,
+      -2
+    ],
+    "layout": "RAM FAIL"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-clocks",
+    "parent": "wrapper-internal-fixed",
+    "reason": "Move debounce clock array into internal RAM, release parameter back to xdata to retain 70-byte floor.",
+    "flash_delta": [
+      -32,
+      -32
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-live",
+    "parent": "wrapper-internal-fixed",
+    "reason": "Move telemetry counters into internal RAM and mouse snapshot to xdata; meets floor but smaller saving.",
+    "flash_delta": [
+      -18,
+      -18
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-tag-fixed-maxram",
+    "parent": "sparse-tag-fixed",
+    "reason": "The same raw/telemetry/error-clock relocation fits this overlay layout, but saves only two flash bytes.",
+    "flash_delta": [
+      -2,
+      -2
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed-merged",
+    "parent": "sparse-fixed",
+    "reason": "Merge hold lookup into configBinding return value; reuse computed layer/input context and parameter storage.",
+    "flash_delta": [
+      -44,
+      -44
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-tag-fixed-merged",
+    "parent": "sparse-tag-fixed",
+    "reason": "Merge lookup into ordinary binding read for the runtime-marker variant.",
+    "flash_delta": [
+      -10,
+      -10
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-single-fixed-merged",
+    "parent": "sparse-single-fixed",
+    "reason": "Merge lookup into ordinary binding read for the single-pending variant.",
+    "flash_delta": [
+      -38,
+      -38
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-bound",
+    "parent": "wrapper-internal-fixed",
+    "reason": "Central physical-record bound rejects chord/nested wrappers; remove separate context handling and body F checks.",
+    "flash_delta": [
+      -24,
+      -24
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-bound-clocks",
+    "parent": "wrapper-internal-fixed-bound",
+    "reason": "Combine centralized validation with both timestamp arrays in internal RAM.",
+    "flash_delta": [
+      -32,
+      -32
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-single",
+    "parent": "wrapper-internal-fixed-bound",
+    "reason": "Reuse existing chord pending slot/timestamp; preserve matching chords, layer changes and encoder overlap. Extra control paths outweigh state savings.",
+    "flash_delta": [
+      174,
+      174
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-single-raw",
+    "parent": "wrapper-single",
+    "reason": "Move raw levels into internal RAM.",
+    "flash_delta": [
+      -24,
+      -24
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed-merged-linear",
+    "parent": "sparse-fixed-merged",
+    "reason": "Linear layer/input ordinal replaces bit fields; one identifier range check replaces layer/input checks.",
+    "flash_delta": [
+      -24,
+      -24
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-bound-clocks",
+    "parent": "wrapper-internal-fixed-bound-clocks",
+    "reason": "Restore per-binding configurable 32-512ms thresholds.",
+    "flash_delta": [
+      22,
+      22
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-single-raw-clocks",
+    "parent": "wrapper-single-raw",
+    "reason": "Move debounce clocks into internal RAM, release parameter back to xdata.",
+    "flash_delta": [
+      -32,
+      -32
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed-merged-linear-raw-release",
+    "parent": "sparse-fixed-merged-linear",
+    "reason": "Move raw levels into internal RAM and release parameter to xdata, leaving 71-byte six-key stack.",
+    "flash_delta": [
+      -20,
+      -20
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed-merged-linear-tail",
+    "parent": "sparse-fixed-merged-linear",
+    "reason": "Place hold records at image end; cheaper lookup but extra macro boundary/terminator validation. Net growth.",
+    "flash_delta": [
+      6,
+      6
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed-merged-linear-tail-raw-release",
+    "parent": "sparse-fixed-merged-linear-tail",
+    "reason": "Apply raw-level/release-argument placement to the tail-table alternative.",
+    "flash_delta": [
+      -20,
+      -20
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-single-fixed-merged-linear-raw-clocks",
+    "parent": "sparse-single-fixed-merged",
+    "reason": "Combine linear IDs and raw/debounce-clock relocation while retaining chord-first single-pending behavior.",
+    "flash_delta": [
+      -80,
+      -80
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-fixed-bound-clocks-combined",
+    "parent": "wrapper-internal-fixed-bound-clocks",
+    "reason": "Compose optional-input HID layer command and adapt header/test contexts.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "wrapper-internal-bound-clocks-combined",
+    "parent": "wrapper-internal-bound-clocks",
+    "reason": "Compose HID with configurable thresholds.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-fixed-merged-linear-raw-release-combined",
+    "parent": "sparse-fixed-merged-linear-raw-release",
+    "reason": "Compose HID with independent sparse holds and ten-byte profile test fixtures.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  },
+  {
+    "candidate": "sparse-single-fixed-merged-linear-raw-clocks-combined",
+    "parent": "sparse-single-fixed-merged-linear-raw-clocks",
+    "reason": "Compose HID with the nonpreferred single-pending sparse prototype.",
+    "flash_delta": [
+      84,
+      84
+    ],
+    "layout": "Pass"
+  }
+]

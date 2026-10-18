@@ -1,0 +1,16 @@
+[
+  {
+    "suite": "alternatives",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative sparse=1 single=0 fixed=1 board=0: 235669 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternatives",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative sparse=1 single=0 fixed=1 board=1: 235461 cases passed\n",
+    "error": ""
+  }
+]

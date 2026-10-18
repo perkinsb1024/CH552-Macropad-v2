@@ -1,0 +1,12 @@
+{
+  "preferred-fixed": "wrapper-internal-fixed-bound-clocks",
+  "preferred-configurable": "wrapper-internal-bound-clocks",
+  "sparse-independent": "sparse-fixed-merged-linear-raw-release",
+  "single-sparse": "sparse-single-fixed-merged-linear-raw-clocks",
+  "single-wrapper": "wrapper-single-raw-clocks",
+  "sparse-tail": "sparse-fixed-merged-linear-tail-raw-release",
+  "preferred-fixed-combined": "wrapper-internal-fixed-bound-clocks-combined",
+  "preferred-configurable-combined": "wrapper-internal-bound-clocks-combined",
+  "sparse-independent-combined": "sparse-fixed-merged-linear-raw-release-combined",
+  "single-sparse-combined": "sparse-single-fixed-merged-linear-raw-clocks-combined"
+}

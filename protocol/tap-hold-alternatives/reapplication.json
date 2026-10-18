@@ -1,0 +1,114 @@
+[
+  {
+    "alias": "preferred-fixed",
+    "candidate": "wrapper-internal-fixed-bound-clocks",
+    "files": 62,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-wrapper-internal-fixed-bound-clocks.json",
+      "validation-wrapper-internal-fixed-bound-clocks-focused.json"
+    ]
+  },
+  {
+    "alias": "preferred-configurable",
+    "candidate": "wrapper-internal-bound-clocks",
+    "files": 62,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-wrapper-internal-bound-clocks.json"
+    ]
+  },
+  {
+    "alias": "sparse-independent",
+    "candidate": "sparse-fixed-merged-linear-raw-release",
+    "files": 60,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-sparse-fixed-merged-linear-raw-release.json"
+    ]
+  },
+  {
+    "alias": "single-sparse",
+    "candidate": "sparse-single-fixed-merged-linear-raw-clocks",
+    "files": 60,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-sparse-single-fixed-merged-linear-raw-clocks.json",
+      "validation-sparse-single-fixed-merged-linear-raw-clocks-focused.json"
+    ]
+  },
+  {
+    "alias": "single-wrapper",
+    "candidate": "wrapper-single-raw-clocks",
+    "files": 62,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-wrapper-single-raw-clocks.json"
+    ]
+  },
+  {
+    "alias": "sparse-tail",
+    "candidate": "sparse-fixed-merged-linear-tail-raw-release",
+    "files": 60,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-sparse-fixed-merged-linear-tail-raw-release-focused.json"
+    ]
+  },
+  {
+    "alias": "preferred-fixed-combined",
+    "candidate": "wrapper-internal-fixed-bound-clocks-combined",
+    "files": 64,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-wrapper-internal-fixed-bound-clocks-combined.json"
+    ]
+  },
+  {
+    "alias": "preferred-configurable-combined",
+    "candidate": "wrapper-internal-bound-clocks-combined",
+    "files": 64,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-wrapper-internal-bound-clocks-combined-focused.json"
+    ]
+  },
+  {
+    "alias": "sparse-independent-combined",
+    "candidate": "sparse-fixed-merged-linear-raw-release-combined",
+    "files": 62,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-sparse-fixed-merged-linear-raw-release-combined-focused.json"
+    ]
+  },
+  {
+    "alias": "single-sparse-combined",
+    "candidate": "sparse-single-fixed-merged-linear-raw-clocks-combined",
+    "files": 62,
+    "reapplied_exactly": true,
+    "validation": [
+      "validation-sparse-single-fixed-merged-linear-raw-clocks-combined-focused.json"
+    ]
+  },
+  {
+    "incremental": "hid-on-preferred-fixed",
+    "files": 64,
+    "reapplied_exactly": true
+  },
+  {
+    "incremental": "hid-on-preferred-configurable",
+    "files": 64,
+    "reapplied_exactly": true
+  },
+  {
+    "incremental": "hid-on-sparse-independent",
+    "files": 62,
+    "reapplied_exactly": true
+  },
+  {
+    "incremental": "hid-on-single-sparse",
+    "files": 62,
+    "reapplied_exactly": true
+  }
+]

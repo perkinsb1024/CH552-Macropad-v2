@@ -1,0 +1,36 @@
+[
+  {
+    "suite": "alternatives",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative sparse=1 single=0 fixed=1 board=0: 235672 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternatives",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative sparse=1 single=0 fixed=1 board=1: 235464 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternative_integration",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative real scanner sparse=1 single=0 board=0: 114 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternative_integration",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative real scanner sparse=1 single=0 board=1: 108 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\nAlternative sparse=1 single=0 fixed=1 board=0: 235672 cases passed\nPassed alternatives [0]\nAlternative sparse=1 single=0 fixed=1 board=1: 235464 cases passed\nPassed alternatives [1]\nAlternative real scanner sparse=1 single=0 board=0: 114 cases passed\nPassed alternative_integration [0]\nAlternative real scanner sparse=1 single=0 board=1: 108 cases passed\nPassed alternative_integration [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "In file included from tests/alternatives_test.c:6:\nIn file included from tests/alternative_fixture.h:8:\ntests/config_fixture.h:40:13: warning: unused function 'testLoadStarterProfile' [-Wunused-function]\n   40 | static void testLoadStarterProfile(uint8_t variant) {\n      |             ^~~~~~~~~~~~~~~~~~~~~~\n1 warning generated.\nIn file included from tests/alternatives_test.c:6:\nIn file included from tests/alternative_fixture.h:8:\ntests/config_fixture.h:40:13: warning: unused function 'testLoadStarterProfile' [-Wunused-function]\n   40 | static void testLoadStarterProfile(uint8_t variant) {\n      |             ^~~~~~~~~~~~~~~~~~~~~~\n1 warning generated.\nIn file included from tests/alternative_integration_test.c:8:\ntests/alternative_fixture.h:69:13: warning: unused function 'thSetAction' [-Wunused-function]\n   69 | static void thSetAction(uint8_t assignment,uint8_t hold,uint8_t first,uint8_t second) {\n      |             ^~~~~~~~~~~\n1 warning generated.\nIn file included from tests/alternative_integration_test.c:8:\ntests/alternative_fixture.h:69:13: warning: unused function 'thSetAction' [-Wunused-function]\n   69 | static void thSetAction(uint8_t assignment,uint8_t hold,uint8_t first,uint8_t second) {\n      |             ^~~~~~~~~~~\n1 warning generated.\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  }
+]

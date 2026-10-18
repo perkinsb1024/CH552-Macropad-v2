@@ -1,0 +1,30 @@
+[
+  {
+    "suite": "alternatives",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative sparse=0 single=1 fixed=1 board=0: 240135 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternatives",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative sparse=0 single=1 fixed=1 board=1: 238695 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternative_integration",
+    "variant": 0,
+    "returncode": 0,
+    "output": "Alternative real scanner sparse=0 single=1 board=0: 114 cases passed\n",
+    "error": ""
+  },
+  {
+    "suite": "alternative_integration",
+    "variant": 1,
+    "returncode": 0,
+    "output": "Alternative real scanner sparse=0 single=1 board=1: 108 cases passed\n",
+    "error": ""
+  }
+]
