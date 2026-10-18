@@ -1434,14 +1434,14 @@ runtime and timer replies an atomic snapshot.
 
 ## Builds and Measurements
 
-The v18 firmware source at revision `3112852` implements five timers, scope-7
+The v18 firmware source at revision `fa1e88a` implements five timers, scope-7
 global chords and the existing complete feature set. Temporary native builds
 at the real 14,336-byte application limit measure:
 
 | Hardware | Flash Used | Flash Free | Paged RAM | Ordinary XSEG | Absolute Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six Keys | 14,299 | 37 | 108 | 404 | 134 | 102 |
-| Three Keys | 14,295 | 41 | 108 | 395 | 134 | 105 |
+| Six Keys | 14,205 | 131 | 108 | 404 | 134 | 102 |
+| Three Keys | 14,201 | 135 | 108 | 395 | 134 | 105 |
 
 The normal host regressions pass both hardware geometries, including all raw
 chord identifiers, local-over-global precedence, five independent timer expiries

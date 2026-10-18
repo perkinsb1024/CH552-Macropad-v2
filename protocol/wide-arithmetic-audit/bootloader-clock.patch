@@ -1,0 +1,11 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -370,7 +370,7 @@
+ void enterBootloader() {
+   actionsClear();
+   uint16_t start = millis();
+-  while (USB_reportsPending() && (uint16_t)(millis() - start) < 100) {
++  while (USB_reportsPending() && (uint16_t)((uint16_t)millis() - start) < 100) {
+     USB_reportPoll(millis());
+     actionsPoll(millis());
+   }

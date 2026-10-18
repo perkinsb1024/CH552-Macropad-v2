@@ -76,6 +76,7 @@ static FW_BIT keyboardUsageValid(uint8_t usage) {
 // Validation runs only in the main loop. Sharing context avoids repeatedly
 // passing image metadata and reduces SDCC register spills into internal RAM.
 // Validated image/pool addresses stay below 128; narrow bounded index sums before access.
+// Keep small masks and limits byte-sized too, before C's promoted comparisons.
 static __data uint8_t validationLayers, validationPool, validationUsed;
 static const __xdata uint8_t *__data validationImage;
 static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
@@ -133,7 +134,7 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
         case CONFIG_ACTION_MOUSE_CLICK:
             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
         case CONFIG_ACTION_MOUSE_TOGGLE:
-            return aux <= (rotation ? 2 : 3) && param != 0;
+            return aux <= (uint8_t)(rotation ? 2 : 3) && param != 0;
         case CONFIG_ACTION_SCROLL:
 #if CONFIG_SCROLL_ACCELERATION
             return aux < 7 && (aux & 3) != 3 &&
@@ -158,7 +159,7 @@ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
             if (aux != (CONFIG_ACTION_STRING >> 4) || param >= validationUsed) return 0;
             return param == 0 || validationImage[(uint8_t)(validationPool + param - 1)] == 0;
         case CONFIG_ACTION_SET_LAYER:
-            if ((aux & (rotation << 1)) || (aux & 3) == 3) return 0;
+            if ((aux & (uint8_t)(rotation << 1)) || (aux & 3) == 3) return 0;
             if (aux & 4) return (uint8_t)(param + 6) <= 12;
             return param < validationLayers || (!(aux & 2) && param == CONFIG_LAYER_PREVIOUS);
         default:
@@ -245,7 +246,8 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         offset += 3;
     }
     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
-        __idata uint8_t scope = validationImage[offset + 5] & 7;
+        // The complete metadata capacity check already bounds this record.
+        __idata uint8_t scope = validationImage[(uint8_t)(offset + 5)] & 7;
         if (scope > validationLayers) return 0;
         if (!actionValid(offset + 1, 1)) return 0;
 #if CONFIG_TIMED_RESUME
@@ -308,7 +310,8 @@ uint8_t configLayerPaletteOffset(uint8_t layer) {
 
 uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
     // Validated palettes and physical keys keep the final image offset below 128.
-    uint8_t colors = activeConfig[(uint8_t)(offset + (key >> 1))];
+    offset += key >> 1;
+    uint8_t colors = activeConfig[offset];
     if (key & 1) colors >>= 4;
     return colors & 15;
 }
@@ -370,5 +373,6 @@ uint8_t configStringChar(uint8_t offset, uint8_t index) {
         return 0;
     }
     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
-    return activeConfig[(uint8_t)(start + position)];
+    start += position;
+    return activeConfig[start];
 }

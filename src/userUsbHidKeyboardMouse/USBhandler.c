@@ -278,9 +278,11 @@ void USB_EP0_OUT() {
   if (!U_TOG_OK) {
     return;
   }
+  // Check ordering before subtracting so malformed lengths cannot wrap.
   if (SetupReq == 0x09 && ep0ReportExpected &&
       USB_RX_LEN <= DEFAULT_ENDP0_SIZE &&
-      ep0ReportReceived + USB_RX_LEN <= ep0ReportExpected) {
+      ep0ReportReceived <= ep0ReportExpected &&
+      USB_RX_LEN <= (uint8_t)(ep0ReportExpected - ep0ReportReceived)) {
     for (i = 0; i < USB_RX_LEN; i++) {
       Ep0Report[(uint8_t)(ep0ReportReceived + i)] = Ep0Buffer[i];
     }

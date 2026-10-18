@@ -1,0 +1,44 @@
+{
+  "baseline_revision": "eaf798c620ee974d44eda9ae0222aa9c1af9b504",
+  "branch": "experiment/v18-wide-arithmetic-optimization",
+  "baseline_initially_clean": true,
+  "active_firmware_changed": false,
+  "native_builds": 64,
+  "normal_host_suites": {
+    "combined": {
+      "passed": true,
+      "geometries": [
+        0,
+        1
+      ],
+      "preview": true,
+      "layout_tests": 8,
+      "mocked_bootloader_tests": 19,
+      "source_manifest_sha256": "3b2380d0c78a20c390af1ff72323fcc8d5951f26d941f8749d1f44513ce3d8b0"
+    },
+    "expanded": {
+      "passed": true,
+      "geometries": [
+        0,
+        1
+      ],
+      "preview": true,
+      "layout_tests": 8,
+      "mocked_bootloader_tests": 19,
+      "source_manifest_sha256": "8c5cb32b2720ebb2faa062f882e2430bc7becadaaaab2693f16c2e32711acaae"
+    },
+    "maximal": {
+      "passed": true,
+      "geometries": [
+        0,
+        1
+      ],
+      "preview": true,
+      "layout_tests": 8,
+      "mocked_bootloader_tests": 19,
+      "source_manifest_sha256": "ff7cb9f70fbde695fa7074c50ad897e59f27b05295dec45a9cbee8f07f1cfbe8"
+    }
+  },
+  "hardware_validation": false,
+  "web_deployment_gate": "Not run; active deployment inputs unchanged."
+}

@@ -1,0 +1,24 @@
+{
+  "candidate": "combined",
+  "differential": "action_encodings=1376256 config_images=852512 palette_reads=195072 string_reads=131072 USB_ranges=16777216",
+  "sanitizer_suites": [
+    "config",
+    "protocol",
+    "usb",
+    "actions",
+    "macros",
+    "timed_actions",
+    "timed_capacity"
+  ],
+  "variants": [
+    0,
+    1
+  ],
+  "address_alignment_suites": [
+    "input",
+    "sleep_integration",
+    "live_state",
+    "per_key_palette"
+  ],
+  "source_manifest_sha256": "3b2380d0c78a20c390af1ff72323fcc8d5951f26d941f8749d1f44513ce3d8b0"
+}

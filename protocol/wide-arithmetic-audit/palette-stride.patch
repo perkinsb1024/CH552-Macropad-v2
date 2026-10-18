@@ -1,0 +1,20 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -206,7 +206,7 @@
+     offset = CONFIG_HEADER_SIZE + size - 1;
+     for (layer = 0; layer < validationLayers; layer++) {
+         if (!(validationImage[offset] & CONFIG_LAYER_OPT_COLOR_MASK))
+-            paletteBytes += (keys + 1) >> 1;
++            paletteBytes += (uint8_t)(keys + 1) >> 1;
+         offset += size;
+     }
+     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
+@@ -300,7 +300,7 @@
+     uint8_t options = CONFIG_HEADER_SIZE + size - 1;
+     while (layer--) {
+         if (!(activeConfig[options] & CONFIG_LAYER_OPT_COLOR_MASK))
+-            offset += (configKeyCount() + 1) >> 1;
++            offset += (uint8_t)(configKeyCount() + 1) >> 1;
+         options += size;
+     }
+     return offset;

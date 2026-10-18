@@ -66,7 +66,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
-| [v18](protocol/config-v18.md) | - Up to five **Timed Actions**<br> - More compact global chord encoding and smaller firmware<br> - Current source; pre-built release remains v17 |
+| [v18](protocol/config-v18.md) | - Added one additional **Timed Action** slot (five total)  |
 | [v17](protocol/config-v17.md) | - **Live View** shows physical inputs, triggers, sleep/timer countdowns, lighting and playback state<br> - Fixed a bug where forcing **Rainbow** through **LED Control** didn't respect runtime speed overrides |
 | [v16](protocol/config-v16.md) | - Per-key idle colors (custom background palettes)<br> - **Rainbow** is available as a key-press color (**Teal** is no longer available)<br> - Runtime brightness overrides persist after waking from **Auto-Sleep** |
 | [v15](protocol/config-v15.md) | - Optional **Auto-Sleep** after **15 Minutes**, **30 Minutes**, **1 Hour** or **2 Hours** of inactivity (can be enabled per-layer, can set LEDs to **dim** or **off**, and can optionally display layer indicator again on wake)  |
@@ -151,12 +151,12 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current v18 source at revision `3112852`, in bytes, with a 14,336-byte application flash limit:
+Memory in the current v18 source at revision `fa1e88a`, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash Used | 14,295 | 14,299 |
-| Flash Remaining | 41 | 37 |
+| Flash Used | 14,201 | 14,205 |
+| Flash Remaining | 135 | 131 |
 | Total External RAM Allocated | 785 | 794 |
 | Stack Available (Linker Reserve) | 105 | 102 |
 

@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -323,7 +323,7 @@
+       uint8_t layers = configLayerCount();
+       // Bias by a multiple of the layer count to wrap signed offsets (-6..6).
+       // Resolve relative to the selected layer, before consuming a one-shot.
+-      second = selectedLayer + second + (layers << 3);
++      second = selectedLayer + second + (uint8_t)(layers << 3);
+       while (second >= layers) second -= layers;
+     }
+     if (first & CONFIG_LAYER_HOLD) {

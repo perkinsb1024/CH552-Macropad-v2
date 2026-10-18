@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -363,7 +363,7 @@
+ };
+ void actionsWriteLive(void) {
+   uint8_t i = 7;
+-  do { --i; liveReply[i] = *liveInternal[i]; } while (i);
++  do { --i; liveReply[i] = **(const __idata uint8_t * const __code *)((const __code uint8_t *)liveInternal + (uint8_t)(i * sizeof(liveInternal[0]))); } while (i);
+   liveReply[12] = pendingInput;
+   liveReply[13] = persistentMouse;
+ }

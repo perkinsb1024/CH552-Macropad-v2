@@ -1,0 +1,11 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -245,7 +245,7 @@
+         offset += 3;
+     }
+     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
+-        __idata uint8_t scope = validationImage[offset + 5] & 7;
++        __idata uint8_t scope = validationImage[(uint8_t)(offset + 5)] & 7;
+         if (scope > validationLayers) return 0;
+         if (!actionValid(offset + 1, 1)) return 0;
+ #if CONFIG_TIMED_RESUME

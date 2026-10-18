@@ -1,0 +1,22 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -481,8 +481,7 @@
+ void firmwareApplyConfig(ACTION_BIT restartIndicator) {
+   liveGeneration++;
+   if (previewOptions & LED_EFFECT_FLAG) previewOptions = 0;
+-  uint32_t clock = millis();
+-  uint16_t now = clock;
++  uint16_t now = millis();
+   // Bits 4-11 form the 16 ms fine clock; the low word is sufficient.
+   actionsTimedReset(now >> 4);
+   ledSettings[0] = (activeConfig[CONFIG_HEADER_LED] >> 4) & 3;
+@@ -541,8 +540,7 @@
+ }
+ 
+ void loop() {
+-  uint32_t clock = millis();
+-  uint16_t now = clock;
++  uint16_t now = millis();
+   USB_reportPoll(now);
+   protocolPoll(now);
+   if (protocolState == 3) enterBootloader();

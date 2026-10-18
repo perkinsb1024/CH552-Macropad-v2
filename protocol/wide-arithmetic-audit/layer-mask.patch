@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -347,7 +347,7 @@
+   }
+ liveRecord:
+   source = input;
+-  if (input < 6) source |= chordPartner[input] << 4;
++  if (input < 6) source |= (uint8_t)(chordPartner[input] << 4);
+   if (input >= 7) source |= 0x80;
+   if (input < 9) liveBindings[input]++;
+   liveBindings[9] = source;

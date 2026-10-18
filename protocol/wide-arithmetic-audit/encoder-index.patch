@@ -1,0 +1,11 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -440,7 +440,7 @@
+ #if ENABLE_COLOR_PREVIEW
+   if (colorPreviewActive) firmwarePreviewColor(0);
+ #endif
+-  movement = encoderTransitions[(encoderState << 2) | state];
++  movement = encoderTransitions[(uint8_t)((encoderState << 2) | state)];
+   encoderState = state;
+   if (!activeConfigValid) return;
+   if (movement == 0) {

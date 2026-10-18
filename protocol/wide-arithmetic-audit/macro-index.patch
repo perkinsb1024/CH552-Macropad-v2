@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -712,7 +712,7 @@
+       if (macroNext) {
+         currentFirst = activeConfig[macroNext];
+         // A repeated empty macro may point to the sole terminator at byte 127.
+-        if (currentFirst) currentSecond = activeConfig[macroNext + 1];
++        if (currentFirst) currentSecond = activeConfig[(uint8_t)(macroNext + 1)];
+         macroNext += 2;
+       }
+     } else if (eventUsed) {

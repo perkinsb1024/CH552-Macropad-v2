@@ -1,0 +1,12 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -308,7 +308,8 @@
+ 
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
+     // Validated palettes and physical keys keep the final image offset below 128.
+-    uint8_t colors = activeConfig[(uint8_t)(offset + (key >> 1))];
++    offset += key >> 1;
++    uint8_t colors = activeConfig[offset];
+     if (key & 1) colors >>= 4;
+     return colors & 15;
+ }

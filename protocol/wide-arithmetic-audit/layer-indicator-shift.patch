@@ -1,0 +1,11 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -235,7 +235,7 @@
+     colorPreviewActive = 0;
+     previewOptions = (value << 4) | LED_EFFECT_FLAG | 8 | !(command & CONFIG_LED_EFFECT_DIM);
+     command &= ~CONFIG_LED_EFFECT_DIM;
+-    layerIndicatorPhasesLeft = (command - CONFIG_LED_EFFECT_ON) << 1;
++    layerIndicatorPhasesLeft = (uint8_t)(command - CONFIG_LED_EFFECT_ON) << 1;
+     if (command == CONFIG_LED_EFFECT_ON) previewOptions |= 4;
+     if (command == CONFIG_LED_EFFECT_RESTORE) {
+       previewOptions = 0;

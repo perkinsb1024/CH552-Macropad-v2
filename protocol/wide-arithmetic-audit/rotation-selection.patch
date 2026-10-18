@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -610,7 +610,7 @@
+ void actionsRotate(uint8_t clockwise) {
+   uint8_t first;
+   uint8_t second;
+-  uint8_t input = configKeyCount() + (clockwise ? 1 : 2);
++  uint8_t input = configKeyCount() + (uint8_t)(clockwise ? 1 : 2);
+   if (pendingInput && oneShotReturnLayer != 0xFF) {
+     resolvePending();
+     updateLayer();

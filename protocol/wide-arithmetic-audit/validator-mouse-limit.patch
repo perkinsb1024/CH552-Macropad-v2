@@ -1,0 +1,11 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -133,7 +133,7 @@
+         case CONFIG_ACTION_MOUSE_CLICK:
+             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
+         case CONFIG_ACTION_MOUSE_TOGGLE:
+-            return aux <= (rotation ? 2 : 3) && param != 0;
++            return aux <= (uint8_t)(rotation ? 2 : 3) && param != 0;
+         case CONFIG_ACTION_SCROLL:
+ #if CONFIG_SCROLL_ACCELERATION
+             return aux < 7 && (aux & 3) != 3 &&

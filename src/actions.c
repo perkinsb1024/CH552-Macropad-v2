@@ -516,7 +516,8 @@ void actionsPress(uint8_t input, uint16_t now) {
   uint8_t other;
   uint8_t keys = configKeyCount();
   __idata uint8_t chordWindow = configChordWindowMs();
-  if (input > keys || (inputDown & (1 << input))) {
+  // The range guard bounds the shift to 0..6; test only the byte-sized mask.
+  if (input > keys || (inputDown & (uint8_t)(1u << input))) {
     return;
   }
   inputDown |= 1 << input;
@@ -599,7 +600,7 @@ void actionsRelease(uint8_t input) {
   if (input < configKeyCount() && chordPartner[input]) {
     other = chordPartner[input] - 1;
     releaseAction(other);
-    if (!(inputDown & (1 << other))) {
+    if (!(inputDown & (uint8_t)(1u << other))) {
       chordPartner[input] = 0;
       chordPartner[other] = 0;
     }
@@ -712,7 +713,8 @@ void actionsPoll(uint16_t now) {
       if (macroNext) {
         currentFirst = activeConfig[macroNext];
         // A repeated empty macro may point to the sole terminator at byte 127.
-        if (currentFirst) currentSecond = activeConfig[macroNext + 1];
+        // Nonempty validated steps have their parameter at or below byte 127.
+        if (currentFirst) currentSecond = activeConfig[(uint8_t)(macroNext + 1)];
         macroNext += 2;
       }
     } else if (eventUsed) {

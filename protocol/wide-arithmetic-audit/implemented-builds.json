@@ -1,0 +1,24 @@
+[
+  {
+    "variant": 0,
+    "flash": 14205,
+    "free_flash": 131,
+    "paged": 108,
+    "external": 404,
+    "stack": 102,
+    "artifacts": "/private/tmp/macropad-wide-implemented-six",
+    "hex_sha256": "89ae69e4fd8727ec059ae80709dbf69d2a35604a9d2c8c0d2438a0d20c8b1d1f",
+    "matches_audited_binary": true
+  },
+  {
+    "variant": 1,
+    "flash": 14201,
+    "free_flash": 135,
+    "paged": 108,
+    "external": 395,
+    "stack": 105,
+    "artifacts": "/private/tmp/macropad-wide-implemented-three",
+    "hex_sha256": "b96e53d8facb343e443fc3bff4ec4ddbaae396e68e6ace40786119f6fc72d4b8",
+    "matches_audited_binary": true
+  }
+]

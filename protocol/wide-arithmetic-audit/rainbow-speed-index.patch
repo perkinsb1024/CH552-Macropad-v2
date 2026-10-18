@@ -1,0 +1,11 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -565,7 +565,7 @@
+   scanEncoder();
+   // Color preview uses saved speed; LED effects follow the runtime override.
+   if ((uint8_t)((uint8_t)now - rainbowChanged) >=
+-      rainbowFrameMs[colorPreviewActive ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1]])
++      rainbowFrameMs[(uint8_t)(colorPreviewActive ? activeConfig[CONFIG_HEADER_LED] >> CONFIG_HEADER_RAINBOW_SPEED_SHIFT : ledSettings[1])])
+   {
+     if (rainbowAnimationActive) {
+       rainbowChanged = (uint8_t)now;

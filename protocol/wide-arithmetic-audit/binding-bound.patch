@@ -1,0 +1,11 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -315,7 +315,7 @@
+ 
+ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second) {
+     uint8_t offset;
+-    if (layer >= configLayerCount() || input >= configKeyCount() + 3) {
++    if (layer >= configLayerCount() || input >= (uint8_t)(configKeyCount() + 3)) {
+         *first = 0;
+         *second = 0;
+         return;

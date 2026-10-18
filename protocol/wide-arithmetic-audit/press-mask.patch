@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -516,7 +516,7 @@
+   uint8_t other;
+   uint8_t keys = configKeyCount();
+   __idata uint8_t chordWindow = configChordWindowMs();
+-  if (input > keys || (inputDown & (1 << input))) {
++  if (input > keys || (inputDown & (uint8_t)(1u << input))) {
+     return;
+   }
+   inputDown |= 1 << input;

@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -599,7 +599,7 @@
+   if (input < configKeyCount() && chordPartner[input]) {
+     other = chordPartner[input] - 1;
+     releaseAction(other);
+-    if (!(inputDown & (1 << other))) {
++    if (!(inputDown & (uint8_t)(1u << other))) {
+       chordPartner[input] = 0;
+       chordPartner[other] = 0;
+     }

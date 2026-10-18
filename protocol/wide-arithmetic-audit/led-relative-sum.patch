@@ -1,0 +1,11 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -223,7 +223,7 @@
+ 
+ // Three whole cycles keep all supported deltas positive, without division.
+ uint8_t ledStep(uint8_t current, int8_t delta, uint8_t count) {
+-  uint8_t next = current + delta + count + count + count;
++  uint8_t next = current + (uint8_t)delta + (uint8_t)(3 * count);
+   while (next >= count) next -= count;
+   return next;
+ }

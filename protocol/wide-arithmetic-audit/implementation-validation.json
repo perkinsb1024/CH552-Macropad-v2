@@ -1,0 +1,48 @@
+{
+  "base_revision": "eaf798c620ee974d44eda9ae0222aa9c1af9b504",
+  "working_tree_had_uncommitted_changes": true,
+  "implemented_files": [
+    "src/actions.c",
+    "src/config.c",
+    "src/userUsbHidKeyboardMouse/USBhandler.c"
+  ],
+  "firmware_host_regressions": "passed (normal preview, both hardware variants)",
+  "native_builds": [
+    {
+      "variant": 0,
+      "flash": 14205,
+      "free_flash": 131,
+      "paged": 108,
+      "external": 404,
+      "stack": 102,
+      "artifacts": "/private/tmp/macropad-wide-implemented-six",
+      "hex_sha256": "89ae69e4fd8727ec059ae80709dbf69d2a35604a9d2c8c0d2438a0d20c8b1d1f",
+      "matches_audited_binary": true
+    },
+    {
+      "variant": 1,
+      "flash": 14201,
+      "free_flash": 135,
+      "paged": 108,
+      "external": 395,
+      "stack": 105,
+      "artifacts": "/private/tmp/macropad-wide-implemented-three",
+      "hex_sha256": "b96e53d8facb343e443fc3bff4ec4ddbaae396e68e6ace40786119f6fc72d4b8",
+      "matches_audited_binary": true
+    }
+  ],
+  "sanitizer_validation": "validation-implemented.json",
+  "configurator_tests": "passed",
+  "uploader_tests": {
+    "passed": 95,
+    "failed": 0
+  },
+  "complete_site": "passed (TypeScript and production build)",
+  "frozen_archives_verified": 16,
+  "shared_deployment_gate": "npm run verify:deploy passed after final firmware edits",
+  "source_manifest_sha256": "3bc8c479b19c214be3b0a783c092e43453736c2ff7e3586f8bf35d7ebc7bc079",
+  "hardware_validation": "not performed",
+  "release_generation": false,
+  "committed": false,
+  "published": false
+}

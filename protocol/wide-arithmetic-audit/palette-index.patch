@@ -1,0 +1,11 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -203,7 +203,7 @@
+         blue = 0;
+       }
+     } else {
+-      const __code uint8_t *rgb = configPalette[color];
++      const __code uint8_t *rgb = ((const __code uint8_t *)configPalette) + (uint8_t)(color * 3);
+       red = *rgb++;
+       green = *rgb++;
+       blue = *rgb;

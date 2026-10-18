@@ -1,0 +1,89 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -516,7 +516,7 @@
+   uint8_t other;
+   uint8_t keys = configKeyCount();
+   __idata uint8_t chordWindow = configChordWindowMs();
+-  if (input > keys || (inputDown & (1 << input))) {
++  if (input > keys || (inputDown & (uint8_t)(1u << input))) {
+     return;
+   }
+   inputDown |= 1 << input;
+@@ -599,7 +599,7 @@
+   if (input < configKeyCount() && chordPartner[input]) {
+     other = chordPartner[input] - 1;
+     releaseAction(other);
+-    if (!(inputDown & (1 << other))) {
++    if (!(inputDown & (uint8_t)(1u << other))) {
+       chordPartner[input] = 0;
+       chordPartner[other] = 0;
+     }
+@@ -712,7 +712,7 @@
+       if (macroNext) {
+         currentFirst = activeConfig[macroNext];
+         // A repeated empty macro may point to the sole terminator at byte 127.
+-        if (currentFirst) currentSecond = activeConfig[macroNext + 1];
++        if (currentFirst) currentSecond = activeConfig[(uint8_t)(macroNext + 1)];
+         macroNext += 2;
+       }
+     } else if (eventUsed) {
+--- a/src/config.c
++++ b/src/config.c
+@@ -133,7 +133,7 @@
+         case CONFIG_ACTION_MOUSE_CLICK:
+             return param != 0; // Auxiliary 0–15 means 1–16 clicks; all eight button bits.
+         case CONFIG_ACTION_MOUSE_TOGGLE:
+-            return aux <= (rotation ? 2 : 3) && param != 0;
++            return aux <= (uint8_t)(rotation ? 2 : 3) && param != 0;
+         case CONFIG_ACTION_SCROLL:
+ #if CONFIG_SCROLL_ACCELERATION
+             return aux < 7 && (aux & 3) != 3 &&
+@@ -158,7 +158,7 @@
+             if (aux != (CONFIG_ACTION_STRING >> 4) || param >= validationUsed) return 0;
+             return param == 0 || validationImage[(uint8_t)(validationPool + param - 1)] == 0;
+         case CONFIG_ACTION_SET_LAYER:
+-            if ((aux & (rotation << 1)) || (aux & 3) == 3) return 0;
++            if ((aux & (uint8_t)(rotation << 1)) || (aux & 3) == 3) return 0;
+             if (aux & 4) return (uint8_t)(param + 6) <= 12;
+             return param < validationLayers || (!(aux & 2) && param == CONFIG_LAYER_PREVIOUS);
+         default:
+@@ -245,7 +245,7 @@
+         offset += 3;
+     }
+     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {
+-        __idata uint8_t scope = validationImage[offset + 5] & 7;
++        __idata uint8_t scope = validationImage[(uint8_t)(offset + 5)] & 7;
+         if (scope > validationLayers) return 0;
+         if (!actionValid(offset + 1, 1)) return 0;
+ #if CONFIG_TIMED_RESUME
+@@ -308,7 +308,8 @@
+ 
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
+     // Validated palettes and physical keys keep the final image offset below 128.
+-    uint8_t colors = activeConfig[(uint8_t)(offset + (key >> 1))];
++    offset += key >> 1;
++    uint8_t colors = activeConfig[offset];
+     if (key & 1) colors >>= 4;
+     return colors & 15;
+ }
+@@ -370,5 +371,6 @@
+         return 0;
+     }
+     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
+-    return activeConfig[(uint8_t)(start + position)];
+-}
++    start += position;
++    return activeConfig[start];
++}
+--- a/src/userUsbHidKeyboardMouse/USBhandler.c
++++ b/src/userUsbHidKeyboardMouse/USBhandler.c
+@@ -280,7 +280,8 @@
+   }
+   if (SetupReq == 0x09 && ep0ReportExpected &&
+       USB_RX_LEN <= DEFAULT_ENDP0_SIZE &&
+-      ep0ReportReceived + USB_RX_LEN <= ep0ReportExpected) {
++      ep0ReportReceived <= ep0ReportExpected &&
++      USB_RX_LEN <= (uint8_t)(ep0ReportExpected - ep0ReportReceived)) {
+     for (i = 0; i < USB_RX_LEN; i++) {
+       Ep0Report[(uint8_t)(ep0ReportReceived + i)] = Ep0Buffer[i];
+     }

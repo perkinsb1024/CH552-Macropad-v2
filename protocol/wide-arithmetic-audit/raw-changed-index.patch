@@ -1,0 +1,24 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -409,10 +409,10 @@
+   uint8_t pressed = readButton(input);
+   if (pressed != rawState[input]) {
+     rawState[input] = pressed;
+-    rawChanged[input] = now;
++    *(__xdata uint16_t *)((__xdata uint8_t *)rawChanged + (uint8_t)(input * sizeof(rawChanged[0]))) = now;
+   }
+   if (pressed != stableState[input] &&
+-      (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
++      (uint16_t)(now - *(__xdata uint16_t *)((__xdata uint8_t *)rawChanged + (uint8_t)(input * sizeof(rawChanged[0])))) >= DEBOUNCE_MS) {
+     stableState[input] = pressed;
+     if (startupWaiting) {
+       if (startupWarning && pressed) startupWaiting = 0;
+@@ -491,7 +491,7 @@
+   sleepBrightnessPending = 0;
+   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
+     rawState[i] = stableState[i] = readButton(i);
+-    rawChanged[i] = now;
++    *(__xdata uint16_t *)((__xdata uint8_t *)rawChanged + (uint8_t)(i * sizeof(rawChanged[0]))) = now;
+   }
+   encoderState = readEncoder();
+   if (!activeConfigValid) {

@@ -1,0 +1,11 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -370,5 +370,6 @@
+         return 0;
+     }
+     start = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
+-    return activeConfig[(uint8_t)(start + position)];
+-}
++    start += position;
++    return activeConfig[start];
++}

@@ -1,0 +1,38 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -178,7 +178,11 @@
+     __idata uint8_t i;
+     __idata uint8_t previous = 0;
+     __idata uint8_t id;
++#if CONFIG_TIMED_MAX <= 5
++    uint8_t end;
++#else
+     uint16_t end;
++#endif
+     uint16_t crc;
+     validationImage = image;
+ #ifdef __SDCC
+@@ -211,16 +215,19 @@
+     }
+     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
+ #if CONFIG_TIMED_MAX <= 5
+-    // Fixed records <=242; pool plus palettes <=142. Widen only their sum.
+-    end = (uint8_t)(9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+-          (uint8_t)(CONFIG_TIMED_SIZE * timers)) + (uint16_t)(uint8_t)(validationUsed + paletteBytes);
++    // Both subtotals fit a byte; check capacity before their addition.
++    end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
++          (uint8_t)(CONFIG_TIMED_SIZE * timers);
++    if (end > CONFIG_SIZE || (uint8_t)(validationUsed + paletteBytes) >
++        (uint8_t)(CONFIG_SIZE - end)) return 0;
++    end += validationUsed + paletteBytes;
+ #else
+     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed + paletteBytes;
+-#endif
+     if (end > CONFIG_SIZE) {
+         return 0;
+     }
++#endif
+     validationPool = (uint8_t)end - validationUsed;
+     offset = 9;
+     for (layer = 0; layer < validationLayers; layer++) {
