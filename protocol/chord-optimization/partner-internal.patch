@@ -1,0 +1,11 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -21,7 +21,7 @@
+ __pdata uint8_t lastKeyboard[8];
+ __pdata uint8_t nextKeyboard[8];
+ __pdata uint8_t inputDown;
+-__pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
++__idata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
+ __pdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
+ __pdata uint8_t pendingLayer;
+ __pdata uint16_t pendingSince;

@@ -41,11 +41,6 @@ static uint8_t maxLayers(uint8_t variant) { return variant == CONFIG_THREE_KEYS 
 static uint8_t pairCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 3 : 15; }
 #endif
 
-static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
-    // Sum preceding rows of the triangular pair table; a < b < keys <= 6.
-    return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
-}
-
 uint16_t configCrc(const __xdata uint8_t *image) {
     uint16_t crc = 0xFFFF;
     uint8_t i;
@@ -328,33 +323,43 @@ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data u
     *second = activeConfig[(uint8_t)(offset + 1)];
 }
 
-FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
-                    __data uint8_t *first, __data uint8_t *second) {
-    uint8_t keys = configKeyCount();
-    uint8_t id;
+// Complemented physical-key masks, in the saved lexicographic pair order.
+// An input mask is contained in a chord when none of its bits is excluded.
+#if !defined(__SDCC) || PHYSICAL_VARIANT == CONFIG_THREE_KEYS
+static const __code uint8_t chordExcludedThree[] = {0xFC, 0xFA, 0xF9};
+#endif
+#if !defined(__SDCC) || PHYSICAL_VARIANT == CONFIG_SIX_KEYS
+static const __code uint8_t chordExcludedSix[] = {
+    0xFC, 0xFA, 0xF6, 0xEE, 0xDE, 0xF9, 0xF5, 0xED, 0xDD, 0xF3, 0xEB, 0xDB, 0xE7, 0xD7, 0xCF
+};
+#endif
+
+uint8_t configChordOffset(uint8_t layer, uint8_t inputs) {
     uint8_t count = activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
-    uint8_t layers = configLayerCount();
-    uint8_t offset = configLayerPaletteOffset(layers);
-    uint8_t i;
-    uint8_t swap;
-    if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
-        layer >= layers) {
-        return 0;
-    }
-    if (firstKey > secondKey) {
-        swap = firstKey;
-        firstKey = secondKey;
-        secondKey = swap;
-    }
-    id = layer << 4 | pairIndex(firstKey, secondKey, keys);
-    for (i = 0; i < count; i++, offset += 3) {
-        if (activeConfig[offset] == id ||
-            activeConfig[offset] == (0x70 | (id & 15))) {
-            *first = activeConfig[(uint8_t)(offset + 1)];
-            *second = activeConfig[(uint8_t)(offset + 2)];
-            return 1;
+    uint8_t offset;
+    if (!count) return 0;
+    offset = configLayerPaletteOffset(configLayerCount());
+    uint8_t id;
+    uint8_t excluded;
+    uint8_t scope;
+
+    do {
+        id = activeConfig[offset];
+        scope = id >> 4;
+        if (scope == layer || scope == 7) {
+#ifdef __SDCC
+#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
+            excluded = chordExcludedThree[(uint8_t)(id & 15)];
+#else
+            excluded = chordExcludedSix[(uint8_t)(id & 15)];
+#endif
+#else
+            excluded = configKeyCount() == 3 ? chordExcludedThree[(uint8_t)(id & 15)] : chordExcludedSix[(uint8_t)(id & 15)];
+#endif
+            if (!(excluded & inputs)) return offset + 1;
         }
-    }
+        offset += 3;
+    } while (--count);
     return 0;
 }
 

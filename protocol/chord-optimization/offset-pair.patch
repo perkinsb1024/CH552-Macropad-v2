@@ -1,0 +1,65 @@
+--- a/src/config.h
++++ b/src/config.h
+@@ -194,7 +194,8 @@
+ uint8_t configLayerPaletteOffset(uint8_t layer);
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key);
+ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
+-FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
++#define CONFIG_CHORD_PAIR_OFFSET 1
++uint8_t configChordOffset(uint8_t layer, uint8_t firstKey, uint8_t secondKey);
+ uint8_t configStringChar(uint8_t offset, uint8_t index);
+ 
+ #endif
+--- a/src/config.c
++++ b/src/config.c
+@@ -328,8 +328,7 @@
+     *second = activeConfig[(uint8_t)(offset + 1)];
+ }
+ 
+-FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
+-                    __data uint8_t *first, __data uint8_t *second) {
++uint8_t configChordOffset(uint8_t layer, uint8_t firstKey, uint8_t secondKey) {
+     uint8_t keys = configKeyCount();
+     uint8_t id;
+     uint8_t count = activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
+@@ -350,9 +349,7 @@
+     for (i = 0; i < count; i++, offset += 3) {
+         if (activeConfig[offset] == id ||
+             activeConfig[offset] == (0x70 | (id & 15))) {
+-            *first = activeConfig[(uint8_t)(offset + 1)];
+-            *second = activeConfig[(uint8_t)(offset + 2)];
+-            return 1;
++            return offset + 1;
+         }
+     }
+     return 0;
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -514,6 +514,7 @@
+   uint8_t first;
+   uint8_t second;
+   uint8_t other;
++  uint8_t chordOffset;
+   uint8_t keys = configKeyCount();
+   __idata uint8_t chordWindow = configChordWindowMs();
+   // The range guard bounds the shift to 0..6; test only the byte-sized mask.
+@@ -530,7 +531,9 @@
+   if (pendingInput && (input < keys || oneShotReturnLayer != 0xFF)) {
+     other = pendingInput - 1;
+     if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
+-        configChord(pendingLayer, other, input, &first, &second)) {
++        (chordOffset = configChordOffset(pendingLayer, other, input))) {
++      first = activeConfig[chordOffset];
++      second = activeConfig[(uint8_t)(chordOffset + 1)];
+       pendingInput = 0;
+       chordPartner[other] = input + 1;
+       chordPartner[input] = other + 1;
+@@ -554,7 +557,7 @@
+   orderPress(input);
+   if (input < keys && chordWindow) {
+     for (other = 0; other < keys; other++) {
+-      if (configChord(effectiveLayer, input, other, &first, &second)) {
++      if (configChordOffset(effectiveLayer, input, other)) {
+         pendingInput = input + 1;
+ #if CONFIG_SCROLL_ACCELERATION
+         scrollFirst = 0; // A pending chord is a distinct physical trigger.

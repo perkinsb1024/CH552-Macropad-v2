@@ -1,0 +1,14 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -348,8 +348,9 @@
+     }
+     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
+     for (i = 0; i < count; i++, offset += 3) {
+-        if (activeConfig[offset] == id ||
+-            activeConfig[offset] == (0x70 | (id & 15))) {
++        uint8_t candidate = activeConfig[offset];
++        if ((candidate & 15) == (id & 15) &&
++            ((candidate >> 4) == layer || (candidate >> 4) == 7)) {
+             *first = activeConfig[(uint8_t)(offset + 1)];
+             *second = activeConfig[(uint8_t)(offset + 2)];
+             return 1;

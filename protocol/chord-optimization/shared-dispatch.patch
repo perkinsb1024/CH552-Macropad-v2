@@ -1,0 +1,25 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -539,11 +539,9 @@
+       buttonFirst[input] = 0;
+       buttonSecond[input] = 0;
+       buttonPressed[input] = 0;
+-      buttonPressed[other] = 1;
+-      orderPress(other);
+-      runAction(first, second, 0, other);
+-      updateLayer();
+-      return;
++      input = other;
++      orderPress(input);
++      goto dispatchPress;
+     }
+     resolvePending();
+     updateLayer();
+@@ -565,6 +563,7 @@
+       }
+     }
+   }
++dispatchPress:
+   buttonPressed[input] = 1;
+   runAction(buttonFirst[input], buttonSecond[input], 0, input);
+   updateLayer();

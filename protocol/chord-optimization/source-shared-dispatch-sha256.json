@@ -1,0 +1,9 @@
+{
+  "src/config.h": "87494e071b78336c08990bb5b12975e1b53276f161cf5f6baeedb6440ce1100c",
+  "src/config.c": "8ba31e2bb63db33adfbc8005c7942afa30b8c6bdfb4cf9be62ca28e2b9936709",
+  "src/actions.h": "2656fff42aae5125611eefb05167b5837658ff74ed7342458fc388e8aad0e522",
+  "src/actions.c": "cd1c0a89ccbdc1602f77cf83f0f1bc6f39b44957746b428d67990367dbbd75ca",
+  "CH552_Universal_Macropad.ino": "88c078f58b4e2e093e12ddb91c8f2c822a2c654718f4a05d59c50f1aa496786d",
+  "src/protocol_firmware.c": "aecabd55552d2c6c6a37ee0e5a4c3b75763de196d71336bf92eb02df4267cadf",
+  "platformio.ini": "74605f0cf98f19a0e48926165588f1d14caed113b11719327bb5e652aafbbbc8"
+}

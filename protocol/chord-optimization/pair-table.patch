@@ -1,0 +1,12 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -43,7 +43,8 @@
+ 
+ static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
+     // Sum preceding rows of the triangular pair table; a < b < keys <= 6.
+-    return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
++    static const __code uint8_t bases[] = {0, 4, 7, 9, 10};
++    return (keys == 3 ? a : bases[a]) + b - 1;
+ }
+ 
+ uint16_t configCrc(const __xdata uint8_t *image) {

@@ -151,14 +151,14 @@ A successful build creates `.pio/build/ch552/firmware.hex`. Ordinary builds trac
 
 ### Available Memory
 
-Memory in the current v18 source at revision `fa1e88a`, in bytes, with a 14,336-byte application flash limit:
+Memory in the current v18 source, in bytes, with a 14,336-byte application flash limit:
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash Used | 14,201 | 14,205 |
-| Flash Remaining | 135 | 131 |
-| Total External RAM Allocated | 785 | 794 |
-| Stack Available (Linker Reserve) | 105 | 102 |
+| Flash Used | 13,932 | 13,951 |
+| Flash Remaining | 404 | 385 |
+| Total External RAM Allocated | 779 | 788 |
+| Stack Available (Linker Reserve) | 108 | 105 |
 
 ### Build Release HEX Files for Both Variants
 

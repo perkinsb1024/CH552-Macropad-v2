@@ -1,0 +1,15 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -22,9 +22,9 @@
+ __pdata uint8_t nextKeyboard[8];
+ __pdata uint8_t inputDown;
+ __pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
+-__pdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
+-__pdata uint8_t pendingLayer;
+-__pdata uint16_t pendingSince;
++__idata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
++__idata uint8_t pendingLayer;
++__idata uint16_t pendingSince;
+ __idata uint8_t lastMouse;
+ __pdata uint8_t lastReportGeneration;
+ // Bindings are resolved before queuing; playback only needs the action bytes.

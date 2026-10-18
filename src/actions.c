@@ -20,11 +20,12 @@ __pdata uint8_t buttonPressed[MAX_INPUTS];
 __pdata uint8_t buttonOrder[MAX_INPUTS];
 __pdata uint8_t lastKeyboard[8];
 __pdata uint8_t nextKeyboard[8];
-__pdata uint8_t inputDown;
+// Direct state avoids repeated paged loads; native stack reserve stays above baseline.
+__data uint8_t inputDown;
 __pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both keys are up.
-__pdata uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
-__pdata uint8_t pendingLayer;
-__pdata uint16_t pendingSince;
+__data uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
+__data uint8_t pendingLayer;
+__data uint16_t pendingSince;
 __idata uint8_t lastMouse;
 __pdata uint8_t lastReportGeneration;
 // Bindings are resolved before queuing; playback only needs the action bytes.
@@ -63,7 +64,6 @@ __pdata uint8_t timedAge[CONFIG_TIMED_MAX + 1];
 __idata uint8_t timedHigh[CONFIG_TIMED_MAX + 1];
 __idata uint8_t timedFraction[CONFIG_TIMED_MAX + 1];
 __pdata uint8_t timedClock;
-__pdata uint8_t timedWork; // Shared interval/release-mask scratch.
 __pdata uint8_t consumerModifiers; // Temporary ownership in the latest-wins lane.
 __pdata uint8_t consumerReleasePending;
 __data uint8_t consumerFirst;
@@ -441,9 +441,6 @@ void actionsInit(void) {
   inputDown = 0;
   droppedButtons = 0;
   droppedRotation = 0;
-  for (i = 0; i < 6; i++) {
-    chordPartner[i] = 0;
-  }
   eventHead = 0;
   eventTail = 0;
   eventUsed = 0;
@@ -465,6 +462,7 @@ void actionsInit(void) {
   lastMouse = 0;
   lastReportGeneration = USB_reportGeneration();
   for (i = 0; i < MAX_INPUTS; i++) {
+    if (i < 6) chordPartner[i] = 0;
     buttonPressed[i] = 0;
     buttonOrder[i] = i;
     buttonFirst[i] = 0;
@@ -510,17 +508,26 @@ static void orderPress(uint8_t input) {
   buttonOrder[input] = MAX_INPUTS - 1;
 }
 
+// Input range guards bound these indexes before use.
+static const __code uint8_t inputBits[] = {
+  1, 2, 4, 8,
+#if !defined(__SDCC) || PHYSICAL_VARIANT == CONFIG_SIX_KEYS
+  16, 32, 64
+#endif
+};
+
 void actionsPress(uint8_t input, uint16_t now) {
   uint8_t first;
   uint8_t second;
   uint8_t other;
+  uint8_t chordOffset;
   uint8_t keys = configKeyCount();
   __idata uint8_t chordWindow = configChordWindowMs();
-  // The range guard bounds the shift to 0..6; test only the byte-sized mask.
-  if (input > keys || (inputDown & (uint8_t)(1u << input))) {
-    return;
-  }
-  inputDown |= 1 << input;
+  uint8_t inputMask;
+  if (input > keys) return;
+  inputMask = inputBits[input];
+  if (inputDown & inputMask) return;
+  inputDown |= inputMask;
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
 #endif
@@ -530,7 +537,10 @@ void actionsPress(uint8_t input, uint16_t now) {
   if (pendingInput && (input < keys || oneShotReturnLayer != 0xFF)) {
     other = pendingInput - 1;
     if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
-        configChord(pendingLayer, other, input, &first, &second)) {
+        (chordOffset = configChordOffset(pendingLayer,
+            (uint8_t)(inputBits[other] | inputMask)))) {
+      first = activeConfig[chordOffset];
+      second = activeConfig[(uint8_t)(chordOffset + 1)];
       pendingInput = 0;
       chordPartner[other] = input + 1;
       chordPartner[input] = other + 1;
@@ -539,11 +549,9 @@ void actionsPress(uint8_t input, uint16_t now) {
       buttonFirst[input] = 0;
       buttonSecond[input] = 0;
       buttonPressed[input] = 0;
-      buttonPressed[other] = 1;
-      orderPress(other);
-      runAction(first, second, 0, other);
-      updateLayer();
-      return;
+      input = other;
+      orderPress(input);
+      goto dispatchPress;
     }
     resolvePending();
     updateLayer();
@@ -553,18 +561,17 @@ void actionsPress(uint8_t input, uint16_t now) {
   buttonSecond[input] = second;
   orderPress(input);
   if (input < keys && chordWindow) {
-    for (other = 0; other < keys; other++) {
-      if (configChord(effectiveLayer, input, other, &first, &second)) {
-        pendingInput = input + 1;
+    if (configChordOffset(effectiveLayer, inputMask)) {
+      pendingInput = input + 1;
 #if CONFIG_SCROLL_ACCELERATION
-        scrollFirst = 0; // A pending chord is a distinct physical trigger.
+      scrollFirst = 0; // A pending chord is a distinct physical trigger.
 #endif
-        pendingLayer = effectiveLayer;
-        pendingSince = now;
-        return;
-      }
+      pendingLayer = effectiveLayer;
+      pendingSince = now;
+      return;
     }
   }
+dispatchPress:
   buttonPressed[input] = 1;
   runAction(buttonFirst[input], buttonSecond[input], 0, input);
   updateLayer();
@@ -589,10 +596,11 @@ void actionsRelease(uint8_t input) {
   if (input > configKeyCount()) {
     return;
   }
-  timedWork = 1 << input;
-  if (!(inputDown & timedWork)) return;
-  inputDown &= ~timedWork;
-  if (pendingInput == input + 1) {
+  uint8_t released = inputBits[input];
+  if (!(inputDown & released)) return;
+  inputDown &= ~released;
+  // The range guard bounds input + 1 to 1..7; compare only that byte.
+  if (pendingInput == (uint8_t)(input + 1)) {
     resolvePending();
     updateLayer();
   }
@@ -600,7 +608,7 @@ void actionsRelease(uint8_t input) {
   if (input < configKeyCount() && chordPartner[input]) {
     other = chordPartner[input] - 1;
     releaseAction(other);
-    if (!(inputDown & (uint8_t)(1u << other))) {
+    if (!(inputDown & inputBits[other])) {
       chordPartner[input] = 0;
       chordPartner[other] = 0;
     }

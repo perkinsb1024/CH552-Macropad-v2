@@ -194,7 +194,11 @@ uint8_t configLedColorOffset(uint8_t layer);
 uint8_t configLayerPaletteOffset(uint8_t layer);
 uint8_t configLedColorAt(uint8_t offset, uint8_t key);
 void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
-FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
+#define CONFIG_CHORD_MASK_LOOKUP 1
+// Requires a validated active image, valid layer and physical input bits.
+// One bit queries chord eligibility; two bits query that exact pair.
+// Return the first matching action offset, or zero. Locals precede globals.
+uint8_t configChordOffset(uint8_t layer, uint8_t inputs);
 uint8_t configStringChar(uint8_t offset, uint8_t index);
 
 #endif

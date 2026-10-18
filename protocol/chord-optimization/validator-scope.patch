@@ -1,0 +1,11 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -236,7 +236,7 @@
+     offset += paletteBytes;
+     for (i = 0; i < chords; i++) {
+         id = validationImage[offset];
+-        if (((id >> 4) != 7 && (id >> 4) >= validationLayers) ||
++        if ((id >= (uint8_t)(validationLayers << 4) && (id & 0xF0) != 0x70) ||
+             (id & 15) >= pairCount(variant) ||
+             (i && id <= previous) ||
+             !actionValid(offset + 1, 0)) {

@@ -1,0 +1,19 @@
+--- a/tests/config_fixture.h
++++ b/tests/config_fixture.h
+@@ -6,6 +6,16 @@
+ 
+ // Standalone suites omit the protocol object; integration links its strong mailbox.
+ __attribute__((weak)) uint8_t protocolReply[32];
++
++#if CONFIG_CHORD_PAIR_OFFSET
++static inline FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
++        uint8_t *first, uint8_t *second) {
++    uint8_t offset = configChordOffset(layer, firstKey, secondKey);
++    if (!offset) return 0;
++    *first = activeConfig[offset]; *second = activeConfig[(uint8_t)(offset + 1)];
++    return 1;
++}
++#endif
+ 
+ /* Canonical target-header setters; unrelated fields are retained. */
+ static inline void testSetVariant(uint8_t variant) {

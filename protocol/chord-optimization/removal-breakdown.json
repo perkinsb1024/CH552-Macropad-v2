@@ -1,0 +1,94 @@
+{
+  "six": {
+    "actions": {
+      "baseline": {
+        "CSEG": 3806,
+        "CONST": 15
+      },
+      "removed": {
+        "CSEG": 3250,
+        "CONST": 15
+      },
+      "saving": 556
+    },
+    "config": {
+      "baseline": {
+        "CSEG": 1946,
+        "CONST": 48
+      },
+      "removed": {
+        "CSEG": 1574,
+        "CONST": 48
+      },
+      "saving": 372
+    },
+    "sketch": {
+      "baseline": {
+        "CSEG": 2798,
+        "CONST": 46
+      },
+      "removed": {
+        "CSEG": 2798,
+        "CONST": 46
+      },
+      "saving": 0
+    },
+    "protocol_firmware": {
+      "baseline": {
+        "CSEG": 1294,
+        "CONST": 14
+      },
+      "removed": {
+        "CSEG": 1294,
+        "CONST": 14
+      },
+      "saving": 0
+    }
+  },
+  "three": {
+    "actions": {
+      "baseline": {
+        "CSEG": 3806,
+        "CONST": 15
+      },
+      "removed": {
+        "CSEG": 3250,
+        "CONST": 15
+      },
+      "saving": 556
+    },
+    "config": {
+      "baseline": {
+        "CSEG": 1948,
+        "CONST": 48
+      },
+      "removed": {
+        "CSEG": 1576,
+        "CONST": 48
+      },
+      "saving": 372
+    },
+    "sketch": {
+      "baseline": {
+        "CSEG": 2798,
+        "CONST": 40
+      },
+      "removed": {
+        "CSEG": 2798,
+        "CONST": 40
+      },
+      "saving": 0
+    },
+    "protocol_firmware": {
+      "baseline": {
+        "CSEG": 1294,
+        "CONST": 14
+      },
+      "removed": {
+        "CSEG": 1294,
+        "CONST": 14
+      },
+      "saving": 0
+    }
+  }
+}

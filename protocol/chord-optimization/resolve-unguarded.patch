@@ -1,0 +1,21 @@
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -380,9 +380,6 @@
+ 
+ static void resolvePending(void) {
+   uint8_t input;
+-  if (!pendingInput) {
+-    return;
+-  }
+   input = pendingInput - 1;
+   pendingInput = 0;
+   buttonPressed[input] = 1;
+@@ -426,7 +423,7 @@
+     tempOn = 0;
+     tempMouse = 0;
+     // Pending singles belong to the layer on which they were pressed.
+-    resolvePending();
++    if (pendingInput) resolvePending();
+   } while (1);
+ }
+ 

@@ -1,0 +1,206 @@
+--- a/src/config.h
++++ b/src/config.h
+@@ -194,7 +194,10 @@
+ uint8_t configLayerPaletteOffset(uint8_t layer);
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key);
+ void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
+-FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey, __data uint8_t *first, __data uint8_t *second);
++#define CONFIG_CHORD_MASK_LOOKUP 1
++// Validated active image, valid layer and one/two physical input bits.
++// Return the first matching action offset, or zero. Locals precede globals.
++uint8_t configChordOffset(uint8_t layer, uint8_t inputs);
+ uint8_t configStringChar(uint8_t offset, uint8_t index);
+ 
+ #endif
+--- a/src/config.c
++++ b/src/config.c
+@@ -40,11 +40,6 @@
+ static uint8_t maxLayers(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 7 : 5; }
+ static uint8_t pairCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 3 : 15; }
+ #endif
+-
+-static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
+-    // Sum preceding rows of the triangular pair table; a < b < keys <= 6.
+-    return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
+-}
+ 
+ uint16_t configCrc(const __xdata uint8_t *image) {
+     uint16_t crc = 0xFFFF;
+@@ -236,8 +231,8 @@
+     offset += paletteBytes;
+     for (i = 0; i < chords; i++) {
+         id = validationImage[offset];
+-        if (((id >> 4) != 7 && (id >> 4) >= validationLayers) ||
+-            (id & 15) >= pairCount(variant) ||
++        if ((uint8_t)(id & 0x8F) >= pairCount(variant) ||
++            ((uint8_t)(id & 0x70) != 0x70 && (uint8_t)(id & 0x70) >= (uint8_t)(validationLayers << 4)) ||
+             (i && id <= previous) ||
+             !actionValid(offset + 1, 0)) {
+             return 0;
+@@ -328,33 +323,39 @@
+     *second = activeConfig[(uint8_t)(offset + 1)];
+ }
+ 
+-FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
+-                    __data uint8_t *first, __data uint8_t *second) {
+-    uint8_t keys = configKeyCount();
++#if !defined(__SDCC) || PHYSICAL_VARIANT == CONFIG_THREE_KEYS
++static const __code uint8_t chordPairsThree[] = {252, 250, 249};
++#endif
++#if !defined(__SDCC) || PHYSICAL_VARIANT == CONFIG_SIX_KEYS
++static const __code uint8_t chordPairsSix[] = {252, 250, 246, 238, 222, 249, 245, 237, 221, 243, 235, 219, 231, 215, 207};
++#endif
++
++uint8_t configChordOffset(uint8_t layer, uint8_t inputs) {
++    uint8_t count = activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
++    uint8_t offset;
++    if (!count) return 0;
++    offset = configLayerPaletteOffset(configLayerCount());
+     uint8_t id;
+-    uint8_t count = activeConfig[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
+-    uint8_t layers = configLayerCount();
+-    uint8_t offset = configLayerPaletteOffset(layers);
+-    uint8_t i;
+-    uint8_t swap;
+-    if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
+-        layer >= layers) {
+-        return 0;
+-    }
+-    if (firstKey > secondKey) {
+-        swap = firstKey;
+-        firstKey = secondKey;
+-        secondKey = swap;
+-    }
+-    id = layer << 4 | pairIndex(firstKey, secondKey, keys);
+-    for (i = 0; i < count; i++, offset += 3) {
+-        if (activeConfig[offset] == id ||
+-            activeConfig[offset] == (0x70 | (id & 15))) {
+-            *first = activeConfig[(uint8_t)(offset + 1)];
+-            *second = activeConfig[(uint8_t)(offset + 2)];
+-            return 1;
+-        }
+-    }
++    uint8_t pair;
++    uint8_t scope;
++
++    do {
++        id = activeConfig[offset];
++        scope = id >> 4;
++        if (scope == layer || scope == 7) {
++#ifdef __SDCC
++#if PHYSICAL_VARIANT == CONFIG_THREE_KEYS
++            pair = chordPairsThree[(uint8_t)(id & 15)];
++#else
++            pair = chordPairsSix[(uint8_t)(id & 15)];
++#endif
++#else
++            pair = configKeyCount() == 3 ? chordPairsThree[(uint8_t)(id & 15)] : chordPairsSix[(uint8_t)(id & 15)];
++#endif
++            if (!(pair & inputs)) return offset + 1;
++        }
++        offset += 3;
++    } while (--count);
+     return 0;
+ }
+ 
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -63,7 +63,6 @@
+ __idata uint8_t timedHigh[CONFIG_TIMED_MAX + 1];
+ __idata uint8_t timedFraction[CONFIG_TIMED_MAX + 1];
+ __pdata uint8_t timedClock;
+-__pdata uint8_t timedWork; // Shared interval/release-mask scratch.
+ __pdata uint8_t consumerModifiers; // Temporary ownership in the latest-wins lane.
+ __pdata uint8_t consumerReleasePending;
+ __data uint8_t consumerFirst;
+@@ -514,13 +513,14 @@
+   uint8_t first;
+   uint8_t second;
+   uint8_t other;
++  uint8_t chordOffset;
+   uint8_t keys = configKeyCount();
+   __idata uint8_t chordWindow = configChordWindowMs();
+-  // The range guard bounds the shift to 0..6; test only the byte-sized mask.
+-  if (input > keys || (inputDown & (uint8_t)(1u << input))) {
+-    return;
+-  }
+-  inputDown |= 1 << input;
++  uint8_t inputMask;
++  if (input > keys) return;
++  inputMask = (uint8_t)(1u << input);
++  if (inputDown & inputMask) return;
++  inputDown |= inputMask;
+ #if CONFIG_SCROLL_ACCELERATION
+   actionsInputNow = now;
+ #endif
+@@ -530,7 +530,10 @@
+   if (pendingInput && (input < keys || oneShotReturnLayer != 0xFF)) {
+     other = pendingInput - 1;
+     if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
+-        configChord(pendingLayer, other, input, &first, &second)) {
++        (chordOffset = configChordOffset(pendingLayer,
++            (uint8_t)((1u << other) | inputMask)))) {
++      first = activeConfig[chordOffset];
++      second = activeConfig[(uint8_t)(chordOffset + 1)];
+       pendingInput = 0;
+       chordPartner[other] = input + 1;
+       chordPartner[input] = other + 1;
+@@ -539,11 +542,9 @@
+       buttonFirst[input] = 0;
+       buttonSecond[input] = 0;
+       buttonPressed[input] = 0;
+-      buttonPressed[other] = 1;
+-      orderPress(other);
+-      runAction(first, second, 0, other);
+-      updateLayer();
+-      return;
++      input = other;
++      orderPress(input);
++      goto dispatchPress;
+     }
+     resolvePending();
+     updateLayer();
+@@ -553,18 +554,17 @@
+   buttonSecond[input] = second;
+   orderPress(input);
+   if (input < keys && chordWindow) {
+-    for (other = 0; other < keys; other++) {
+-      if (configChord(effectiveLayer, input, other, &first, &second)) {
+-        pendingInput = input + 1;
++    if (configChordOffset(effectiveLayer, inputMask)) {
++      pendingInput = input + 1;
+ #if CONFIG_SCROLL_ACCELERATION
+-        scrollFirst = 0; // A pending chord is a distinct physical trigger.
+-#endif
+-        pendingLayer = effectiveLayer;
+-        pendingSince = now;
+-        return;
+-      }
+-    }
+-  }
++      scrollFirst = 0; // A pending chord is a distinct physical trigger.
++#endif
++      pendingLayer = effectiveLayer;
++      pendingSince = now;
++      return;
++    }
++  }
++dispatchPress:
+   buttonPressed[input] = 1;
+   runAction(buttonFirst[input], buttonSecond[input], 0, input);
+   updateLayer();
+@@ -589,10 +589,10 @@
+   if (input > configKeyCount()) {
+     return;
+   }
+-  timedWork = 1 << input;
+-  if (!(inputDown & timedWork)) return;
+-  inputDown &= ~timedWork;
+-  if (pendingInput == input + 1) {
++  uint8_t released = (uint8_t)(1u << input);
++  if (!(inputDown & released)) return;
++  inputDown &= ~released;
++  if (pendingInput == (uint8_t)(input + 1)) {
+     resolvePending();
+     updateLayer();
+   }

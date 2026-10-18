@@ -1,0 +1,75 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -41,10 +41,7 @@
+ static uint8_t pairCount(uint8_t variant) { return variant == CONFIG_THREE_KEYS ? 3 : 15; }
+ #endif
+ 
+-static uint8_t pairIndex(uint8_t a, uint8_t b, uint8_t keys) {
+-    // Sum preceding rows of the triangular pair table; a < b < keys <= 6.
+-    return ((uint8_t)(a * (2 * keys - a - 3)) >> 1) + b - 1;
+-}
++#define pairIndex(a, b, keys) (((uint8_t)((a) * (2 * (keys) - (a) - 3)) >> 1) + (b) - 1)
+ 
+ uint16_t configCrc(const __xdata uint8_t *image) {
+     uint16_t crc = 0xFFFF;
+@@ -337,6 +334,7 @@
+     uint8_t offset = configLayerPaletteOffset(layers);
+     uint8_t i;
+     uint8_t swap;
++    uint8_t candidate;
+     if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
+         layer >= layers) {
+         return 0;
+@@ -348,8 +346,8 @@
+     }
+     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
+     for (i = 0; i < count; i++, offset += 3) {
+-        if (activeConfig[offset] == id ||
+-            activeConfig[offset] == (0x70 | (id & 15))) {
++        candidate = activeConfig[offset];
++        if (candidate == id || candidate == (uint8_t)(0x70 | (id & 15))) {
+             *first = activeConfig[(uint8_t)(offset + 1)];
+             *second = activeConfig[(uint8_t)(offset + 2)];
+             return 1;
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -516,11 +516,11 @@
+   uint8_t other;
+   uint8_t keys = configKeyCount();
+   __idata uint8_t chordWindow = configChordWindowMs();
+-  // The range guard bounds the shift to 0..6; test only the byte-sized mask.
+-  if (input > keys || (inputDown & (uint8_t)(1u << input))) {
+-    return;
+-  }
+-  inputDown |= 1 << input;
++  uint8_t inputMask;
++  if (input > keys) return;
++  inputMask = (uint8_t)(1u << input);
++  if (inputDown & inputMask) return;
++  inputDown |= inputMask;
+ #if CONFIG_SCROLL_ACCELERATION
+   actionsInputNow = now;
+ #endif
+@@ -539,11 +539,9 @@
+       buttonFirst[input] = 0;
+       buttonSecond[input] = 0;
+       buttonPressed[input] = 0;
+-      buttonPressed[other] = 1;
+-      orderPress(other);
+-      runAction(first, second, 0, other);
+-      updateLayer();
+-      return;
++      input = other;
++      orderPress(input);
++      goto dispatchPress;
+     }
+     resolvePending();
+     updateLayer();
+@@ -565,6 +563,7 @@
+       }
+     }
+   }
++dispatchPress:
+   buttonPressed[input] = 1;
+   runAction(buttonFirst[input], buttonSecond[input], 0, input);
+   updateLayer();

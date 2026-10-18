@@ -1,0 +1,11 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -347,7 +347,7 @@
+         secondKey = swap;
+     }
+     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
+-    for (i = 0; i < count; i++, offset += 3) {
++    for (; count--; offset += 3) {
+         if (activeConfig[offset] == id ||
+             activeConfig[offset] == (0x70 | (id & 15))) {
+             *first = activeConfig[(uint8_t)(offset + 1)];

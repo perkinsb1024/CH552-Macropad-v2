@@ -1,0 +1,21 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -337,6 +337,7 @@
+     uint8_t offset = configLayerPaletteOffset(layers);
+     uint8_t i;
+     uint8_t swap;
++    uint8_t candidate;
+     if (firstKey == secondKey || firstKey >= keys || secondKey >= keys ||
+         layer >= layers) {
+         return 0;
+@@ -348,8 +349,8 @@
+     }
+     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
+     for (i = 0; i < count; i++, offset += 3) {
+-        if (activeConfig[offset] == id ||
+-            activeConfig[offset] == (0x70 | (id & 15))) {
++        candidate = activeConfig[offset];
++        if (candidate == id || candidate == (uint8_t)(0x70 | (id & 15))) {
+             *first = activeConfig[(uint8_t)(offset + 1)];
+             *second = activeConfig[(uint8_t)(offset + 2)];
+             return 1;

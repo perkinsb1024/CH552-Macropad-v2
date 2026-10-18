@@ -1,0 +1,38 @@
+{
+  "baseline_revision": "be43c89ec56a0832f2334d44f90b4f1cfcb83eca",
+  "working_tree": "uncommitted firmware/tests and memory documentation",
+  "sources": {
+    "src/config.h": "2c6e613fc760aebe8857bce235c9582f41625bf89123e0f5b95dd2a76bcb2ba6",
+    "src/config.c": "2de978749b6c1a4060f3d7124a305203cfcef4a685296a395f706f0cf015a278",
+    "src/actions.h": "2656fff42aae5125611eefb05167b5837658ff74ed7342458fc388e8aad0e522",
+    "src/actions.c": "6ad97c152b1c58a9fbdb09db34e0333aac121e8249c4838adc42670dbc22c40f",
+    "CH552_Universal_Macropad.ino": "88c078f58b4e2e093e12ddb91c8f2c822a2c654718f4a05d59c50f1aa496786d",
+    "src/protocol_firmware.c": "aecabd55552d2c6c6a37ee0e5a4c3b75763de196d71336bf92eb02df4267cadf",
+    "platformio.ini": "74605f0cf98f19a0e48926165588f1d14caed113b11719327bb5e652aafbbbc8"
+  },
+  "native": {
+    "six": {
+      "hex_sha256": "af523ecd9406b0316f511a5893b5793a30685b92957fd0d837c9044e7c02a79f",
+      "flash": 13951,
+      "layout": "passed"
+    },
+    "three": {
+      "hex_sha256": "da04f40979fc9bd3ace1ea5c2f39a022f4e3961f9770da98746e7275baa64f9b",
+      "flash": 13932,
+      "layout": "passed"
+    }
+  },
+  "full_host_runner": "passed",
+  "final_differential_sanitizers": "passed on identical sources",
+  "configurator": "passed via npm run verify:deploy",
+  "uploader": "95 passed",
+  "complete_site": "passed, TypeScript/build and 16 frozen archive manifests",
+  "hardware": "not tested",
+  "tests_and_documentation": {
+    "README.md": "c23f2682f1994ee7c7832f4d3d5e8bab452f294a4e1eb2f44c223b11a00295ee",
+    "protocol/config-v18.md": "56f31869be129a4889180c705dbf0eb7377dc7920a262f2dc39cbc9ba9e42867",
+    "tests/config_fixture.h": "28d239c90bb80dafcf36ba2bd703206ae6662db8f801d8729b174774b1368198",
+    "tests/run_host_tests.py": "9a6d2ff54e1ee330d0b1b09ae50238d861396dff4b1c44eaec647a7e9330a4c8",
+    "tests/chord_lookup_test.c": "9dbadf2133ea8b2af25a0fd8596f622faa4300750bfa35228441c3c3e286992e"
+  }
+}

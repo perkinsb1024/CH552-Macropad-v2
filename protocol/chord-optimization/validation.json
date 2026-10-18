@@ -1,0 +1,210 @@
+[
+  {
+    "candidate": "baseline",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "baseline",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-combined",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-combined",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-combined",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  },
+  {
+    "candidate": "local-combined",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "local-combined",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "local-combined",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "src/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\nsrc/config.c:335:13: warning: unused variable 'i' [-Wunused-variable]\n  335 |     uint8_t i;\n      |             ^\n1 warning generated.\n........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  },
+  {
+    "candidate": "mask-narrow",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-narrow",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-narrow",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.009s\n\nOK\n"
+  },
+  {
+    "candidate": "local-selected",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "local-selected",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "local-selected",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  },
+  {
+    "candidate": "mask-compact-do",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-compact-do",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "mask-compact-do",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.009s\n\nOK\n"
+  },
+  {
+    "candidate": "compact-bit-table",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "compact-bit-table",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "compact-bit-table",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  },
+  {
+    "candidate": "data-all-init",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "data-all-init",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "data-all-init",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  },
+  {
+    "candidate": "final",
+    "variant": 0,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=0 cases=1906778 reports=155480 trace=8844a138149fad66\n",
+    "error": ""
+  },
+  {
+    "candidate": "final",
+    "variant": 1,
+    "suite": "chord-audit-asan-ubsan",
+    "returncode": 0,
+    "output": "board=1 cases=2140336 reports=149666 trace=809cab1d46b26dba\n",
+    "error": ""
+  },
+  {
+    "candidate": "final",
+    "variant": null,
+    "suite": "complete-normal-host-runner",
+    "returncode": 0,
+    "output": "Passed config []\nPassed actions []\nPassed protocol [0]\nPassed protocol [1]\nPassed usb [0]\nPassed usb [1]\nPassed header_repacking [0]\nPassed header_repacking [1]\nPassed erase_config []\nPassed modified_hold [0]\nPassed modified_hold [1]\nPassed layer_encoding [0]\nPassed layer_encoding [1]\nPassed macros [0]\nPassed macros [1]\nPassed timed_actions [0]\nPassed timed_actions [1]\nPassed timed_capacity [0]\nPassed timed_capacity [1]\nPassed input [0]\nPassed input [1]\nPassed sleep_integration [0]\nPassed sleep_integration [1]\nPassed live_state [0]\nPassed live_state [1]\nPassed palette probe: variant=0 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [0]\nPassed palette probe: variant=1 rainbow=1 preview=1 compared_frames=508064\nPassed per_key_palette [1]\nChord lookup: board=0 cases=519750 passed\nPassed chord_lookup [0]\nChord lookup: board=1 cases=15120 passed\nPassed chord_lookup [1]\n6-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nNo running macropad found (it may already be in bootloader mode).\n3-key macropad acknowledged bootloader entry.\n6-key macropad acknowledged bootloader entry.\nAutomatic bootloader entry unavailable: unsupported\n",
+    "error": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n...................\n----------------------------------------------------------------------\nRan 19 tests in 0.008s\n\nOK\n"
+  }
+]

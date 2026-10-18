@@ -1434,14 +1434,14 @@ runtime and timer replies an atomic snapshot.
 
 ## Builds and Measurements
 
-The v18 firmware source at revision `fa1e88a` implements five timers, scope-7
+The v18 firmware source implements five timers, scope-7
 global chords and the existing complete feature set. Temporary native builds
 at the real 14,336-byte application limit measure:
 
 | Hardware | Flash Used | Flash Free | Paged RAM | Ordinary XSEG | Absolute Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six Keys | 14,205 | 131 | 108 | 404 | 134 | 102 |
-| Three Keys | 14,201 | 135 | 108 | 395 | 134 | 105 |
+| Six Keys | 13,951 | 385 | 102 | 404 | 134 | 105 |
+| Three Keys | 13,932 | 404 | 102 | 395 | 134 | 108 |
 
 The normal host regressions pass both hardware geometries, including all raw
 chord identifiers, local-over-global precedence, five independent timer expiries
@@ -1473,16 +1473,18 @@ native bit marks a captured snapshot. The synthesized timer uses runtime-only
 LED commands `0E` and `0F`; saved-image validation rejects both command IDs.
 
 USB DMA reserves 148 bytes. Total external allocation, including USB DMA, PSEG,
-ordinary XSEG and the absolute buffer, is 794 bytes on six keys and 785 on three
-keys, leaving 230/239 unallocated bytes including gaps. PSEG occupies
-`0x094–0x0FF`, filling the available page-zero region. Ordinary XSEG occupies
-`0x114–0x2A7` on six keys and `0x114–0x29E` on three keys. Seven raw input levels
+ordinary XSEG and the absolute buffer, is 788 bytes on six keys and 779 on three
+keys, leaving 236/245 unallocated bytes including gaps. PSEG occupies
+`0x094–0x0F9`, leaving six bytes free in page zero. Ordinary XSEG occupies
+`0x10E–0x2A1` on six keys and `0x10E–0x298` on three keys. Seven raw input levels
 occupy ordinary external RAM; last-layer and per-frame layer-palette offsets
 occupy paged external RAM. The fifth timer adds one external and two internal
-state bytes; no existing state is relocated and no packet buffer is added.
+state bytes. The physical-down mask and pending-chord input, layer and timestamp
+use five direct internal bytes; chord-partner indices remain in paged RAM.
+No packet buffer is added.
 
-Stack starts at `0x9A` on six keys and `0x97` on three keys, reserving 102/105
-bytes. This is one byte less per board than v17's 103/106-byte reserve. These
+Stack starts at `0x97` on six keys and `0x94` on three keys, reserving 105/108
+bytes. These
 are linker capacity figures, not hardware high-water measurements. The builder
 checks USB/paged/external/absolute separation, interrupt parameter storage and
 startup clearing. Image size validation retains a 16-bit sum of two separately

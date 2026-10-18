@@ -1,0 +1,16 @@
+--- a/src/config.c
++++ b/src/config.c
+@@ -238,11 +238,11 @@
+         id = validationImage[offset];
+         if (((id >> 4) != 7 && (id >> 4) >= validationLayers) ||
+             (id & 15) >= pairCount(variant) ||
+-            (i && id <= previous) ||
++            ((uint8_t)(id + 1) <= previous) ||
+             !actionValid(offset + 1, 0)) {
+             return 0;
+         }
+-        previous = id;
++        previous = id + 1;
+         offset += 3;
+     }
+     for (i = 0; i < timers; i++, offset += CONFIG_TIMED_SIZE) {

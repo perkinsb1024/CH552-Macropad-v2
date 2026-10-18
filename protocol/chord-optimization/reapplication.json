@@ -1,0 +1,230 @@
+[
+  {
+    "candidate": "baseline",
+    "exact": true
+  },
+  {
+    "candidate": "global-byte",
+    "exact": true
+  },
+  {
+    "candidate": "lookup-countdown",
+    "exact": true
+  },
+  {
+    "candidate": "lookup-single-read",
+    "exact": true
+  },
+  {
+    "candidate": "lookup-nibble",
+    "exact": true
+  },
+  {
+    "candidate": "pair-inline",
+    "exact": true
+  },
+  {
+    "candidate": "pair-table",
+    "exact": true
+  },
+  {
+    "candidate": "validator-scope",
+    "exact": true
+  },
+  {
+    "candidate": "validator-order",
+    "exact": true
+  },
+  {
+    "candidate": "shared-dispatch",
+    "exact": true
+  },
+  {
+    "candidate": "cached-mask",
+    "exact": true
+  },
+  {
+    "candidate": "offset-pair",
+    "exact": true
+  },
+  {
+    "candidate": "mask-lookup",
+    "exact": true
+  },
+  {
+    "candidate": "mask-direct",
+    "exact": true
+  },
+  {
+    "candidate": "resolve-unguarded",
+    "exact": true
+  },
+  {
+    "candidate": "partner-internal",
+    "exact": true
+  },
+  {
+    "candidate": "pending-internal",
+    "exact": true
+  },
+  {
+    "candidate": "local-combined",
+    "exact": true
+  },
+  {
+    "candidate": "mask-combined",
+    "exact": true
+  },
+  {
+    "candidate": "mask-callee",
+    "exact": true
+  },
+  {
+    "candidate": "local-selected",
+    "exact": true
+  },
+  {
+    "candidate": "mask-selected",
+    "exact": true
+  },
+  {
+    "candidate": "mask-narrow",
+    "exact": true
+  },
+  {
+    "candidate": "mask-scope",
+    "exact": true
+  },
+  {
+    "candidate": "mask-xor",
+    "exact": true
+  },
+  {
+    "candidate": "mask-do",
+    "exact": true
+  },
+  {
+    "candidate": "mask-physical",
+    "exact": true
+  },
+  {
+    "candidate": "mask-time",
+    "exact": true
+  },
+  {
+    "candidate": "mask-time-bytes",
+    "exact": true
+  },
+  {
+    "candidate": "mask-release",
+    "exact": true
+  },
+  {
+    "candidate": "mask-links",
+    "exact": true
+  },
+  {
+    "candidate": "mask-narrow-time",
+    "exact": true
+  },
+  {
+    "candidate": "mask-narrow-physical",
+    "exact": true
+  },
+  {
+    "candidate": "mask-final-probe",
+    "exact": true
+  },
+  {
+    "candidate": "mask-inverted",
+    "exact": true
+  },
+  {
+    "candidate": "mask-release-byte",
+    "exact": true
+  },
+  {
+    "candidate": "mask-release-local",
+    "exact": true
+  },
+  {
+    "candidate": "mask-inverted-byte",
+    "exact": true
+  },
+  {
+    "candidate": "mask-compact",
+    "exact": true
+  },
+  {
+    "candidate": "mask-compact-do",
+    "exact": true
+  },
+  {
+    "candidate": "mask-compact-register",
+    "exact": true
+  },
+  {
+    "candidate": "mask-inline-time",
+    "exact": true
+  },
+  {
+    "candidate": "mask-compact-unguarded",
+    "exact": true
+  },
+  {
+    "candidate": "compact-validator-byte",
+    "exact": true
+  },
+  {
+    "candidate": "compact-validator-fold",
+    "exact": true
+  },
+  {
+    "candidate": "compact-validator-signed",
+    "exact": true
+  },
+  {
+    "candidate": "compact-bit-table",
+    "exact": true
+  },
+  {
+    "candidate": "compact-bit-helper",
+    "exact": true
+  },
+  {
+    "candidate": "compact-order-init",
+    "exact": true
+  },
+  {
+    "candidate": "final-table",
+    "exact": true
+  },
+  {
+    "candidate": "data-input",
+    "exact": true
+  },
+  {
+    "candidate": "data-pending",
+    "exact": true
+  },
+  {
+    "candidate": "data-clock",
+    "exact": true
+  },
+  {
+    "candidate": "data-all",
+    "exact": true
+  },
+  {
+    "candidate": "data-all-init",
+    "exact": true
+  },
+  {
+    "candidate": "final",
+    "exact": true
+  },
+  {
+    "candidate": "optimized-no-chords",
+    "exact": true
+  }
+]
