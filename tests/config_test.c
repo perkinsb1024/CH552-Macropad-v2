@@ -407,7 +407,7 @@ static void testExpandedLayers(uint8_t variant) {
         activeConfig[chord] = (count - 1) << 4;
         activeConfig[chord + 1] = CONFIG_ACTION_SET_LAYER;
         activeConfig[chord + 2] = count - 1;
-        activeConfig[chord + 3] = 0x80 | ((count - 1) << 4);
+        activeConfig[chord + 3] = 0x70;
         activeConfig[chord + 4] = CONFIG_ACTION_SET_LAYER;
         activeConfig[chord + 5] = 0;
         uint8_t base = 9 + size * (count - 1);
@@ -628,7 +628,38 @@ static void testTypeZeroAndReserved(void) {
     }
 }
 
+
+static void testChordScopes(void) {
+    // All raw identifiers, both geometries and every supported layer count.
+    for (uint8_t variant = 0; variant < 2; variant++) {
+        uint8_t maximum = variant ? 7 : 5;
+        uint8_t size = variant ? 15 : 22;
+        uint8_t pairs = variant ? 3 : 15;
+        for (uint8_t layers = 1; layers <= maximum; layers++) {
+            for (uint16_t id = 0; id < 256; id++) {
+                testLoadStarterProfile(variant);
+                testSetLayout(layers, 0, 0);
+                testSetChordCount(1);
+                uint8_t offset = 9 + size * layers;
+                activeConfig[offset] = id;
+                seal();
+                uint8_t scope = id >> 4;
+                uint8_t valid = (scope == 7 || scope < layers) && (id & 15) < pairs;
+                assert(!!configValid(activeConfig, variant) == valid);
+                if (valid) {
+                    uint8_t first, second;
+                    // Pair zero uses keys 0+1. Global scope applies on every layer.
+                    if (!(id & 15)) for (uint8_t layer = 0; layer < layers; layer++) {
+                        assert(!!configChord(layer, 0, 1, &first, &second) == (scope == 7 || scope == layer));
+                    }
+                }
+            }
+        }
+    }
+}
+
 int main(void) {
+    testChordScopes();
     testTypeZeroAndReserved();
     testConsumerHoldEncoding();
     testScrollHoldValidation();

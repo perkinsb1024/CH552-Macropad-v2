@@ -780,7 +780,7 @@ static void testOneShotChordIndicator(void) {
     activeConfig[10] = 1;
     activeConfig[9 + size - 1] = 0x87; // Timed cyan.
     activeConfig[9 + 2 * size - 1] = 0xD7; // Timed pink.
-    activeConfig[9 + 2 * size] = PHYSICAL_VARIANT ? 0x82 : 0x8C;
+    activeConfig[9 + 2 * size] = PHYSICAL_VARIANT ? 0x72 : 0x7C;
     activeConfig[10 + 2 * size] = CONFIG_ACTION_RELATIVE_LAYER;
     activeConfig[11 + 2 * size] = 1;
     activeConfigValid = 1;

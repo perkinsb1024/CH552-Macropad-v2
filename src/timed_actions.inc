@@ -5,7 +5,7 @@
 // layer transitions and are serviced even outside their timer's assigned layer.
 
 // The last runtime slot uses a synthesized record after the saved image.
-// User timers retain their original order and all four configuration slots.
+// User timers retain their original order and all five configuration slots.
 // Bit 0 of timedHigh latches the pending next-input action; bits 3-5 are age.
 // Low interval-1 byte and pre-positioned high bits for 220/440/879/1758 ticks.
 static const __code uint8_t sleepLow[] = {219, 183, 110, 221};

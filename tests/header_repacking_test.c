@@ -66,12 +66,12 @@ static void capacities(void) {
             unsigned offset = 9 + size * layers;
             for (unsigned c = 0; c < count && offset + 3 <= 128; c++, offset += 3) {
                 activeConfig[offset] = c < pairs * layers ?
-                    ((c / pairs) << 4) | (c % pairs) : 128 | (c % pairs);
+                    ((c / pairs) << 4) | (c % pairs) : 0x70 | (c % pairs);
             }
             seal(activeConfig);
             assert(!!configValid(activeConfig, PHYSICAL_VARIANT) == (count <= capacity));
         }
-        for (unsigned timers = 0; timers <= 4; timers++) {
+        for (unsigned timers = 0; timers <= CONFIG_TIMED_MAX; timers++) {
             unsigned pool = 9 + size * layers + 6 * timers;
             if (pool > 128) continue;
             testLoadStarterProfile(PHYSICAL_VARIANT);

@@ -648,7 +648,7 @@ static void testOneShotGlobalLayerChord(void) {
             activeConfig[CONFIG_HEADER_LED] = 3; // 50 ms.
             activeConfig[9] = activeConfig[31] = 0x10 | CONFIG_ACTION_SET_LAYER;
             activeConfig[10] = 1;
-            activeConfig[53] = 0x8C; // Global keys 3+4.
+            activeConfig[53] = 0x7C; // Global keys 3+4.
             activeConfig[54] = CONFIG_ACTION_RELATIVE_LAYER;
             activeConfig[55] = 1;
             actionsInit();

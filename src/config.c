@@ -210,10 +210,10 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
         offset += size;
     }
     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
-#if CONFIG_TIMED_MAX <= 4
-    // Validated counts cap metadata at 251 bytes; only adding the pool can exceed 255.
+#if CONFIG_TIMED_MAX <= 5
+    // Fixed records <=242; pool plus palettes <=142. Widen only their sum.
     end = (uint8_t)(9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
-          (uint8_t)(CONFIG_TIMED_SIZE * timers) + paletteBytes) + (uint16_t)validationUsed;
+          (uint8_t)(CONFIG_TIMED_SIZE * timers)) + (uint16_t)(uint8_t)(validationUsed + paletteBytes);
 #else
     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed + paletteBytes;
@@ -235,7 +235,7 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     offset += paletteBytes;
     for (i = 0; i < chords; i++) {
         id = validationImage[offset];
-        if (((id >> 4) & 7) >= validationLayers ||
+        if (((id >> 4) != 7 && (id >> 4) >= validationLayers) ||
             (id & 15) >= pairCount(variant) ||
             (i && id <= previous) ||
             !actionValid(offset + 1, 0)) {
@@ -346,7 +346,7 @@ FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t secondKey,
     id = layer << 4 | pairIndex(firstKey, secondKey, keys);
     for (i = 0; i < count; i++, offset += 3) {
         if (activeConfig[offset] == id ||
-            (activeConfig[offset] & 0x8F) == (0x80 | (id & 15))) {
+            activeConfig[offset] == (0x70 | (id & 15))) {
             *first = activeConfig[(uint8_t)(offset + 1)];
             *second = activeConfig[(uint8_t)(offset + 2)];
             return 1;

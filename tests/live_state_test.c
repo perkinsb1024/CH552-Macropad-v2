@@ -84,14 +84,14 @@ static void testRuntime(void) {
 #if ENABLE_COLOR_PREVIEW
     firmwarePreviewColor(0xFD); snapshot(11); assert(protocolReply[27] == 0xFD);
 #endif
-    for (uint8_t i = 0; i < 5; i++) { timedAge[i] = 17 + i; timedHigh[i] = 9 + i; timedFraction[i] = 123 + i; }
-    snapshot(12); assert(protocolReply[7] == 17);
-    for (uint8_t i = 0; i < 5; i++) {
+    for (uint8_t i = 0; i < 6; i++) { timedAge[i] = 17 + i; timedHigh[i] = 9 + i; timedFraction[i] = 123 + i; }
+    snapshot(12); assert(protocolReply[7] == 20);
+    for (uint8_t i = 0; i < 6; i++) {
         assert(protocolReply[9 + i] == 17 + i);
-        assert(protocolReply[14 + i] == 9 + i);
-        assert(protocolReply[19 + i] == 123 + i);
+        assert(protocolReply[15 + i] == 9 + i);
+        assert(protocolReply[21 + i] == 123 + i);
     }
-    assert(protocolReply[24] == activeConfig[7] && protocolReply[25] == activeConfig[8]);
+    assert(protocolReply[27] == activeConfig[7] && protocolReply[28] == activeConfig[8]);
 }
 static void testChordAndRejectedActions(void) {
     initLive();

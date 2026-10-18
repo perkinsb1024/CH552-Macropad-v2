@@ -5,8 +5,8 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 16 adds optional per-key layer palettes and a unified LED palette.
-#define CONFIG_VERSION 17
+// Format 18 adds a fifth timer and uses chord scope 7 for globals.
+#define CONFIG_VERSION 18
 #define CONFIG_MARKER 'B'
 #define CONFIG_HEADER_SIZE 9
 #define CONFIG_HEADER_MARKER 0
@@ -43,7 +43,7 @@
 #define CONFIG_TIMED_CONSUME 0x40
 #define CONFIG_LAYER_PREVIOUS 0xFF
 #ifndef CONFIG_TIMED_MAX
-#define CONFIG_TIMED_MAX 4
+#define CONFIG_TIMED_MAX 5
 #endif
 #ifndef CONFIG_TIMED_ALL_RESET
 #define CONFIG_TIMED_ALL_RESET 0
@@ -69,7 +69,7 @@
 #error "PHYSICAL_VARIANT must be 0 (six keys) or 1 (three keys)."
 #endif
 
-// Action numbers are part of the saved format; v17 retains the finalized v16 map.
+// Action numbers are part of the saved format; v18 retains the finalized v16 map.
 #define CONFIG_ACTION_NONE             0x0
 #define CONFIG_ACTION_PAUSE            0x10 // Full first byte; parameter: 16ms units.
 #define CONFIG_ACTION_STRING           0x20 // Full first byte; parameter: pool offset.

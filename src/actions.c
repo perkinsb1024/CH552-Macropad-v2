@@ -369,12 +369,12 @@ void actionsWriteLive(void) {
 }
 
 void actionsWriteTimers(void) {
-  uint8_t i = 5;
+  uint8_t i = 6;
   do {
     --i;
     liveReply[i] = timedAge[i];
-    liveReply[(uint8_t)(5 + i)] = timedHigh[i];
-    liveReply[(uint8_t)(10 + i)] = timedFraction[i];
+    liveReply[(uint8_t)(6 + i)] = timedHigh[i];
+    liveReply[(uint8_t)(12 + i)] = timedFraction[i];
   } while (i);
 }
 
@@ -765,7 +765,7 @@ void actionsPoll(uint16_t now) {
       }
     } else if (type >= CONFIG_ACTION_MOUSE_TOGGLE) {
       // Held bindings never enter this queue; X/Y movement was handled above.
-      runAction(currentFirst, currentSecond, 0, 14);
+      runAction(currentFirst, currentSecond, 0, 15);
       currentFirst = 0;
       updateLayer();
     } else {

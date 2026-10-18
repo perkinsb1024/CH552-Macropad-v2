@@ -143,10 +143,10 @@ static uint8_t processRequest(void) {
       firmwareWriteLive();
       break;
     case PROTOCOL_GET_TIMERS:
-      protocolReply[7] = 17;
+      protocolReply[7] = 20;
       actionsWriteTimers();
-      liveReply[15] = activeConfig[CONFIG_HEADER_CRC];
-      liveReply[16] = activeConfig[CONFIG_HEADER_CRC + 1];
+      liveReply[18] = activeConfig[CONFIG_HEADER_CRC];
+      liveReply[19] = activeConfig[CONFIG_HEADER_CRC + 1];
       break;
     case PROTOCOL_READ_FLASH:
     case PROTOCOL_READ_ACTIVE:
