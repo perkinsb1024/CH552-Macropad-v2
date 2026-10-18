@@ -5,7 +5,7 @@ import { actionTooltip, summarize } from '../../model/actions';
 import { matchesChord } from '../../model/chords';
 import type { Slot } from '../../model/types';
 import { actionProblem } from '../../model/validate';
-import { connection, liveActivity, liveClock, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
+import { connection, liveActivity, liveClock, liveRuntime, canInsertSlot, canSwapSlots, draggedSlot, insertSlotAction, profile, selectedLayer, selectedSlot, slotDrop, swapSlotActions, type DropPosition } from '../store';
 import { dropPosition, endShortcutDrag, setRoundedDragImage, shortcutDragOver, shortcutDrop } from '../drag';
 import { IconRotate } from './Icons';
 import { ActionLabel } from './ActionLabel';
@@ -29,6 +29,10 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const selection = readOnly ? null : selectedSlot.value;
   const c = connection.value;
   const activity = readOnly ? liveActivity.value : null;
+  const runtime = readOnly ? liveRuntime.value : null;
+  const asleep = runtime && c.kind === 'connected' && c.connection.status.live && c.connection.status.flashValid &&
+    liveClock.value - runtime.receivedAt < 1000 && liveClock.value - runtime.timersReceivedAt < 1000 &&
+    !!(runtime.timers.high[p.timedActions?.length ?? 0]! & 1);
   const fresh = activity && liveClock.value - activity.receivedAt < 1000 && c.kind === 'connected' && c.connection.status.flashValid && c.connection.status.currentLayer === li;
   const pressed = (index: number) => !!fresh && !!(activity!.sample.pressed & (1 << index));
   const fired = (index: number) => !!fresh && activity!.sample.bindingLayer === li && activity!.hotUntil[index]! > liveClock.value;
@@ -233,6 +237,15 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
             {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn Right', icon: <IconRotate ccw /> })}
           </div>
         </div>
+        {asleep && <div class="device-sleep-overlay" role="status">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.5 13A7 7 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" />
+          </svg>
+          <span class="device-sleep-title">Sleeping</span>
+          <span class="device-sleep-hint">Press a key or turn the knob to wake
+            {!p.consumeWakeInput && <><br />and run its assigned action</>}
+          </span>
+        </div>}
       </div>
       </div>
     </div>

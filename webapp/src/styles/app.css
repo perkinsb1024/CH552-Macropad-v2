@@ -1380,6 +1380,41 @@ output {
 .device-3 .device-body {
   padding: 26px 30px;
 }
+.device-sleep-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  border-radius: inherit;
+  background: rgb(10 13 21 / 0.78);
+  backdrop-filter: blur(3px);
+  color: #e8eaf0;
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 350ms ease;
+}
+.device-body:active .device-sleep-overlay {
+  opacity: 0.1;
+}
+@media (hover: hover) {
+  .device-body:hover .device-sleep-overlay { opacity: 0.1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .device-sleep-overlay { transition: none; }
+}
+.device-sleep-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+.device-sleep-hint {
+  font-size: 14px;
+  color: #b8bece;
+}
 .device-shell.indicator-glow .device-body {
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
