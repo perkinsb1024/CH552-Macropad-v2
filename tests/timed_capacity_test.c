@@ -39,7 +39,7 @@ int main(void) {
     activeConfig[9] = CONFIG_ACTION_MACRO; activeConfig[10] = macro;
     activeConfig[macro] = CONFIG_ACTION_LED_CONTROL; activeConfig[macro + 1] = CONFIG_LED_KEY_SET;
     activeConfig[macro + 2] = 0;
-    actionsPress(0, 0); actionsRelease(0);
+    actionsPress(0, 0); actionsRelease(0, 0);
     for (unsigned i = 0; i < 20; i++) actionsPoll(i);
     assert(liveBindings[9] == 0x8F);
     return 0;

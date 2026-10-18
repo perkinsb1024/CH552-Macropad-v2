@@ -155,17 +155,17 @@ __code uint8_t _asciimap[128] = {
 // Share the endpoint fairly between short input reports and configuration replies.
 __xdata uint8_t reportQueue[8][9];
 __xdata uint8_t reportLength[8];
-__xdata uint8_t reportHead;
-__xdata uint8_t reportTail;
-__xdata uint8_t reportCount;
+__data uint8_t reportHead;
+__data uint8_t reportTail;
+__data uint8_t reportCount;
 __xdata uint8_t reportGeneration;
 USB_BIT configWaiting;
 USB_BIT configTurn;
 volatile __xdata uint8_t USB_idleRate;
-__xdata uint8_t USB_globalIdleRate;
-__xdata uint8_t mouseIdleRate;
-__xdata uint8_t consumerIdleRate;
-__xdata uint8_t idleReport;
+__data uint8_t USB_globalIdleRate;
+__data uint8_t mouseIdleRate;
+__data uint8_t consumerIdleRate;
+__data uint8_t idleReport;
 __xdata uint16_t keyboardTime;
 __xdata uint16_t mouseTime;
 __xdata uint16_t consumerTime;

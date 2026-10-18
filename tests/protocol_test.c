@@ -64,6 +64,7 @@ uint8_t USB_EP1_sendConfig(const uint8_t *reply) {
 
 void USB_EP1_receiveReady(void) {}
 uint8_t actionsLayer(void) { return configStartupLayer(); }
+void actionsSetLayer(uint8_t options) { (void)options; }
 uint8_t actionsDropped(uint8_t rotation) { return rotation ? 9 : 3; }
 void firmwareApplyConfig(uint8_t restartIndicator) { (void)restartIndicator; applies++; }
 void firmwarePreviewColor(uint8_t options) { preview = options; }
@@ -144,7 +145,7 @@ static void chunks(void) {
 static void testReads(void) {
     reset();
     request(1, 0, 0, 0);
-    assert(sent[21] == 0xFF && sent[22] == 0x7F); // Type F reserved; E executes a macro.
+    assert(sent[21] == 0xFF && sent[22] == 0xFF); // Type F reserved; E executes a macro.
     assert(sent[8] == 0 && sent[7] == 14);
     assert(memcmp(sent + 9, "UMAC", 4) == 0);
     assert(sent[16] == (PHYSICAL_VARIANT ? 3 : 6) && sent[19] == 128);

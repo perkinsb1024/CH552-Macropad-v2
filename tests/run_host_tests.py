@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 flags = ["cc", "-std=c99", "-Wall", "-Wextra", "-Wno-unknown-pragmas", "-Wno-bitwise-op-parentheses", "-Wno-pointer-to-int-cast", "-D__data=", "-D__idata=", "-D__pdata=", "-D__xdata=", "-D__code=", "-Itests/stubs", "-IwebUploader/upstream/ch55xduino/ch55x/variants/ch552", "-IwebUploader/upstream/ch55xduino/ch55x/cores/ch55xduino"]
 if "--no-preview" in sys.argv:
     flags.append("-DENABLE_COLOR_PREVIEW=0")
+flags.append("-DTAP_HOLD_COMBINED=1")
 flags += ["-D" + arg.removeprefix("--define=") for arg in sys.argv[1:]
           if arg.startswith("--define=")]
 with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
@@ -26,6 +27,10 @@ with tempfile.TemporaryDirectory(prefix="macropad-tests-") as directory:
     suites += [("live_state", ["src/config.c", "src/actions.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
     suites += [("per_key_palette", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     suites += [("chord_lookup", ["src/config.c"], variant) for variant in (0, 1)]
+    suites += [("tap_hold", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
+    suites += [("tap_hold_integration", ["src/config.c", "src/actions.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+    suites += [("input_layer", ["src/config.c", "src/actions.c", "src/storage.c", "src/protocol_firmware.c"], variant) for variant in (0, 1)]
+    suites += [("chord_scan_order", ["src/config.c", "src/actions.c"], variant) for variant in (0, 1)]
     for suite in suites:
         name, sources, *variant = suite
         options = [f"-DPHYSICAL_VARIANT={variant[0]}"] if variant else []

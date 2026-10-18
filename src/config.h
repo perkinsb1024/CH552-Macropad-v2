@@ -5,7 +5,7 @@
 #include "firmware_types.h"
 
 #define CONFIG_SIZE 128
-// Format 18 adds a fifth timer and uses chord scope 7 for globals.
+// Format 18 adds a fifth timer, scope-7 global chords and tap-hold records.
 #define CONFIG_VERSION 18
 #define CONFIG_MARKER 'B'
 #define CONFIG_HEADER_SIZE 9
@@ -69,7 +69,7 @@
 #error "PHYSICAL_VARIANT must be 0 (six keys) or 1 (three keys)."
 #endif
 
-// Action numbers are part of the saved format; v18 retains the finalized v16 map.
+// Action numbers are part of the saved format; v18 extends the v16 map with F.
 #define CONFIG_ACTION_NONE             0x0
 #define CONFIG_ACTION_PAUSE            0x10 // Full first byte; parameter: 16ms units.
 #define CONFIG_ACTION_STRING           0x20 // Full first byte; parameter: pool offset.
@@ -93,8 +93,8 @@
 #define CONFIG_ACTION_RELATIVE_LAYER   0x4C // Full first byte: relative, persistent.
 #define CONFIG_ACTION_LED_CONTROL      0xD
 #define CONFIG_ACTION_MACRO            0xE
-#define CONFIG_ACTION_RESERVED         0xF
-#define CONFIG_ACTION_MASK (0xFFFFu ^ (1u << CONFIG_ACTION_RESERVED))
+#define CONFIG_ACTION_TAP_HOLD         0xF
+#define CONFIG_ACTION_MASK 0xFFFFu
 #define CONFIG_LAYER_RELATIVE          0x40
 #define CONFIG_LAYER_HOLD              0x20
 
@@ -193,7 +193,9 @@ uint8_t configLedColorOffset(uint8_t layer);
 // Offset of this layer's optional palette, or the section end for layerCount.
 uint8_t configLayerPaletteOffset(uint8_t layer);
 uint8_t configLedColorAt(uint8_t offset, uint8_t key);
-void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
+#define CONFIG_BINDING_OFFSET 1
+// Caller supplies a validated layer and binding input.
+uint8_t configBindingOffset(uint8_t layer, uint8_t input);
 #define CONFIG_CHORD_MASK_LOOKUP 1
 // Requires a validated active image, valid layer and physical input bits.
 // One bit queries chord eligibility; two bits query that exact pair.

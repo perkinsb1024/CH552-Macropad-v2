@@ -133,27 +133,27 @@ static void testConsumerHolds(void) {
     actionsPress(0, 0); actionsPoll(0); assert(lastConsumer() == 0xFFF);
     actionsPress(1, 1); actionsPoll(1); assert(lastConsumer() == 0xEA);
     uint8_t before = count;
-    actionsRelease(0); actionsPoll(2); assert(count == before);
-    actionsRelease(1); actionsPoll(3); actionsPoll(4); assert(lastConsumer() == 0);
+    actionsRelease(0, 0); actionsPoll(2); assert(count == before);
+    actionsRelease(1, 0); actionsPoll(3); actionsPoll(4); assert(lastConsumer() == 0);
 
     // Authorized compact policy: no restoration, equally for hold/tap winners.
     reset(); activeConfig[9] = activeConfig[11] = CONFIG_ACTION_CONSUMER_HOLD;
     activeConfig[10] = 0xE9; activeConfig[12] = 0xEA;
     actionsPress(0, 0); actionsPoll(0);
     actionsPress(1, 1); actionsPoll(1);
-    actionsRelease(1); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+    actionsRelease(1, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
     before = count; actionsPoll(100); assert(count == before);
-    actionsRelease(0); actionsPoll(101); assert(count == before);
+    actionsRelease(0, 0); actionsPoll(101); assert(count == before);
 
     reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
     activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;
     actionsPress(0, 0); actionsPoll(0);
-    actionsPress(1, 1); actionsRelease(1); actionsPoll(1);
+    actionsPress(1, 1); actionsRelease(1, 0); actionsPoll(1);
     assert(reports[count - 2][1] == 0 && lastConsumer() == 0xE9);
     actionsPoll(2); assert(lastConsumer() == 0);
-    actionsRelease(0); actionsPoll(3); assert(lastConsumer() == 0);
+    actionsRelease(0, 0); actionsPoll(3); assert(lastConsumer() == 0);
     // Repeated same-usage taps each contain a release/press edge.
-    actionsPress(1, 4); actionsRelease(1); actionsPoll(4);
+    actionsPress(1, 4); actionsRelease(1, 0); actionsPoll(4);
     assert(lastConsumer() == 0xE9); actionsPoll(5); assert(lastConsumer() == 0);
 
     // An older pending tap cannot override a newer physical hold under pressure.
@@ -166,7 +166,7 @@ static void testConsumerHolds(void) {
 
     // A brief hold preserves its press and release through rejected reports.
     reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
-    blocked = 1; actionsPress(0, 0); actionsRelease(0); actionsPoll(0);
+    blocked = 1; actionsPress(0, 0); actionsRelease(0, 0); actionsPoll(0);
     assert(!count); blocked = 0; actionsPoll(1); assert(lastConsumer() == 0xE9);
     blocked = 1; actionsPoll(2); assert(lastConsumer() == 0xE9);
     blocked = 0; actionsPoll(3); assert(lastConsumer() == 0);
@@ -177,12 +177,12 @@ static void testConsumerHolds(void) {
     activeConfig[11] = CONFIG_ACTION_SET_LAYER; activeConfig[12] = 1;
     actionsPress(0, 0); actionsPoll(0);
     actionsPress(1, 1); actionsPoll(1); assert(lastConsumer() == 0xE9);
-    actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+    actionsRelease(0, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
 
     reset(); activeConfig[9] = CONFIG_ACTION_CONSUMER_HOLD; activeConfig[10] = 0xE9;
     actionsPress(0, 0); actionsPoll(0);
     count = 0; generation++; actionsPoll(1); assert(lastConsumer() == 0xE9);
-    actionsRelease(0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+    actionsRelease(0, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
 
     // Either chord member releases the hold; reset clears all output.
     reset(); testSetChordCount(1);
@@ -190,7 +190,7 @@ static void testConsumerHolds(void) {
     activeConfig[33] = 0xE9;
     actionsPress(0, 0); actionsPress(1, 1); actionsPoll(1);
     assert(lastConsumer() == 0xE9);
-    actionsRelease(1); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
+    actionsRelease(1, 0); actionsPoll(2); actionsPoll(3); assert(lastConsumer() == 0);
     actionsClear(); assert(lastConsumer() == 0);
 }
 
@@ -208,7 +208,7 @@ static int16_t drainScroll(uint16_t now) {
     assert(0); return 0;
 }
 static int16_t scrollTap(uint16_t now) {
-    actionsPress(0, now); actionsRelease(0);
+    actionsPress(0, now); actionsRelease(0, 0);
     return drainScroll(now);
 }
 static void testScrollAcceleration(void) {
@@ -219,7 +219,7 @@ static void testScrollAcceleration(void) {
     assert(scrollTap(500) == 2); // Exactly 200 ms resets.
     // Non-scroll no-op triggers and mode/base changes reset independently.
     activeConfig[11] = activeConfig[12] = 0;
-    actionsPress(1, 501); actionsRelease(1); assert(scrollTap(502) == 2);
+    actionsPress(1, 501); actionsRelease(1, 0); assert(scrollTap(502) == 2);
     activeConfig[9] = 0x20 | CONFIG_ACTION_SCROLL;
     assert(scrollTap(503) == 2);
     assert(scrollTap(650) == 2 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
@@ -249,7 +249,7 @@ static void testScrollAcceleration(void) {
     actionsRotate(0); assert(drainScroll(450) == 2);
     actionsInputNow = 600; actionsRotate(1); assert(drainScroll(600) == 2);
     activeConfig[9] = CONFIG_ACTION_KEY_TAP; activeConfig[10] = 4;
-    actionsPress(0, 601); actionsRelease(0);
+    actionsPress(0, 601); actionsRelease(0, 0);
     actionsInputNow = 602; actionsRotate(0); assert(actionsDropped(1) == 1);
     drainScroll(602);
     actionsInputNow = 750; actionsRotate(1); assert(drainScroll(750) == 2);
@@ -268,7 +268,7 @@ static void testScrollAcceleration(void) {
     activeConfig[10] = 1;
     actionsPress(0, 0); assert(drainScroll(0) == 1);
     assert(drainScroll(8) == 1 + (1 / CONFIG_SCROLL_FAST_Y) * CONFIG_SCROLL_FAST_X);
-    actionsRelease(0); assert(drainScroll(30) == 0);
+    actionsRelease(0, 0); assert(drainScroll(30) == 0);
 }
 #endif
 
@@ -281,8 +281,8 @@ static void testScrollHold(void) {
     assert(count == 2); // Delay starts after the complete two-report step.
     for (uint16_t now = 101; now <= 110; now++) actionsPoll(now);
     assert(count == 4);
-    actionsRelease(0); actionsPoll(220); assert(count == 4);
-    actionsPress(0, 221); actionsRelease(0); actionsPoll(221); actionsPoll(222);
+    actionsRelease(0, 0); actionsPoll(220); assert(count == 4);
+    actionsPress(0, 221); actionsRelease(0, 0); actionsPoll(221); actionsPoll(222);
     assert(count == 6); actionsPoll(330); assert(count == 6);
 
     // A chord scroll holds until either member releases.
@@ -294,7 +294,7 @@ static void testScrollHold(void) {
     assert(count == 1);
     for (uint16_t now = 101; now <= 110; now++) actionsPoll(now);
     assert(count == 2);
-    actionsRelease(1); actionsPoll(220); assert(count == 2);
+    actionsRelease(1, 0); actionsPoll(220); assert(count == 2);
 
     // A one-second hold produces about ten steps, without changing tap behavior.
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
@@ -302,7 +302,7 @@ static void testScrollHold(void) {
     actionsPress(0, 0);
     for (uint16_t now = 0; now < 1000; now++) actionsPoll(now);
     assert(count == 10);
-    actionsRelease(0); actionsPoll(1100); assert(count == 10);
+    actionsRelease(0, 0); actionsPoll(1100); assert(count == 10);
 
     // Completion times survive low-byte and 16-bit millisecond wrap.
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
@@ -336,7 +336,7 @@ static void testScrollHold(void) {
     // Initial queued step survives a short release under transport pressure.
     reset(); activeConfig[9] = CONFIG_SCROLL_HOLD | CONFIG_ACTION_SCROLL;
     activeConfig[10] = 1; blocked = 1;
-    actionsPress(0, 0); actionsRelease(0); actionsPoll(0); assert(!count);
+    actionsPress(0, 0); actionsRelease(0, 0); actionsPoll(0); assert(!count);
     blocked = 0; actionsPoll(1); assert(count == 1 && reports[0][4] == 1);
     actionsPoll(100); assert(count == 1); actionsClear();
     before = count; actionsPoll(200); assert(count == before);
@@ -363,7 +363,7 @@ static void testScrollReportSpacing(void) {
             assert(reports[i][phase & 256 ? 4 : 5] == 0);
             if (i) assert((uint16_t)(reportTimes[i] - reportTimes[i - 1]) >= 100);
         }
-        actionsRelease(0);
+        actionsRelease(0, 0);
     }
 }
 
@@ -392,7 +392,7 @@ static void testPreviousLayer(void) {
     reset(); testSetLayout(2, 0, 0);
     selectLayer(1, 0);
     selectLayer(CONFIG_LAYER_PREVIOUS, 1); assert(actionsLayer() == 0);
-    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
+    actionsPress(3, 0); actionsRelease(3, 0); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     previous(); assert(actionsLayer() == 1);
     // Momentary layers overlay the base; visiting/releasing them is not history.
@@ -401,7 +401,7 @@ static void testPreviousLayer(void) {
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[10] = 2;
     actionsPress(0, 0); assert(actionsLayer() == 2);
     previous(); assert(actionsLayer() == 2); // Held momentary layer keeps priority.
-    actionsRelease(0); assert(actionsLayer() == 1);
+    actionsRelease(0, 0); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     // History is one entry, not a stack of every visited layer.
     reset(); testSetLayout(3, 0, 0);
@@ -411,7 +411,7 @@ static void testPreviousLayer(void) {
     // Ordinary one-shot visits and their automatic return do not enter history.
     reset(); testSetLayout(3, 0, 0);
     selectLayer(1, 0); selectLayer(2, 1); assert(actionsLayer() == 2);
-    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
+    actionsPress(3, 0); actionsRelease(3, 0); assert(actionsLayer() == 1);
     previous(); assert(actionsLayer() == 0);
     // A timed reminder can revert to wherever the persistent user selection was.
     reset(); testSetLayout(2, 0, 0);
@@ -435,7 +435,7 @@ static void testPreviousLayer(void) {
     // A timer next-input action sees the remembered base (1), not visit (0).
     activeConfig[timer + 3] = CONFIG_ACTION_SET_LAYER; activeConfig[timer + 4] = CONFIG_LAYER_PREVIOUS;
     actionsTimedInput(); assert(actionsLayer() == 1);
-    actionsPress(3, 0); actionsRelease(3); assert(actionsLayer() == 1);
+    actionsPress(3, 0); actionsRelease(3, 0); assert(actionsLayer() == 1);
 }
 
 static void testDefaults(void) {
@@ -445,7 +445,7 @@ static void testDefaults(void) {
     assert(count == 1 && reports[0][0] == 1 && reports[0][3] == 0x29);
     actionsPoll(10);
     assert(count == 2 && reports[1][3] == 0);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(11);
     actionsRotate(1);
     actionsPoll(20);
@@ -474,14 +474,14 @@ static void testLayerAndOwnership(void) {
     actionsPress(2, 0);
     actionsPoll(0);
     assert(count == 1 && reports[0][3] == 0x04);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     actionsPoll(1);
     assert(reports[count - 1][3] == 0x04); // The second owner retains A.
-    actionsRelease(0);
+    actionsRelease(0, 0);
     assert(actionsLayer() == 0);
     actionsPoll(2);
     assert(reports[count - 1][3] == 0x04); // Held key keeps its binding.
-    actionsRelease(2);
+    actionsRelease(2, 0);
     actionsPoll(3);
     assert(reports[count - 1][3] == 0);
 }
@@ -499,10 +499,10 @@ static void testRelativeLayer(void) {
     actionsInit();
     actionsPress(0, 0);
     assert(actionsLayer() == 2); // Layer 1 + 2 = layer 3.
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPress(1, 1);
     assert(actionsLayer() == 1); // Layer 3 - 1 = layer 2.
-    actionsRelease(1);
+    actionsRelease(1, 0);
 
     reset();
     testSetLayout(4, 0, 0);
@@ -511,7 +511,7 @@ static void testRelativeLayer(void) {
     actionsInit();
     actionsPress(0, 0);
     assert(actionsLayer() == 3); // Layer 1 - 1 wraps to layer 4.
-    actionsRelease(0);
+    actionsRelease(0, 0);
 
     reset();
     testSetLayout(1, 0, 0); // One layer still accepts the full offset range.
@@ -520,7 +520,7 @@ static void testRelativeLayer(void) {
     actionsInit();
     actionsPress(0, 0);
     assert(actionsLayer() == 0);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     activeConfig[10] = 0;
     actionsPress(0, 1);
     assert(actionsLayer() == 0); // Existing zero-byte records are no-ops.
@@ -559,7 +559,7 @@ static void testOneShot(void) {
         activeConfig[31 + 3] = 4;
         actionsInit();
         actionsPress(0, 0);
-        actionsRelease(0);
+        actionsRelease(0, 0);
         assert(actionsLayer() == 1);
         actionsPress(1, 1);
         assert(actionsLayer() == 0);
@@ -597,7 +597,7 @@ static void testOneShot(void) {
     activeConfig[55] = 7;
     actionsInit();
     actionsPress(0, 0);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPress(1, 1);
     actionsPoll(1);
     assert(actionsLayer() == 1 && count == 0); // Keep waiting for the chord.
@@ -608,15 +608,15 @@ static void testOneShot(void) {
     // The same one-shot binding becomes a single held key on timeout.
     actionsPoll(11);
     actionsPoll(12);
-    actionsRelease(1);
-    actionsRelease(2);
+    actionsRelease(1, 0);
+    actionsRelease(2, 0);
     count = 0;
     actionsPress(0, 20);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPress(1, 21);
     actionsPoll(61);
     assert(actionsLayer() == 0 && count == 1 && reports[0][3] == 4);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     actionsPoll(62);
     assert(count == 2 && reports[1][3] == 0);
 
@@ -625,7 +625,7 @@ static void testOneShot(void) {
         actionsInit();
         count = 0;
         actionsPress(0, 0);
-        actionsRelease(0);
+        actionsRelease(0, 0);
         actionsPress(1, 1);
         if (type) actionsRotate(1);
         else actionsPress(6, 2);
@@ -655,20 +655,20 @@ static void testOneShotGlobalLayerChord(void) {
             actionsPress(3, 0);
             actionsPress(4, 1);
             assert(actionsLayer() == (start ^ 1));
-            actionsRelease(3);
-            actionsRelease(4);
+            actionsRelease(3, 0);
+            actionsRelease(4, 0);
             actionsPress(0, 10);
-            actionsRelease(0);
+            actionsRelease(0, 0);
             assert(actionsLayer() == start);
             actionsPress(first, 2000);
             assert(actionsLayer() == start); // Await the complete chord.
             actionsPress(first == 3 ? 4 : 3, 2049);
             assert(actionsLayer() == (start ^ 1));
-            actionsRelease(3);
-            actionsRelease(4);
+            actionsRelease(3, 0);
+            actionsRelease(4, 0);
             actionsPress(1, 2050); // The chord consumed the one-shot.
             assert(actionsLayer() == (start ^ 1));
-            actionsRelease(1);
+            actionsRelease(1, 0);
             actionsPress(3, 2060);
             actionsPress(4, 2061);
             assert(actionsLayer() == start);
@@ -689,7 +689,7 @@ static void testRolloverAndSequence(void) {
     }
     actionsPoll(0);
     assert(reports[0][8] == 0x09); // Six distinct usages fit.
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(1);
     assert(reports[count - 1][8] == 0x0A); // Seventh enters the free slot.
 
@@ -749,11 +749,11 @@ static void testPointerSteps(void) {
             assert((int8_t)reports[0][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? deltas[i] : 0));
             actionsPoll(1); // Holding the key must not repeat the step.
             assert(count == 1);
-            actionsRelease(0);
+            actionsRelease(0, 0);
             actionsPoll(2);
             assert(count == 1);
             actionsPress(0, 3);
-            actionsRelease(0); // A quick tap still sends exactly one step.
+            actionsRelease(0, 0); // A quick tap still sends exactly one step.
             actionsPoll(3);
             actionsPoll(4);
             assert(count == 2);
@@ -798,7 +798,7 @@ static void testCombinedPointer(void) {
             assert((int8_t)reports[0][2] == x && (int8_t)reports[0][3] == y);
             actionsPoll(9);
             assert(count == 1);
-            actionsRelease(0);
+            actionsRelease(0, 0);
 
             reset();
             activeConfig[9] = CONFIG_ACTION_MOUSE_XY | CONFIG_MOUSE_MOVE_HOLD | (signs << 5);
@@ -816,7 +816,7 @@ static void testCombinedPointer(void) {
             blocked = 0;
             actionsPoll(24);
             assert(count == 3);
-            actionsRelease(0);
+            actionsRelease(0, 0);
             actionsPoll(32);
             assert(count == 3);
         }
@@ -846,13 +846,13 @@ static void testPointerHold(void) {
         assert(reports[1][3] == (type == (CONFIG_ACTION_MOUSE_AXIS | CONFIG_MOUSE_AXIS_Y) ? 0xFF : 0));
         actionsPoll(16);
         assert(count == 3);
-        actionsRelease(0);
+        actionsRelease(0, 0);
         actionsPoll(24);
         actionsPoll(100);
         assert(count == 3);
 
         actionsPress(0, 101);
-        actionsRelease(0);
+        actionsRelease(0, 0);
         actionsPoll(101);
         actionsPoll(109);
         assert(count == 4); // A quick hold-mode tap still moves once.
@@ -867,7 +867,7 @@ static void testPointerHold(void) {
         blocked = 0;
         actionsPoll(12);
         assert(count == 6); // Resume after backpressure across timer wrap.
-        actionsRelease(0);
+        actionsRelease(0, 0);
     }
 
     // Both axes repeat independently, and unrelated key taps can still finish.
@@ -883,15 +883,15 @@ static void testPointerHold(void) {
     actionsPoll(9);
     assert(count == 4 && reports[2][2] == 1 && reports[3][3] == 2);
     actionsPress(2, 10);
-    actionsRelease(2);
+    actionsRelease(2, 0);
     actionsPoll(10);
     assert(count == 5 && reports[4][0] == 1 && reports[4][3] == 0x21);
     actionsPoll(18);
     actionsPoll(19);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(27);
     assert(reports[count - 1][2] == 0 && reports[count - 1][3] == 2);
-    actionsRelease(1);
+    actionsRelease(1, 0);
 
     // Either chord key ending its hold must stop repetition.
     for (released = 0; released < 2; released++) {
@@ -905,7 +905,7 @@ static void testPointerHold(void) {
         actionsPoll(101);
         actionsPoll(109);
         assert(count == 2 && reports[1][2] == 3);
-        actionsRelease(released);
+        actionsRelease(released, 0);
         actionsPoll(117);
         assert(count == 2);
     }
@@ -935,7 +935,7 @@ static void testMultiClickPlayback(void) {
             activeConfig[9] = ((clicks - 1) << 4) | CONFIG_ACTION_MOUSE_CLICK;
             activeConfig[10] = 7;
             actionsPress(0, 0);
-            actionsRelease(0); // Playback completes even after a brief physical press.
+            actionsRelease(0, 0); // Playback completes even after a brief physical press.
             for (uint16_t now = 0; now < 5000; now++) {
                 blocked = pressure && now % 300 < 25;
                 actionsPoll(now);
@@ -960,10 +960,10 @@ static void testMouseAndLayerOrder(void) {
     actionsPress(1, 0);
     actionsPoll(0);
     assert(reports[count - 1][1] == 1);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(1);
     assert(reports[count - 1][1] == 1);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     actionsPoll(2);
     assert(reports[count - 1][1] == 0);
 
@@ -990,9 +990,9 @@ static void testMouseAndLayerOrder(void) {
     actionsPress(0, 0);
     actionsPress(1, 0);
     assert(actionsLayer() == 2);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     assert(actionsLayer() == 2);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     assert(actionsLayer() == 0);
 }
 
@@ -1024,14 +1024,14 @@ static void testChords(uint8_t variant) {
             actionsPress(first ^ 1, 139);
             actionsPoll(139);
             assert(count == 1 && reports[0][3] == 4);
-            actionsRelease(released);
+            actionsRelease(released, 0);
             actionsPoll(140);
             assert(count == 2 && reports[1][3] == 0);
             actionsPress(released, 141);
             actionsPoll(141);
             assert(count == 2); // The other chord key is still down.
-            actionsRelease(released ^ 1);
-            actionsRelease(released);
+            actionsRelease(released ^ 1, 0);
+            actionsRelease(released, 0);
             actionsPress(first, 150);
             actionsPress(first ^ 1, 160);
             actionsPoll(160);
@@ -1044,7 +1044,7 @@ static void testChords(uint8_t variant) {
     actionsPress(1, 1);
     actionsPoll(1);
     assert(reports[0][0] == 2 && reports[0][1] == 1);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     actionsPoll(2);
     assert(reports[1][1] == 0);
 
@@ -1122,7 +1122,7 @@ static void testChordWindowPresets(void) {
                 }
                 chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
                 activeConfig[CONFIG_HEADER_LED] = selector;
-                actionsPress(0, start); actionsRelease(0);
+                actionsPress(0, start); actionsRelease(0, 0);
                 actionsPoll(start);
                 assert(count == 1 && reports[0][3] == 0x29);
                 chordProfile(variant, CONFIG_ACTION_KEY_HOLD);
@@ -1142,7 +1142,7 @@ static void testChordWindowPresets(void) {
 static void testBriefHolds(void) {
     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
     actionsPress(0, 100);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(101);
     assert(count == 1 && reports[0][3] == 0x29);
     actionsPoll(110);
@@ -1151,7 +1151,7 @@ static void testBriefHolds(void) {
     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
     activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
     actionsPress(0, 100);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     blocked = 1;
     actionsPoll(101);
     assert(count == 0);
@@ -1162,14 +1162,14 @@ static void testBriefHolds(void) {
     chordProfile(0, CONFIG_ACTION_KEY_HOLD);
     actionsPress(0, 100);
     actionsPress(1, 101);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     actionsPoll(102);
     assert(count == 2 && reports[0][3] == 4 && reports[1][3] == 0);
 
     chordProfile(0, CONFIG_ACTION_MOUSE_HOLD);
     actionsPress(0, 100);
     actionsPress(1, 101);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     reportLimit = 1; // Accept the press, then block its release.
     actionsPoll(102);
     assert(count == 1 && reports[0][0] == 2 && reports[0][1] == 1);
@@ -1192,9 +1192,9 @@ static void testChordLayers(void) {
     actionsPress(0, 100);
     actionsPress(1, 101);
     assert(actionsLayer() == 1);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     assert(actionsLayer() == 0);
-    actionsRelease(0);
+    actionsRelease(0, 0);
 
     // An encoder layer action resolves the captured pending single.
     activeConfig[9] = CONFIG_ACTION_KEY_HOLD;
@@ -1205,7 +1205,7 @@ static void testChordLayers(void) {
     assert(actionsLayer() == 1);
     actionsPoll(201);
     assert(count == 1 && reports[0][3] == 0x29);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(202);
     assert(reports[count - 1][3] == 0);
 }
@@ -1222,10 +1222,10 @@ static void testMultipleChords(void) {
     actionsPress(3, 3);
     actionsPoll(3);
     assert(count == 1 && reports[0][3] == 4 && reports[0][4] == 5);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     actionsPoll(4);
     assert(reports[count - 1][3] == 5);
-    actionsRelease(2);
+    actionsRelease(2, 0);
     actionsPoll(5);
     assert(reports[count - 1][3] == 0);
 }
@@ -1257,10 +1257,10 @@ static void testLongLivedMomentary(void) {
     for (i = 0; i < 70000; i++) {
         actionsPress(1, 0);
         assert(actionsLayer() == 2);
-        actionsRelease(1);
+        actionsRelease(1, 0);
         assert(actionsLayer() == 1);
     }
-    actionsRelease(0);
+    actionsRelease(0, 0);
     assert(actionsLayer() == 0);
 }
 
@@ -1276,11 +1276,11 @@ static void testRolloverBackpressure(void) {
     activeConfig[22] = 10;
     actionsPoll(0);
     actionsPress(6, 1);
-    actionsRelease(6);
+    actionsRelease(6, 0);
     actionsPoll(1);
     actionsPoll(100);
     assert(count == 1); // The tap waits while all six slots belong to holds.
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(101);
     assert(reports[count - 1][8] == 10);
     actionsPoll(110);
@@ -1292,10 +1292,10 @@ static void testRolloverBackpressure(void) {
         activeConfig[10 + 2 * i] = 4 + i;
         actionsPress(i, 0);
     }
-    actionsRelease(6);
+    actionsRelease(6, 0);
     actionsPoll(0);
     assert(count == 1 && reports[0][8] == 9);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(1);
     actionsPoll(2);
     assert(reports[1][8] == 10); // Even a released seventh hold gets a press.
@@ -1318,7 +1318,7 @@ static void testClearAndOverflow(void) {
     reset();
     for (i = 0; i < 300; i++) {
         actionsPress(0, 0);
-        actionsRelease(0);
+        actionsRelease(0, 0);
         actionsRotate(1);
     }
     assert(actionsDropped(0) == 255 && actionsDropped(1) == 255);
@@ -1347,8 +1347,8 @@ static void testHighLayerActions(void) {
             assert(actionsLayer() == (mode == 1 ? 0 : count - 1));
             actionsPoll(1);
             assert(reports[0][3] == 4); // Selected high-layer binding executed.
-            actionsRelease(1);
-            actionsRelease(0);
+            actionsRelease(1, 0);
+            actionsRelease(0, 0);
             assert(actionsLayer() == (mode ? 0 : count - 1));
         }
     }
@@ -1365,7 +1365,7 @@ static void testLedDispatch(void) {
     actionsPress(0, 1); // A held key does not retrigger.
     actionsPoll(100);
     assert(ledCalls == 1 && count == 0);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     for (uint8_t i = 0; i < 100; i++) actionsRotate(i & 1);
     assert(ledCalls == 101 && count == 0 && actionsDropped(1) == 0);
     assert(ledCommand == CONFIG_LED_PHASE_RELATIVE && ledValue == 9);
@@ -1379,13 +1379,13 @@ static void testLedDispatch(void) {
     activeConfig[54] = 0xF0 | CONFIG_ACTION_LED_CONTROL; activeConfig[55] = CONFIG_LED_BOTH_SET;
     actionsInit(); actionsTimedReset(0);
     blocked = 1;
-    actionsPress(0, 0); actionsRelease(0);
+    actionsPress(0, 0); actionsRelease(0, 0);
     assert(actionsLayer() == 1);
     actionsPress(1, 1);
     assert(ledCalls == 0 && actionsLayer() == 1);
     actionsPress(2, 2);
     assert(ledCalls == 1 && ledValue == 15 && ledCommand == CONFIG_LED_BOTH_SET && ledLayer == 0);
-    actionsRelease(1); actionsRelease(2); actionsPoll(100);
+    actionsRelease(1, 0); actionsRelease(2, 0); actionsPoll(100);
     assert(ledCalls == 1 && count == 0 && actionsLayer() == 0);
 }
 
@@ -1402,13 +1402,13 @@ static void testConsumeWake(void) {
     actionsTimedReset(0);
     actionsTimedPoll(1);
     assert(actionsTimedInput());
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(0);
     assert(count == 0);
     assert(!actionsTimedInput());
     actionsPress(0, 1); actionsPoll(1);
     assert(count == 1 && reports[0][3] == 4);
-    actionsRelease(0); actionsPoll(2);
+    actionsRelease(0, 0); actionsPoll(2);
     assert(reports[count - 1][3] == 0);
     // One completed encoder detent is consumed, subsequent detents work normally.
     actionsTimedPoll(2);
@@ -1433,10 +1433,10 @@ static void testConsumeWake(void) {
     actionsPress(1, 0); // Pending single, awaiting key 0.
     actionsTimedPoll(1);
     assert(actionsTimedInput());
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPoll(100);
     assert(count && reports[0][3] == 0x2C); // Single key, not chord usage 6.
-    actionsRelease(1);
+    actionsRelease(1, 0);
     // All armed timers resume once; any one may request consuming the event.
     reset();
     testSetLayout(1, 0, 2);
@@ -1457,11 +1457,11 @@ static void testConsumeWake(void) {
     timer = configTimedOffset();
     activeConfig[timer + 5] = CONFIG_TIMED_CONSUME;
     actionsInit(); actionsTimedReset(0);
-    actionsPress(0, 0); actionsRelease(0);
+    actionsPress(0, 0); actionsRelease(0, 0);
     assert(actionsLayer() == 1);
     actionsTimedPoll(1);
     assert(actionsTimedInput());
-    actionsRelease(1); // The consumed press created no action state.
+    actionsRelease(1, 0); // The consumed press created no action state.
     assert(actionsLayer() == 1);
     assert(!actionsTimedInput());
     actionsPress(1, 1);

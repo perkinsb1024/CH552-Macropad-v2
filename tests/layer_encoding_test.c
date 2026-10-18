@@ -55,7 +55,7 @@ static void testUnifiedRelativeModes(void) {
                     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
                     actionsPress(0, 0); assert(actionsLayer() == target);
                     pump(0, 10); assert(actionsLayer() == target);
-                    actionsRelease(0);
+                    actionsRelease(0, 0);
                     assert(actionsLayer() == (mode == 2 ? initial : target));
                     if (mode == 1) {
                         actionsPress(1, 10); assert(actionsLayer() == initial);
@@ -71,23 +71,23 @@ static void testRelativeHoldRetention(void) {
     setupLayers(3, 0); layerBinding(0, 0, 6, 1); layerBinding(1, 1, 0, 2);
     actionsPress(0, 0); assert(actionsLayer() == 1);
     actionsPress(1, 1); assert(actionsLayer() == 1);
-    actionsRelease(0); assert(actionsLayer() == 2);
+    actionsRelease(0, 0); assert(actionsLayer() == 2);
     // Relative holds follow existing relative actions: resolve from base layer.
     setupLayers(3, 0); layerBinding(0, 0, 6, 1); layerBinding(1, 1, 6, 2);
     actionsPress(0, 0); actionsPress(1, 1); assert(actionsLayer() == 2);
-    actionsRelease(1); assert(actionsLayer() == 1);
-    actionsRelease(0); assert(actionsLayer() == 0);
+    actionsRelease(1, 0); assert(actionsLayer() == 1);
+    actionsRelease(0, 0); assert(actionsLayer() == 0);
     // Consuming a one-shot resolves relative to that selected base before return.
     setupLayers(3, 0); layerBinding(0, 0, 1, 1); layerBinding(1, 1, 6, 1);
-    actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
+    actionsPress(0, 0); actionsRelease(0, 0); assert(actionsLayer() == 1);
     actionsPress(1, 1); assert(actionsLayer() == 2);
-    actionsRelease(1); assert(actionsLayer() == 0);
+    actionsRelease(1, 0); assert(actionsLayer() == 0);
     // Either chord key releases the resolved hold.
     setupLayers(3, 0); uint8_t tail = configTimedOffset(); testSetChordCount(1);
     activeConfig[tail] = 0; activeConfig[tail + 1] = (0x60 | CONFIG_ACTION_SET_LAYER); activeConfig[tail + 2] = 2;
     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
     actionsPress(0, 0); actionsPress(1, 1); assert(actionsLayer() == 2);
-    actionsRelease(1); assert(actionsLayer() == 0);
+    actionsRelease(1, 0); assert(actionsLayer() == 0);
 }
 #endif
 int main(void) {

@@ -125,7 +125,7 @@ void USB_EP0_SETUP() {
           break;
         case 3:
           if (valueLow > 3) { len = 0xFF; break; }
-          pDescr = stringDescriptors[valueLow];
+          pDescr = *(const __code uint8_t * const __code *)((const __code uint8_t *)stringDescriptors + (uint8_t)(valueLow * sizeof(stringDescriptors[0])));
           descriptorLen = pDescr[0];
           break;
         case 0x21:

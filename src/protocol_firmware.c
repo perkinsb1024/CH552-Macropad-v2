@@ -20,6 +20,7 @@ void firmwareApplyConfig(FW_BIT restartIndicator);
 #define PROTOCOL_ENTER_BOOTLOADER 10
 #define PROTOCOL_GET_LIVE 11
 #define PROTOCOL_GET_TIMERS 12
+#define PROTOCOL_SET_LAYER 13
 
 #define PROTOCOL_OK 0
 #define PROTOCOL_BAD_VERSION 1
@@ -111,12 +112,18 @@ static uint8_t processRequest(void) {
     if (!length || offset > (uint8_t)(CONFIG_SIZE - length)) {
       return PROTOCOL_BAD_RANGE;
     }
-  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
+  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR && opcode != PROTOCOL_SET_LAYER) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
     return PROTOCOL_BAD_RANGE;
   }
   // Validated lengths keep payload indices below 32 and image indices below 128.
   // Narrow the sums so SDCC does not emit unnecessary 16-bit address arithmetic.
   switch (opcode) {
+    case PROTOCOL_SET_LAYER:
+      if (!activeConfigValid) return PROTOCOL_BAD_CONFIG;
+      i = configLayerCount();
+      if ((uint8_t)(offset & 0x7F) >= i) return PROTOCOL_BAD_RANGE;
+      actionsSetLayer(offset);
+      break;
     case PROTOCOL_ENTER_BOOTLOADER:
       break; // Main loop enters only after the successful reply is queued.
     case PROTOCOL_GET_INFO:

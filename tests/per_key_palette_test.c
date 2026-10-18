@@ -152,7 +152,7 @@ static void testMovedSections(void) {
     for (uint8_t i = 0; i < frameCount; i++)
         if (frames[i][0] == 1 && frames[i][3] == 5) found = 1;
     assert(found);
-    actionsRelease(NUM_LEDS);
+    actionsRelease(NUM_LEDS, 0);
     actionsClear();
     actionsTimedReset(0);
     actionsTimedPoll(255);
@@ -408,7 +408,7 @@ static void testIgnoredFields(void) {
             sealImage(); activate();
             actionsPress(0, currentMs);
             for (uint8_t elapsed = 0; elapsed < 24; elapsed++) actionsPoll(currentMs+elapsed);
-            actionsRelease(0);
+            actionsRelease(0, 0);
             actionsPoll(currentMs+24);
             if (!dirty) { originalCount = frameCount; memcpy(original, frames, sizeof original); }
             else {
@@ -425,13 +425,13 @@ static void testIgnoredFields(void) {
             activeConfig[10] = 1;
             sealImage(); activate();
             actionsPress(0, currentMs); assert(actionsLayer() == 1);
-            actionsRelease(0); assert(actionsLayer() == ((aux & 2) ? 0 : 1));
+            actionsRelease(0, 0); assert(actionsLayer() == ((aux & 2) ? 0 : 1));
         }
     }
     for (uint16_t value = 0; value < 256; value++) {
         fresh(1, 0); activeConfig[9] = CONFIG_ACTION_NONE; activeConfig[10] = value;
         sealImage(); activate();
-        actionsPress(0, currentMs); actionsRelease(0); assert(actionsLayer() == 0);
+        actionsPress(0, currentMs); actionsRelease(0, 0); assert(actionsLayer() == 0);
     }
     for (uint8_t value = 0; value < 16; value++) {
         fresh(1, 0);
@@ -444,7 +444,7 @@ static void testIgnoredFields(void) {
         activeConfig[10] = CONFIG_LED_EFFECT_RESTORE;
         sealImage(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
         firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
-        actionsRelease(0); actionsPress(0, currentMs);
+        actionsRelease(0, 0); actionsPress(0, currentMs);
         assert(!previewOptions && !layerIndicatorPhasesLeft);
     }
 }

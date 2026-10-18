@@ -73,15 +73,19 @@ static FW_BIT keyboardUsageValid(uint8_t usage) {
 // Validated image/pool addresses stay below 128; narrow bounded index sums before access.
 // Keep small masks and limits byte-sized too, before C's promoted comparisons.
 static __data uint8_t validationLayers, validationPool, validationUsed;
+static __data uint8_t validationMacros;
 static const __xdata uint8_t *__data validationImage;
 static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
     uint8_t first = validationImage[offset];
     uint8_t type = first & 15;
     uint8_t aux = first >> 4;
     uint8_t param = validationImage[(uint8_t)(offset + 1)];
-    __idata uint8_t macros = validationPool + validationUsed;
+    __idata uint8_t macros = validationMacros;
     if (rotation == 2 && type != CONFIG_ACTION_MACRO) rotation = 1;
     switch (type) {
+        case CONFIG_ACTION_TAP_HOLD:
+            return !rotation && param > (uint8_t)(validationPool + validationUsed) && param < macros &&
+                   !((param ^ macros) & 3);
         case CONFIG_ACTION_MACRO:
             // Absolute image offset: no runtime directory or recursive lookup.
             // Macro steps use rotation=2, which prohibits nested invocations.
@@ -174,7 +178,11 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     __idata uint8_t i;
     __idata uint8_t previous = 0;
     __idata uint8_t id;
+#if CONFIG_TIMED_MAX <= 5
+    uint8_t end;
+#else
     uint16_t end;
+#endif
     uint16_t crc;
     validationImage = image;
 #ifdef __SDCC
@@ -193,8 +201,8 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     size = layerSize(variant);
     if (validationLayers > maxLayers(variant)) return 0;
     chords = validationImage[CONFIG_HEADER_COUNTS] >> CONFIG_HEADER_CHORD_SHIFT;
-    // Each product fits a byte after the layer/chord count checks; the sum
-    // remains 16-bit so malformed images cannot wrap past the capacity check.
+    // Products fit a byte after the layer/chord count checks. Check section
+    // capacity before adding the bounded pool/palette subtotal below.
     timers = validationImage[CONFIG_HEADER_COUNTS] & CONFIG_HEADER_TIMED_MASK;
     if (timers > CONFIG_TIMED_MAX) return 0;
     // Layer records keep their original stride; palettes follow all layers.
@@ -202,22 +210,33 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
     offset = CONFIG_HEADER_SIZE + size - 1;
     for (layer = 0; layer < validationLayers; layer++) {
         if (!(validationImage[offset] & CONFIG_LAYER_OPT_COLOR_MASK))
-            paletteBytes += (keys + 1) >> 1;
+            paletteBytes += (uint8_t)(keys + 1) >> 1;
         offset += size;
     }
     validationUsed = validationImage[CONFIG_HEADER_POOL] >> CONFIG_HEADER_POOL_SHIFT;
 #if CONFIG_TIMED_MAX <= 5
-    // Fixed records <=242; pool plus palettes <=142. Widen only their sum.
-    end = (uint8_t)(9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
-          (uint8_t)(CONFIG_TIMED_SIZE * timers)) + (uint16_t)(uint8_t)(validationUsed + paletteBytes);
+    // Both subtotals fit a byte; check capacity before their addition.
+    end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
+          (uint8_t)(CONFIG_TIMED_SIZE * timers);
+    if (end > CONFIG_SIZE || (uint8_t)(validationUsed + paletteBytes) >
+        (uint8_t)(CONFIG_SIZE - end)) return 0;
+    end += validationUsed + paletteBytes;
 #else
     end = 9 + (uint8_t)(size * validationLayers) + (uint8_t)(3 * chords) +
           (uint8_t)(CONFIG_TIMED_SIZE * timers) + (uint16_t)validationUsed + paletteBytes;
-#endif
     if (end > CONFIG_SIZE) {
         return 0;
     }
+#endif
     validationPool = (uint8_t)end - validationUsed;
+    // Optional counted pair block follows strings; ordinary profiles add nothing.
+    validationMacros = (uint8_t)end;
+    if (end < CONFIG_SIZE && (validationImage[(uint8_t)end] & 15) == CONFIG_ACTION_TAP_HOLD) {
+        offset = (uint8_t)(5 + (uint8_t)((validationImage[(uint8_t)end] >> 4) << 2));
+        // Both terms are <=128/65; the unsigned byte sum cannot wrap.
+        validationMacros = (uint8_t)end + offset;
+        if (validationMacros > CONFIG_SIZE) return 0;
+    }
     offset = 9;
     for (layer = 0; layer < validationLayers; layer++) {
         for (i = 0; i < (uint8_t)(keys + 3); i++, offset += 2) {
@@ -258,9 +277,16 @@ FW_BIT configValid(const __xdata uint8_t *image, uint8_t variant) {
             return 0;
         }
     }
-    for (offset = validationPool + validationUsed; offset < CONFIG_SIZE; offset++) {
-        if (!validationImage[offset]) continue;
-        if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) return 0;
+    offset = validationPool + validationUsed;
+    if (offset < validationMacros) offset++; // Skip the optional prefix.
+    for (; offset < CONFIG_SIZE; offset++) {
+        if (offset < validationMacros) {
+            if ((validationImage[offset] & 15) == CONFIG_ACTION_TAP_HOLD ||
+                !actionValid(offset, !((offset ^ validationMacros) & 2))) return 0;
+        } else {
+            if (!validationImage[offset]) continue;
+            if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) return 0;
+        }
         offset++;
     }
     crc = configCrc(validationImage);
@@ -297,7 +323,7 @@ uint8_t configLayerPaletteOffset(uint8_t layer) {
     uint8_t options = CONFIG_HEADER_SIZE + size - 1;
     while (layer--) {
         if (!(activeConfig[options] & CONFIG_LAYER_OPT_COLOR_MASK))
-            offset += (configKeyCount() + 1) >> 1;
+            offset += (uint8_t)(configKeyCount() + 1) >> 1;
         options += size;
     }
     return offset;
@@ -311,16 +337,8 @@ uint8_t configLedColorAt(uint8_t offset, uint8_t key) {
     return colors & 15;
 }
 
-void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second) {
-    uint8_t offset;
-    if (layer >= configLayerCount() || input >= configKeyCount() + 3) {
-        *first = 0;
-        *second = 0;
-        return;
-    }
-    offset = layerOffset(layer) + 2 * input;
-    *first = activeConfig[offset];
-    *second = activeConfig[(uint8_t)(offset + 1)];
+uint8_t configBindingOffset(uint8_t layer, uint8_t input) {
+    return layerOffset(layer) + (uint8_t)(2 * input);
 }
 
 // Complemented physical-key masks, in the saved lexicographic pair order.

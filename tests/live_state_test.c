@@ -103,10 +103,10 @@ static void testChordAndRejectedActions(void) {
     actionsPress(1, 1); snapshot(2);
     assert(liveBindings[12] == 1 && liveBindings[9] == 0x20);
     assert(liveBindings[10] == CONFIG_ACTION_KEY_TAP && liveBindings[11] == 4);
-    actionsRelease(0); actionsRelease(1); actionsClear(); frameCount = 0;
+    actionsRelease(0, 0); actionsRelease(1, 0); actionsClear(); frameCount = 0;
     // Fill the action queue without polling. Dropped bindings must not claim dispatch.
     uint8_t before = liveBindings[12];
-    for (uint8_t i = 0; i < 12; i++) { actionsPress(2, i); actionsRelease(2); }
+    for (uint8_t i = 0; i < 12; i++) { actionsPress(2, i); actionsRelease(2, 0); }
     assert((uint8_t)(liveBindings[12] - before) == 8);
     assert(actionsDropped(0) == 4);
     snapshot(11); assert(protocolReply[15] == 8); // Queue depth.
@@ -122,11 +122,11 @@ static void testLayerAndMouseState(void) {
     actionsPress(0, 0); snapshot(11);
     assert(protocolReply[9] == 2 && protocolReply[10] == 2 && protocolReply[12] == 0);
     assert(liveBindingLayer == 0 && liveBindings[11] == 2); // Preserve original target bytes.
-    actionsRelease(0); actionsPress(1, 1); snapshot(11);
+    actionsRelease(0, 0); actionsPress(1, 1); snapshot(11);
     assert(protocolReply[9] == 0 && protocolReply[12] == 255);
-    actionsRelease(1); actionsClear(); frameCount = 0;
+    actionsRelease(1, 0); actionsClear(); frameCount = 0;
     activeConfig[9] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[10] = 5;
-    actionsPress(0, 2); actionsRelease(0); snapshot(11);
+    actionsPress(0, 2); actionsRelease(0, 0); snapshot(11);
     assert(protocolReply[22] == 5); // Persistent buttons survive physical release.
     uint8_t packet[32] = {3, 'U', 'M', 1, 11, 1, 1};
     assert(protocolReceive(packet)); protocolPoll(currentMs); assert(protocolReply[8] == 3);

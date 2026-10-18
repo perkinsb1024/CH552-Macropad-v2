@@ -356,7 +356,7 @@ static void testActions(void) {
         activeConfig[9] = (activeConfig[9] & 0xF0) | type;
         activeConfig[10] = param;
         seal();
-        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO && type != CONFIG_ACTION_RESERVED));
+        assert(configValid(activeConfig, CONFIG_SIX_KEYS) == (type != CONFIG_ACTION_MACRO && type != CONFIG_ACTION_TAP_HOLD));
     }
         testLoadStarterProfile(CONFIG_SIX_KEYS);
     activeConfig[23] = CONFIG_ACTION_MOMENTARY_LAYER;
@@ -611,8 +611,8 @@ static void testTypeZeroAndReserved(void) {
                     uint8_t pool = configTimedOffset() + CONFIG_TIMED_SIZE * configTimedCount();
                     testSetStringLength(4);
                     memcpy(activeConfig + pool, "A\0B", 4);
-                    if (slot == 5) offset = pool + 4;
-                    activeConfig[offset] = (aux << 4) | CONFIG_ACTION_RESERVED;
+                    if (slot == 5) offset = pool + 5;
+                    activeConfig[offset] = (aux << 4) | CONFIG_ACTION_TAP_HOLD;
                     activeConfig[offset + 1] = param;
                     seal(); assert(!configValid(activeConfig, variant));
                     // Raw type-0 bytes verify the new Pause-before-Text encoding.

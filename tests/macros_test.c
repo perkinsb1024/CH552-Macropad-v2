@@ -55,7 +55,7 @@ static uint8_t define(uint8_t offset, const uint8_t *bytes, uint8_t steps) {
     if (offset + 2 * steps < CONFIG_SIZE) activeConfig[offset + 2 * steps] = 0;
     return offset + 2 * steps + 1;
 }
-static void press(uint8_t key, uint16_t now) { actionsPress(key, now); actionsRelease(key); }
+static void press(uint8_t key, uint16_t now) { actionsPress(key, now); actionsRelease(key, 0); }
 static void pump(uint16_t first, uint16_t end) {
     for (uint16_t now = first; now < end; now++) actionsPoll(now);
 }
@@ -224,7 +224,7 @@ static void testQueueAndChords(void) {
     activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MACRO;
     activeConfig[chord + 2] = start; define(start, pair, 2);
     seal(); assert(configValid(activeConfig, PHYSICAL_VARIANT));
-    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
+    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0, 0); actionsRelease(1, 0);
     pump(5, 100); assert(keyPresses(4) == 1 && keyPresses(5) == 1);
 }
 static void testHeldPointer(void) {
@@ -235,7 +235,7 @@ static void testHeldPointer(void) {
     unsigned moves = 0;
     for (unsigned i = 0; i < count; i++) if (reports[i][0] == 2 && reports[i][2]) moves++;
     assert(moves == 1 && keyPresses(4) == 1 && keyPresses(5) == 1);
-    actionsRelease(1); pump(20, 100);
+    actionsRelease(1, 0); pump(20, 100);
 }
 static void testPause(void) {
 #if CONFIG_MACRO_PAUSE
@@ -292,7 +292,7 @@ static void testGlobalToggle(void) {
     actionsPress(2, 300); pump(300, 350); assert(latestMouse() == 1);
     press(1, 350); pump(350, 400); assert(latestMouse() == 1);
     press(0, 400); pump(400, 450); assert(latestMouse() == 1);
-    actionsRelease(2); pump(450, 500); assert(latestMouse() == 0);
+    actionsRelease(2, 0); pump(450, 500); assert(latestMouse() == 0);
     // Clear/reset removes toggles.
     press(0, 500); pump(500, 550); assert(latestMouse() == 1);
     actionsClear(); pump(550, 600); assert(latestMouse() == 0);
@@ -333,7 +333,7 @@ static void testGlobalToggleSources(void) {
     activeConfig[13] = CONFIG_ACTION_MOUSE_TOGGLE; activeConfig[14] = 1;
     press(2, 0); pump(0, 50); assert(latestMouse() == 1);
     actionsPress(0, 50); actionsPress(1, 55);
-    actionsRelease(0); actionsRelease(1);
+    actionsRelease(0, 0); actionsRelease(1, 0);
     pump(55, 100); assert(latestMouse() == 0);
     // Timer expiry and its follow-up share the macro's toggle state.
     reset();
@@ -370,7 +370,7 @@ static void testPersistentMouse(void) {
         activeConfig[13] = CONFIG_ACTION_MOUSE_HOLD;
         actionsPress(2, 60); pump(60, 70); assert(latestMouse() == mask);
         press(0, 70); press(1, 71); pump(71, 80); assert(latestMouse() == mask);
-        actionsRelease(2); pump(80, 90); assert(latestMouse() == 0);
+        actionsRelease(2, 0); pump(80, 90); assert(latestMouse() == 0);
         press(0, 90); pump(90, 100); actionsClear(); pump(100, 110); assert(latestMouse() == 0);
     }
     reset(); activeConfig[9] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[10] = 0xFF;
@@ -439,7 +439,7 @@ static void testCombinedPointerSources(void) {
         activeConfig[start + 2] = 0xF1;
         actionsPress(0, 0); actionsPress(1, 1); pump(1, 10);
         assert(count == 2 && reports[1][2] == 8 && (int8_t)reports[1][3] == -64);
-        actionsRelease(released); pump(10, 30); assert(count == 2);
+        actionsRelease(released, 0); pump(10, 30); assert(count == 2);
     }
     // Resolved pointer holds retain their axes and signs across layer changes.
     reset(); testSetLayout(2, 0, 0);
@@ -449,7 +449,7 @@ static void testCombinedPointerSources(void) {
     actionsPress(0, 0); actionsPoll(0); press(1, 1); pump(1, 10);
     assert(actionsLayer() == 1 && count == 2);
     assert((int8_t)reports[1][2] == -8 && reports[1][3] == 64);
-    actionsRelease(0); pump(10, 30); assert(count == 2);
+    actionsRelease(0, 0); pump(10, 30); assert(count == 2);
 
     // Both timer slots use the same dispatcher and preserve blocked tap reports.
     reset(); uint8_t timer = start; testSetLayout(1, 0, 1);
@@ -480,7 +480,7 @@ static void testMouseSources(void) {
     press(0, 0); pump(0, 10); actionsRotate(1); pump(10, 20); assert(latestMouse() == 0);
     reset(); uint8_t chord = start; testSetChordCount(1);
     activeConfig[chord] = 0; activeConfig[chord + 1] = CONFIG_ACTION_MOUSE_DOWN; activeConfig[chord + 2] = 0xF8;
-    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0); actionsRelease(1);
+    actionsPress(0, 0); actionsPress(1, 5); actionsRelease(0, 0); actionsRelease(1, 0);
     pump(5, 20); assert(latestMouse() == 0xF8);
     reset(); uint8_t timer = start; testSetLayout(1, 0, 1);
     memset(activeConfig + timer, 0, CONFIG_TIMED_SIZE);
@@ -524,7 +524,7 @@ static void testModifiedConsumer(void) {
         reset(); activeConfig[9] = (aux << 4) | type; activeConfig[10] = 0x24;
         actionsPress(0, 0); actionsPoll(0);
         assert(count == 1); assertConsumer(0, ((uint16_t)aux << 8) | 0x24);
-        actionsRelease(0); pump(1, 20);
+        actionsRelease(0, 0); pump(1, 20);
         assert(count == 2); assertConsumer(1, 0); assert(!latestModifiers());
     }
     // Removing temporary ownership preserves physical keys and modifiers.
@@ -534,7 +534,7 @@ static void testModifiedConsumer(void) {
     press(0, 2); pump(2, 10);
     assert(count == 5); assertModifiers(1, 6); assertConsumer(2, 0x6f);
     assertConsumer(3, 0); assertModifiers(4, 2); assert(reports[4][3] == 4);
-    actionsRelease(1); pump(10, 20); assert(!latestModifiers());
+    actionsRelease(1, 0); pump(10, 20); assert(!latestModifiers());
     // Direct modified consumers overlap temporary keyboard taps too.
     reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x70;
     activeConfig[11] = 0x91; activeConfig[12] = 5;
@@ -574,7 +574,7 @@ static void testModifiedConsumerReplacement(void) {
         blocked = 0; actionsPoll(2);
         assertConsumer(2, 0); assertModifiers(3, replacement == 2 ? 9 : 0);
         assertConsumer(4, replacement == 2 ? 0x70 : 0xE9);
-        actionsRelease(1); pump(3, 20); assert(!latestModifiers());
+        actionsRelease(1, 0); pump(3, 20); assert(!latestModifiers());
         assertConsumer(count - (replacement == 2 ? 2 : 1), 0);
     }
     // A modified tap interrupts a held 12-bit usage, without restoring it.
@@ -584,7 +584,7 @@ static void testModifiedConsumerReplacement(void) {
     press(1, 1); actionsPoll(1);
     assertConsumer(1, 0); assertModifiers(2, 6); assertConsumer(3, 0x6f);
     pump(2, 10); assertConsumer(4, 0); assertModifiers(5, 0);
-    actionsRelease(0); pump(10, 20); assert(count == 6);
+    actionsRelease(0, 0); pump(10, 20); assert(count == 6);
     // An unsent modified action can be replaced without emitting its usage.
     reset(); activeConfig[9] = (0x60 | CONFIG_ACTION_CONSUMER_MODIFIED); activeConfig[10] = 0x6f;
     activeConfig[11] = CONFIG_ACTION_CONSUMER; activeConfig[12] = 0xE9;

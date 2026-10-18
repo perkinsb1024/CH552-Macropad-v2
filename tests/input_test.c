@@ -724,7 +724,7 @@ static void testMomentaryIndicatorCancellation(void) {
     assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 6);
     P1 |= 0x02;
     rawState[0] = stableState[0] = 0;
-    actionsRelease(0);
+    actionsRelease(0, 0);
     tick(8050);
     assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 0);
     assertIndicatorLeds(0, 1, 0);
@@ -750,7 +750,7 @@ static void testSameLayerIndicator(void) {
         tick(10000);
         assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
         assertIndicatorLeds(1, 1, 0);
-        actionsRelease(0);
+        actionsRelease(0, 0);
         tick(10250);
         tick(10500);
         tick(10750);
@@ -763,7 +763,7 @@ static void testSameLayerIndicator(void) {
         tick(11600);
         assert(layerIndicatorPhasesLeft == 6);
         assertIndicatorLeds(1, 1, 0);
-        actionsRelease(0);
+        actionsRelease(0, 0);
     }
 }
 
@@ -788,7 +788,7 @@ static void testOneShotChordIndicator(void) {
     currentMs = 20000;
     firmwareApplyConfig(1);
     actionsPress(0, 20000);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     tick(20000);
     assert(actionsLayer() == 1 && layerIndicatorPhasesLeft == 6);
     assert(ledData[1] == 255 && ledData[2] == 72); // Pink.
@@ -806,8 +806,8 @@ static void testOneShotChordIndicator(void) {
     tick(21649);
     assert(actionsLayer() == 0 && layerIndicatorPhasesLeft == 6);
     assert(ledData[0] == 255 && ledData[1] == 0 && ledData[2] == 200); // Cyan.
-    actionsRelease(first);
-    actionsRelease(second);
+    actionsRelease(first, 0);
+    actionsRelease(second, 0);
 }
 
 
@@ -1165,7 +1165,7 @@ static void testSleepSettingsInput(void) {
         activeConfig[9 + size] = CONFIG_ACTION_KEY_HOLD; activeConfig[10 + size] = 4;
         activeConfig[9 + 2 * size - 1] = 0x10 | CONFIG_LAYER_OPT_AUTO_SLEEP;
         firmwareApplyConfig(1);
-        actionsPress(0, 0); actionsRelease(0); assert(actionsLayer() == 1);
+        actionsPress(0, 0); actionsRelease(0, 0); assert(actionsLayer() == 1);
         advanceSleep(220UL * 256); frameCount = 0;
         wakeSleepInput(0);
         assert(actionsLayer() == (consume ? 1 : 0));

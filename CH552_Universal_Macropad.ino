@@ -58,9 +58,9 @@ __code int8_t encoderTransitions[16] = {
 };
 
 __xdata uint8_t ledData[NUM_BYTES];
-// Raw levels use ordinary external RAM to preserve the internal stack reserve.
-// Stable levels and debounce times remain private to this main-loop scanner.
-__xdata uint8_t rawState[7];
+// Hot raw levels use page-zero RAM; debounce times use ordinary external RAM.
+// Stable levels remain internal and private to this main-loop scanner.
+__pdata uint8_t rawState[7];
 __idata uint8_t stableState[7];
 __xdata uint16_t rawChanged[7];
 __xdata uint8_t liveRotations[2];
@@ -409,10 +409,10 @@ void scanButton(uint8_t input, uint16_t now) {
   uint8_t pressed = readButton(input);
   if (pressed != rawState[input]) {
     rawState[input] = pressed;
-    rawChanged[input] = now;
+    *(__xdata uint16_t *)((__xdata uint8_t *)rawChanged + (uint8_t)(input * sizeof(rawChanged[0]))) = now;
   }
   if (pressed != stableState[input] &&
-      (uint16_t)(now - rawChanged[input]) >= DEBOUNCE_MS) {
+      (uint16_t)(now - *(__xdata uint16_t *)((__xdata uint8_t *)rawChanged + (uint8_t)(input * sizeof(rawChanged[0])))) >= DEBOUNCE_MS) {
     stableState[input] = pressed;
     if (startupWaiting) {
       if (startupWarning && pressed) startupWaiting = 0;
@@ -425,7 +425,7 @@ void scanButton(uint8_t input, uint16_t now) {
     if (pressed) {
       if (!actionsTimedInput()) actionsPress(input, now);
     } else {
-      actionsRelease(input);
+      actionsRelease(input, now);
     }
     updateLeds();
   }
@@ -491,7 +491,7 @@ void firmwareApplyConfig(ACTION_BIT restartIndicator) {
   sleepBrightnessPending = 0;
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     rawState[i] = stableState[i] = readButton(i);
-    rawChanged[i] = now;
+    *(__xdata uint16_t *)((__xdata uint8_t *)rawChanged + (uint8_t)(i * sizeof(rawChanged[0]))) = now;
   }
   encoderState = readEncoder();
   if (!activeConfigValid) {
@@ -559,6 +559,7 @@ void loop() {
   actionsInputNow = now;
 #endif
   if (activeConfigValid) actionsTimedPoll(now >> 4);
+  if (activeConfigValid) actionsResolveInputs(now);
   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
     scanButton(i, now);
   }

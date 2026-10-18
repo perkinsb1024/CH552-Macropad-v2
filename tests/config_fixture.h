@@ -19,6 +19,14 @@ static inline FW_BIT configChord(uint8_t layer, uint8_t firstKey, uint8_t second
 }
 #endif
 
+#if CONFIG_BINDING_OFFSET
+static inline void configBinding(uint8_t layer, uint8_t input, uint8_t *first, uint8_t *second) {
+    if (layer >= configLayerCount() || input >= configKeyCount() + 3) { *first = *second = 0; return; }
+    uint8_t offset = configBindingOffset(layer, input);
+    *first = activeConfig[offset]; *second = activeConfig[(uint8_t)(offset + 1)];
+}
+#endif
+
 /* Canonical target-header setters; unrelated fields are retained. */
 static inline void testSetVariant(uint8_t variant) {
     activeConfig[CONFIG_HEADER_LAYERS] = (activeConfig[CONFIG_HEADER_LAYERS] & ~1) | variant;

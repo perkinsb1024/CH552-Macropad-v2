@@ -26,10 +26,14 @@ __pdata uint8_t chordPartner[6]; // Partner index plus one; retained until both 
 __data uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
 __data uint8_t pendingLayer;
 __data uint16_t pendingSince;
-__idata uint8_t lastMouse;
-__pdata uint8_t lastReportGeneration;
+// Independent clocks start at accepted press, or chord recognition for a chord.
+__xdata uint16_t tapSince[PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 4 : 7];
+__xdata uint16_t tapNow;
+__xdata uint8_t lastMouse;
+__data uint8_t lastReportGeneration;
 // Bindings are resolved before queuing; playback only needs the action bytes.
-__pdata uint8_t eventData[EVENT_COUNT][2];
+__pdata uint8_t eventFirst[EVENT_COUNT];
+__pdata uint8_t eventSecond[EVENT_COUNT];
 __pdata uint8_t eventHead;
 __pdata uint8_t eventTail;
 __data uint8_t eventUsed;
@@ -55,7 +59,7 @@ __pdata uint8_t stringIndex;
 __data uint8_t macroNext;
 __data uint8_t macroStart;
 #if CONFIG_MACRO_REPEAT
-__idata uint8_t macroRepeat;
+__xdata uint8_t macroRepeat;
 #endif
 // Toggle/down/up share one persistent mouse-button state; holds remain separate.
 __pdata uint8_t persistentMouse;
@@ -148,8 +152,8 @@ static FW_BIT queueAction(uint8_t first, uint8_t second, uint8_t rotation) {
     }
   }
 #endif
-  eventData[eventHead][0] = first;
-  eventData[eventHead][1] = second;
+  eventFirst[eventHead] = first;
+  eventSecond[eventHead] = second;
   eventHead = (eventHead + 1) & (EVENT_COUNT - 1);
   eventUsed++;
   return 1;
@@ -267,11 +271,19 @@ static FW_BIT flushOutputs(void) {
   return 1;
 }
 
+static void selectBaseLayer(uint8_t layer) {
+  uint8_t previous = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
+  if (layer != previous) previousLayer = previous;
+  baseLayer = layer;
+}
+
 static void updateLayer(void);
 static void resetLayerTimers(void);
 
 static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
                       uint8_t input) {
+  // Waiting wrappers do not execute or consume a one-shot.
+  if (actionType(first) == CONFIG_ACTION_TAP_HOLD) return;
   __xdata uint8_t requestedSecond = second;
   __xdata uint8_t layer = effectiveLayer;
   uint8_t source;
@@ -336,11 +348,8 @@ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
     if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
     if (first & 0x10) {
       oneShotReturnLayer = baseLayer;
-    } else {
-      selectedLayer = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
-      if (second != selectedLayer) previousLayer = selectedLayer;
-    }
-    baseLayer = second;
+      baseLayer = second;
+    } else selectBaseLayer(second);
     goto liveRecord;
   } else if (first && type != CONFIG_ACTION_KEY_HOLD) {
     if (!queueAction(first, second, rotation)) return;
@@ -376,6 +385,30 @@ void actionsWriteTimers(void) {
     liveReply[(uint8_t)(6 + i)] = timedHigh[i];
     liveReply[(uint8_t)(12 + i)] = timedFraction[i];
   } while (i);
+}
+
+static void loadButton(uint8_t input, uint8_t offset) {
+  buttonFirst[input] = activeConfig[offset];
+  buttonSecond[input] = activeConfig[(uint8_t)(offset + 1)];
+}
+
+static void dispatchButton(uint8_t input) {
+  buttonPressed[input] = 1;
+  runAction(buttonFirst[input], buttonSecond[input], 0, input);
+  updateLayer();
+}
+
+static FW_BIT tapExpired(uint8_t input) {
+  uint16_t elapsed = tapNow - *(__xdata uint16_t *)((__xdata uint8_t *)tapSince + (uint8_t)(input * sizeof(tapSince[0])));
+  // F = 16 * selector + 15, so (2 * first | 1) is threshold minus one.
+  // Widen before doubling; selector 15 requires a 512ms threshold.
+  return elapsed > (((uint16_t)buttonFirst[input] << 1) | 1);
+}
+
+static void resolveTap(uint8_t input, uint8_t branch) {
+  uint8_t offset = buttonSecond[input] + branch;
+  loadButton(input, offset);
+  dispatchButton(input);
 }
 
 static void resolvePending(void) {
@@ -428,6 +461,15 @@ static void updateLayer(void) {
     // Pending singles belong to the layer on which they were pressed.
     resolvePending();
   } while (1);
+}
+
+void actionsSetLayer(uint8_t options) {
+  if ((options & 0x80) && actionsTimedInput()) return;
+  selectBaseLayer(options & 0x7F);
+  // Replace a pending one-shot; physical layer holds retain priority.
+  oneShotReturnLayer = 0xFF;
+  layerSelectionPending = 1;
+  updateLayer();
 }
 
 void actionsInit(void) {
@@ -517,8 +559,7 @@ static const __code uint8_t inputBits[] = {
 };
 
 void actionsPress(uint8_t input, uint16_t now) {
-  uint8_t first;
-  uint8_t second;
+  uint8_t offset;
   uint8_t other;
   uint8_t chordOffset;
   uint8_t keys = configKeyCount();
@@ -528,6 +569,7 @@ void actionsPress(uint8_t input, uint16_t now) {
   inputMask = inputBits[input];
   if (inputDown & inputMask) return;
   inputDown |= inputMask;
+  *(__xdata uint16_t *)((__xdata uint8_t *)tapSince + (uint8_t)(input * sizeof(tapSince[0]))) = now;
 #if CONFIG_SCROLL_ACCELERATION
   actionsInputNow = now;
 #endif
@@ -539,13 +581,11 @@ void actionsPress(uint8_t input, uint16_t now) {
     if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
         (chordOffset = configChordOffset(pendingLayer,
             (uint8_t)(inputBits[other] | inputMask)))) {
-      first = activeConfig[chordOffset];
-      second = activeConfig[(uint8_t)(chordOffset + 1)];
       pendingInput = 0;
+      *(__xdata uint16_t *)((__xdata uint8_t *)tapSince + (uint8_t)(other * sizeof(tapSince[0]))) = now; // Chord duration starts at recognition.
       chordPartner[other] = input + 1;
       chordPartner[input] = other + 1;
-      buttonFirst[other] = first;
-      buttonSecond[other] = second;
+      loadButton(other, chordOffset);
       buttonFirst[input] = 0;
       buttonSecond[input] = 0;
       buttonPressed[input] = 0;
@@ -556,9 +596,8 @@ void actionsPress(uint8_t input, uint16_t now) {
     resolvePending();
     updateLayer();
   }
-  configBinding(effectiveLayer, input, &first, &second);
-  buttonFirst[input] = first;
-  buttonSecond[input] = second;
+  offset = configBindingOffset(effectiveLayer, input);
+  loadButton(input, offset);
   orderPress(input);
   if (input < keys && chordWindow) {
     if (configChordOffset(effectiveLayer, inputMask)) {
@@ -572,12 +611,12 @@ void actionsPress(uint8_t input, uint16_t now) {
     }
   }
 dispatchPress:
-  buttonPressed[input] = 1;
-  runAction(buttonFirst[input], buttonSecond[input], 0, input);
-  updateLayer();
+  dispatchButton(input);
 }
 
 static void releaseAction(uint8_t input) {
+  if (buttonPressed[input] && actionType(buttonFirst[input]) == CONFIG_ACTION_TAP_HOLD)
+    resolveTap(input, tapExpired(input) ? 2 : 0);
   uint8_t type = actionType(buttonFirst[input]);
 #if CONFIG_SCROLL_ACCELERATION
   if (type == CONFIG_ACTION_SCROLL && (buttonFirst[input] & CONFIG_SCROLL_HOLD))
@@ -591,7 +630,8 @@ static void releaseAction(uint8_t input) {
   }
 }
 
-void actionsRelease(uint8_t input) {
+void actionsRelease(uint8_t input, __xdata uint16_t now) {
+  tapNow = now;
   uint8_t other;
   if (input > configKeyCount()) {
     return;
@@ -617,19 +657,38 @@ void actionsRelease(uint8_t input) {
 }
 
 void actionsRotate(uint8_t clockwise) {
-  uint8_t first;
-  uint8_t second;
+  uint8_t offset;
   uint8_t input = configKeyCount() + (clockwise ? 1 : 2);
   if (pendingInput && oneShotReturnLayer != 0xFF) {
     resolvePending();
     updateLayer();
   }
-  configBinding(effectiveLayer, input, &first, &second);
-  runAction(first, second, 1, clockwise ? 7 : 8);
+  offset = configBindingOffset(effectiveLayer, input);
+  runAction(activeConfig[offset], activeConfig[(uint8_t)(offset + 1)], 1, clockwise ? 7 : 8);
   updateLayer();
 }
 
 #include "timed_actions.inc"
+
+// Ordinary chord deadlines retain their post-scan order. The pre-scan pass
+// resolves tap-hold decisions; the poll marks itself and the helper clears it.
+static ACTION_BIT inputPolling;
+
+void actionsResolveInputs(uint16_t now) {
+  uint8_t i;
+  if (pendingInput && (inputPolling || actionType(buttonFirst[(uint8_t)(pendingInput - 1)]) == CONFIG_ACTION_TAP_HOLD) &&
+      (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
+    resolvePending();
+    updateLayer();
+  }
+  tapNow = now;
+  // Resolve before output backpressure can postpone the decision.
+  for (i = 0; i < MAX_INPUTS; i++) {
+    if (buttonPressed[i] == 1 && actionType(buttonFirst[i]) == CONFIG_ACTION_TAP_HOLD && tapExpired(i))
+      resolveTap(i, 2);
+  }
+  inputPolling = 0;
+}
 
 void actionsPoll(uint16_t now) {
   __idata uint8_t type;
@@ -642,10 +701,8 @@ void actionsPoll(uint16_t now) {
   if (!(scrollFirst & CONFIG_SCROLL_HOLD) &&
       (uint16_t)(now - scrollLast) >= CONFIG_SCROLL_TIMEOUT_MS) scrollFirst = 0;
 #endif
-  if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
-    resolvePending();
-    updateLayer();
-  }
+  inputPolling = 1;
+  actionsResolveInputs(now);
   i = USB_reportGeneration();
   if (lastReportGeneration != i) {
     lastReportGeneration = i;
@@ -726,8 +783,8 @@ void actionsPoll(uint16_t now) {
         macroNext += 2;
       }
     } else if (eventUsed) {
-      currentFirst = eventData[eventTail][0];
-      currentSecond = eventData[eventTail][1];
+      currentFirst = eventFirst[eventTail];
+      currentSecond = eventSecond[eventTail];
       eventTail = (eventTail + 1) & (EVENT_COUNT - 1);
       eventUsed--;
     }

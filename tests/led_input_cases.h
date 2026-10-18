@@ -272,10 +272,10 @@ static void testTemporaryEffects(void) {
     P1 = P3 = 0xFF; previewOptions = 0; currentMs = 0; firmwareApplyConfig(1);
     firmwareLedAction(CONFIG_LED_EFFECT_ON, 15);
     actionsPress(0, 0); loop(); assert(previewOptions & LED_EFFECT_FLAG);
-    actionsRelease(0);
+    actionsRelease(0, 0);
     actionsPress(1, 1); loop();
     assert(!previewOptions && actionsLayer() == 1 && ledData[2] == 255);
-    actionsRelease(1);
+    actionsRelease(1, 0);
     // A timer may start an alert; its resume restores the same layer, consuming wake.
     testLoadStarterProfile(PHYSICAL_VARIANT);
     testSetLayout(1, 0, 1);

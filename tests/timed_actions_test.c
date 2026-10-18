@@ -254,7 +254,7 @@ static void layers(void) {
     activeConfig[9] = CONFIG_ACTION_MOMENTARY_LAYER; activeConfig[10] = 1;
     actionsPress(0, 0); assert(actionsLayer() == 1);
     advanceFine(256); assert(ledCalls == 1);
-    actionsRelease(0); assert(actionsLayer() == 0);
+    actionsRelease(0, 0); assert(actionsLayer() == 0);
     advanceFine(256); assert(ledCalls == 1);
     // Timers and a consumed wake input must preserve an armed one-shot layer.
     // The next ordinary physical binding consumes it and resets interval state.
@@ -265,7 +265,7 @@ static void layers(void) {
     actionsRotate(0); assert(actionsLayer() == 1);
     advanceFine(256); assert(ledCalls == 1 && actionsLayer() == 1);
     assert(actionsTimedInput()); assert(actionsLayer() == 1 && ledCalls == 2);
-    assert(!actionsTimedInput()); actionsPress(0, 0); actionsRelease(0);
+    assert(!actionsTimedInput()); actionsPress(0, 0); actionsRelease(0, 0);
     assert(actionsLayer() == 0);
     // All four selectors are decoded independently, including the second byte.
     probeInit(4);
