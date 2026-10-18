@@ -84,13 +84,13 @@ describe('telemetry decoding and activity', () => {
     expect(parseRuntime(bytes.slice(0, 22))).toBeNull();
   });
   it('uses coarse age, high bits and 16ms fractions while ignoring the pending-action bit', () => {
-    const bytes = new Uint8Array(17);
-    bytes[0] = 12; bytes[5] = 9; bytes[10] = 128; bytes[15] = 0x34; bytes[16] = 0x12;
+    const bytes = new Uint8Array(20);
+    bytes[0] = 12; bytes[6] = 9; bytes[12] = 128; bytes[18] = 0x34; bytes[19] = 0x12;
     const state = parseTimers(bytes)!;
     expect(state.profileCrc).toBe(0x1234);
     expect(timerRemaining(state, 0, 440)).toBeCloseTo((440 - 256 - 12.5) * 4.096);
     expect(timerRemaining(state, 0, 1)).toBe(0);
-    expect(parseTimers(bytes.slice(0, 16))).toBeNull();
+    expect(parseTimers(bytes.slice(0, 19))).toBeNull();
   });
 });
 describe('telemetry protocol integration', () => {

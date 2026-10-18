@@ -35,7 +35,7 @@ export function stringActionsInOrder(profile: Profile): string[] {
 }
 
 export function sortedChords(profile: Profile) {
-  return [...profile.chords].sort((x, y) => Number(!!x.global) - Number(!!y.global) || x.layer - y.layer || x.keyA - y.keyA || x.keyB - y.keyB);
+  return [...profile.chords].sort((x, y) => Number(!!x.global) - Number(!!y.global) || (x.global ? 0 : x.layer) - (y.global ? 0 : y.layer) || x.keyA - y.keyA || x.keyB - y.keyB);
 }
 
 /** Distinct strings, first occurrence wins, matching the encoder's deduplication. */

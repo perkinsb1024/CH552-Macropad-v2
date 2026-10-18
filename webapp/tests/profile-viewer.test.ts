@@ -280,7 +280,7 @@ it('reports sleep independently from brightness and marks stale telemetry', asyn
   vi.spyOn(performance, 'now').mockImplementation(() => Date.now());
   const conn = await connect();
   const device = conn.transport as SimulatedDevice;
-  device.timers[5 + (profile.value?.timedActions?.length ?? 0)] = 1;
+  device.timers[6 + (profile.value?.timedActions?.length ?? 0)] = 1;
   device.runtime[16] = 2; device.runtime[17] = 1; // Lighting can change while asleep.
   await vi.advanceTimersByTimeAsync(300);
   const content = text(LiveStatus());
@@ -573,7 +573,7 @@ it('animates Temporary throughout device-body hover while preserving timed trigg
 it.each([
   ['self-referential layer selection', 0x0c, 0],
   ['identical LED command', 0x0d, 0],
-  ['macro LED command', 0x0d, 0x8e],
+  ['macro LED command', 0x0d, 0x8f],
   ['wake with unchanged brightness', 0x0d, 0x89],
 ] as const)('restarts Brief for %s even without a lighting-state difference', async (_, first, source) => {
   const { tick, callbacks, trigger } = await rainbowHarness();

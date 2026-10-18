@@ -78,8 +78,8 @@ it('edits interval and reset flag, and removes a timer without leaving a stale s
   expect(approximateDuration(1)).toBe('≈ 4 seconds');
 });
 it('limits additions by firmware timer count and shared profile capacity', () => {
-  start(); for (let i = 0; i < 4; i++) add();
-  expect(nodes(TimedActionsPanel()).some(n => n.type === 'button' && n.props.disabled && n.props.title === 'Maximum 4 timed actions.')).toBe(true);
+  start(); for (let i = 0; i < 5; i++) add();
+  expect(nodes(TimedActionsPanel()).some(n => n.type === 'button' && n.props.disabled && n.props.title === 'Maximum 5 timed actions.')).toBe(true);
   start(); profile.value!.layers[0]!.keys[0] = { type: 'string', text: 'x'.repeat(74) };
   expect(nodes(TimedActionsPanel()).some(n => n.type === 'button' && n.props.disabled && String(n.props.title).includes('Not enough storage'))).toBe(true);
 });

@@ -24,12 +24,12 @@ function firmwareAccepts(image: Uint8Array, variant: number) {
 }
 
 describe('v10 timed-action images', () => {
-  it.each([0, 1] as const)('matches firmware for all four counts, endpoints and flag combinations on variant %s', (variant) => {
-    for (let count = 0; count <= 4; count++) {
+  it.each([0, 1] as const)('matches firmware for all supported counts, endpoints and flag combinations on variant %s', (variant) => {
+    for (let count = 0; count <= 5; count++) {
       const p = defaultProfile(variant);
       if (count) p.timedActions = Array.from({ length: count }, (_, i) => timer(i & 1 ? 64 : 1, !!(i & 1)));
       const image = encodeProfile(p);
-      expect(image[1]).toBe(17);
+      expect(image[1]).toBe(18);
       expect(image[4]! & 7).toBe(count);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
       expect(firmwareAccepts(image, variant)).toBe(true);
@@ -50,7 +50,7 @@ describe('v10 timed-action images', () => {
   });
   it('rejects unsupported timer counts and truncated records in both validators', () => {
     const image = encodeProfile(defaultProfile(0));
-    image[4] = 5; // count = 5
+    image[4] = 6; // count = 6
     sealImage(image);
     expect(decodeImage(image).ok).toBe(false);
     expect(firmwareAccepts(image, 0)).toBe(false);
@@ -86,8 +86,8 @@ describe('v10 timed-action images', () => {
       p.timedActions[0]!.ticks = ticks;
       expect(validateProfile(p).length).toBeGreaterThan(0);
     }
-    p.timedActions = Array.from({ length: 5 }, () => timer());
-    expect(() => encodeProfile(p)).toThrow('At most 4');
+    p.timedActions = Array.from({ length: 6 }, () => timer());
+    expect(() => encodeProfile(p)).toThrow('At most 5');
     p.timedActions = [timer()];
     const raw = JSON.parse(exportProfile(p));
     raw.timedActions[0].resetOnInput = 'yes';

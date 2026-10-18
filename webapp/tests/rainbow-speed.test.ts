@@ -25,7 +25,7 @@ describe('rainbow speed', () => {
           p.rainbowPhase = phase;
           p.chordWindow = chordWindow;
           const image = encodeProfile(p);
-          expect(image[1]).toBe(17);
+          expect(image[1]).toBe(18);
           expect(image[5]).toBe((chordWindow - 4) / 2 | (phase << 4) | (speed << 6));
           expect(decodeImage(image)).toEqual({ ok: true, profile: p });
           const text = exportProfile(p);

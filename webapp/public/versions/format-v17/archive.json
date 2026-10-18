@@ -1,0 +1,23 @@
+{
+  "formatVersion": 17,
+  "sourceCommit": "38724fbb23480c5e782a1ad33a22a83145bd9ff0",
+  "changes": [
+    "Frozen finalized v17 editor and Live View with runtime telemetry. Preserved v17 board draft namespace. Added HTML archive banners and shared uploader redirect; application assets unchanged.",
+    "Built with installed dependencies matching the unchanged source lockfile; upstream uploader submodule supplied from the original checkout."
+  ],
+  "validation": "All 805 tests across 66 files passed against the extracted finalized v17 source and its firmware validator. TypeScript, production build and all 15 existing archive checks passed.",
+  "sha256": {
+    "assets/configurator-DZj9zB-0.js.map": "8fc174dcbf492468861f38a5a7b1d02b0033df5eeb9bac547025f17ba1ea97d4",
+    "assets/macos_input_monitoring_enable-CJGRDHZN.png": "0271f0d4439e8ddb94770628acf993429c3526d0e8ff962c3d796bdfd1a2e6bd",
+    "assets/macos_input_monitoring_prompt-CEpeoKIR.png": "d28cfafd5dbc24a259483fb175192f3abd019ec27e303cd314512d4418445625",
+    "assets/main-3fzW2JEo.css": "0f2441398c6ea5ae672c87a3e7267d84ebf89f21759546f4730fe70a37fb55bc",
+    "assets/main-BTjY13DI.js": "d9c982ac9a5997c73cb93607ef1b042ba8132929319e013b022a3810a745f3cc",
+    "assets/main-BTjY13DI.js.map": "edc5a7316c9747ff9d800b7611f83d11a9bcaad72a2dbdd22a18013c91bb9cc1",
+    "assets/viewer-DZj9zB-0.js.map": "5f7aadc5d75677f9629495ee1c930e500927ace7c538534d269a0c1aac598afe",
+    "favicon.svg": "eb47e87c540ce093bdf9b1ba415afa1ca495b7229ed1b2fff8fb94b51996f961",
+    "index.html": "41071996036cb2daf87998582ed66b0fbfa339e7825eadc95d3bd7c60bba3a14",
+    "liveView/index.html": "8a23992c94aa8b12196c5ecefe299c62d8970e15bda4aa40e846d201feddbb35",
+    "webUploader/index.html": "29a77dfb01c27d4af02976b18f45332b4374e17ff9c66382e73810883027c63d",
+    "wheel-debug.html": "e67bc00d70e8654df88232e11c91edd35cbeec3cc286bbca2e78c58bc905fb8a"
+  }
+}

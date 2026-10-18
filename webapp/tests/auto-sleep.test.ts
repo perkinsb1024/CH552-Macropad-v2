@@ -156,7 +156,7 @@ describe('per-layer auto-sleep', () => {
       layer.indicatorColor = options >> 4;
       if (!layer.indicatorColor) layer.idleLeds = [...layer.leds]; else delete layer.idleLeds;
       const image = encodeProfile(p);
-      expect(image[1]).toBe(17);
+      expect(image[1]).toBe(18);
       expect(image[optionsOffset]).toBe(options);
       expect(validator.accepts(image, variant)).toBe(true);
       expect(decodeImage(image)).toEqual({ ok: true, profile: p });
@@ -184,7 +184,7 @@ describe('per-layer auto-sleep', () => {
   it('preserves current JSON and drafts while clearing the option in old imports', () => {
     const p = defaultProfile(0); p.layers[0]!.autoSleep = true;
     const current = exportProfile(p, { profileName: 'Sleep' });
-    expect(JSON.parse(current).version).toBe(17);
+    expect(JSON.parse(current).version).toBe(18);
     expect(importProfile(current).profile).toEqual(p);
     const old = JSON.parse(current); legacyJson(old); old.version = 14;
     expect(importProfile(JSON.stringify(old)).profile.layers.every(l => !l.autoSleep)).toBe(true);
@@ -199,7 +199,7 @@ describe('per-layer auto-sleep', () => {
     expect(loadDraft(0)?.profile.layers[0]!.autoSleep).toBe(false);
     expect(storage.get(key)).toBe(saved);
     storeDraft(p, { profileName: 'Sleep' });
-    expect(draftKey(0)).toContain('format-v17:');
+    expect(draftKey(0)).toContain('format-v18:');
     expect(loadDraft(0)?.profile).toEqual(p);
   });
 
@@ -221,9 +221,9 @@ describe('per-layer auto-sleep', () => {
     expect(validateProfile(profile.value!).some(issue => issue.message.includes('Auto-sleep'))).toBe(true);
   });
 
-  it.each([0, 1] as const)('keeps four user timers available on variant %s', variant => {
+  it.each([0, 1] as const)('keeps five user timers available on variant %s', variant => {
     const p = defaultProfile(variant); p.layers[0]!.autoSleep = true;
-    p.timedActions = Array.from({ length: 4 }, () => ({ ticks: 1, resetOnInput: true, consumeInput: true,
+    p.timedActions = Array.from({ length: 5 }, () => ({ ticks: 1, resetOnInput: true, consumeInput: true,
       action: { type: 'none' as const }, resumeAction: { type: 'none' as const } }));
     const image = encodeProfile(p);
     expect(validator.accepts(image, variant)).toBe(true);
@@ -268,7 +268,7 @@ describe('profile sleep settings', () => {
   it.each([0, 1] as const)('round-trips all 32 combinations without losing capacity on variant %s', variant => {
     const p = defaultProfile(variant);
     p.layers[0]!.autoSleep = true;
-    p.timedActions = Array.from({ length: 4 }, () => ({ ticks: 1, resetOnInput: true, consumeInput: true,
+    p.timedActions = Array.from({ length: 5 }, () => ({ ticks: 1, resetOnInput: true, consumeInput: true,
       action: { type: 'none' as const }, resumeAction: { type: 'none' as const } }));
     const capacity = computeCapacity(p);
     for (let settings = 0; settings < 32; settings++) {
@@ -293,7 +293,7 @@ describe('profile sleep settings', () => {
     const fields = ['sleepTimeoutMinutes', 'consumeWakeInput', 'showLayerIndicatorOnWake', 'dimInsteadOfOff'] as const;
     for (const field of fields) { delete old[field]; delete oldDraft[field]; }
     expect(importProfile(JSON.stringify(old)).profile).toEqual(p);
-    const saved = JSON.stringify({ formatVersion: 17, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
+    const saved = JSON.stringify({ formatVersion: 18, headerMarker: 'B', profile: oldDraft, meta: {}, savedAt: 'old' });
     const storage = new Map([[draftKey(0), saved]]);
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,

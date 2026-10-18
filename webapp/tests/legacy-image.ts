@@ -3,6 +3,15 @@ import { keyCount, layerSize } from '../src/model/constants';
 export function legacyHeader(image: Uint8Array): Uint8Array {
   if (image[0] !== 0x42) return image;
   const layers = image[2]!;
+  if (image[1]! >= 18) {
+    const variant = (layers & 1) as 0 | 1;
+    const count = ((layers >> 1) & 7) + 1;
+    let offset = 9 + count * layerSize(variant);
+    for (let layer = 0; layer < count; layer++) if (image[9 + (layer + 1) * layerSize(variant) - 1]! >> 4 === 0) offset += variant ? 2 : 3;
+    for (let chord = 0; chord < image[4]! >> 3; chord++, offset += 3) {
+      if (image[offset]! >> 4 === 7) image[offset] = 0x80 | (image[offset]! & 15);
+    }
+  }
   if (image[1]! >= 16) {
     const variant = (layers & 1) as 0 | 1;
     const count = ((layers >> 1) & 7) + 1;

@@ -32,7 +32,7 @@ it.each(fixtures.fixtures)('migrates authentic finalized v13 bytes, JSON and dra
   expect(result).toEqual({ ok: true, profile: p });
   if (!result.ok) throw new Error(result.detail);
   const upgraded = encodeProfile(result.profile);
-  expect(upgraded[1]).toBe(17);
+  expect(upgraded[1]).toBe(18);
   expect(validator.accepts(upgraded, p.variant)).toBe(true);
   expect(decodeImage(upgraded)).toEqual(result);
   expect([...original].map(byte => byte.toString(16).padStart(2, '0')).join('')).toBe(hex);
@@ -42,7 +42,7 @@ it.each(fixtures.fixtures)('migrates authentic finalized v13 bytes, JSON and dra
   const oldDraft = JSON.stringify({ formatVersion: 13, profile: legacyProfile(p), meta: { profileName: 'Migrated' }, savedAt: 'old' });
   const storage = new Map([[oldKey, oldDraft]]);
   vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
-  expect(loadDraft(p.variant)).toEqual({ formatVersion: 17, headerMarker: 'B', profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
+  expect(loadDraft(p.variant)).toEqual({ formatVersion: 18, headerMarker: 'B', profile: p, meta: { profileName: 'Migrated' }, savedAt: 'old' });
   storeDraft(p, { profileName: 'Migrated' });
   expect(storage.has(draftKey(p.variant))).toBe(true);
   expect(storage.get(oldKey)).toBe(oldDraft);

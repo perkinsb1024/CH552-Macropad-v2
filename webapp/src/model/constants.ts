@@ -1,14 +1,14 @@
 /** Current firmware layout and shared HID transport constants. */
 
 export const IMAGE_SIZE = 128;
-export const FORMAT_VERSION = 17;
+export const FORMAT_VERSION = 18;
 export const PREVIOUS_LAYER = 0xff;
 export const HEADER_SIZE = 9;
 export function maxLayers(variant: Variant): number {
   return variant === VARIANT_THREE_KEYS ? 7 : 5;
 }
 export const CHORD_ENTRY_SIZE = 3;
-export const MAX_TIMED_ACTIONS = 4;
+export const MAX_TIMED_ACTIONS = 5;
 export const MAX_TIMED_TICKS = 2048;
 export const TIMED_ENTRY_SIZE = 6;
 export const TIMED_TICK_SECONDS = 4.096;

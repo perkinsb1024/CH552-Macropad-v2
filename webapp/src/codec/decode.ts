@@ -208,7 +208,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const size = layerSize(variant);
   const chordCount = board ? image[4]! >> 3 : (image[5]! >> 1) & 63;
   const timerCount = board ? image[4]! & 7 : version >= 7 ? (image[3]! >> 6) | ((image[4]! >> 7) << 2) : 0;
-  if (timerCount > MAX_TIMED_ACTIONS) return fail('malformed', 'Too many timed actions.');
+  if (timerCount > (version >= 18 ? MAX_TIMED_ACTIONS : 4)) return fail('malformed', 'Too many timed actions.');
   const poolUsed = board ? image[3]! >> 1 : version >= 7 ? image[4]! & 127 : image[4]!;
   const timerSize = version >= 10 ? TIMED_ENTRY_SIZE : 5;
   const fixedEnd = HEADER_SIZE + size * layerCount;
@@ -273,8 +273,10 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   let previous = -1;
   for (let i = 0; i < chordCount; i++, offset += CHORD_ENTRY_SIZE) {
     const id = image[offset]!;
-    const layer = (id >> 4) & (extended ? 7 : 3);
-    const global = !!(id & 0x80);
+    const scope = (id >> 4) & (extended ? 7 : 3);
+    const global = version >= 18 ? scope === 7 : !!(id & 0x80);
+    const layer = version >= 18 && global ? 0 : scope;
+    if (version >= 18 && (id & 0x80)) return fail('malformed', `Chord ${i + 1}: reserved identifier bit set.`);
     const pair = id & 15;
     if (!extended && (id & 0x40)) return fail('malformed', `Chord ${i + 1}: reserved identifier bit set.`);
     if (layer >= layerCount) return fail('malformed', `Chord ${i + 1}: layer ${layer + 1} does not exist.`);

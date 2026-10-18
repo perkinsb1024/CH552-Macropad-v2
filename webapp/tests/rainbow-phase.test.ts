@@ -51,6 +51,7 @@ describe('rainbow phase spacing', () => {
     p.chords = [{ layer: 6, keyA: 0, keyB: 2, global: true, action: { type: 'relativeLayer', offset: -6 } }];
     const image = encodeProfile(p);
     legacyActionCodes(image);
+    image[9 + 7 * 15] = 0xE1; // Historical global scope retained layer index 6.
     image[2] = 4;
     image[8] = image[8]! & 15;
     sealImage(image);

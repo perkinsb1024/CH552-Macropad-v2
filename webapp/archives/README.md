@@ -24,7 +24,7 @@ manifest. Give it a separate draft namespace, add it to `public/versions/index.h
 and add its URL to the active editor's `ARCHIVED_CONFIGURATORS` lookup in `ui/store.ts`.
 Do not add older-firmware encoding or UI branches to the active editor.
 
-The root serves the active v17 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
+The root serves the active v18 editor. `../public/versions/format-v3/` preserves the production build of the source revision (recorded in `archive.json`), with a banner and link to the latest editor added to its HTML. Its existing v3 draft namespace is preserved.
 
 `npm run dev` also serves these frozen HTML pages directly. The archive middleware
 bypasses the active editor's HTML transformation and SPA fallback, so development
@@ -108,3 +108,14 @@ a shared-uploader redirect were added; application assets and the
 provenance and checksums. The archived viewer provides saved shortcuts and layer
 following; runtime telemetry belongs to v17. Both v16 entry points pass archive
 serving checks, and v16 devices route to this archive from the active editor.
+
+
+The frozen v17 editor and Live View are in `../public/versions/format-v17/`,
+built from finalized outgoing source `38724fb`, including runtime telemetry and
+its latest sleep-state display. All 805 tests across 66 files passed against
+that extracted source and its v17 firmware validator. TypeScript, the production
+build and all 15 earlier archive checks passed. The existing `format-v17:board:`
+draft namespace is preserved. Only HTML banners and the shared uploader redirect
+were added; application assets are unchanged. Its manifest records provenance
+and SHA-256 checksums. The archive catalog and active editor route v17 firmware
+to this matching editor/viewer.

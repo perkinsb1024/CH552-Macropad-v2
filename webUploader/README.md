@@ -5,10 +5,13 @@
 The bundled default firmware uses configuration format v17, built from revision
 `64fa750c`: [three-key](../releases/ch552-macropad-3-key-64fa750c.hex) and
 [six-key](../releases/ch552-macropad-6-key-64fa750c.hex). Use the
-[active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/)
+[frozen v17 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v17/)
 with these files. V17 adds **Live View** telemetry for physical inputs, accepted
 bindings, timers, lighting and playback state, and fixes runtime **Rainbow**
 speed overrides for **LED Control** effects.
+The active configurator and current firmware source target v18 with five
+**Timed Actions**. V18 release files have not been generated; the bundled
+installer remains on v17 and links to its matching archive.
 The installer reads each bundled HEX's format and links to its matching editor.
 Back up profiles before updating; older profiles remain in DataFlash with actions
 inactive until explicitly migrated and saved in v17. Older **Teal** colors migrate

@@ -35,7 +35,7 @@ export class SimulatedDevice implements Transport {
   /** Mutable hardware snapshots for simulator interaction and protocol tests. */
   readonly liveStatus = new Uint8Array(17);
   readonly runtime = new Uint8Array(23);
-  readonly timers = new Uint8Array(17);
+  readonly timers = new Uint8Array(20);
   private activeValid = false;
   private staging = new Uint8Array(IMAGE_SIZE);
   private uploadState: 0 | 1 | 2 = 0;
@@ -144,9 +144,9 @@ export class SimulatedDevice implements Transport {
         return Status.Ok;
       case Opcode.GetTimers:
         if (this.options.liveSupported === false) return Status.BadOpcode;
-        reply[6] = 17;
-        this.timers[15] = this.active[7]!;
-        this.timers[16] = this.active[8]!;
+        reply[6] = 20;
+        this.timers[18] = this.active[7]!;
+        this.timers[19] = this.active[8]!;
         reply.set(this.timers, 8);
         return Status.Ok;
       case Opcode.ReadFlash:

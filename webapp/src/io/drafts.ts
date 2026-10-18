@@ -30,7 +30,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
     const key = draftKey(variant);
     const keys = [key];
     if (!localStorage.getItem(`${key}:cleared`)) {
-      for (const version of [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) {
+      for (const version of [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]) {
         if (version >= 15) keys.push(`universal-macropad:format-v${version}:board:draft:${variant ? 'three-key' : 'six-key'}`);
         keys.push(`universal-macropad:format-v${version}:draft:${variant ? 'three-key' : 'six-key'}`);
       }
@@ -41,8 +41,9 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         const raw = localStorage.getItem(source);
         if (!raw) continue;
         const parsed = JSON.parse(raw) as Draft;
-        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
+        if (parsed.formatVersion !== undefined && ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, FORMAT_VERSION].includes(parsed.formatVersion)) continue;
         if (!parsed.profile || !Array.isArray(parsed.profile.layers) || parsed.profile.variant !== variant) continue;
+        if ((parsed.formatVersion ?? 2) < 18 && (parsed.profile.timedActions?.length ?? 0) > 4) continue;
         const board = (parsed.formatVersion ?? 2) >= 15 && parsed.headerMarker === 'B';
         if ((parsed.formatVersion ?? 2) >= 16 && !board) continue;
         if (parsed.headerMarker !== undefined && !board) continue;

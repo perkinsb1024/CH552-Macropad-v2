@@ -4,7 +4,7 @@ Using this macropad gives you quick access to the things you do most often: copy
 
 You configure it in your browser with the configurator tool. Once you click **Save to Device**, the settings stay on the macropad — even when you unplug it or use it on a different computer. You do not need to keep the configurator open for the macropad to work.
 
-This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 17 with **Live View** telemetry. Published v16 firmware supports per-key idle colors and key-press **Rainbow** and uses the [frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
+This guide covers the current configurator and its supported three-key and six-key wired macropads with a clickable wheel. Your device needs this project's firmware installed first; factory settings cannot be edited with this tool. See the [setup instructions](../README.md#how-to-upload-the-firmware) if it has not been installed yet. Some macropads do not have LEDs fitted. The active editor targets format 18 with five **Timed Actions** and **Live View** telemetry. Published v17 firmware uses the [frozen v17 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v17/). Published v16 firmware supports per-key idle colors and key-press **Rainbow** and uses the [frozen v16 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). Older v15 firmware uses the [frozen v15 editor](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v15/).
 
 ## Index
 
@@ -313,7 +313,7 @@ A chord assigns an extra action to a pair of numbered keys. For example, Key 1 c
 
 ### Chord Timing
 
-The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v17 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
+The **Chord Window** in **Profile Settings** is how long the first key waits for its partner. The active v18 editor offers 20ms–90ms in 10ms steps; the starter setting is 40ms, or four one-hundredths of a second. The frozen v14 editor retains its earlier 5ms–75ms choices and **Off** setting.
 
 - A larger window makes chords easier to press but adds a small delay to individual keys that belong to a chord
 - A smaller window makes those individual keys respond sooner, but requires more nearly simultaneous presses
@@ -326,7 +326,7 @@ A recognized chord runs its action instead of the two individual actions. For a 
 
 ## Timed Actions and Reminders
 
-You can add up to four timed actions, depending on remaining configuration storage space. They repeat automatically and can operate across all layers or on one selected layer.
+You can add up to five **Timed Actions**, depending on remaining configuration storage space. They repeat automatically and can operate across all layers or on one selected layer.
 
 ![An inactivity timer turns both lighting brightnesses off after roughly thirty minutes; the next input restores configured lighting and is consumed](../images/configuration-overview/08-timed-actions.png)
 
@@ -430,7 +430,7 @@ individual layer choices; **Off** disables every layer. During editing, choosing
 to restore them. Undo and redo restore both the mode and those choices.
 The remembered choices belong to the current editing session; saving writes
 the active choices to the device. Sleep adds no profile bytes and leaves all
-four **Timed Actions** available.
+five **Timed Actions** available.
 
 The profile-wide settings apply to every enabled layer:
 
@@ -597,7 +597,7 @@ An invalid destination is not accepted. In particular, a swap must leave both in
 ## Macros
 
 Macros are supported by the [pre-built v17 release firmware](../README.md#how-to-compile-the-firmware)
-and its [matching configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/).
+and its [matching v17 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v17/). V18 source builds use the active configurator and retain the same macro features.
 V17 hardware validation is complete. Older firmware uses its matching archived
 editor; versions before v11 do not support macros.
 
@@ -763,7 +763,7 @@ the difference; click **Follow Device** to return to the active layer. The next
 device layer change also resumes following. Live input outlines appear only on
 the active layer.
 
-With v17 firmware, the viewer adds:
+With v17 or v18 firmware, the matching viewer adds:
 
 | Display | Meaning |
 | --- | --- |
@@ -793,11 +793,13 @@ without fresh data, live outlines disappear and stale-state messages appear.
 On disconnect, the saved shortcut reference remains visible. A changed saved
 profile is reloaded automatically when its checksum changes.
 
-The bundled v17 release provides the live state described above. The frozen v16
-viewer retains the shortcut/layer reference without telemetry; use that matching
-editor/viewer for v16 firmware until updating to v17. Back up before updating,
-then import or read the preserved profile and click **Save to Device** in the v17 editor. Settings
-retain their meanings, but actions stay inactive until the v17 profile is saved.
+The active viewer targets v18 and displays all five user timers. The bundled
+v17 release provides live state through the frozen v17 viewer. The frozen v16
+viewer retains the shortcut/layer reference without telemetry. Use the editor
+and viewer matching the installed firmware. Back up before updating, then import
+or read the preserved profile and click **Save to Device** in the matching editor.
+V18 retains settings and actions while converting global chord identifiers;
+actions stay inactive until the converted profile is saved.
 Telemetry uses no additional configuration storage or user timer slot. A device with
 an invalid profile must first be repaired in the configurator.
 
@@ -850,7 +852,7 @@ Each timer has less than 16ms of early clock quantization; firmware polling, que
 | A dragged action is rejected | A hold action cannot go onto a wheel turn or timer. For swaps, check that the action moving back is also allowed at its destination |
 | Typed text contains wrong characters | Check your computer's keyboard layout; **Type Text** expects US layout. Replace unsupported characters with plain letters and punctuation |
 | A media or brightness control does nothing | Your operating system, application, or display may not support it. Try the matching keyboard shortcut if one is available |
-| A reminder fires earlier than expected | v10–v17 clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
+| A reminder fires earlier than expected | v10 and later clock quantization is less than 16ms early. Earlier firmware has coarser timing; use matching firmware and editor and review the rounded interval |
 | An inactivity timer ignores my regular keyboard | Only macropad presses and completed wheel turns reset the inactivity timer |
 | My first press after a Timed action does nothing | **Consume This Input** may be enabled. That input dismisses the Timed action; the next one runs normally |
 | Holding the wheel button disconnects the device | Older firmware may have the three-second bootloader option enabled. Disable it in the matching configurator. V12 uses the installer button for runtime bootloader entry. Unplug and replug without holding any buttons to leave update mode |

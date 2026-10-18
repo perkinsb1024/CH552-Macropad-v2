@@ -19,12 +19,12 @@ it.each([0, 1] as const)('preserves v6 settings, LED actions and metadata when m
   p.startupLayer = 1; p.rainbowPhase = 3; p.rainbowSpeed = 0; p.transparentBlack = true;
   p.layers[0]!.keys[0] = { type: 'ledControl', command: 'commonPresetToggle', value: 3 };
   p.layers[0]!.keys[1] = { type: 'string', text: 'Hello\n' };
-  p.chords = [{ layer: 1, keyA: 0, keyB: 1, global: true, action: { type: 'ledControl', command: 'rainbowPhaseRelative', value: -2 } }];
+  p.chords = [{ layer: 0, keyA: 0, keyB: 1, global: true, action: { type: 'ledControl', command: 'rainbowPhaseRelative', value: -2 } }];
   const original = encodeProfile(p); legacyTextCodes(original); original[2] = 6; sealImage(original);
   const decoded = decodeImage(original); expect(decoded).toEqual({ ok: true, profile: p });
   if (!decoded.ok) throw new Error('decode failed');
   const migrated = encodeProfile(decoded.profile);
-  expect(migrated[1]).toBe(17);
+  expect(migrated[1]).toBe(18);
   const reverted = migrated.slice(); legacyTextCodes(reverted); reverted[2] = 6; sealImage(reverted);
   expect(reverted).toEqual(original);
   expect(validator.accepts(original, variant)).toBe(false);

@@ -181,7 +181,7 @@ export function parseRuntime(data: Uint8Array): RuntimeState | null {
 }
 export interface TimerState { age: number[]; high: number[]; fraction: number[]; profileCrc: number }
 export function parseTimers(data: Uint8Array): TimerState | null {
-  if (data.length !== 17) return null;
-  return { age: Array.from(data.slice(0, 5)), high: Array.from(data.slice(5, 10)),
-    fraction: Array.from(data.slice(10, 15)), profileCrc: data[15]! | data[16]! << 8 };
+  if (data.length !== 20) return null;
+  return { age: Array.from(data.slice(0, 6)), high: Array.from(data.slice(6, 12)),
+    fraction: Array.from(data.slice(12, 18)), profileCrc: data[18]! | data[19]! << 8 };
 }

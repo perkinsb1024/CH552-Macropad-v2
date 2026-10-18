@@ -93,7 +93,7 @@ it('preserves full v9 images, blocks oversized writes, and allows an explicit re
   profile.value!.timedActions!.forEach(t => { t.action = { type: 'string', text: 'x'.repeat(50) }; });
   profile.value = structuredClone(profile.value!);
   expect(canSave.value).toBe(true);
-  await save(); expect((await c.connection.client.readFlash())[1]).toBe(17);
+  await save(); expect((await c.connection.client.readFlash())[1]).toBe(18);
 });
 
 it.each([0, 1] as const)('uploads and reads back scoped maximum intervals on variant %s', async variant => {

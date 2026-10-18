@@ -49,11 +49,11 @@ describe('device profile migration', () => {
     expect(device.flash).toEqual(legacy);
     expect(canSave.value).toBe(true);
     await save();
-    expect(device.flash[1]).toBe(17);
+    expect(device.flash[1]).toBe(18);
     expect(device.flashValid).toBe(true);
   });
 
-  it.each([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
+  it.each([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])('offers the archived editor instead of connecting to version %s firmware', async (version) => {
     const originalGetInfo = ConfigClient.prototype.getInfo;
     vi.spyOn(ConfigClient.prototype, 'getInfo').mockImplementation(async function (this: ConfigClient) {
       return { ...await originalGetInfo.call(this), formatVersion: version };

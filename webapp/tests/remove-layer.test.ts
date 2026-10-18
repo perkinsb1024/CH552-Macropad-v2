@@ -72,7 +72,7 @@ describe.each([VARIANT_THREE_KEYS, VARIANT_SIX_KEYS])('global chords on variant 
     const decoded = decodeImage(encodeProfile(updated));
     expect(decoded.ok).toBe(true);
     if (!decoded.ok) throw new Error(decoded.detail);
-    expect(decoded.profile.chords).toEqual([...updated.chords].sort((a, b) => Number(!!a.global) - Number(!!b.global) || a.layer - b.layer || a.keyA - b.keyA || a.keyB - b.keyB));
+    expect(decoded.profile.chords).toEqual(updated.chords.map(c => c.global ? { ...c, layer: 0 } : c).sort((a, b) => Number(!!a.global) - Number(!!b.global) || a.layer - b.layer || a.keyA - b.keyA || a.keyB - b.keyB));
     undo();
     expect(profile.value).toEqual(original);
     redo();

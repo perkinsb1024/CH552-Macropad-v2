@@ -22,5 +22,5 @@ export function allPairs(keys: number): [number, number][] {
 }
 
 export function chordId(layer: number, keyA: number, keyB: number, keys: number, global = false): number {
-  return (global ? 0x80 : 0) | (layer << 4) | pairIndex(keyA, keyB, keys);
+  return ((global ? 7 : layer) << 4) | pairIndex(keyA, keyB, keys);
 }

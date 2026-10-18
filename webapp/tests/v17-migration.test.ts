@@ -11,7 +11,7 @@ import { SimulatedDevice } from '../src/protocol/simulator';
 import { canSave, connection, connectSimulator, disconnect, profile, save } from '../src/ui/store';
 import { createFirmwareValidator } from './firmware-validator.mjs';
 
-// Produced by the finalized v16 source, independently of the active v17 encoder.
+// Produced by the finalized v16 source, independently of the active v18 encoder.
 const { fixtures } = v16Fixtures as {
   fixtures: { variant: 0 | 1; profile: Profile; meta: LocalMetadata; hex: string; json: string }[];
 };
@@ -20,13 +20,17 @@ beforeAll(() => { firmware = createFirmwareValidator(); });
 afterAll(() => firmware.close());
 afterEach(async () => { await disconnect(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-it.each(fixtures)('migrates published v16 binary and JSON without changing payload or settings on variant $variant', fixture => {
+it.each(fixtures)('migrates published v16 binary and JSON with converted global chord identifiers and preserved settings on variant $variant', fixture => {
   const original = Uint8Array.from(fixture.hex.match(/../g)!, b => parseInt(b, 16));
   const decoded = decodeImage(original, fixture.variant);
   expect(decoded.ok).toBe(true);
   if (!decoded.ok) throw new Error(decoded.detail);
   const migrated = encodeProfile(decoded.profile);
-  const expected = original.slice(); expected[1] = 17; sealImage(expected);
+  const expected = original.slice(); expected[1] = 18;
+  // The independent fixture has one global chord, after two per-key layer palettes.
+  const chordOffset = 9 + (fixture.variant ? 15 : 22) * 2 + (fixture.variant ? 2 : 3);
+  expected[chordOffset] = 0x70 | (original[chordOffset]! & 15);
+  sealImage(expected);
   expect(migrated).toEqual(expected);
   expect(firmware.accepts(original, fixture.variant)).toBe(false);
   expect(firmware.accepts(migrated, fixture.variant)).toBe(true);
@@ -35,11 +39,11 @@ it.each(fixtures)('migrates published v16 binary and JSON without changing paylo
 
   const imported = importProfile(fixture.json);
   const upgradedJson = JSON.parse(exportProfile(imported.profile, imported.meta));
-  expect(upgradedJson).toEqual({ ...JSON.parse(fixture.json), version: 17 });
+  expect(upgradedJson).toEqual({ ...JSON.parse(fixture.json), version: 18 });
   expect(imported.profile.layers[1]!.idleLeds).toEqual(fixture.profile.layers[1]!.idleLeds);
 });
 
-it.each(fixtures)('recovers v16 drafts without rewriting them and isolates subsequent v17 saves on variant $variant', fixture => {
+it.each(fixtures)('recovers v16 drafts without rewriting them and isolates subsequent v18 saves on variant $variant', fixture => {
   const oldKey = `universal-macropad:format-v16:board:draft:${fixture.variant ? 'three-key' : 'six-key'}`;
   const original = JSON.stringify({ formatVersion: 16, headerMarker: 'B', profile: fixture.profile, meta: fixture.meta, savedAt: 'v16' });
   const storage = new Map([[oldKey, original]]);
@@ -49,17 +53,17 @@ it.each(fixtures)('recovers v16 drafts without rewriting them and isolates subse
     removeItem: (key: string) => storage.delete(key),
   });
   const recovered = loadDraft(fixture.variant)!;
-  expect(recovered).toEqual({ formatVersion: 17, headerMarker: 'B', profile: fixture.profile, meta: fixture.meta, savedAt: 'v16' });
+  expect(recovered).toEqual({ formatVersion: 18, headerMarker: 'B', profile: fixture.profile, meta: fixture.meta, savedAt: 'v16' });
   expect(storage.get(oldKey)).toBe(original);
   expect(storage.has(draftKey(fixture.variant))).toBe(false);
   storeDraft(recovered.profile, recovered.meta);
-  expect(JSON.parse(storage.get(draftKey(fixture.variant))!).formatVersion).toBe(17);
+  expect(JSON.parse(storage.get(draftKey(fixture.variant))!).formatVersion).toBe(18);
   clearDraft(fixture.variant);
   expect(loadDraft(fixture.variant)).toBeNull();
   expect(storage.get(oldKey)).toBe(original);
 });
 
-it.each(fixtures)('keeps old device flash intact until explicitly saving v17 on variant $variant', async fixture => {
+it.each(fixtures)('keeps old device flash intact until explicitly saving v18 on variant $variant', async fixture => {
   const original = Uint8Array.from(fixture.hex.match(/../g)!, b => parseInt(b, 16));
   const send = SimulatedDevice.prototype.send;
   vi.spyOn(SimulatedDevice.prototype, 'send').mockImplementation(function (this: SimulatedDevice, payload) {
@@ -75,7 +79,7 @@ it.each(fixtures)('keeps old device flash intact until explicitly saving v17 on 
   expect(profile.value?.timedActions).toHaveLength(4);
   expect(canSave.value).toBe(true);
   await save();
-  expect(device.flash[1]).toBe(17);
+  expect(device.flash[1]).toBe(18);
   expect(device.flashValid).toBe(true);
   expect(firmware.accepts(device.flash, fixture.variant)).toBe(true);
 });
