@@ -29,6 +29,14 @@ Report ID 1's two-byte keyboard LED Output is also accepted by both
 delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
+Current format 18 retains transport version 1 and palette version 4, supports
+five user timers plus auto-sleep, and returns a 20-byte six-slot timer reply.
+Its **Tap-Hold** extension reports action mask `0xFFFF`; earlier v18 source
+reports `0x7FFF`. The complete action map, image rules and runtime semantics are
+specified in [configuration format 18](config-v18.md). Opcode 13, **SET_LAYER**,
+selects a runtime base layer; it has no separate capability bit, so hosts must
+handle unsupported-opcode replies from older builds.
+
 Format 17 retains transport version 1, the GET_INFO layout, action mask
 `0x7FFF` and palette version 4. Its B-header image advertises version 17, with
 the same storage layout and action encodings as v16. **Live View** extends
@@ -89,7 +97,8 @@ before the window expires to activate a mapped chord.
 | 9 | PREVIEW_COLOR, options in offset, length zero | Overrides every LED; offset zero cancels. Empty reply. |
 | 10 | ENTER_BOOTLOADER, offset and length zero | Empty success reply followed by bootloader entry; v12 and later |
 | 11 | GET_LIVE, offset and length zero | Runtime layers, playback, lighting and reset generation; 23 bytes on telemetry-capable firmware |
-| 12 | GET_TIMERS, offset and length zero | Five runtime timer slots and active profile CRC; 17 bytes on telemetry-capable firmware |
+| 12 | GET_TIMERS, offset and length zero | Runtime timer slots and active profile CRC; six slots / 20 bytes for v18, five slots / 17 bytes for v17 |
+| 13 | SET_LAYER, options in offset, length zero | Empty success reply; current v18 source |
 
 GET_LIVE and GET_TIMERS require zero request status, offset, length and unused
 bytes. Earlier firmware returns status 2 (unsupported opcode); hosts receiving
@@ -102,7 +111,19 @@ ENTER_BOOTLOADER does not write DataFlash and works without a valid profile.
 After acknowledging, firmware drains reports for up to 100ms before entering the
 factory bootloader. Verify GET_INFO identity first; do not automatically retry
 following a missing acknowledgement. The complete command semantics are in the
-[current configuration reference](config-v17.md#hid-configuration-protocol).
+[current configuration reference](config-v18.md#hid-configuration-protocol).
+
+**SET_LAYER** uses offset bits 0–6 as a zero-based absolute layer index. Bit 7
+requests normal input handling, including wake and pending user-timer follow-ups,
+before selection. A consuming follow-up suppresses selection while still
+returning success. With bit 7 clear, selection is quiet. Both modes preserve
+held-layer priority, cancel a pending one-shot and update normal persistent
+layer history without writing DataFlash or changing the saved startup layer.
+Length, request status and data/padding must be zero. Invalid profiles return
+status 6; invalid target or length returns status 3; malformed padding returns
+status 4. For wake followed by quiet **Layer 2** selection, send options
+`0x81`, then `0x01`. The full semantics and interaction rules are specified
+under [Runtime Layer Selection](config-v18.md#runtime-layer-selection).
 
 PREVIEW_COLOR uses the offset byte as compact LED options: bits 4–7 are the
 palette index, bit 0 selects full brightness, bit 2 enables preview, and bit 3

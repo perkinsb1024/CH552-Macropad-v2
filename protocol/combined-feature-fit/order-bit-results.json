@@ -1,0 +1,62 @@
+[
+  {
+    "candidate": "order-k",
+    "variant": 0,
+    "flash": 14335,
+    "paged": 108,
+    "external": 410,
+    "stack": 102,
+    "real_limit_returncode": 0,
+    "diagnostic_link": false,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/order-k/six",
+    "error": "",
+    "hex_sha256": "73034ad3c95915648592404981af245c1ddffeaea95b95f30932ef533deb509d",
+    "free": 1
+  },
+  {
+    "candidate": "order-k",
+    "variant": 1,
+    "flash": 14314,
+    "paged": 108,
+    "external": 395,
+    "stack": 105,
+    "real_limit_returncode": 0,
+    "diagnostic_link": false,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/order-k/three",
+    "error": "",
+    "hex_sha256": "f2755759278a3f9441316476839a1ed4fca3d5d6b3ba49880a71ee3b1d6233b9",
+    "free": 22
+  },
+  {
+    "candidate": "order-l",
+    "variant": 0,
+    "flash": 14329,
+    "paged": 108,
+    "external": 408,
+    "stack": 100,
+    "real_limit_returncode": 0,
+    "diagnostic_link": false,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/order-l/six",
+    "error": "",
+    "hex_sha256": "2d2b25a1f2b8e4883994d6eb32ba371f6fe33063fd259a3174d215fa3a6a452d",
+    "free": 7
+  },
+  {
+    "candidate": "order-l",
+    "variant": 1,
+    "flash": 14308,
+    "paged": 108,
+    "external": 393,
+    "stack": 103,
+    "real_limit_returncode": 0,
+    "diagnostic_link": false,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/order-l/three",
+    "error": "",
+    "hex_sha256": "9d9217cc5c74165ca223d6ce54f097348dbe7d3a77e5a53b3ed7bfd9e47ef29f",
+    "free": 28
+  }
+]

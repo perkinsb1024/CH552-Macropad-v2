@@ -1,0 +1,50 @@
+[
+  {
+    "source": "baseline",
+    "variant": 0,
+    "expected_pass": true,
+    "returncode": 0,
+    "output": "Ordinary chord scanner ordering 0: 42 cases passed\n",
+    "error": ""
+  },
+  {
+    "source": "baseline",
+    "variant": 1,
+    "expected_pass": true,
+    "returncode": 0,
+    "output": "Ordinary chord scanner ordering 1: 42 cases passed\n",
+    "error": ""
+  },
+  {
+    "source": "final",
+    "variant": 0,
+    "expected_pass": false,
+    "returncode": -6,
+    "output": "",
+    "error": "Assertion failed: (buttonFirst[NUM_LEDS] == 0x1D && ledSettings[0] == 1), function main, file chord_scan_order_test.c, line 36.\n"
+  },
+  {
+    "source": "final",
+    "variant": 1,
+    "expected_pass": false,
+    "returncode": -6,
+    "output": "",
+    "error": "Assertion failed: (buttonFirst[NUM_LEDS] == 0x1D && ledSettings[0] == 1), function main, file chord_scan_order_test.c, line 36.\n"
+  },
+  {
+    "source": "selected",
+    "variant": 0,
+    "expected_pass": true,
+    "returncode": 0,
+    "output": "Ordinary chord scanner ordering 0: 42 cases passed\n",
+    "error": ""
+  },
+  {
+    "source": "selected",
+    "variant": 1,
+    "expected_pass": true,
+    "returncode": 0,
+    "output": "Ordinary chord scanner ordering 1: 42 cases passed\n",
+    "error": ""
+  }
+]

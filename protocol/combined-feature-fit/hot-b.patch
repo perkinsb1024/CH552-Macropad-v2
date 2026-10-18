@@ -1,0 +1,415 @@
+--- a/CH552_Universal_Macropad.ino
++++ b/CH552_Universal_Macropad.ino
+@@ -425,7 +425,7 @@
+     if (pressed) {
+       if (!actionsTimedInput()) actionsPress(input, now);
+     } else {
+-      actionsRelease(input);
++      actionsRelease(input, now);
+     }
+     updateLeds();
+   }
+@@ -559,6 +559,7 @@
+   actionsInputNow = now;
+ #endif
+   if (activeConfigValid) actionsTimedPoll(now >> 4);
++  if (activeConfigValid) actionsResolveInputs(now);
+   for (uint8_t i = 0; i <= NUM_LEDS; i++) {
+     scanButton(i, now);
+   }
+--- a/platformio.ini
++++ b/platformio.ini
+@@ -18,4 +18,4 @@
+     pio-platform/targets.py
+ 
+ ; Compile callers and these small C getters with the same register-save convention.
+-build_flags = --callee-saves configLayerOptions,configLedColorAt,configChordWindowMs,actionsLayer,actionsDropped
++build_flags = --callee-saves configLayerOptions,configLedColorAt,configChordWindowMs,actionsLayer,actionsDropped,configTimedCount,configLayerCount,USB_reportsPending
+--- a/src/actions.c
++++ b/src/actions.c
+@@ -26,6 +26,8 @@
+ __data uint8_t pendingInput; // Index plus one, or zero when no single key is waiting.
+ __data uint8_t pendingLayer;
+ __data uint16_t pendingSince;
++__xdata uint16_t tapSince[PHYSICAL_VARIANT == CONFIG_THREE_KEYS ? 4 : 7];
++__idata uint16_t tapNow;
+ __idata uint8_t lastMouse;
+ __pdata uint8_t lastReportGeneration;
+ // Bindings are resolved before queuing; playback only needs the action bytes.
+@@ -267,11 +269,19 @@
+   return 1;
+ }
+ 
++static void selectBaseLayer(uint8_t layer) {
++  uint8_t previous = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
++  if (layer != previous) previousLayer = previous;
++  baseLayer = layer;
++}
++
+ static void updateLayer(void);
+ static void resetLayerTimers(void);
+ 
+ static void runAction(uint8_t first, uint8_t second, uint8_t rotation,
+                       uint8_t input) {
++  // Waiting wrappers do not execute or consume a one-shot.
++  if (actionType(first) == CONFIG_ACTION_TAP_HOLD) return;
+   __xdata uint8_t requestedSecond = second;
+   __xdata uint8_t layer = effectiveLayer;
+   uint8_t source;
+@@ -336,11 +346,8 @@
+     if (second == CONFIG_LAYER_PREVIOUS) second = previousLayer;
+     if (first & 0x10) {
+       oneShotReturnLayer = baseLayer;
+-    } else {
+-      selectedLayer = oneShotReturnLayer == 0xFF ? baseLayer : oneShotReturnLayer;
+-      if (second != selectedLayer) previousLayer = selectedLayer;
+-    }
+-    baseLayer = second;
++      baseLayer = second;
++    } else selectBaseLayer(second);
+     goto liveRecord;
+   } else if (first && type != CONFIG_ACTION_KEY_HOLD) {
+     if (!queueAction(first, second, rotation)) return;
+@@ -376,6 +383,28 @@
+     liveReply[(uint8_t)(6 + i)] = timedHigh[i];
+     liveReply[(uint8_t)(12 + i)] = timedFraction[i];
+   } while (i);
++}
++
++static void loadButton(uint8_t input, uint8_t offset) {
++  buttonFirst[input] = activeConfig[offset];
++  buttonSecond[input] = activeConfig[(uint8_t)(offset + 1)];
++}
++
++static void dispatchButton(uint8_t input) {
++  buttonPressed[input] = 1;
++  runAction(buttonFirst[input], buttonSecond[input], 0, input);
++  updateLayer();
++}
++
++static FW_BIT tapExpired(uint8_t input) {
++  uint16_t elapsed = tapNow - tapSince[input];
++  return (elapsed >> 5) > (buttonFirst[input] >> 4);
++}
++
++static void resolveTap(uint8_t input, uint8_t branch) {
++  uint8_t offset = buttonSecond[input] + branch;
++  loadButton(input, offset);
++  dispatchButton(input);
+ }
+ 
+ static void resolvePending(void) {
+@@ -428,6 +457,15 @@
+     // Pending singles belong to the layer on which they were pressed.
+     resolvePending();
+   } while (1);
++}
++
++void actionsSetLayer(uint8_t options) {
++  if ((options & 0x80) && actionsTimedInput()) return;
++  selectBaseLayer(options & 0x7F);
++  // Replace a pending one-shot; physical layer holds retain priority.
++  oneShotReturnLayer = 0xFF;
++  layerSelectionPending = 1;
++  updateLayer();
+ }
+ 
+ void actionsInit(void) {
+@@ -517,8 +555,7 @@
+ };
+ 
+ void actionsPress(uint8_t input, uint16_t now) {
+-  uint8_t first;
+-  uint8_t second;
++  uint8_t offset;
+   uint8_t other;
+   uint8_t chordOffset;
+   uint8_t keys = configKeyCount();
+@@ -528,6 +565,7 @@
+   inputMask = inputBits[input];
+   if (inputDown & inputMask) return;
+   inputDown |= inputMask;
++  tapSince[input] = now;
+ #if CONFIG_SCROLL_ACCELERATION
+   actionsInputNow = now;
+ #endif
+@@ -539,13 +577,11 @@
+     if (input < keys && (uint16_t)(now - pendingSince) < chordWindow &&
+         (chordOffset = configChordOffset(pendingLayer,
+             (uint8_t)(inputBits[other] | inputMask)))) {
+-      first = activeConfig[chordOffset];
+-      second = activeConfig[(uint8_t)(chordOffset + 1)];
+       pendingInput = 0;
++      tapSince[other] = now; // Chord duration starts at recognition.
+       chordPartner[other] = input + 1;
+       chordPartner[input] = other + 1;
+-      buttonFirst[other] = first;
+-      buttonSecond[other] = second;
++      loadButton(other, chordOffset);
+       buttonFirst[input] = 0;
+       buttonSecond[input] = 0;
+       buttonPressed[input] = 0;
+@@ -556,9 +592,8 @@
+     resolvePending();
+     updateLayer();
+   }
+-  configBinding(effectiveLayer, input, &first, &second);
+-  buttonFirst[input] = first;
+-  buttonSecond[input] = second;
++  offset = configBindingOffset(effectiveLayer, input);
++  loadButton(input, offset);
+   orderPress(input);
+   if (input < keys && chordWindow) {
+     if (configChordOffset(effectiveLayer, inputMask)) {
+@@ -572,12 +607,12 @@
+     }
+   }
+ dispatchPress:
+-  buttonPressed[input] = 1;
+-  runAction(buttonFirst[input], buttonSecond[input], 0, input);
+-  updateLayer();
++  dispatchButton(input);
+ }
+ 
+ static void releaseAction(uint8_t input) {
++  if (buttonPressed[input] && actionType(buttonFirst[input]) == CONFIG_ACTION_TAP_HOLD)
++    resolveTap(input, tapExpired(input) ? 2 : 0);
+   uint8_t type = actionType(buttonFirst[input]);
+ #if CONFIG_SCROLL_ACCELERATION
+   if (type == CONFIG_ACTION_SCROLL && (buttonFirst[input] & CONFIG_SCROLL_HOLD))
+@@ -591,7 +626,8 @@
+   }
+ }
+ 
+-void actionsRelease(uint8_t input) {
++void actionsRelease(uint8_t input, __xdata uint16_t now) {
++  tapNow = now;
+   uint8_t other;
+   if (input > configKeyCount()) {
+     return;
+@@ -617,19 +653,32 @@
+ }
+ 
+ void actionsRotate(uint8_t clockwise) {
+-  uint8_t first;
+-  uint8_t second;
++  uint8_t offset;
+   uint8_t input = configKeyCount() + (clockwise ? 1 : 2);
+   if (pendingInput && oneShotReturnLayer != 0xFF) {
+     resolvePending();
+     updateLayer();
+   }
+-  configBinding(effectiveLayer, input, &first, &second);
+-  runAction(first, second, 1, clockwise ? 7 : 8);
++  offset = configBindingOffset(effectiveLayer, input);
++  runAction(activeConfig[offset], activeConfig[(uint8_t)(offset + 1)], 1, clockwise ? 7 : 8);
+   updateLayer();
+ }
+ 
+ #include "timed_actions.inc"
++
++void actionsResolveInputs(uint16_t now) {
++  uint8_t i;
++  if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
++    resolvePending();
++    updateLayer();
++  }
++  tapNow = now;
++  // Resolve before output backpressure can postpone the decision.
++  for (i = 0; i < MAX_INPUTS; i++) {
++    if (buttonPressed[i] == 1 && actionType(buttonFirst[i]) == CONFIG_ACTION_TAP_HOLD && tapExpired(i))
++      resolveTap(i, 2);
++  }
++}
+ 
+ void actionsPoll(uint16_t now) {
+   __idata uint8_t type;
+@@ -642,10 +691,7 @@
+   if (!(scrollFirst & CONFIG_SCROLL_HOLD) &&
+       (uint16_t)(now - scrollLast) >= CONFIG_SCROLL_TIMEOUT_MS) scrollFirst = 0;
+ #endif
+-  if (pendingInput && (uint16_t)(now - pendingSince) >= configChordWindowMs()) {
+-    resolvePending();
+-    updateLayer();
+-  }
++  actionsResolveInputs(now);
+   i = USB_reportGeneration();
+   if (lastReportGeneration != i) {
+     lastReportGeneration = i;
+--- a/src/actions.h
++++ b/src/actions.h
+@@ -15,11 +15,14 @@
+ ACTION_BIT actionsTimedInput(void); // True consumes this physical event.
+ void actionsInit(void);
+ void actionsPress(uint8_t input, uint16_t now);
+-void actionsRelease(uint8_t input);
++void actionsRelease(uint8_t input, __xdata uint16_t now);
+ void actionsRotate(uint8_t clockwise);
+ void actionsPoll(uint16_t now);
++void actionsResolveInputs(uint16_t now);
+ void actionsClear(void);
+ uint8_t actionsLayer(void);
++// Target is validated by the protocol; bit 7 services normal input timers.
++void actionsSetLayer(uint8_t options);
+ // Consume indication requests from explicit layer selections or auto-sleep wake.
+ uint8_t actionsTakeLayerSelection(void);
+ uint8_t actionsDropped(uint8_t rotation);
+--- a/src/config.c
++++ b/src/config.c
+@@ -73,15 +73,19 @@
+ // Validated image/pool addresses stay below 128; narrow bounded index sums before access.
+ // Keep small masks and limits byte-sized too, before C's promoted comparisons.
+ static __data uint8_t validationLayers, validationPool, validationUsed;
++static __data uint8_t validationMacros;
+ static const __xdata uint8_t *__data validationImage;
+ static FW_BIT actionValid(uint8_t offset, uint8_t rotation) {
+     uint8_t first = validationImage[offset];
+     uint8_t type = first & 15;
+     uint8_t aux = first >> 4;
+     uint8_t param = validationImage[(uint8_t)(offset + 1)];
+-    __idata uint8_t macros = validationPool + validationUsed;
++    __idata uint8_t macros = validationMacros;
+     if (rotation == 2 && type != CONFIG_ACTION_MACRO) rotation = 1;
+     switch (type) {
++        case CONFIG_ACTION_TAP_HOLD:
++            return !rotation && param > (uint8_t)(validationPool + validationUsed) && param < macros &&
++                   !((param ^ macros) & 3);
+         case CONFIG_ACTION_MACRO:
+             // Absolute image offset: no runtime directory or recursive lookup.
+             // Macro steps use rotation=2, which prohibits nested invocations.
+@@ -218,6 +222,14 @@
+         return 0;
+     }
+     validationPool = (uint8_t)end - validationUsed;
++    // Optional counted pair block follows strings; ordinary profiles add nothing.
++    validationMacros = (uint8_t)end;
++    if (end < CONFIG_SIZE && (validationImage[(uint8_t)end] & 15) == CONFIG_ACTION_TAP_HOLD) {
++        offset = (uint8_t)(5 + (uint8_t)((validationImage[(uint8_t)end] >> 4) << 2));
++        // Both terms are <=128/65; the unsigned byte sum cannot wrap.
++        validationMacros = (uint8_t)end + offset;
++        if (validationMacros > CONFIG_SIZE) return 0;
++    }
+     offset = 9;
+     for (layer = 0; layer < validationLayers; layer++) {
+         for (i = 0; i < (uint8_t)(keys + 3); i++, offset += 2) {
+@@ -258,9 +270,16 @@
+             return 0;
+         }
+     }
+-    for (offset = validationPool + validationUsed; offset < CONFIG_SIZE; offset++) {
+-        if (!validationImage[offset]) continue;
+-        if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) return 0;
++    offset = validationPool + validationUsed;
++    if (offset < validationMacros) offset++; // Skip the optional prefix.
++    for (; offset < CONFIG_SIZE; offset++) {
++        if (offset < validationMacros) {
++            if ((validationImage[offset] & 15) == CONFIG_ACTION_TAP_HOLD ||
++                !actionValid(offset, !((offset ^ validationMacros) & 2))) return 0;
++        } else {
++            if (!validationImage[offset]) continue;
++            if (offset == CONFIG_SIZE - 1 || !actionValid(offset, 2)) return 0;
++        }
+         offset++;
+     }
+     crc = configCrc(validationImage);
+@@ -311,16 +330,8 @@
+     return colors & 15;
+ }
+ 
+-void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second) {
+-    uint8_t offset;
+-    if (layer >= configLayerCount() || input >= configKeyCount() + 3) {
+-        *first = 0;
+-        *second = 0;
+-        return;
+-    }
+-    offset = layerOffset(layer) + 2 * input;
+-    *first = activeConfig[offset];
+-    *second = activeConfig[(uint8_t)(offset + 1)];
++uint8_t configBindingOffset(uint8_t layer, uint8_t input) {
++    return layerOffset(layer) + (uint8_t)(2 * input);
+ }
+ 
+ // Complemented physical-key masks, in the saved lexicographic pair order.
+--- a/src/config.h
++++ b/src/config.h
+@@ -93,8 +93,9 @@
+ #define CONFIG_ACTION_RELATIVE_LAYER   0x4C // Full first byte: relative, persistent.
+ #define CONFIG_ACTION_LED_CONTROL      0xD
+ #define CONFIG_ACTION_MACRO            0xE
++#define CONFIG_ACTION_TAP_HOLD         0xF
+ #define CONFIG_ACTION_RESERVED         0xF
+-#define CONFIG_ACTION_MASK (0xFFFFu ^ (1u << CONFIG_ACTION_RESERVED))
++#define CONFIG_ACTION_MASK 0xFFFFu
+ #define CONFIG_LAYER_RELATIVE          0x40
+ #define CONFIG_LAYER_HOLD              0x20
+ 
+@@ -193,7 +194,9 @@
+ // Offset of this layer's optional palette, or the section end for layerCount.
+ uint8_t configLayerPaletteOffset(uint8_t layer);
+ uint8_t configLedColorAt(uint8_t offset, uint8_t key);
+-void configBinding(uint8_t layer, uint8_t input, __data uint8_t *first, __data uint8_t *second);
++#define CONFIG_BINDING_OFFSET 1
++// Caller supplies a validated layer and binding input.
++uint8_t configBindingOffset(uint8_t layer, uint8_t input);
+ #define CONFIG_CHORD_MASK_LOOKUP 1
+ // Requires a validated active image, valid layer and physical input bits.
+ // One bit queries chord eligibility; two bits query that exact pair.
+--- a/src/protocol_firmware.c
++++ b/src/protocol_firmware.c
+@@ -20,6 +20,7 @@
+ #define PROTOCOL_ENTER_BOOTLOADER 10
+ #define PROTOCOL_GET_LIVE 11
+ #define PROTOCOL_GET_TIMERS 12
++#define PROTOCOL_SET_LAYER 13
+ 
+ #define PROTOCOL_OK 0
+ #define PROTOCOL_BAD_VERSION 1
+@@ -111,12 +112,18 @@
+     if (!length || offset > (uint8_t)(CONFIG_SIZE - length)) {
+       return PROTOCOL_BAD_RANGE;
+     }
+-  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
++  } else if ((offset && opcode != PROTOCOL_PREVIEW_COLOR && opcode != PROTOCOL_SET_LAYER) || (opcode == PROTOCOL_BEGIN_WRITE ? length != 3 : length != 0)) {
+     return PROTOCOL_BAD_RANGE;
+   }
+   // Validated lengths keep payload indices below 32 and image indices below 128.
+   // Narrow the sums so SDCC does not emit unnecessary 16-bit address arithmetic.
+   switch (opcode) {
++    case PROTOCOL_SET_LAYER:
++      if (!activeConfigValid) return PROTOCOL_BAD_CONFIG;
++      i = configLayerCount();
++      if ((uint8_t)(offset & 0x7F) >= i) return PROTOCOL_BAD_RANGE;
++      actionsSetLayer(offset);
++      break;
+     case PROTOCOL_ENTER_BOOTLOADER:
+       break; // Main loop enters only after the successful reply is queued.
+     case PROTOCOL_GET_INFO:
+--- a/src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c
++++ b/src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c
+@@ -155,9 +155,9 @@
+ // Share the endpoint fairly between short input reports and configuration replies.
+ __xdata uint8_t reportQueue[8][9];
+ __xdata uint8_t reportLength[8];
+-__xdata uint8_t reportHead;
+-__xdata uint8_t reportTail;
+-__xdata uint8_t reportCount;
++__data uint8_t reportHead;
++__data uint8_t reportTail;
++__data uint8_t reportCount;
+ __xdata uint8_t reportGeneration;
+ USB_BIT configWaiting;
+ USB_BIT configTurn;
+@@ -166,9 +166,9 @@
+ __xdata uint8_t mouseIdleRate;
+ __xdata uint8_t consumerIdleRate;
+ __xdata uint8_t idleReport;
+-__xdata uint16_t keyboardTime;
+-__xdata uint16_t mouseTime;
+-__xdata uint16_t consumerTime;
++__data uint16_t keyboardTime;
++__data uint16_t mouseTime;
++__data uint16_t consumerTime;
+ __xdata uint8_t keyboardState[8];
+ __xdata uint8_t mouseState;
+ __xdata uint16_t consumerState;

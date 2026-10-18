@@ -1,0 +1,62 @@
+[
+  {
+    "candidate": "binding-offset",
+    "variant": 0,
+    "flash": 14485,
+    "paged": 102,
+    "external": 420,
+    "stack": 106,
+    "real_limit_returncode": 1,
+    "diagnostic_link": true,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/binding-offset/six",
+    "error": "",
+    "hex_sha256": "49061d87d366f5194b6cc113977929bb2e472e2e6807a67544fbe376a2fcbd1c",
+    "free": -149
+  },
+  {
+    "candidate": "binding-offset",
+    "variant": 1,
+    "flash": 14466,
+    "paged": 102,
+    "external": 405,
+    "stack": 109,
+    "real_limit_returncode": 1,
+    "diagnostic_link": true,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/binding-offset/three",
+    "error": "",
+    "hex_sha256": "2da3d026074fab59110423a0a055500a60207498ab2dedf883049896cefdd99d",
+    "free": -130
+  },
+  {
+    "candidate": "binding-offset+load-helper",
+    "variant": 0,
+    "flash": 14475,
+    "paged": 102,
+    "external": 420,
+    "stack": 106,
+    "real_limit_returncode": 1,
+    "diagnostic_link": true,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/binding-offset+load-helper/six",
+    "error": "",
+    "hex_sha256": "c935ed80c396d8a6ed9fbb51c6dbc5d342dcb855c9923ee32c98e37b75752818",
+    "free": -139
+  },
+  {
+    "candidate": "binding-offset+load-helper",
+    "variant": 1,
+    "flash": 14456,
+    "paged": 102,
+    "external": 405,
+    "stack": 109,
+    "real_limit_returncode": 1,
+    "diagnostic_link": true,
+    "layout_checks": "passed",
+    "artifacts": "/private/tmp/macropad-combined-feature-fit/binding-offset+load-helper/three",
+    "error": "",
+    "hex_sha256": "9ddd2db6eaeae24c859168afc27dd4ee38aefb19326762ee816dd3cc09dab527",
+    "free": -120
+  }
+]

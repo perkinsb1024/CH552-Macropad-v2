@@ -3,7 +3,7 @@
 | Image Property | Value |
 | --- | --- |
 | Size | 128 bytes |
-| Unused trailing bytes | Writers write zero; macro-tail rules apply |
+| Unused trailing bytes | Writers write zero; optional tap-hold block and macro-tail rules apply |
 | Multibyte values | Little endian |
 | Byte offsets and action codes | Allocation specified completely below |
 | Header size | 9 bytes |
@@ -11,6 +11,7 @@
 | Action record size | 2 bytes |
 | Chord record size | 3 bytes |
 | Timed-action record size | 6 bytes, at most five timers |
+| Optional tap-hold block | 1-byte count prefix, then 1–16 four-byte records |
 | Additional layer palette | 3 bytes on six-key hardware; 2 on three-key hardware |
 | Palette version | 4 |
 | HID transport version | 1 |
@@ -21,11 +22,16 @@ transport. It includes independent per-key layer palettes, keypress and layer
 absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers, runtime LED controls and read-only
 **Live View** telemetry. All action records
-remain two bytes. The active configurator supports v18, including binary, JSON and draft migration.
+remain two bytes. The active configurator supports ordinary v18 profiles, including
+binary, JSON and draft migration. Its tap-hold controls, profile conversion and
+host-layer controls are deferred; do not use it to edit profiles containing
+**Tap-Hold** records.
 V18 supports five user-defined **Timed Actions** and encodes global chords using
 scope 7, leaving chord identifier bit 7 reserved. Timer runtime telemetry includes
-six slots. Header size, image capacity, palette version, action map and HID
-transport version remain unchanged. Current v18 source has automated validation;
+six slots. **Tap-Hold** extends the action map with type F and an optional counted
+record block. Chords and independent tap-hold decisions coexist. HID opcode 13
+selects a runtime base layer. Header size, image capacity, palette version and
+HID transport version remain unchanged. Current v18 source has automated validation;
 hardware validation and release generation remain pending.
 The bundled v17 release remains available from source revision `64fa750c`:
 [three-key](../releases/ch552-macropad-3-key-64fa750c.hex) and
@@ -40,6 +46,14 @@ accepts only matching B-header v18 images for its physical hardware variant.
 Older DataFlash remains readable and unchanged, but its physical action bindings
 are inactive until a valid v18 image is explicitly uploaded. Firmware does not
 migrate or erase profiles during an update.
+
+The tap-hold extension preserves existing valid v18 profiles byte for byte; it
+uses the previously invalid type F and previously invalid macro-tail prefix.
+**GET_INFO** action mask `0xFFFF` identifies tap-hold support in format 18.
+Earlier v18 source reports `0x7FFF` and rejects tap-hold images. The active editor
+still writes profiles without this extension. Binary, JSON and draft editor
+support for tap-hold is not implemented. HID **SET_LAYER** is a transport extension;
+older builds can reject opcode 13 even when their configuration version is 18.
 
 A converter must validate the original source format and checksum, decode all
 semantic values, then encode v18 and recompute its CRC. V16 and v17 use the same
@@ -448,7 +462,7 @@ The action types are:
 | C | **Set Layer** / **Momentary Layer** / **Relative Layer** | Bits 0–1: `00` persistent, `01` one-shot, `10` hold, `11` reserved; bit 2 selects relative; bit 3 ignored by firmware; writers zero | Absolute layer index (persistent/one-shot also allow `0xFF` for previous persistent layer), or signed relative offset -6 to +6 |
 | D | **LED Control** | Value or signed step (see below) | Full command byte (see below) |
 | E | **Execute Macro** | Repeat count minus one, 0–15 | Absolute byte address of a macro step in the image |
-| F | Reserved | All values reject | All values reject |
+| F | **Tap-Hold** | Threshold selector 0–15; threshold is `(selector + 1) * 32ms` | Absolute address of a tap/hold record's first byte |
 
 Keyboard modifier bits are `1` = **Ctrl**, `2` = **Shift**, `4` = **Alt**, and `8` = **GUI**;
 combine them with bitwise OR. Mouse button bits are `1` = **Left**, `2` = **Right**,
@@ -551,13 +565,88 @@ auxiliary values 0–3; type `0x7` accepts 0–7, subject to trigger restriction
 Pointer deltas are relative HID mouse counts. Screen distance depends on host
 pointer speed and acceleration, and is not guaranteed to equal pixels.
 
-Rotation bindings cannot use **Keyboard Hold**, **Mouse Hold**, **Consumer Hold**,
+Rotation bindings cannot use **Tap-Hold**, **Keyboard Hold**, **Mouse Hold**, **Consumer Hold**,
 **Scroll Hold**, **Momentary Layer**, **Relative Layer** in hold mode,
 **Media / System with Modifiers** set to **Hold**, or pointer movement in hold mode. Timed expiry and
 next-input actions have the same restrictions.
 For keyboard actions, the parameter byte is an HID key usage: `0` means no
 non-modifier key, while `0x04`–`0x65` and `0x68`–`0x73` select supported keys.
 With usage `0`, the modifier mask can produce a modifier-only action (particularly useful for **Keyboard Hold** actions).
+
+## Tap-Hold Action F
+
+A key, encoder button or chord may select two behaviors according to its held
+duration. The binding is `(selector << 4) | 0xF`, followed by an absolute record
+address. The sixteen thresholds are 32ms, 64ms, …, 512ms. Each binding selects its
+own threshold. Multiple inputs can wait and cross their deadlines independently;
+pressing another input does not force a tap or restart an existing decision.
+There is no single-pending-hold limit.
+
+The optional block starts immediately after the shared string pool, before
+macros. Its first byte is `((recordCount - 1) << 4) | 0xF`, with recordCount
+1–16. Each record then occupies four bytes:
+
+| Record Byte | Meaning |
+| --- | --- |
+| 0–1 | Tap branch, ordinary two-byte action |
+| 2–3 | Hold branch, ordinary two-byte action |
+
+If the first byte after the string pool has low nibble F, it is this prefix,
+not a macro step. The entire declared block must fit within bytes 0–127. A wrapper
+address must point exactly to byte 0 of one of these records; prefix, parameter,
+hold-branch, macro and out-of-image addresses reject. Records may be shared by
+bindings with different thresholds. All records, including unreferenced records,
+are validated.
+
+The tap branch accepts the ordinary rotation-compatible actions, including
+**Execute Macro** and **Nothing**, and rejects actions requiring a physical
+release. The hold branch accepts ordinary physical-binding actions, including
+held keyboard, mouse, consumer, pointer, scroll and layer actions, and actions
+that execute once such as **LED Control** or **Execute Macro**. Neither branch
+may contain another **Tap-Hold** wrapper. Rotation bindings, both timer action
+fields and macro steps reject wrappers. A fixed two-byte **Nothing** branch
+retains its ignored parameter byte; it is not a macro terminator.
+
+No branch executes at the initial press. A release strictly before the threshold
+executes the tap branch once. At or after the threshold, the hold branch executes
+once and any held contribution ends on release. An exact-threshold release
+chooses hold even without an intervening output poll. Short held outputs still
+assert before releasing under USB backpressure. Decisions use the full 16-bit
+millisecond elapsed time, including clock wrap, rather than a quantized clock.
+Physical duration starts at the accepted debounced press. The chosen pair remains
+bound across layer changes. A relative layer branch resolves when it executes.
+An armed one-shot layer is consumed when a branch executes, not by its wrapper.
+
+Chord recognition has priority while a key waits for a chord. If no chord forms,
+the single key retains its original press timestamp; its hold can therefore
+execute immediately when the chord window expires. A chord-result wrapper starts
+its duration at recognition of the second key. Releasing either member chooses
+its tap branch or ends its hold branch, and never runs constituent-key taps.
+The chord remains blocked until both members are released. Ordinary chord
+bindings retain their existing scanner and deadline ordering. Due tap-hold
+decisions resolve before new physical bindings and before USB output backpressure.
+
+Normal wake-input consumption suppresses the entire initial press, so it cannot
+produce a later branch on release. Configuration application and action reset
+cancel pending decisions. Host layer selection preserves press-time pairs and
+existing held-layer priority.
+
+Profiles without tap-hold pay no additional storage. With N unique records, the
+block costs `1 + 4*N` bytes; each wrapper replaces an existing two-byte binding.
+This improves alternate behavior choices but does not increase profile capacity.
+For one six-key uniform-color layer with no chords, timers or strings, the block
+starts at byte 31. These bytes define an **A** tap and a **Ctrl** hold:
+
+```text
+31: 0F          One record
+32: 01 04       Tap: keyboard usage 0x04
+34: 12 00       Hold: Ctrl modifier, no non-modifier key
+```
+
+An encoder-button binding `5F 20` references absolute byte 32 with a 192ms
+threshold. Macros, if present, start at byte 36. Repacking earlier sections must
+remap wrapper addresses and all affected macro references, including references
+inside either branch.
 
 ## LED Control Action D
 
@@ -828,6 +917,7 @@ zero is a firmware no-op.
 
 Type `0x3` encodes **Mouse Click** and type `0xE` encodes **Execute Macro**. A full first byte
 of `0x20` for **Type Text** uses low-nibble type 0 with auxiliary value 2.
+Type `0xF` is the physical **Tap-Hold** wrapper specified above.
 
 ## Consumer Ownership and Release
 
@@ -993,7 +1083,8 @@ feedback throughout their animation.
 
 ## Macros and Pauses
 
-The macro tail begins at `macroStart = stringPoolStart + poolBytes`. There is no
+The macro tail begins at `macroStart = stringPoolStart + poolBytes + tapHoldBytes`,
+after the optional tap-hold block. There is no
 macro count, directory, fixed slot allocation, presence flag, or extra header
 byte. With no macros the tail is zero padding. A sequence is a run of ordinary
 two-byte action records. A single `00` byte at an action boundary ends it; no
@@ -1018,8 +1109,10 @@ zero terminator. A terminator reference is an empty sequence, including at byte
 or looks like a valid opcode. Firmware
 does not assign ordinal macro numbers; an editor can name/number definitions and
 resolve their addresses after laying out the image. Repacking layers, chords,
-timers or strings requires remapping every macro reference in bindings and
-both timer action fields. Macro steps cannot reference other macros.
+timers, strings or tap-hold records requires remapping every macro reference in
+bindings, both timer action fields and both tap-hold branches. Macro steps cannot
+reference other macros or contain tap-hold wrappers. Macro references cannot
+point into the optional tap-hold block.
 
 Allowed steps are **Keyboard Tap**, **Type Text**, **Mouse Click**, **Mouse Toggle**, **Mouse Down**, **Mouse Up**,
 **Media / System with Modifiers**,
@@ -1029,7 +1122,7 @@ layer**, pointer movement in **Tap** mode, **LED control**, and **Pause**.
 All normal parameter rules still apply. Reject **Execute Macro**, **Keyboard Hold**,
 **Mouse Hold**, **Consumer Hold**, **Media / System with Modifiers** set to **Hold**,
 **Scroll Hold**, **Momentary Layer**, **Relative Layer** in hold mode, and held
-pointer movement anywhere in the tail, including unreferenced actions. Strings used
+pointer movement, plus **Tap-Hold**, anywhere in the tail, including unreferenced actions. Strings used
 by steps share the existing string pool and its start/bounds checks.
 
 A macro invocation occupies one entry in the normal eight-event queue, regardless
@@ -1095,13 +1188,14 @@ A standalone sequence of N steps normally costs `2*N + 1` bytes; an empty
 definition costs one byte. Adjacent macros
 share neither a directory nor unused fixed slots. The last sequence omits its
 terminator if it completely fills the 128-byte configuration space. With one uniform-color layer and no added palette, strings,
-chords or timers, at most 48 steps fit on six-key hardware or 52 on three-key
+chords, timers or tap-hold records, at most 48 steps fit on six-key hardware or 52 on three-key
 hardware. More layers and other dynamic data share the same 128-byte budget.
 
 ## Storage and Verification
 
 The image order is header → fixed layers → additional layer palettes → sorted
-chords → timers in stored order → shared string pool → macro sequences / zero padding. Section starts are:
+chords → timers in stored order → shared string pool → optional tap-hold block
+→ macro sequences / zero padding. Section starts are:
 
 | Section | Absolute Byte Offset |
 | --- | --- |
@@ -1110,11 +1204,16 @@ chords → timers in stored order → shared string pool → macro sequences / z
 | **Chords** | `9 + layerCount * layerSize + paletteBytes` |
 | **Timed Actions** | `9 + layerCount * layerSize + paletteBytes + chordCount * 3` |
 | **String** pool | `9 + layerCount * layerSize + paletteBytes + chordCount * 3 + timerCount * 6` |
-| Macro tail | `stringPoolStart + poolBytes` |
+| Optional tap-hold block | `stringPoolStart + poolBytes`, when its first byte has low nibble F |
+| Macro tail | `stringPoolStart + poolBytes + tapHoldBytes` |
 
 The complete image must satisfy:
 
-`9 + layerCount * layerSize + paletteBytes + chordCount * 3 + timerCount * 6 + poolBytes + macroBytes <= 128`.
+`9 + layerCount * layerSize + paletteBytes + chordCount * 3 + timerCount * 6 + poolBytes + tapHoldBytes + macroBytes <= 128`.
+
+`tapHoldBytes` is zero when no optional block is present, otherwise
+`1 + 4 * recordCount`. No header bit or chord-threshold reinterpretation is
+needed: type F at this section boundary identifies the counted block.
 
 Chord count is encoded in five bits (0–31), but capacity and unique valid
 identifiers limit the number that can actually fit. With no additional palettes, one six-key layer permits
@@ -1125,7 +1224,8 @@ five-bit count; 31 does not bypass structural validation. Pair indices must be v
 variant: 0–14 for six keys, 0–2 for three keys. Pool length is encoded in seven
 bits (0–127) and must fit the remaining image space. A nonempty pool must end in
 NULL. **String** sharing includes keys, encoder actions, chords, expiry and next-input
-bindings and macro steps. All 128 bytes remain available. Every trailing action
+bindings, both tap-hold branches and macro steps. All 128 bytes remain available.
+Every tap-hold record is validated in its appropriate branch context. Every trailing action
 is validated as a macro step, single zero bytes act as terminators/padding, and all
 trailing bytes remain CRC-covered.
 
@@ -1164,7 +1264,7 @@ delivery paths. The USB interface is report protocol HID, without boot
 subclass support.
 
 GET_INFO advertises configuration format 18, palette version 4, and
-action mask `0x7FFF` (all low-nibble types except reserved type F). The maximum layer count is 5 for six keys and 7 for three
+action mask `0xFFFF` (all low-nibble types, including **Tap-Hold** at F). The maximum layer count is 5 for six keys and 7 for three
 keys; image capacity is 128 bytes. The format version identifies the action map:
 the mask alone cannot distinguish submodes of a shared action type or determine
 modifier/hold support. Transport version remains 1.
@@ -1183,6 +1283,7 @@ modifier/hold support. Transport version remains 1.
 | 10 (`0x0A`) | `ENTER_BOOTLOADER`, offset and length zero | Empty success reply, followed by bootloader entry. |
 | 11 (`0x0B`) | `GET_LIVE`, offset and length zero | Runtime layers, playback, lighting and reset generation; 23 bytes |
 | 12 (`0x0C`) | `GET_TIMERS`, offset and length zero | Six runtime timer slots and active profile CRC; 20 bytes |
+| 13 (`0x0D`) | `SET_LAYER`, options in offset, length zero | Empty success reply; runtime base-layer selection |
 
 ENTER_BOOTLOADER works with a valid, invalid or missing profile and does not
 write DataFlash. The entire request must pass normal packet validation. Firmware
@@ -1208,7 +1309,7 @@ GET_INFO returns 14 data bytes (offsets below are relative to reply data):
 | 9 | Maximum layers | `5` or `7` |
 | 10 | Image capacity | `128` |
 | 11 | Palette version | `4` |
-| 12–13 | Action mask | `0x7FFF`, little endian (`FF 7F`) |
+| 12–13 | Action mask | `0xFFFF`, little endian (`FF FF`) |
 
 GET_STATUS returns 23 data bytes. Its first six bytes retain the legacy layout:
 flash-valid flag (0 or 1), current layer, startup layer, upload state, dropped
@@ -1239,6 +1340,44 @@ to GET_INFO.
 A preview start should not be automatically retried after a timeout: a physical
 input may have canceled the original command before its acknowledgment was lost.
 Canceling preview is safe to retry.
+
+### Runtime Layer Selection
+
+**SET_LAYER** (13) uses payload byte 5 (USB packet byte 6) as options:
+bits 0–6 contain the zero-based absolute layer index; bit 7 requests normal
+input handling before selection. Length, request status and all data/padding
+bytes must be zero. Success echoes the options byte with zero reply data length.
+An invalid active profile returns **BAD_CONFIG** (6); an out-of-range layer or
+nonzero length returns **BAD_RANGE** (3). Existing packet validation runs first,
+so nonzero padding/status returns **BAD_PACKET** (4). Invalid requests cause no
+input handling or layer change.
+
+Selection updates the persistent base layer and previous-layer history, cancels
+an armed one-shot and requests the normal layer indication. Physical momentary
+layers retain priority until release. Held bindings and pending tap-hold pairs
+retain their captured actions. Actual effective-layer changes perform the normal
+playback cleanup and scoped-timer reset, while global timers retain their ordinary
+transition semantics. The command creates no fabricated accepted-binding event
+in **Live View** and never writes DataFlash, startup settings, image bytes or CRC.
+
+With bit 7 clear, selection is quiet: it does not count as input for inactivity
+or pending next-input actions. A transition to a sleep-disabled layer still wakes
+through ordinary layer-transition handling. With bit 7 set, the command first
+services normal input handling, including auto-sleep wake/restoration, restarting
+inactivity timers and running pending user-timer follow-ups. Any consuming
+follow-up suppresses the requested selection. Success acknowledges that processing,
+including consumption; it does not guarantee the requested layer became effective.
+
+A caller needing wake plus a requested selection may send an input-style command
+and then a quiet command for the same layer. For **Layer 2**, the options are
+`0x81`, then `0x01`. Two input-style commands are not an unconditional substitute:
+a non-restarting repeating timer can become pending again between them. Held-layer
+priority applies to both commands. Each received request counts separately;
+reply backpressure does not repeat execution of one request.
+
+There is no separate opcode-capability bit. Hosts must handle **BAD_OPCODE** (2)
+from older firmware and verify application identity with **GET_INFO**. Configurator
+controls and a foreground-application helper are not implemented.
 
 | Status | Meaning |
 | --- | --- |
@@ -1434,22 +1573,33 @@ runtime and timer replies an atomic snapshot.
 
 ## Builds and Measurements
 
-The v18 firmware source implements five timers, scope-7
-global chords and the existing complete feature set. Temporary native builds
+Firmware revision `796120b` implements five timers, scope-7 global chords,
+independent **Tap-Hold**, HID **SET_LAYER** and the existing complete feature set.
+Temporary native builds
 at the real 14,336-byte application limit measure:
 
 | Hardware | Flash Used | Flash Free | Paged RAM | Ordinary XSEG | Absolute Image and Runtime Timer | Stack Capacity |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Six Keys | 13,951 | 385 | 102 | 404 | 134 | 105 |
-| Three Keys | 13,932 | 404 | 102 | 395 | 134 | 108 |
+| Six Keys | 14,329 | 7 | 108 | 410 | 134 | 102 |
+| Three Keys | 14,310 | 26 | 108 | 395 | 134 | 105 |
 
 The normal host regressions pass both hardware geometries, including all raw
 chord identifiers, local-over-global precedence, five independent timer expiries
 and pending input actions, Auto-Sleep in the sixth slot, six-slot timer replies,
 distinct macro telemetry, input, macros, USB and LED rendering. Both native
 builds pass paged/external/absolute layout, startup clearing and interrupt
-parameter checks. Automated configurator/firmware agreement covers binary,
+parameter checks. Existing configurator/firmware agreement covers ordinary binary,
 JSON and draft migration from independently generated v17 profiles.
+Tap-hold validation covers all sixteen thresholds, every 16-bit elapsed value
+at two clock origins, independent concurrent decisions, chord results, scanner
+ordering, layer/one-shot interaction, sleep consumption, output backpressure,
+reset and malformed records. The tap-hold, real-scanner, HID layer-selection
+and ordinary-chord scanner suites also pass AddressSanitizer and
+UndefinedBehaviorSanitizer on both geometries. The existing configurator's
+ordinary-profile agreement does not provide tap-hold editor support.
+The shared deployment gate currently fails two legacy reserved-F assertions;
+the other 817 configurator tests pass. The editor and its tests remain deferred.
+Separate uploader tests and the complete site/archive build pass.
 Hardware validation and v18 release generation have not been requested.
 The bundled v17 HEX files remain unchanged and use the frozen v17 editor.
 
@@ -1473,20 +1623,26 @@ native bit marks a captured snapshot. The synthesized timer uses runtime-only
 LED commands `0E` and `0F`; saved-image validation rejects both command IDs.
 
 USB DMA reserves 148 bytes. Total external allocation, including USB DMA, PSEG,
-ordinary XSEG and the absolute buffer, is 788 bytes on six keys and 779 on three
-keys, leaving 236/245 unallocated bytes including gaps. PSEG occupies
-`0x094–0x0F9`, leaving six bytes free in page zero. Ordinary XSEG occupies
-`0x10E–0x2A1` on six keys and `0x10E–0x298` on three keys. Seven raw input levels
-occupy ordinary external RAM; last-layer and per-frame layer-palette offsets
-occupy paged external RAM. The fifth timer adds one external and two internal
+ordinary XSEG and the absolute buffer, is 800 bytes on six keys and 785 on three
+keys, leaving 224/239 unallocated bytes including gaps. PSEG occupies
+`0x094–0x0FF`, filling the usable page-zero range. Ordinary XSEG occupies
+`0x114–0x2AD` on six keys and `0x114–0x29E` on three keys. Seven raw input levels,
+last-layer and per-frame layer-palette offsets occupy paged external RAM.
+Independent hold timestamps occupy fourteen/eight ordinary external bytes;
+their shared current timestamp occupies two more. Cached mouse state and macro
+repeat state use ordinary external RAM. USB queue indices/count and four idle
+control bytes use direct internal RAM. The fifth timer adds one external and two internal
 state bytes. The physical-down mask and pending-chord input, layer and timestamp
 use five direct internal bytes; chord-partner indices remain in paged RAM.
 No packet buffer is added.
 
-Stack starts at `0x97` on six keys and `0x94` on three keys, reserving 105/108
-bytes. These
+Stack starts at `0x9A` on six keys and `0x97` on three keys, reserving 102/105
+bytes. This is three bytes less per variant than the preceding source revision.
+These
 are linker capacity figures, not hardware high-water measurements. The builder
 checks USB/paged/external/absolute separation, interrupt parameter storage and
-startup clearing. Image size validation retains a 16-bit sum of two separately
-byte-bounded terms: fixed records at most 242 bytes and pool plus palettes at
-most 142 bytes, before requiring the complete declared content to fit 128 bytes.
+startup clearing. Image size validation bounds fixed records to at most 242
+bytes and pool plus palettes to at most 142 bytes, checks the fixed subtotal
+against 128, then checks the second subtotal against remaining capacity before
+adding. It separately bounds the optional tap-hold block before parsing any
+records. Malformed counts cannot wrap into a smaller accepted image.

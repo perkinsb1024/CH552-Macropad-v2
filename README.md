@@ -66,7 +66,7 @@ Below are the primary firmware features added with each version
 
 | Firmware Version | Primary Features Added |
 | --- | --- |
-| [v18](protocol/config-v18.md) | - Added one additional **Timed Action** slot (five total)  |
+| [v18](protocol/config-v18.md) | - Added one additional **Timed Action** slot (five total)<br> - Firmware supports independent **Tap-Hold** alongside **Chords**<br> - HID **Set Layer** selects the runtime layer with optional input handling |
 | [v17](protocol/config-v17.md) | - **Live View** shows physical inputs, triggers, sleep/timer countdowns, lighting and playback state<br> - Fixed a bug where forcing **Rainbow** through **LED Control** didn't respect runtime speed overrides |
 | [v16](protocol/config-v16.md) | - Per-key idle colors (custom background palettes)<br> - **Rainbow** is available as a key-press color (**Teal** is no longer available)<br> - Runtime brightness overrides persist after waking from **Auto-Sleep** |
 | [v15](protocol/config-v15.md) | - Optional **Auto-Sleep** after **15 Minutes**, **30 Minutes**, **1 Hour** or **2 Hours** of inactivity (can be enabled per-layer, can set LEDs to **dim** or **off**, and can optionally display layer indicator again on wake)  |
@@ -92,7 +92,7 @@ Below are the primary firmware features added with each version
 >
 > Pre-built v17 firmware files are available for [three-key](releases/ch552-macropad-3-key-64fa750c.hex) and [six-key](releases/ch552-macropad-6-key-64fa750c.hex) macropads, built from source revision `64fa750c`. This version adds **Live View** telemetry for physical inputs, accepted bindings, timers, lighting and playback state, and fixes runtime **Rainbow** speed overrides for **LED Control** effects. Hardware validation is complete. To use these files, skip compilation and follow [How To Upload the Firmware](#how-to-upload-the-firmware).
 
-Current source targets v18 with up to five **Timed Actions**. Use the [active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) for v18 source builds and the [frozen v17 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v17/) with these v17 release files. Published v16 firmware uses the [frozen v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) provide matching editors for older firmware. Back up your profile before updating firmware, then import it and click **Save to Device** in the matching editor to activate it. Updating firmware preserves DataFlash but leaves actions inactive until you save a profile in the matching editor. V18 migration retains existing actions and settings and converts global chord identifiers. Older **Teal** colors migrate to **Cyan** with brightness unchanged. Imports from before v15 start with **Auto-Sleep** disabled.
+Current source targets v18 with up to five **Timed Actions**, independent **Tap-Hold** alongside **Chords**, and HID runtime layer selection. The active configurator supports ordinary v18 profiles; tap-hold editing and host-layer controls are deferred. Do not use it to edit profiles containing tap-hold records. Use the [active configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/) for ordinary v18 source builds and the [frozen v17 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v17/) with these v17 release files. Published v16 firmware uses the [frozen v16 configurator](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/format-v16/). [Previous versions](https://perkinsb1024.github.io/CH552-Macropad-v2/versions/) provide matching editors for older firmware. Back up your profile before updating firmware, then import it and click **Save to Device** in the matching editor to activate it. Updating firmware preserves DataFlash but leaves actions inactive until you save a profile in the matching editor. V18 migration retains existing actions and settings and converts global chord identifiers. Older **Teal** colors migrate to **Cyan** with brightness unchanged. Imports from before v15 start with **Auto-Sleep** disabled.
 
 The current build and upload scripts target macOS. They use PlatformIO together with the compiler and upload tools installed by the CH55xDuino Arduino package.
 
@@ -155,10 +155,10 @@ Memory in the current v18 source, in bytes, with a 14,336-byte application flash
 
 | Resource | 3-Key | 6-Key |
 | --- | ---: | ---: |
-| Flash Used | 13,932 | 13,951 |
-| Flash Remaining | 404 | 385 |
-| Total External RAM Allocated | 779 | 788 |
-| Stack Available (Linker Reserve) | 108 | 105 |
+| Flash Used | 14,310 | 14,329 |
+| Flash Remaining | 26 | 7 |
+| Total External RAM Allocated | 785 | 800 |
+| Stack Available (Linker Reserve) | 105 | 102 |
 
 ### Build Release HEX Files for Both Variants
 
@@ -280,6 +280,8 @@ On first use, or when the saved profile is invalid, key and encoder actions stay
 **Type Text** waits 32ms after each character's key release before continuing, including after tabs, newlines and the final character. This gives applications time to process the input; commands may still need an explicit **Pause** before Enter.
 
 Definitions allocate storage only when present: two bytes per step plus a one-byte terminator (the last sequence can use the image boundary). Repeats cost no extra configuration bytes. Strings share the normal pool. Held actions and nested macros are unavailable. Layer switches must be the final step, and macros containing them must have **Repeat Count** set to 1. Playback streams steps through one active macro instead of filling the eight-event queue; later queued actions wait, and new invocations are dropped if that queue fills. Immediate actions may interleave, and an effective layer change cancels playback.
+
+The firmware also supports **Tap-Hold** on keys, the encoder button and chord results, with independent 32ms–512ms thresholds per binding. It coexists with chords and uses an optional shared record block. HID **Set Layer** supports quiet runtime selection or normal input handling before selection. These firmware features currently have no configurator controls; tap-hold binary encoding is described in the [format reference](protocol/config-v18.md#tap-hold-action-f).
 
 Configuration format 18 supports five six-key layers or seven three-key layers in a 128-byte profile. Up to five **Timed Actions** repeat any action that does not require a release, globally or on one selected layer. Intervals use 1–2048 ticks of 4.096 seconds, up to 2 hours 19 minutes 48.608 seconds. Timers can restart on input, run an optional action on the next input, and consume that input. An effective layer change resets layer-specific intervals while preserving armed **On Next Input** actions; global intervals continue. Each timer has its own phase, with less than 16ms early clock quantization and possible additional playback/USB delay. Each timer uses six configuration bytes.
 

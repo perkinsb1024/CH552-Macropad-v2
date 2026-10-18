@@ -1,0 +1,12 @@
+{
+  "src/config.h": "a0158cd662af9c37cd0cdfa2ad7ccbf70443c69d8f05c0687a27994e143d5e10",
+  "src/config.c": "75560ff6f340d6c7aa41d26ad0cc0c668e959d2f04b3cb9b9c728722c939507e",
+  "src/actions.h": "f08ea1f5efe8a84d0dd1acdad0a61b5909da3aa831ce00d24ce968cedf7911aa",
+  "src/actions.c": "1e0f66745550264e34b8eafa161693434f696e9559fb612ef5b0f3eb1d598f12",
+  "CH552_Universal_Macropad.ino": "2ae517c214c9d556e9ab0bd153ca12d5c2a1d833255fa3889ee393197cbcb02a",
+  "src/protocol_firmware.c": "76b5b6afd3fe2d0e274100e622949d20fa2684ad49a4c757a2f45c6b41d36319",
+  "platformio.ini": "0c92d30fb908b50b6b8e35e8b2f825bd77ffcbc4afa9e0de5b0589f4a82f7d27",
+  "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.c": "d57ea1513ddfa316c1931adc0e54704f53c92c6fb53033c0f303a70d86b33dac",
+  "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h": "f898e7a9b49645010d6817e2bb7c9af0d47f4c99abbe1a679ca40ec226255331",
+  "src/userUsbHidKeyboardMouse/USBhandler.c": "9ae0797613b085989e244c1d64e64468518f96a4868fa167cfda468af45f5040"
+}

@@ -1,0 +1,50 @@
+{
+  "baseline_revision": "18ae05b0c26811eb10c58c6825727f7e7abb8ee3",
+  "firmware_revision": "796120bc4a209d7dd3dbfb47380d5a4d702679df",
+  "firmware_validation_tree": "Baseline revision with uncommitted selected sources, then committed as the stated firmware revision; source and native HEX hashes agree.",
+  "deployment_validation_tree": "Firmware revision with uncommitted documentation/artifacts; configurator code and tests unchanged.",
+  "firmware_host_regressions": "passed both geometries, including 8 layout and 19 mocked bootloader tests",
+  "firmware_sanitizers": "passed 4 suites on both geometries with ASan/UBSan recovery disabled",
+  "native_builds": {
+    "six": {
+      "flash": 14329,
+      "free": 7,
+      "stack": 102,
+      "total_external": 800
+    },
+    "three": {
+      "flash": 14310,
+      "free": 26,
+      "stack": 105,
+      "total_external": 785
+    },
+    "real_limit": 14336,
+    "layout_checks": "passed",
+    "active_hex_matches_selected": true
+  },
+  "shared_deployment_gate": {
+    "result": "failed",
+    "passed_configurator_tests": 817,
+    "failed_configurator_tests": 2,
+    "test_file": "webapp/tests/v14-actions.test.ts",
+    "reason": "Legacy reserved-F assertions conflict with the valid new tap-hold section prefix; configurator work explicitly deferred."
+  },
+  "uploader": {
+    "result": "passed",
+    "tests": 95
+  },
+  "complete_site": {
+    "result": "passed",
+    "command": "npm run build",
+    "includes": [
+      "TypeScript checking",
+      "Vite production build",
+      "16 frozen archive checksum checks",
+      "embedded uploader build"
+    ]
+  },
+  "configurator_implementation": "deferred unchanged",
+  "hardware_validation": "not performed",
+  "release_generation": "not performed",
+  "publication": "not performed"
+}
