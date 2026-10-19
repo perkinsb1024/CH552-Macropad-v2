@@ -86,10 +86,10 @@ export function ChordPanel() {
             const intent = slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : null;
             return (
               <li key={`${c.layer}-${c.keyA}-${c.keyB}-${!!c.global}`} class={`chord ${selected ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}>
-                <button data-clipboard-target data-slot={JSON.stringify(slot)} class="chord-main" onClick={() => { selectedSlot.value = JSON.stringify(selectedSlot.value) === JSON.stringify(slot) ? null : slot; }} draggable onDragStart={(event) => { setRoundedDragImage(event); endShortcutDrag(); draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
+                <button data-clipboard-target data-slot={JSON.stringify(slot)} class="chord-main" onClick={() => { selectedSlot.value = JSON.stringify(selectedSlot.value) === JSON.stringify(slot) ? null : slot; }} draggable onDragStart={(event) => { setRoundedDragImage(event, (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.chord-action'), true, 15); endShortcutDrag(); draggedSlot.value = slot; event.dataTransfer?.setData('application/x-macropad-slot', 'move'); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; }} onDragEnd={() => { draggedSlot.value = null; slotDrop.value = null; }} onDragOver={(event) => {
                   if (shortcutDragOver(event, slot)) return;
                   const source = draggedSlot.value;
-                  const position = source?.kind === 'timed' ? 'swap' : dropPosition(event, 'vertical');
+                  const position = (source?.branch || source?.kind === 'timed') ? 'swap' : dropPosition(event, 'vertical');
                   const valid = source && (position === 'swap' ? canSwapSlots(source, slot) : canInsertSlot(source, slot, position));
                   if (!valid) { slotDrop.value = null; if (event.dataTransfer) event.dataTransfer.dropEffect = 'none'; return; }
                   event.preventDefault();
@@ -99,7 +99,7 @@ export function ChordPanel() {
                   if (shortcutDrop(event, slot)) return;
                   event.preventDefault();
                   const source = draggedSlot.value;
-                  const position = source?.kind === 'timed' ? 'swap' : slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : dropPosition(event, 'vertical');
+                  const position = (source?.branch || source?.kind === 'timed') ? 'swap' : slotDrop.value && JSON.stringify(slotDrop.value.slot) === JSON.stringify(slot) ? slotDrop.value.position : dropPosition(event, 'vertical');
                   if (source) {
                     if (position === 'swap') swapSlotActions(source, slot);
                     else insertSlotAction(source, slot, position);

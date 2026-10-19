@@ -2,9 +2,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { defaultProfile, emptyLayer } from '../src/model/defaults';
 import { holdThreshold, holdBindings } from '../src/model/tapHold';
 import type { Action, OrdinaryAction, Slot } from '../src/model/types';
+import { bindingDrag } from '../src/ui/bindingDrag';
+import { canApplyShortcut, shortcutDrop, draggedShortcut, endShortcutDrag } from '../src/ui/drag';
 import { Inspector } from '../src/ui/components/Inspector';
 import { ProfilePanel } from '../src/ui/components/ProfilePanel';
-import { dialog, closeDialog, getAction, profile, selectedSlot, setAction, undo, redo, insertLayer, removeLayer, layerReferences, connection, canSave, save, issues } from '../src/ui/store';
+import { dialog, closeDialog, getAction, profile, selectedSlot, setAction, undo, redo, insertLayer, removeLayer, layerReferences, connection, canSave, save, issues, copySelectedConfiguration, cutSelectedConfiguration, pasteSelectedConfiguration, canSwapSlots, swapSlotActions, clearSelectedAction, canInsertSlot, draggedSlot, slotDrop } from '../src/ui/store';
 
 vi.mock('preact/hooks', () => ({ useMemo: (factory: () => unknown) => factory(), useState: (initial: unknown) => [initial, vi.fn()] }));
 type Node = { type: unknown; props: Record<string, unknown> };
@@ -120,4 +122,119 @@ it('blocks saves to older firmware before any upload request is sent', async () 
   expect(canSave.value).toBe(false);
   expect(issues.value.some(i => i.where === 'Firmware')).toBe(true);
   await save(); expect(saveImage).not.toHaveBeenCalled();
+});
+
+
+it('selects a gesture header for clipboard operations while keeping both editors visible', () => {
+  start(); addHold();
+  const header = nodes(Inspector()).find(n => n.type === 'summary')!;
+  expect(header.props.draggable).toBe(true);
+  expect(header.props['data-clipboard-target']).toBe(true);
+  click(header);
+  expect(selectedSlot.value?.branch).toBe('tap');
+  expect(nodes(Inspector()).filter(n => n.type === 'details')).toHaveLength(2);
+  expect(JSON.parse(copySelectedConfiguration(false)!).action).toEqual({ type: 'keyTap', usage: 40, modifiers: 0 });
+});
+
+it('copies, cuts, pastes and clears branches without changing the sibling, threshold or LEDs', () => {
+  start({ type: 'tapHold', thresholdMs: 192, tap: { type: 'keyTap', usage: 40, modifiers: 0 }, hold: { type: 'keyTap', usage: 44, modifiers: 0 } });
+  const base = selectedSlot.value!;
+  const original = structuredClone(profile.value!);
+  selectedSlot.value = { ...base, branch: 'tap' };
+  const text = copySelectedConfiguration(false)!;
+  expect(JSON.parse(text).led).toBeUndefined();
+  cutSelectedConfiguration();
+  expect(getAction(profile.value!, base)).toMatchObject({ tap: { type: 'none' }, hold: { usage: 44 }, thresholdMs: 192 });
+  expect(profile.value!.layers[0]!.leds).toEqual(original.layers[0]!.leds);
+  undo(); expect(profile.value).toEqual(original);
+  selectedSlot.value = { ...base, branch: 'hold' };
+  expect(pasteSelectedConfiguration(text)).toBe(true);
+  expect(current()).toEqual({ type: 'keyTap', usage: 40, modifiers: 0 });
+  clearSelectedAction(); clearSelectedAction();
+  expect(getAction(profile.value!, base)).toMatchObject({ tap: { usage: 40 }, hold: { type: 'none' }, thresholdMs: 192 });
+  expect(profile.value!.layers[0]!.leds).toEqual(original.layers[0]!.leds);
+});
+
+it('rejects pasting held outputs into Tap and nested gestures into either branch', () => {
+  start({ type: 'keyHold', usage: 44, modifiers: 0 });
+  const held = copySelectedConfiguration(false)!;
+  addHold();
+  const base = selectedSlot.value!;
+  const wrapper = copySelectedConfiguration(false)!;
+  const original = structuredClone(profile.value!);
+  selectedSlot.value = { ...base, branch: 'tap' };
+  expect(pasteSelectedConfiguration(held)).toBe(true);
+  expect(profile.value).toEqual(original);
+  for (const branch of ['tap', 'hold'] as const) {
+    selectedSlot.value = { ...base, branch };
+    expect(pasteSelectedConfiguration(wrapper)).toBe(true);
+    expect(profile.value).toEqual(original);
+  }
+  selectedSlot.value = { ...base, branch: 'hold' };
+  expect(pasteSelectedConfiguration(held)).toBe(true);
+  expect(current().type).toBe('keyHold');
+});
+
+it('swaps branches with each other and with ordinary bindings, preserving LEDs and supporting undo', () => {
+  start({ type: 'tapHold', tap: { type: 'keyTap', usage: 40, modifiers: 0 }, hold: { type: 'keyTap', usage: 44, modifiers: 0 } });
+  const base = selectedSlot.value!;
+  const tap: Slot = { ...base, branch: 'tap' }, hold: Slot = { ...base, branch: 'hold' };
+  const other: Slot = { kind: 'key', layer: 0, index: 1 };
+  setAction(other, { type: 'keyTap', usage: 41, modifiers: 0 });
+  const original = structuredClone(profile.value!);
+  expect(canInsertSlot(tap, other, 'before')).toBe(false);
+  expect(canSwapSlots(tap, base)).toBe(false);
+  expect(canSwapSlots(base, tap)).toBe(false);
+  expect(canSwapSlots(tap, hold)).toBe(true);
+  swapSlotActions(tap, hold);
+  expect(getAction(profile.value!, base)).toMatchObject({ tap: { usage: 44 }, hold: { usage: 40 } });
+  undo(); expect(profile.value).toEqual(original);
+  draggedSlot.value = tap;
+  bindingDrag(other).onDrop({ preventDefault() {}, stopPropagation() {} } as DragEvent);
+  expect(getAction(profile.value!, tap)).toMatchObject({ usage: 41 });
+  expect(getAction(profile.value!, other)).toMatchObject({ usage: 40 });
+  expect(profile.value!.layers[0]!.leds).toEqual(original.layers[0]!.leds);
+  undo(); expect(profile.value).toEqual(original);
+  draggedSlot.value = null; slotDrop.value = null;
+});
+
+it('accepts shortcut drops into branches while enforcing gesture restrictions', () => {
+  start(); addHold();
+  const base = selectedSlot.value!;
+  const tap: Slot = { ...base, branch: 'tap' }, hold: Slot = { ...base, branch: 'hold' };
+  const shortcut = { id: 'test', label: 'Test', tags: [], action: { type: 'keyHold', usage: 44, modifiers: 0 } } as unknown as NonNullable<typeof draggedShortcut.value>;
+  expect(canApplyShortcut(shortcut, tap)).toBe(false);
+  expect(canApplyShortcut(shortcut, hold)).toBe(true);
+  draggedShortcut.value = shortcut;
+  shortcutDrop({ preventDefault() {}, stopPropagation() {} } as DragEvent, hold);
+  expect(getAction(profile.value!, base)).toMatchObject({ tap: { usage: 40 }, hold: { type: 'keyHold', usage: 44 } });
+  expect(canSwapSlots(hold, tap)).toBe(false);
+  endShortcutDrag();
+});
+
+
+it.each(['tap', 'hold'] as const)('uses only the action as the %s drag preview', branch => {
+  start(); addHold();
+  vi.useFakeTimers();
+  try {
+    const preview = { style: { setProperty: vi.fn() }, querySelectorAll: () => [], removeAttribute: vi.fn(), setAttribute: vi.fn(), remove: vi.fn() };
+    const action = { getBoundingClientRect: () => ({ left: 80, top: 20, width: 120, height: 20 }),
+      querySelectorAll: () => [], cloneNode: vi.fn(() => preview) };
+    const header = { querySelector: vi.fn(() => action), cloneNode: vi.fn() };
+    vi.stubGlobal('document', { body: { appendChild: vi.fn() } });
+    vi.stubGlobal('getComputedStyle', () => Object.assign([], { borderRadius: '0px' }));
+    const event = { currentTarget: header, clientX: 100, clientY: 30,
+      dataTransfer: { setData: vi.fn(), setDragImage: vi.fn() } };
+    bindingDrag({ ...selectedSlot.value!, branch }).onDragStart(event as unknown as DragEvent);
+    expect(header.querySelector).toHaveBeenCalledWith('.gesture-drag-label');
+    expect(action.cloneNode).toHaveBeenCalledWith(true);
+    expect(header.cloneNode).not.toHaveBeenCalled();
+    expect(event.dataTransfer.setDragImage).toHaveBeenCalledWith(preview, 60, 25);
+    expect(preview.style).toMatchObject({ width: '120px', height: '20px' });
+    vi.runAllTimers();
+    expect(preview.remove).toHaveBeenCalled();
+  } finally {
+    draggedSlot.value = null;
+    vi.useRealTimers();
+  }
 });

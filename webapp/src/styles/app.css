@@ -1598,7 +1598,7 @@ output {
   font-size: 12.5px;
   font-weight: 500;
 }
-.tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main, .timer-action.is-drop-target {
+.tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main, .timer-action.is-drop-target, .gesture-target.is-drop-target {
   z-index: 2;
   border-color: #1680ff;
   outline: 5px solid #1680ff;
@@ -2637,10 +2637,12 @@ output {
 .tap-hold-group > .hint { margin: 0 0 12px; }
 .gesture-editor { min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-elev); }
 .gesture-editor + .gesture-editor { margin-top: 8px; }
-.gesture-editor > summary { display: flex; align-items: center; gap: 10px; padding: 12px; list-style: none; cursor: pointer; }
+.gesture-editor > summary { display: flex; align-items: center; gap: 10px; padding: 12px; list-style: none; cursor: pointer; border-radius: var(--radius-sm); }
+.gesture-editor[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .gesture-editor > summary::-webkit-details-marker { display: none; }
 .gesture-name { flex: 0 0 34px; font-weight: 600; }
 .gesture-summary { flex: 1; min-width: 0; color: var(--fg-muted); }
+.gesture-drag-label { display: inline-block; max-width: 100%; vertical-align: middle; }
 .gesture-editor > summary > svg { flex-shrink: 0; transition: transform 150ms ease; }
 .gesture-editor[open] > summary > svg { transform: rotate(180deg); }
 .inspector-branch { display: flex; flex-direction: column; gap: 14px; padding: 12px; border-top: 1px solid var(--line); }
@@ -2721,3 +2723,8 @@ output {
   0%, 74.074% { box-shadow: 0 0 0 100vmax rgb(8 10 16 / 0.65); }
   100% { box-shadow: 0 0 0 100vmax rgb(8 10 16 / 0); }
 }
+
+.gesture-target.is-selected:not(.is-drop-target) { box-shadow: inset 0 0 0 2px var(--accent); }
+.gesture-target.is-dragging { opacity: 0.45; }
+.gesture-target.drag-invalid { opacity: 0.45; }
+.gesture-target[draggable="true"] { cursor: grab; }

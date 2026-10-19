@@ -7,7 +7,7 @@ import { draggedTimer, timerDrop, draggedMacro, macroDrop, draggedSlot, getActio
 export const draggedShortcut = signal<Shortcut | null>(null);
 
 /** Snapshot an isolated, clipped copy so Chrome cannot include the page behind rounded corners. */
-export function setRoundedDragImage(event: DragEvent, source = event.currentTarget as HTMLElement | null): void {
+export function setRoundedDragImage(event: DragEvent, source = event.currentTarget as HTMLElement | null, centered = false, liftPx = 0): void {
   if (!source || !event.dataTransfer) return;
   const rect = source.getBoundingClientRect();
   const preview = source.cloneNode(true) as HTMLElement;
@@ -38,8 +38,8 @@ export function setRoundedDragImage(event: DragEvent, source = event.currentTarg
   preview.setAttribute('aria-hidden', 'true');
   document.body.appendChild(preview);
   event.dataTransfer.setDragImage(preview,
-    Math.max(0, Math.min(rect.width, event.clientX - rect.left)),
-    Math.max(0, Math.min(rect.height, event.clientY - rect.top)));
+    centered ? rect.width / 2 : Math.max(0, Math.min(rect.width, event.clientX - rect.left)),
+    (centered ? rect.height / 2 : Math.max(0, Math.min(rect.height, event.clientY - rect.top))) + liftPx);
   // The browser captures after dragstart returns; keep the copy until the next task.
   setTimeout(() => preview.remove(), 0);
 }
@@ -93,7 +93,7 @@ function draggedAssignment(): Action | null {
 function canApplyAction(action: Action, slot: Slot): boolean {
   const p = profile.value;
   return !!p && !!getAction(p, slot) && !actionProblem(action, {
-    layerCount: p.layers.length,
+    layerCount: p.layers.length, branch: slot.branch,
     macro: slot.kind === 'macro', timed: slot.kind === 'timed',
     macros: p.macros, macroCount: p.macros?.length ?? 0,
     rotation: slot.kind === 'timed' || slot.kind === 'clockwise' || slot.kind === 'counterclockwise',

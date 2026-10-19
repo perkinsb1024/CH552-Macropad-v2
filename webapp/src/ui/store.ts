@@ -294,6 +294,10 @@ export function updateProfile(mutate: (draft: Profile) => void, historyKey?: str
 }
 
 export function getAction(p: Profile, slot: Slot): Action | undefined {
+  if (slot.branch) {
+    const binding = getAction(p, { ...slot, branch: undefined });
+    return binding?.type === 'tapHold' ? binding[slot.branch] : undefined;
+  }
   const layer = p.layers[slot.layer];
   if (!layer) return undefined;
   switch (slot.kind) {
@@ -322,45 +326,17 @@ export function clearSelectedAction(): void {
   if (action.type !== 'none') {
     rememberAction(slot, action);
     setAction(slot, slot.kind === 'macro' ? { type: 'pause', ticks: 0 } : { type: 'none' });
-  } else if (slot.kind === 'key') {
+  } else if (slot.kind === 'key' && !slot.branch) {
     updateProfile((draft) => { draft.layers[slot.layer]!.leds[slot.index] = 0; });
   }
 }
 
 export function setAction(slot: Slot, action: Action): void {
+  const selection = selectedSlot.value;
+  if (!slot.branch && action.type !== 'tapHold' && selection?.branch && sameSlot({ ...selection, branch: undefined }, { ...slot, branch: undefined })) selectedSlot.value = slot;
   rememberAction(slot, action);
   updateProfile((draft) => {
-    const layer = draft.layers[slot.layer];
-    if (!layer) return;
-    switch (slot.kind) {
-      case 'macro': {
-        const macro = draft.macros?.[slot.index];
-        if (macro) macro.actions[slot.step] = action;
-        break;
-      }
-      case 'timed': {
-        const timer = draft.timedActions?.[slot.index];
-        if (timer) timer[slot.resume ? 'resumeAction' : 'action'] = action;
-        break;
-      }
-      case 'key':
-        layer.keys[slot.index] = action;
-        break;
-      case 'encoderButton':
-        layer.encoderButton = action;
-        break;
-      case 'clockwise':
-        layer.clockwise = action;
-        break;
-      case 'counterclockwise':
-        layer.counterclockwise = action;
-        break;
-      case 'chord': {
-        const chord = draft.chords.find((c) => matchesChord(c, slot));
-        if (chord) chord.action = action;
-        break;
-      }
-    }
+    putAction(draft, slot, action);
   }, `action:${slotMemoryKey(slot)}:${action.type}`);
 }
 
@@ -374,7 +350,7 @@ function isRotationSlot(slot: Slot): boolean {
 
 function slotOrder(p: Profile, slot: Slot): Slot[] | null {
   if (!p.layers[slot.layer]) return null;
-  if (slot.kind === 'timed') return null;
+  if (slot.branch || slot.kind === 'timed') return null;
   if (slot.kind === 'macro') return p.macros?.[slot.index]?.actions.map((_, step) => ({ ...slot, step })) ?? null;
   if (slot.kind === 'key') return p.layers[slot.layer]!.keys.map((_, index) => ({ kind: 'key', layer: slot.layer, index }));
   if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
@@ -400,6 +376,11 @@ function insertionIndex(source: number, target: number, position: 'before' | 'af
 }
 
 function putAction(p: Profile, slot: Slot, action: Action): void {
+  if (slot.branch) {
+    const binding = getAction(p, { ...slot, branch: undefined });
+    if (binding?.type === 'tapHold' && action.type !== 'tapHold') binding[slot.branch] = action;
+    return;
+  }
   const layer = p.layers[slot.layer];
   if (!layer) return;
   switch (slot.kind) {
@@ -442,8 +423,8 @@ export function copySelectedConfiguration(showToast = true): string | null {
     format: ACTION_CLIPBOARD_FORMAT,
     version: 2,
     action,
-    led: slot.kind === 'key' ? p.layers[slot.layer]!.leds[slot.index] : undefined,
-    idleLed: slot.kind === 'key' ? p.layers[slot.layer]!.idleLeds?.[slot.index] : undefined,
+    led: slot.kind === 'key' && !slot.branch ? p.layers[slot.layer]!.leds[slot.index] : undefined,
+    idleLed: slot.kind === 'key' && !slot.branch ? p.layers[slot.layer]!.idleLeds?.[slot.index] : undefined,
   });
 }
 
@@ -456,7 +437,7 @@ export function cutSelectedConfiguration(): void {
   rememberAction(slot, action);
   updateProfile((draft) => {
     putAction(draft, slot, slot.kind === 'macro' ? { type: 'pause', ticks: 0 } : { type: 'none' });
-    if (slot.kind === 'key') {
+    if (slot.kind === 'key' && !slot.branch) {
       const layer = draft.layers[slot.layer]!;
       layer.leds[slot.index] = 0;
       if (layer.idleLeds) layer.idleLeds[slot.index] = 0;
@@ -476,7 +457,7 @@ export function pasteSelectedConfiguration(text: string): boolean {
     if (!copied || copied.format !== ACTION_CLIPBOARD_FORMAT || ![1, 2].includes(copied.version ?? 0) || !copied.action) return false;
     if (copied.led !== undefined && (!Number.isInteger(copied.led) || copied.led < 0 || copied.led > 15)) return false;
     if (copied.idleLed !== undefined && (copied.version !== 2 || !Number.isInteger(copied.idleLed) || copied.idleLed < 0 || copied.idleLed > 15)) return false;
-    const problem = actionProblem(copied.action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), timed: slot.kind === 'timed', macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
+    const problem = actionProblem(copied.action, { layerCount: p.layers.length, branch: slot.branch, rotation: isRotationSlot(slot), timed: slot.kind === 'timed', macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
     if (problem) {
       notify('error', `Cannot paste here: ${problem}`);
       return true;
@@ -493,7 +474,7 @@ export function pasteSelectedConfiguration(text: string): boolean {
   rememberAction(slot, getAction(p, slot)!);
   updateProfile((draft) => {
     putAction(draft, slot, action);
-    if (slot.kind === 'key') {
+    if (slot.kind === 'key' && !slot.branch) {
       const layer = draft.layers[slot.layer]!;
       if (copied.led !== undefined) layer.leds[slot.index] = copied.led;
       if (copied.idleLed !== undefined) {
@@ -510,16 +491,17 @@ export function pasteSelectedConfiguration(text: string): boolean {
 export function canSwapSlots(source: Slot, target: Slot): boolean {
   const p = profile.value;
   if (!p || sameSlot(source, target)) return false;
+  if ((source.branch || target.branch) && sameSlot({ ...source, branch: undefined }, { ...target, branch: undefined }) && (!source.branch || !target.branch)) return false;
   const sourceAction = getAction(p, source);
   const targetAction = getAction(p, target);
   if (!sourceAction || !targetAction) return false;
-  const allowed = (action: Action, slot: Slot) => !actionProblem(action, { layerCount: p.layers.length, rotation: isRotationSlot(slot), macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
+  const allowed = (action: Action, slot: Slot) => !actionProblem(action, { layerCount: p.layers.length, branch: slot.branch, rotation: isRotationSlot(slot), macro: slot.kind === 'macro', macros: p.macros, macroCount: p.macros?.length ?? 0 });
   return allowed(sourceAction, target) && allowed(targetAction, source);
 }
 
 export function canInsertSlot(source: Slot, target: Slot, position: 'before' | 'after'): boolean {
   const p = profile.value;
-  if (!p || source.layer !== target.layer || source.kind !== target.kind &&
+  if (!p || source.branch || target.branch || source.layer !== target.layer || source.kind !== target.kind &&
       !(source.kind !== 'key' && source.kind !== 'chord' && target.kind !== 'key' && target.kind !== 'chord')) return false;
   const order = slotOrder(p, source);
   if (!order) return false;
@@ -560,7 +542,7 @@ export function swapSlotActions(source: Slot, target: Slot): void {
     if (!sourceAction || !targetAction) return;
     putAction(draft, source, targetAction);
     putAction(draft, target, sourceAction);
-    if (source.kind === 'key' && target.kind === 'key') {
+    if (source.kind === 'key' && target.kind === 'key' && !source.branch && !target.branch) {
       const sourceLayer = draft.layers[source.layer]!;
       const targetLayer = draft.layers[target.layer]!;
       if (sourceLayer.idleLeds || targetLayer.idleLeds) {

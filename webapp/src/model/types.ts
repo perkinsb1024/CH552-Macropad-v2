@@ -94,14 +94,14 @@ export interface Profile {
 }
 
 /** Identifies one editable binding slot within a profile. */
-export type Slot =
+export type Slot = (
   | { kind: 'macro'; layer: number; index: number; step: number }
   | { kind: 'timed'; layer: number; index: number; resume: boolean }
   | { kind: 'key'; layer: number; index: number }
   | { kind: 'encoderButton'; layer: number }
   | { kind: 'clockwise'; layer: number }
   | { kind: 'counterclockwise'; layer: number }
-  | { kind: 'chord'; layer: number; keyA: number; keyB: number; global?: boolean };
+  | { kind: 'chord'; layer: number; keyA: number; keyB: number; global?: boolean }) & { branch?: 'tap' | 'hold' };
 
 export interface Issue {
   /** Human-readable location, e.g. "Layer 2 · Key 3". */

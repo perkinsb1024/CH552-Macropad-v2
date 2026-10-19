@@ -21,6 +21,7 @@ import { ActionLabel } from './ActionLabel';
 import { branches } from '../../model/tapHold';
 import { spotlightHoldThreshold } from './ProfilePanel';
 import { IconChevron } from './Icons';
+import { bindingDrag } from '../bindingDrag';
 
 function gestureChoiceLabel(action: Action): string {
   if (action.type === 'keyTap') return `Key Press: ${summarize(action)}`;
@@ -188,7 +189,9 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
 export function Inspector({ branch }: { branch?: 'tap' | 'hold' } = {}) {
   const [showScrollTest, setShowScrollTest] = useState(false);
   const p = profile.value;
-  const slot = selectedSlot.value;
+  const selection = selectedSlot.value;
+  const slot = selection ? { ...selection } : null;
+  if (slot) delete slot.branch;
   const binding = p && slot ? getAction(p, slot) : undefined;
   const action = branch && binding?.type === 'tapHold' ? binding[branch] : binding;
   const timed = slot?.kind === 'timed';
@@ -312,7 +315,7 @@ export function Inspector({ branch }: { branch?: 'tap' | 'hold' } = {}) {
 
   return (
     <section class={branch ? 'inspector-branch' : 'card inspector'}>
-      {!branch && <header class="card-head">
+      {!branch && <header class="card-head" onClick={() => { selectedSlot.value = slot; }}>
         <div class="inspector-title">
           <h2>{slot.kind === 'timed' || slot.kind === 'macro' ? slotLabel(slot) : slotLabel(slot).split(' · ')[1]}</h2>
           <span class="muted">{slot.kind === 'timed' || slot.kind === 'macro' ? 'Across All Layers' : layerName(slot.layer)}</span>
@@ -326,10 +329,22 @@ export function Inspector({ branch }: { branch?: 'tap' | 'hold' } = {}) {
         <fieldset class="tap-hold-group">
           <legend>Tap and Hold</legend>
           <p class="hint">Release before the <a href="#hold-threshold" onClick={event => { event.preventDefault(); spotlightHoldThreshold(); }}>hold threshold</a> to trigger the tap action</p>
-          {(['tap', 'hold'] as const).map(gesture => <details key={`${JSON.stringify(slot)}:${gesture}`} class={`gesture-editor gesture-${gesture}`} open={false}>
-            <summary><span class="gesture-name">{gesture === 'tap' ? 'Tap' : 'Hold'}</span><span class="gesture-summary"><ActionLabel action={action[gesture]} gestureContext /></span><IconChevron /></summary>
-            <Inspector branch={gesture} />
-          </details>)}
+          <p class="hint">Select Tap or Hold to copy and paste its action. Drag a header to swap actions, or drop a shortcut or macro onto it.</p>
+          {(['tap', 'hold'] as const).map(gesture => {
+            const target = { ...slot, branch: gesture };
+            const drag = bindingDrag(target);
+            return <details key={`${JSON.stringify(slot)}:${gesture}`} class={`gesture-editor gesture-${gesture}`} open={false}>
+              <summary {...drag} class={drag.class}
+                data-clipboard-target data-slot={JSON.stringify(target)}
+                onClick={() => { selectedSlot.value = target; }}
+                onFocus={() => { selectedSlot.value = target; }}>
+                <span class="gesture-name">{gesture === 'tap' ? 'Tap' : 'Hold'}</span><span class="gesture-summary"><span class="gesture-drag-label"><ActionLabel action={action[gesture]} gestureContext /></span></span><IconChevron />
+              </summary>
+              <div onFocusCapture={() => { selectedSlot.value = target; }} onClick={() => { selectedSlot.value = target; }}>
+                <Inspector branch={gesture} />
+              </div>
+            </details>;
+          })}
         </fieldset>
         {slot.kind === 'chord' && <p class="hint">The threshold starts when the second key is recognized. Releasing either key chooses Tap or ends Hold.</p>}
         <button type="button" class="btn gesture-remove" onClick={() => {

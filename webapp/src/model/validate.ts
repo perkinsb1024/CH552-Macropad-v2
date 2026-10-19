@@ -16,12 +16,15 @@ export interface ActionContext {
   rotation: boolean;
   timed?: boolean;
   macro?: boolean;
+  branch?: 'tap' | 'hold';
   macroCount?: number;
   macros?: Profile['macros'];
 }
 
 /** Returns a problem description, or null when the action is legal in this context. */
 export function actionProblem(action: Action, ctx: ActionContext): string | null {
+  if (ctx.branch && action.type === 'tapHold') return 'Tap-Hold branches must be ordinary actions.';
+  if (ctx.branch === 'tap' && actionNeedsRelease(action)) return 'Tap actions run on release and cannot keep an output held.';
   if (action.type === 'tapHold') {
     if (ctx.rotation || ctx.timed || ctx.macro) return 'Tap-Hold is available only on keys, the encoder button and chords.';
     if (!action.tap || !action.hold || action.tap.type === ('tapHold' as string) || action.hold.type === ('tapHold' as string)) return 'Tap-Hold branches must be ordinary actions.';
@@ -101,6 +104,7 @@ export function actionProblem(action: Action, ctx: ActionContext): string | null
 }
 
 export function slotLabel(slot: Slot): string {
+  if (slot.branch) return `${slotLabel({ ...slot, branch: undefined })}, ${slot.branch === 'tap' ? 'Tap' : 'Hold'}`;
   const layer = `Layer ${slot.layer + 1}`;
   switch (slot.kind) {
     case 'macro': return `Macro ${slot.index + 1} · Step ${slot.step + 1}`;

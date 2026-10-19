@@ -1,53 +1,15 @@
 import { MAX_TIMED_TICKS, MAX_TIMED_ACTIONS, TIMED_ENTRY_SIZE, TIMED_TICK_SECONDS } from '../../model/constants';
 import type { Slot } from '../../model/types';
-import { canInsertSlot, insertSlotAction, canSwapSlots, capacity, draggedTimer, timerDrop, moveTimer, draggedMacro, draggedSlot, profile, selectedSlot, slotDrop, swapSlotActions, updateProfile } from '../store';
-import { canApplyDraggedMacro, canApplyShortcut, dropPosition, draggedShortcut, endShortcutDrag, setRoundedDragImage, startTimerDrag, shortcutDragOver, shortcutDrop } from '../drag';
+import { bindingDrag as timedBindingDrag } from '../bindingDrag';
+export { bindingDrag as timedBindingDrag } from '../bindingDrag';
+import { capacity, draggedTimer, timerDrop, moveTimer, slotDrop, profile, selectedSlot, updateProfile } from '../store';
+import { dropPosition, endShortcutDrag, startTimerDrag } from '../drag';
 import { ActionLabel } from './ActionLabel';
 import { IconChevron, IconPlus, IconTrash } from './Icons';
 
 // Let native details retain the user's choice across configuration edits.
 const initializedResumeSections = new WeakSet<HTMLDetailsElement>();
 
-export function timedBindingDrag(slot: Slot, insertion = false) {
-  const same = (other: Slot | null) => other !== null && JSON.stringify(other) === JSON.stringify(slot);
-  const invalid = draggedMacro.value !== null ? !canApplyDraggedMacro(slot) : draggedShortcut.value ? !canApplyShortcut(draggedShortcut.value, slot)
-    : draggedSlot.value && !same(draggedSlot.value) && !canSwapSlots(draggedSlot.value, slot);
-  const end = () => { draggedSlot.value = null; slotDrop.value = null; };
-  return {
-    draggable: true,
-    class: `timer-action ${same(selectedSlot.value) ? 'is-selected' : ''} ${same(draggedSlot.value) ? 'is-dragging' : ''} ${same(slotDrop.value?.slot ?? null) && slotDrop.value?.position === 'swap' ? 'is-drop-target' : ''} ${invalid ? 'drag-invalid' : ''}`,
-    onDragStart: (event: DragEvent) => {
-      setRoundedDragImage(event);
-      endShortcutDrag();
-      draggedSlot.value = slot;
-      event.dataTransfer?.setData('application/x-macropad-slot', 'move');
-      if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-    },
-    onDragEnd: end,
-    onDragOver: (event: DragEvent) => {
-      if (shortcutDragOver(event, slot)) return;
-      event.stopPropagation();
-      const source = draggedSlot.value;
-      const position = insertion && source?.kind === 'macro' && slot.kind === 'macro' && source.index === slot.index ? dropPosition(event, 'vertical') : 'swap';
-      const valid = source && (position === 'swap' ? canSwapSlots(source, slot) : canInsertSlot(source, slot, position));
-      slotDrop.value = valid ? { slot, position } : null;
-      if (valid) event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = valid ? 'move' : 'none';
-    },
-    onDrop: (event: DragEvent) => {
-      if (shortcutDrop(event, slot)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const source = draggedSlot.value;
-      const position = slotDrop.value?.position ?? 'swap';
-      if (source) {
-        if (position === 'swap') swapSlotActions(source, slot);
-        else insertSlotAction(source, slot, position);
-      }
-      end();
-    },
-  };
-}
 
 export function duration(seconds: number): string {
   const rounded = Math.round(seconds);

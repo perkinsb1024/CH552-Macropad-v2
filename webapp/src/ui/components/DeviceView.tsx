@@ -67,7 +67,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     if (shortcutDrop(event, target)) return;
     event.preventDefault();
     const source = draggedSlot.value;
-    const position = source?.kind === 'timed' ? 'swap' : slotDrop.value && sameSlot(slotDrop.value.slot, target)
+    const position = (source?.branch || source?.kind === 'timed') ? 'swap' : slotDrop.value && sameSlot(slotDrop.value.slot, target)
       ? slotDrop.value.position : dropPosition(event, orientation);
     const destination = position === 'swap' ? { slot: target, position } : insertionTarget(target, position);
     if (source && valid(source, destination.slot, destination.position)) {
@@ -79,7 +79,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const dragOver = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical') => {
     if (shortcutDragOver(event, target)) return;
     const source = draggedSlot.value;
-    const position = source?.kind === 'timed' ? 'swap' : dropPosition(event, orientation);
+    const position = (source?.branch || source?.kind === 'timed') ? 'swap' : dropPosition(event, orientation);
     const destination = position === 'swap' ? { slot: target, position } : insertionTarget(target, position);
     if (!source || !valid(source, destination.slot, destination.position)) {
       slotDrop.value = null;
