@@ -74,7 +74,7 @@ describe('drag and drop swaps', () => {
       profile.value!.layers[0]!.keys[0] = { type, delta: 10, hold };
       expect(canSwapSlots(key, turn)).toBe(true);
       profile.value!.layers[0]!.encoderButton = { type, delta: 10, hold };
-      expect(canInsertSlot(press, turn, 'before')).toBe(true);
+      expect(canSwapSlots(press, turn)).toBe(true);
     }
   });
 

@@ -2,9 +2,33 @@ import { signal } from '@preact/signals';
 import type { Shortcut } from '../model/shortcuts';
 import type { Action, Slot } from '../model/types';
 import { actionProblem } from '../model/validate';
-import { draggedTimer, timerDrop, draggedMacro, macroDrop, draggedSlot, getAction, profile, selectedSlot, setAction, slotDrop, type DropPosition } from './store';
+import { canInsertSlot, canSwapSlots, draggedTimer, timerDrop, draggedMacro, macroDrop, draggedSlot, getAction, layerDrop, profile, selectedSlot, setAction, slotDrop, type DropPosition } from './store';
 
 export const draggedShortcut = signal<Shortcut | null>(null);
+
+/** Unhandled areas do not have component drag handlers to clear old indicators. */
+export function installDropIndicatorCleanup(view: Window = window): () => void {
+  const clear = () => {
+    slotDrop.value = null;
+    macroDrop.value = null;
+    timerDrop.value = null;
+    layerDrop.value = null;
+  };
+  const over = (event: DragEvent) => { if (!event.defaultPrevented) clear(); };
+  const leave = (event: DragEvent) => {
+    if (event.clientX <= 0 || event.clientX >= view.innerWidth || event.clientY <= 0 || event.clientY >= view.innerHeight) clear();
+  };
+  view.addEventListener('dragover', over);
+  view.addEventListener('dragleave', leave);
+  view.addEventListener('dragend', clear);
+  view.addEventListener('drop', clear);
+  return () => {
+    view.removeEventListener('dragover', over);
+    view.removeEventListener('dragleave', leave);
+    view.removeEventListener('dragend', clear);
+    view.removeEventListener('drop', clear);
+  };
+}
 
 /** Snapshot an isolated, clipped copy so Chrome cannot include the page behind rounded corners. */
 export function setRoundedDragImage(event: DragEvent, source = event.currentTarget as HTMLElement | null, centered = false, liftPx = 0): void {
@@ -107,6 +131,18 @@ export function canApplyShortcut(shortcut: Shortcut, slot: Slot): boolean {
 export function canApplyDraggedMacro(slot: Slot): boolean {
   const action = draggedMacro.value !== null ? draggedAssignment() : null;
   return !!action && canApplyAction(action, slot);
+}
+
+/** Match the available swap, assignment, and insertion destinations during a drag. */
+export function canDropDraggedAction(slot: Slot): boolean {
+  if (draggedMacro.value !== null) return canApplyDraggedMacro(slot);
+  if (draggedShortcut.value) return canApplyShortcut(draggedShortcut.value, slot);
+  const source = draggedSlot.value;
+  if (!source) return false;
+  if (canSwapSlots(source, slot)) return true;
+  const insertion = !source.branch && source.kind !== 'timed' && !slot.branch &&
+    (slot.kind !== 'macro' || source.kind === 'macro' && source.index === slot.index) && slot.kind !== 'timed';
+  return insertion && (canInsertSlot(source, slot, 'before') || canInsertSlot(source, slot, 'after'));
 }
 
 export function applyShortcut(shortcut: Shortcut, slot: Slot): void {

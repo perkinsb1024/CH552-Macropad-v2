@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import { installDragAutoScroll } from './dragAutoScroll';
+import { installDropIndicatorCleanup } from './drag';
+import { DragDimming } from './components/DragDimming';
 import { siteUrl } from '../site';
 import { FORMAT_VERSION } from '../model/constants';
 import { TRANSPORT_VERSION } from '../protocol/packet';
@@ -90,6 +92,7 @@ export function App() {
   }, []);
 
   useEffect(() => installDragAutoScroll(), []);
+  useEffect(() => installDropIndicatorCleanup(), []);
 
   useEffect(() => {
     const onDelete = (event: KeyboardEvent) => {
@@ -140,7 +143,7 @@ export function App() {
             <section class="card card-device">
               <LayerTabs />
               <DeviceView />
-              <p class="hint device-drag-hint">Drag actions onto an existing action to swap; drag to an edge or between items to insert and reorder. Hold actions cannot be moved to encoder rotation.</p>
+              <p class="hint device-drag-hint">Drag actions onto an existing action to swap; drag to an edge or between keys to insert and reorder. Encoder actions only swap. Hold actions cannot be moved to encoder rotation.</p>
               <ul class="legend device-legend">
                 <li><span class="swatch swatch-selected" /> Selected input</li>
                 {issues.value.some(issue => issue.slot) && <li><span class="swatch-problem" aria-hidden="true">!</span> Needs attention before saving</li>}
@@ -178,6 +181,7 @@ export function App() {
       </footer>
       <Dialog />
       <Toasts />
+      <DragDimming />
     </div>
   );
 }

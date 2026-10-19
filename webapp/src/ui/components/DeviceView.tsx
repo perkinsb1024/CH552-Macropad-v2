@@ -55,6 +55,11 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const valid = (source: Slot, target: Slot, position: DropPosition) => position === 'swap'
     ? canSwapSlots(source, target)
     : canInsertSlot(source, target, position);
+  const bindingPosition = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical'): DropPosition => {
+    const source = draggedSlot.value;
+    if (source?.branch || source?.kind === 'timed' || target.kind !== 'key') return 'swap';
+    return dropPosition(event, orientation);
+  };
   const insertionTarget = (slot: Slot, position: 'before' | 'after'): { slot: Slot; position: 'before' | 'after' } => {
     // Both sides of an internal key gap share the preceding key's after target.
     // Row starts stay separate so before key 4 and after key 3 remain available.
@@ -67,8 +72,8 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     if (shortcutDrop(event, target)) return;
     event.preventDefault();
     const source = draggedSlot.value;
-    const position = (source?.branch || source?.kind === 'timed') ? 'swap' : slotDrop.value && sameSlot(slotDrop.value.slot, target)
-      ? slotDrop.value.position : dropPosition(event, orientation);
+    const position = slotDrop.value && sameSlot(slotDrop.value.slot, target)
+      ? slotDrop.value.position : bindingPosition(event, target, orientation);
     const destination = position === 'swap' ? { slot: target, position } : insertionTarget(target, position);
     if (source && valid(source, destination.slot, destination.position)) {
       if (destination.position === 'swap') swapSlotActions(source, destination.slot);
@@ -79,7 +84,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const dragOver = (event: DragEvent, target: Slot, orientation: 'horizontal' | 'vertical') => {
     if (shortcutDragOver(event, target)) return;
     const source = draggedSlot.value;
-    const position = (source?.branch || source?.kind === 'timed') ? 'swap' : dropPosition(event, orientation);
+    const position = bindingPosition(event, target, orientation);
     const destination = position === 'swap' ? { slot: target, position } : insertionTarget(target, position);
     if (!source || !valid(source, destination.slot, destination.position)) {
       slotDrop.value = null;
@@ -133,41 +138,6 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     if (source && target) insertSlotAction(source, target.slot, target.position);
     dragEnd();
   };
-  const encoderGapTarget = (event: DragEvent): { slot: Slot; position: 'before' | 'after' } | null => {
-    const parts = Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.enc-part'));
-    let closest: { index: number; position: 'before' | 'after'; distance: number } | null = null;
-    parts.forEach((part, index) => {
-      const rect = part.getBoundingClientRect();
-      for (const position of ['before', 'after'] as const) {
-        const y = position === 'before' ? rect.top : rect.bottom;
-        const x = Math.max(rect.left, Math.min(event.clientX, rect.right));
-        const distance = Math.hypot(event.clientX - x, event.clientY - y);
-        if (!closest || distance < closest.distance) closest = { index, position, distance };
-      }
-    });
-    if (!closest) return null;
-    const { index, position } = closest as { index: number; position: 'before' | 'after' };
-    return { slot: { kind: (['clockwise', 'encoderButton', 'counterclockwise'] as const)[index]!, layer: li }, position };
-  };
-  const encoderGapDragOver = (event: DragEvent) => {
-    if ((event.target as HTMLElement).closest('.enc-part')) return;
-    const source = draggedSlot.value;
-    const target = encoderGapTarget(event);
-    if (source && target && canInsertSlot(source, target.slot, target.position)) {
-      event.preventDefault();
-      slotDrop.value = target;
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    } else slotDrop.value = null;
-  };
-  const encoderGapDrop = (event: DragEvent) => {
-    if ((event.target as HTMLElement).closest('.enc-part')) return;
-    event.preventDefault();
-    const source = draggedSlot.value;
-    const target = encoderGapTarget(event);
-    if (source && target) insertSlotAction(source, target.slot, target.position);
-    dragEnd();
-  };
-
   // Render helpers keep button identity stable across selection updates. Defining
   // component types inside DeviceView remounts them on every render, losing focus.
   const renderKeyCap = (index: number) => {
@@ -209,13 +179,12 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     const action = slot.kind === 'encoderButton' ? layer.encoderButton : slot.kind === 'clockwise' ? layer.clockwise : layer.counterclockwise;
     const problem = actionProblem(action, { layerCount, rotation: slot.kind !== 'encoderButton' });
     const dragged = readOnly ? null : draggedSlot.value;
-    const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
+    const invalidDrop = !!dragged && !canSwapSlots(dragged, slot);
     const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
       <button title={actionTooltip(action)} data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)} class={`enc-part ${(slot.kind === 'encoderButton' && pressed(liveIndex)) || turned(liveIndex) ? 'is-live-pressed' : ''} ${triggerClass(liveIndex)} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
         <span class="enc-part-label">{icon}{label}{readOnly && turned(liveIndex) && <small>{activity!.turns[liveIndex - 7]} Detent{activity!.turns[liveIndex - 7] === 1 ? '' : 's'}</small>}</span>
         <span class="enc-part-value"><ActionLabel action={action} showTooltip={false} compact /></span>
-        {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>
     );
   };
@@ -232,7 +201,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         </div>
         <div class="encoder">
           <div class="knob" aria-hidden="true"><div class="knob-mark" /></div>
-          <div class="enc-parts" onDragOver={readOnly ? undefined : encoderGapDragOver} onDrop={readOnly ? undefined : encoderGapDrop}>
+          <div class="enc-parts">
             {renderEncoderPart({ slot: { kind: 'clockwise', layer: li }, label: 'Turn Left', icon: <IconRotate /> })}
             {renderEncoderPart({ slot: { kind: 'encoderButton', layer: li }, label: 'Press' })}
             {renderEncoderPart({ slot: { kind: 'counterclockwise', layer: li }, label: 'Turn Right', icon: <IconRotate ccw /> })}

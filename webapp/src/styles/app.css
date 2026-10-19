@@ -1598,6 +1598,16 @@ output {
   font-size: 12.5px;
   font-weight: 500;
 }
+.drag-dimming {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  pointer-events: none;
+  background: rgb(0 0 0 / 0.5);
+}
+
 .tab.is-drop-target, .keycap.is-drop-target, .enc-part.is-drop-target, .chord.is-drop-target .chord-main, .timer-action.is-drop-target, .gesture-target.is-drop-target {
   z-index: 2;
   border-color: #1680ff;

@@ -356,11 +356,7 @@ function slotOrder(p: Profile, slot: Slot): Slot[] | null {
   if (slot.kind === 'chord') return p.chords.filter((chord) => chord.layer === slot.layer)
     .sort((a, b) => a.keyA - b.keyA || a.keyB - b.keyB || Number(!!a.global) - Number(!!b.global))
     .map(chordSlot);
-  return [
-    { kind: 'clockwise', layer: slot.layer },
-    { kind: 'encoderButton', layer: slot.layer },
-    { kind: 'counterclockwise', layer: slot.layer },
-  ];
+  return null;
 }
 
 function insertionOrder<T>(items: T[], source: number, target: number, position: 'before' | 'after'): T[] {
@@ -501,8 +497,7 @@ export function canSwapSlots(source: Slot, target: Slot): boolean {
 
 export function canInsertSlot(source: Slot, target: Slot, position: 'before' | 'after'): boolean {
   const p = profile.value;
-  if (!p || source.branch || target.branch || source.layer !== target.layer || source.kind !== target.kind &&
-      !(source.kind !== 'key' && source.kind !== 'chord' && target.kind !== 'key' && target.kind !== 'chord')) return false;
+  if (!p || source.branch || target.branch || source.layer !== target.layer || source.kind !== target.kind) return false;
   const order = slotOrder(p, source);
   if (!order) return false;
   const sourceIndex = order.findIndex((slot) => sameSlot(slot, source));
