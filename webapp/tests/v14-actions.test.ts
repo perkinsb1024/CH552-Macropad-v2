@@ -71,8 +71,10 @@ it.each([0, 1] as const)('matches firmware v14 layer modes and modified holds at
       expect(validator.accepts(image, variant)).toBe(valid);
     }
     const reserved = original.slice(); reserved.set([aux << 4 | 15, 1], offset); sealImage(reserved);
-    expect(decodeImage(reserved).ok).toBe(false);
-    expect(validator.accepts(reserved, variant)).toBe(false);
+    // V18 uses F at the macro-tail boundary as a counted Tap-Hold prefix.
+    // A binding pointing at address 1 remains invalid; an unreferenced block may be valid.
+    expect(decodeImage(reserved).ok).toBe(validator.accepts(reserved, variant));
+    if (offset !== end + 9) expect(decodeImage(reserved).ok).toBe(false);
   }
 }, 20000);
 

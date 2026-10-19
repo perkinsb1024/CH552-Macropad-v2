@@ -20,7 +20,15 @@ export function ShortcutPills({ usage, modifiers, hold = false, showTooltip = tr
   );
 }
 
-export function ActionLabel({ action, showTooltip = true }: { action: Action; showTooltip?: boolean }) {
+export function ActionLabel({ action, showTooltip = true, compact = false, gestureContext = false }: { action: Action; showTooltip?: boolean; compact?: boolean; gestureContext?: boolean }) {
+  if (action.type === 'tapHold' && compact) return <span class="tap-hold-label tap-hold-compact">
+    <span><span class="gesture-label">Tap</span><span class="gesture-action">{summarize(action.tap)}</span></span>
+    <span><span class="gesture-label">Hold</span><span class="gesture-action">{summarize(action.hold).replace(/^Hold /, '')}</span></span>
+  </span>;
+  if (action.type === 'tapHold') return <span class="tap-hold-label">
+    <span><span class="gesture-label">Tap</span><ActionLabel action={action.tap} showTooltip={showTooltip} gestureContext /></span>
+    <span><span class="gesture-label">Hold</span><ActionLabel action={action.hold} showTooltip={showTooltip} gestureContext /></span>
+  </span>;
   if (action.type === 'string') return (
     <span class="text-action-preview" title={showTooltip ? actionTooltip(action) : undefined}>
       {action.text.length ? `“${visibleText(action.text)}”` : 'Empty Text'}
@@ -31,6 +39,6 @@ export function ActionLabel({ action, showTooltip = true }: { action: Action; sh
     <span title={showTooltip ? ledSummary(action.command, action.value, false, action.brightness) : undefined}>{ledSummary(action.command, action.value, true, action.brightness)}</span>
   );
   return action.type === 'keyTap' || action.type === 'keyHold'
-    ? <ShortcutPills usage={action.usage} modifiers={action.modifiers} hold={action.type === 'keyHold'} showTooltip={showTooltip} />
-    : <>{summarize(action)}</>;
+    ? <ShortcutPills usage={action.usage} modifiers={action.modifiers} hold={action.type === 'keyHold' && !gestureContext} showTooltip={showTooltip} />
+    : <>{gestureContext ? summarize(action).replace(/^Hold /, '') : summarize(action)}</>;
 }

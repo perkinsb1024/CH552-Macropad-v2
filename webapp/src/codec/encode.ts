@@ -10,13 +10,19 @@ import { sortedChords, stringPool, computeCapacity } from '../model/capacity';
 import { chordId } from '../model/pairs';
 import { validateProfile } from '../model/validate';
 import { sealImage } from './crc16';
+import { DEFAULT_HOLD_THRESHOLD_MS, holdRecords, holdRecordKey, holdThreshold } from '../model/tapHold';
 
 export class EncodeError extends Error {}
 
 /** Encodes one two-byte action record. */
-export function encodeAction(action: Action, stringOffsets: Map<string, number>, macroOffsets: number[] = []): [number, number] {
+export function encodeAction(action: Action, stringOffsets: Map<string, number>, macroOffsets: number[] = [], tapHoldOffsets = new Map<string, number>(), thresholdMs = DEFAULT_HOLD_THRESHOLD_MS): [number, number] {
   const code = descriptor(action.type).code;
   switch (action.type) {
+    case 'tapHold': {
+      const offset = tapHoldOffsets.get(holdRecordKey(action));
+      if (offset === undefined) throw new EncodeError('Tap-Hold pair not present in layout.');
+      return [ActionCode.TapHold | (((action.thresholdMs ?? thresholdMs) / 32 - 1) << 4), offset];
+    }
     case 'macro': {
       const offset = macroOffsets[action.macro];
       if (offset === undefined) throw new EncodeError('Macro not present in layout.');
@@ -88,12 +94,16 @@ export function encodeProfile(profile: Profile): Uint8Array {
   }
 
   const chords = sortedChords(profile);
-  let macroEnd = HEADER_SIZE + size * profile.layers.length + computeCapacity(profile).layerPalettes + CHORD_ENTRY_SIZE * chords.length + TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0) + poolLength;
+  const records = holdRecords(profile);
+  const recordStart = HEADER_SIZE + size * profile.layers.length + computeCapacity(profile).layerPalettes + CHORD_ENTRY_SIZE * chords.length + TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0) + poolLength;
+  const tapHoldOffsets = new Map(records.map((a, i) => [holdRecordKey(a), recordStart + 1 + 4 * i]));
+  let macroEnd = recordStart + (records.length ? 1 + 4 * records.length : 0);
   const macroOffsets = (profile.macros ?? []).map(macro => {
     const start = macroEnd;
     macroEnd += 2 * macro.actions.length + 1;
     return start;
   });
+  const encode = (a: Action) => encodeAction(a, offsets, macroOffsets, tapHoldOffsets, holdThreshold(profile));
   image[0] = HEADER_MARKER;
   image[1] = FORMAT_VERSION;
   const timers = profile.timedActions ?? [];
@@ -111,7 +121,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
     const base = HEADER_SIZE + size * li;
     const records = [...layer.keys, layer.encoderButton, layer.clockwise, layer.counterclockwise];
     records.forEach((action, i) => {
-      const [b0, b1] = encodeAction(action, offsets, macroOffsets);
+      const [b0, b1] = encode(action);
       image[base + 2 * i] = b0;
       image[base + 2 * i + 1] = b1;
     });
@@ -134,7 +144,7 @@ export function encodeProfile(profile: Profile): Uint8Array {
   }
   for (const chord of chords) {
     image[offset] = chordId(chord.layer, chord.keyA, chord.keyB, keys, chord.global);
-    const [b0, b1] = encodeAction(chord.action, offsets, macroOffsets);
+    const [b0, b1] = encode(chord.action);
     image[offset + 1] = b0;
     image[offset + 2] = b1;
     offset += CHORD_ENTRY_SIZE;
@@ -142,8 +152,8 @@ export function encodeProfile(profile: Profile): Uint8Array {
 
   for (const timer of timers) {
     image[offset] = (timer.ticks - 1) & 255;
-    image.set(encodeAction(timer.action, offsets, macroOffsets), offset + 1);
-    image.set(encodeAction(timer.resumeAction, offsets, macroOffsets), offset + 3);
+    image.set(encode(timer.action), offset + 1);
+    image.set(encode(timer.resumeAction), offset + 3);
     image[offset + 5] = ((timer.ticks - 1) >> 8) << 3 | (timer.layer === undefined ? 0 : timer.layer + 1)
       | (timer.consumeInput ? 64 : 0) | (timer.resetOnInput ? 128 : 0);
     offset += TIMED_ENTRY_SIZE;
@@ -154,9 +164,17 @@ export function encodeProfile(profile: Profile): Uint8Array {
     image[offset++] = 0;
   }
 
+  if (records.length) {
+    image[offset++] = ((records.length - 1) << 4) | ActionCode.TapHold;
+    for (const record of records) {
+      image.set(encode(record.tap), offset);
+      image.set(encode(record.hold), offset + 2);
+      offset += 4;
+    }
+  }
   for (const macro of profile.macros ?? []) {
     for (const action of macro.actions) {
-      image.set(encodeAction(action, offsets, macroOffsets), offset);
+      image.set(encode(action), offset);
       offset += 2;
     }
     if (offset < IMAGE_SIZE) image[offset++] = 0;

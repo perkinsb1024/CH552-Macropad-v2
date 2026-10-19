@@ -20,6 +20,7 @@ export interface ActionDescriptor {
 }
 
 export const ACTION_DESCRIPTORS: readonly ActionDescriptor[] = [
+  { type: 'tapHold', code: ActionCode.TapHold, label: 'Tap-Hold', group: 'None', needsRelease: true, hint: 'Tap or hold the input to choose between two actions.' },
   { type: 'macro', code: ActionCode.Macro, label: 'Execute Macro', group: 'Macros', needsRelease: false, hint: 'Run an ordered sequence 1–16 times. Define its steps in Macros.' },
   { type: 'pause', code: ActionCode.Pause, label: 'Pause', group: 'Macros', needsRelease: false, hint: 'Wait up to 4 seconds before the next action' },
   { type: 'ledControl', code: ActionCode.LedControl, label: 'LED Control', group: 'LED Control', needsRelease: false, hint: 'Adjust global lighting at runtime; resets on configuration save or USB reset.' },
@@ -72,6 +73,7 @@ export function relativeTargetLayer(source: number, offset: number, layerCount: 
 /** A fresh, valid instance of the given action type. */
 export function blankAction(type: ActionType): Action {
   switch (type) {
+    case 'tapHold': return { type, tap: { type: 'none' }, hold: { type: 'none' } };
     case 'macro': return { type, macro: 0, repeats: 1 };
     case 'pause': return { type, ticks: 16 };
     case 'ledControl': return { type, command: 'commonPresetRelative', value: 1 };
@@ -129,6 +131,7 @@ export function mouseButtonNames(mask: number): string[] {
 /** Short label used on key caps and lists. */
 export function summarize(action: Action): string {
   switch (action.type) {
+    case 'tapHold': return `Tap: ${summarize(action.tap)}; Hold: ${summarize(action.hold)}`;
     case 'macro': return `Macro ${action.macro + 1}${action.repeats > 1 ? ` (×${action.repeats})` : ''}`;
     case 'pause': return `Pause ${action.ticks * 16}ms`;
     case 'ledControl': return ledSummary(action.command, action.value, false, action.brightness);
@@ -188,6 +191,7 @@ export function summarize(action: Action): string {
 export function actionTooltip(action: Action): string {
   const label = descriptor(action.type).label;
   switch (action.type) {
+    case 'tapHold': return `Tap: ${actionTooltip(action.tap)}; Hold: ${actionTooltip(action.hold)}`;
     case 'none': return label;
     case 'keyTap':
     case 'keyHold': {

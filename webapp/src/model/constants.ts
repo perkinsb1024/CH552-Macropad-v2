@@ -82,6 +82,7 @@ export const enum ActionCode {
   MomentaryRelativeLayer = 0x6c,
   LedControl = 0xd,
   Macro = 0xe,
+  TapHold = 0xf,
 }
 
 export const MOD_CTRL = 1;

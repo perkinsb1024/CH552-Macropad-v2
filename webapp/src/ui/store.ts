@@ -1,4 +1,6 @@
 import { migrateColor } from '../model/palette';
+import { branches, holdBindings, mapBranches } from '../model/tapHold';
+import { liveGestureClassifier } from './liveGestures';
 import { reorderMacros, untriggeredMacros } from '../model/macros';
 import { batch, computed, effect, signal } from '@preact/signals';
 import { siteUrl } from '../site';
@@ -165,7 +167,15 @@ export function redo(): void {
   restoreEditor(next);
 }
 
-export const issues = computed<Issue[]>(() => (profile.value ? validateProfile(profile.value) : []));
+export const issues = computed<Issue[]>(() => {
+  const p = profile.value;
+  if (!p) return [];
+  const result = validateProfile(p);
+  const c = connection.value;
+  if (c.kind === 'connected' && !(c.connection.info.actionMask & 0x8000) && holdBindings(p).length)
+    result.push({ where: 'Firmware', message: 'This firmware does not support Hold gestures. Update the firmware or remove the Hold gestures before saving.' });
+  return result;
+});
 export const reachabilityWarnings = computed(() => (profile.value ? layerReachabilityWarnings(profile.value) : []));
 export const layerChangeWarnings = computed(() => (profile.value ? selfReferentialLayerWarnings(profile.value) : []));
 export const unusedMacros = computed(() => profile.value ? untriggeredMacros(profile.value) : []);
@@ -220,12 +230,13 @@ export function dismissToast(id: number): void {
 }
 
 export interface DialogSpec {
+  onCancel?: () => void;
   title: string;
   body: string;
   inputMonitoringHelp?: boolean;
   comparison?: { device: Profile; editor: Profile; editorLabel?: string };
   textInput?: { label: string; placeholder: string; onInput: (text: string) => void };
-  actions: Array<{ label: string; tone?: 'primary' | 'danger' | 'neutral'; onSelect: () => void }>;
+  actions: Array<{ label: string; tone?: 'primary' | 'danger' | 'neutral' | 'ghost'; onSelect: () => void }>;
 }
 export const dialog = signal<DialogSpec | null>(null);
 
@@ -577,11 +588,11 @@ function applyLayerOrder(order: number[]): void {
   updateProfile((draft) => {
     draft.layers = order.map((oldIndex) => draft.layers[oldIndex]!);
     draft.chords = draft.chords.map((chord) => ({ ...chord, layer: remap(chord.layer) }));
-    const updateTarget = (action: Action): Action => (
+    const updateTarget = (binding: Action): Action => mapBranches(binding, action => (
       !isPreviousLayer(action) && (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer')
         ? { ...action, layer: remap(action.layer) }
         : action
-    );
+    ));
     for (const layer of draft.layers) {
       layer.keys = layer.keys.map(updateTarget);
       layer.encoderButton = updateTarget(layer.encoderButton);
@@ -740,6 +751,7 @@ export function addLayer(mode: 'blank' | 'duplicate' = 'blank'): void {
 export function layerReferences(p: Profile, layer: number): { actions: number; chords: number } {
   let actions = 0;
   const visit = (a: Action) => {
+    if (a.type === 'tapHold') { branches(a).forEach(visit); return; }
     if ((a.type === 'setLayer' || a.type === 'oneShotSetLayer' || a.type === 'momentaryLayer') && a.layer === layer) actions++;
   };
   p.layers.forEach((l, li) => {
@@ -775,6 +787,7 @@ export function removeLayer(layer: number): void {
     });
     if (!draft.chords.length && draft.chordWindow === 0) draft.chordWindow = 8;
     const shift = (a: Action): Action => {
+      if (a.type === 'tapHold') return mapBranches(a, branch => shift(branch) as import('../model/types').OrdinaryAction);
       if (!isPreviousLayer(a) && (a.type === 'setLayer' || a.type === 'oneShotSetLayer' || a.type === 'momentaryLayer') && a.layer > layer) return { ...a, layer: a.layer - 1 };
       return a;
     };
@@ -863,14 +876,17 @@ function updateDeviceStatus(conn: Connection, status: DeviceStatus): void {
     if (liveOwner !== conn) { liveOwner = conn; liveActivity.value = null; liveRuntime.value = null; }
     if (status.live && status.flashValid) {
       const previous = liveActivity.peek();
-      const activity = advanceActivity(previous, status.live, now);
+      const savedProfile = profile.peek();
+      const savedImage = deviceFlash.peek();
+      const activity = advanceActivity(previous, status.live, now, savedProfile && savedImage ? liveGestureClassifier(savedProfile, savedImage) : () => 'unknown');
       liveActivity.value = activity;
       const latest = activity.latest;
       if (latest && latest !== previous?.latest) {
         const image = deviceFlash.peek();
         const action = image ? decodeLiveAction(image, latest.first, latest.second) : null;
         const slots = profile.peek()?.timedActions?.length ?? 0;
-        const description = action ? summarize(action) : runtimeAction(latest.source, latest.second, slots);
+        const gesture = latest.source & 128 ? '' : activity.latestGesture === 'hold' ? 'Hold: ' : activity.latestGesture === 'tap' ? 'Tap: ' : '';
+        const description = gesture + (action ? summarize(action) : runtimeAction(latest.source, latest.second, slots));
         notify('info', `${liveSource(latest.source, conn.info.keyCount, slots)} (${layerName(latest.bindingLayer)}) - ${description}`, 3000, 'live-trigger');
       }
     }
@@ -1161,6 +1177,10 @@ export async function save(): Promise<void> {
   }
   if (p.variant !== c.connection.info.variant) {
     notify('error', 'This profile is for the other hardware variant and cannot be saved to this device.');
+    return;
+  }
+  if (!(c.connection.info.actionMask & 0x8000) && holdBindings(p).length) {
+    notify('error', 'This firmware does not support Hold gestures. Update the firmware or remove the Hold gestures before saving.');
     return;
   }
   if (deviceDecode.value && !deviceDecode.value.ok && deviceDecode.value.reason === 'unsupported-version' &&

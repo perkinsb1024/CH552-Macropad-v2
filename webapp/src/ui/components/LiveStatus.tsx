@@ -44,6 +44,7 @@ export function LiveStatus() {
         <div><dt>Source</dt><dd>{liveSource(latest.source, c.connection.info.keyCount, slots)}</dd></div>
         <div><dt>Layer</dt><dd>{layerName(latest.bindingLayer)}</dd></div>
         <div><dt>Action</dt><dd>{action ? <ActionLabel action={action} /> : runtimeAction(latest.source, latest.second, slots)}</dd></div>
+        {!(latest.source & 128) && <div><dt>Gesture</dt><dd class={`live-gesture-${activity.latestGesture ?? 'unknown'}`}>{activity.latestGesture === 'hold' ? 'Hold' : activity.latestGesture === 'tap' ? 'Tap' : 'Not Identifiable'}</dd></div>}
       </dl>
       {activity.bindingDelta > 1 && <span class="hint">{activity.bindingDelta} triggers since the previous update; showing the latest.</span>}
     </section>}
@@ -82,6 +83,6 @@ export function LiveStatus() {
         <div><dt>Rotation</dt><dd>{c.connection.status.droppedRotationActions}</dd></div>
       </dl></section>}
     </div> : <p class="hint">{stateStale && runtime ? 'Runtime state is stale.' : 'Reading runtime state…'}</p>}
-    <p class="hint live-input-note"><span>Blue outlines on the device preview show physical input and green outlines show accepted triggers.</span>{' '}<span>Accepted triggers may still wait behind long running actions.</span></p>
+    <p class="hint live-input-note"><span>Blue outlines show physical input. Green flashes show Tap or ordinary triggers; purple flashes show Hold gestures. Gray flashes mean the gesture cannot be identified from telemetry.</span>{' '}<span>Accepted triggers may still wait behind long running actions.</span></p>
   </details>;
 }

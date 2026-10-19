@@ -1,7 +1,7 @@
 import type { LedBrightness, LedCommand, LedValue } from './ledControl';
 import type { LayerIndicatorBehavior, Variant } from './constants';
 
-export type Action =
+export type OrdinaryAction =
   | { type: 'macro'; macro: number; repeats: number }
   | { type: 'pause'; ticks: number }
   | { type: 'ledControl'; command: LedCommand; value: LedValue; brightness?: LedBrightness }
@@ -28,6 +28,9 @@ export type Action =
   | { type: 'mouseX'; delta: number; hold?: boolean }
   | { type: 'mouseY'; delta: number; hold?: boolean }
   | { type: 'mouseXY'; x: number; y: number; hold?: boolean };
+
+export type TapHoldAction = { type: 'tapHold'; tap: OrdinaryAction; hold: OrdinaryAction; thresholdMs?: number };
+export type Action = OrdinaryAction | TapHoldAction;
 
 export type ActionType = Action['type'];
 
@@ -78,6 +81,8 @@ export interface Profile {
   startupLayer: number;
   /** 5ms units: 4, 6, …, 18; zero retains disabled legacy chords pending review. */
   chordWindow: number;
+  /** Shared Tap-Hold threshold; encoded into each physical binding. */
+  holdThresholdMs?: number;
   /** Index of the rainbow phase spacing: 0°, ~30°, ~60°, ~150°. */
   rainbowPhase: number;
   /** Index of rainbow speed: Extra fast, Fast, Slow, Extra slow. */

@@ -1,7 +1,7 @@
 import { LED_COMMANDS, ledCommandSpec, isLedEffect, ledValueOptions, ledRelativeCycle, type LedCommand, type LedValue } from '../../model/ledControl';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import { ACTION_DESCRIPTORS, actionNeedsRelease, blankAction, isPreviousLayer, relativeTargetLayer } from '../../model/actions';
+import { ACTION_DESCRIPTORS, actionNeedsRelease, blankAction, isPreviousLayer, relativeTargetLayer, summarize, actionTooltip } from '../../model/actions';
 import { ACTION_FAMILIES, actionFamilyType, isKeyAction, isMediaAction, isLayerAction } from '../actionFamilies';
 import { CONSUMER_GROUPS, CONSUMER_USAGES } from '../../keys/consumer';
 import { MOUSE_BUTTONS, PREVIOUS_LAYER, keyCount, maxLayers } from '../../model/constants';
@@ -11,12 +11,23 @@ import { normalizeText, visibleText } from '../../model/strings';
 import type { Action, ActionType } from '../../model/types';
 import { isMacroLayerSwitch, macroSwitchesLayer } from '../../model/macros';
 import { actionProblem, slotLabel } from '../../model/validate';
-import { getAction, layerName, profile, rememberedAction, rememberedFamilyAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
+import { ask, closeDialog, getAction, layerName, profile, rememberedAction, rememberedFamilyAction, rememberedCustomClickCount, removeChord, selectedSlot, setAction, updateProfile } from '../store';
 import { ColorPreview } from './ColorPreview';
 import { ModifierPicker } from './KeyPicker';
 import { KeyPicker } from './KeyPicker';
 import { IconTrash } from './Icons';
 import { ScrollTest } from './ScrollTest';
+import { ActionLabel } from './ActionLabel';
+import { branches } from '../../model/tapHold';
+import { spotlightHoldThreshold } from './ProfilePanel';
+import { IconChevron } from './Icons';
+
+function gestureChoiceLabel(action: Action): string {
+  if (action.type === 'keyTap') return `Key Press: ${summarize(action)}`;
+  const summary = summarize(action);
+  const label = ACTION_DESCRIPTORS.find(candidate => candidate.type === action.type)!.label;
+  return summary.startsWith(label) ? summary : actionTooltip(action);
+}
 
 const GROUPS = ['None', 'Keyboard', 'Mouse', 'Media', 'Text', 'Layers', 'LED Control', 'Macros'] as const;
 type MouseButtonAction = Extract<Action, { type: 'mouseClick' | 'mouseHold' | 'mouseToggle' | 'mouseDown' | 'mouseUp' }>;
@@ -174,14 +185,15 @@ function DirectionalStep({ label, directionLabel, negativeLabel, positiveLabel, 
   );
 }
 
-export function Inspector() {
+export function Inspector({ branch }: { branch?: 'tap' | 'hold' } = {}) {
   const [showScrollTest, setShowScrollTest] = useState(false);
   const p = profile.value;
   const slot = selectedSlot.value;
-  const action = p && slot ? getAction(p, slot) : undefined;
+  const binding = p && slot ? getAction(p, slot) : undefined;
+  const action = branch && binding?.type === 'tapHold' ? binding[branch] : binding;
   const timed = slot?.kind === 'timed';
   const macro = slot?.kind === 'macro';
-  const rotation = slot?.kind === 'macro' || slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
+  const rotation = branch === 'tap' || slot?.kind === 'macro' || slot?.kind === 'timed' || slot?.kind === 'clockwise' || slot?.kind === 'counterclockwise';
   const layerCount = p?.layers.length ?? 0;
   const actionContext = { layerCount, rotation: !!rotation, timed, macro, macros: p?.macros, macroCount: p?.macros?.length ?? 0 };
   const problem = action ? actionProblem(action, actionContext) : null;
@@ -190,7 +202,7 @@ export function Inspector() {
     if (!p) return [];
     const strings = new Set<string>();
     const add = (candidate: Action) => {
-      if (candidate.type === 'string' && candidate.text.length > 0) strings.add(candidate.text);
+      for (const a of branches(candidate)) if (a.type === 'string' && a.text.length > 0) strings.add(a.text);
     };
     for (const savedLayer of p.layers) {
       savedLayer.keys.forEach(add);
@@ -213,7 +225,12 @@ export function Inspector() {
     );
   }
 
-  const update = (next: Action) => setAction(slot, next);
+  const update = (next: Action) => {
+    if (branch) {
+      const current = getAction(profile.value!, slot);
+      if (current?.type === 'tapHold' && next.type !== 'tapHold') setAction(slot, { ...current, [branch]: next });
+    } else setAction(slot, next);
+  };
   const ledRelativeSteps = action.type === 'ledControl' &&
     (action.command === 'rainbowPhaseRelative' || action.command === 'rainbowSpeedRelative')
     ? [-2, -1, 1, 2] : [-1, 1];
@@ -222,7 +239,7 @@ export function Inspector() {
     if (type === 'mouseX' && isPointerAction(action)) return;
     if (type === 'mouseClick' && isMouseButtonAction(action)) return;
     if (type === actionFamilyType(action.type)) return;
-    setAction(slot, action);
+    if (!branch) setAction(slot, action);
     const saved = rememberedFamilyAction(slot, type);
     const remembered = saved && !actionProblem(saved, actionContext) ? saved : undefined;
     if ((type === 'consumer' || type === 'consumerModified') && isMediaAction(action)) {
@@ -263,7 +280,7 @@ export function Inspector() {
 
   const setMouseBehavior = (type: MouseButtonAction['type']) => {
     if (!isMouseButtonAction(action) || action.type === type || (type === 'mouseHold' && rotation)) return;
-    setAction(slot, action);
+    if (!branch) setAction(slot, action);
     const remembered = rememberedAction(slot, type);
     const next = remembered && isMouseButtonAction(remembered) ? remembered : blankAction(type);
     if (isMouseButtonAction(next)) update({ ...next, buttons: action.buttons });
@@ -285,17 +302,17 @@ export function Inspector() {
       update({ type, delta, ...hold });
     }
   };
-  const selectableActions = ACTION_DESCRIPTORS.filter(d => actionFamilyType(d.type) === d.type && d.type !== 'mouseY' && d.type !== 'mouseXY' &&
+  const selectableActions = ACTION_DESCRIPTORS.filter(d => d.type !== 'tapHold' && actionFamilyType(d.type) === d.type && d.type !== 'mouseY' && d.type !== 'mouseXY' &&
     !MOUSE_BEHAVIORS.some(behavior => behavior.type === d.type && behavior.type !== 'mouseClick')).filter(d => macro
     ? d.type !== 'macro' && d.type !== 'none' && !d.needsRelease
     : d.type !== 'pause');
   const singleRun = action.type === 'macro' && macroSwitchesLayer(p.macros?.[action.macro]?.actions ?? []);
-  const keyIndex = slot.kind === 'key' ? slot.index : null;
+  const keyIndex = !branch && slot.kind === 'key' ? slot.index : null;
   const layer = p.layers[slot.layer]!;
 
   return (
-    <section class="card inspector">
-      <header class="card-head">
+    <section class={branch ? 'inspector-branch' : 'card inspector'}>
+      {!branch && <header class="card-head">
         <div class="inspector-title">
           <h2>{slot.kind === 'timed' || slot.kind === 'macro' ? slotLabel(slot) : slotLabel(slot).split(' · ')[1]}</h2>
           <span class="muted">{slot.kind === 'timed' || slot.kind === 'macro' ? 'Across All Layers' : layerName(slot.layer)}</span>
@@ -303,8 +320,32 @@ export function Inspector() {
         {slot.kind === 'chord' && (
           <button class="btn btn-icon btn-ghost" aria-label="Remove Chord" onClick={() => removeChord(slot)}><IconTrash /></button>
         )}
-      </header>
+      </header>}
 
+      {action.type === 'tapHold' ? <>
+        <fieldset class="tap-hold-group">
+          <legend>Tap and Hold</legend>
+          <p class="hint">Release before the <a href="#hold-threshold" onClick={event => { event.preventDefault(); spotlightHoldThreshold(); }}>hold threshold</a> to trigger the tap action</p>
+          {(['tap', 'hold'] as const).map(gesture => <details key={`${JSON.stringify(slot)}:${gesture}`} class={`gesture-editor gesture-${gesture}`} open={false}>
+            <summary><span class="gesture-name">{gesture === 'tap' ? 'Tap' : 'Hold'}</span><span class="gesture-summary"><ActionLabel action={action[gesture]} gestureContext /></span><IconChevron /></summary>
+            <Inspector branch={gesture} />
+          </details>)}
+        </fieldset>
+        {slot.kind === 'chord' && <p class="hint">The threshold starts when the second key is recognized. Releasing either key chooses Tap or ends Hold.</p>}
+        <button type="button" class="btn gesture-remove" onClick={() => {
+          if (action.tap.type === 'none') update(structuredClone(action.hold));
+          else if (action.hold.type === 'none') update(structuredClone(action.tap));
+          else ask({
+            title: 'Remove Hold Gesture',
+            onCancel: closeDialog,
+            body: 'Which action would you like to keep?',
+            actions: [{ label: 'Cancel', tone: 'ghost', onSelect: closeDialog }, ...(['tap', 'hold'] as const).map(gesture => ({
+              label: gestureChoiceLabel(action[gesture]),
+              onSelect: () => { update(structuredClone(action[gesture])); closeDialog(); },
+            }))],
+          });
+        }}>Remove Hold Gesture</button>
+      </> : <>
       <label class="field">
         <span class="field-label">Action</span>
         <select value={isPointerAction(action) ? 'mouseX' : isMouseButtonAction(action) ? 'mouseClick' : actionFamilyType(action.type)} onChange={(e) => setType((e.target as HTMLSelectElement).value as ActionType)}>
@@ -323,23 +364,29 @@ export function Inspector() {
       </label>
 
       {(isKeyAction(action) || isMediaAction(action) || isLayerAction(action)) && <div class="field">
-        <span class="field-label">Behavior</span>
-        <div class="segmented" role="group" aria-label={isKeyAction(action) ? 'Key Behavior' : isMediaAction(action) ? 'Media Behavior' : 'Layer Behavior'} aria-describedby="family-behavior-hint">
+        <span class="field-label">{branch ? 'Output Behavior' : 'Behavior'}</span>
+        <div class="segmented" role="group" aria-label={isKeyAction(action) ? 'Key Behavior' : isMediaAction(action) ? 'Media Behavior' : 'Layer Behavior'} aria-describedby={`family-behavior-hint${branch ? `-${branch}` : ''}`}>
           {ACTION_FAMILIES[actionFamilyType(action.type) as keyof typeof ACTION_FAMILIES].map((type, index) => {
-            const label = isLayerAction(action) ? ['Switch', 'One-Shot', 'Hold'][index] : ['Tap', 'Hold'][index];
+            const label = isLayerAction(action) ? ['Switch', 'One-Shot', branch ? 'Until Release' : 'Hold'][index] : branch ? ['Press Once', 'Until Release'][index] : ['Tap', 'Hold'][index];
             const hold = ACTION_DESCRIPTORS.find(d => d.type === type)!.needsRelease;
             return <button key={type} type="button" class={action.type === type ? 'is-selected' : ''} aria-pressed={action.type === type}
               disabled={hold && (rotation || isPreviousLayer(action))} onClick={() => setFamilyBehavior(type)}>{label}</button>;
           })}
         </div>
-        <span class="hint" id="family-behavior-hint">
+        <span class="hint" id={`family-behavior-hint${branch ? `-${branch}` : ''}`}>
           {isMediaAction(action)
             ? actionNeedsRelease(action) ? 'Hold the selected control until physical release.' : 'Press and release the selected control once.'
             : actionDescriptor?.hint}
-          {rotation && <> Hold is not available on this input because it has no physical release.</>}
+          {rotation && <>{branch === 'tap' ? ' Tap actions run on release and cannot keep an output held.' : ' Hold is not available on this input because it has no physical release.'}</>}
           {isPreviousLayer(action) && !rotation && <> Hold is not available for Previous Layer. Choose a specific target layer to use Hold.</>}
         </span>
       </div>}
+
+      {!branch && !rotation && <button type="button" class="btn add-hold-gesture" onClick={() => {
+        if (action.type === 'pause') return;
+        const held = actionNeedsRelease(action);
+        update({ type: 'tapHold', tap: held ? { type: 'none' } : structuredClone(action), hold: held ? structuredClone(action) : { type: 'none' } });
+      }}>Add Hold Gesture</button>}
 
       {macro && isMacroLayerSwitch(action) && <p class="hint">A layer switch must be the final macro step. Macros containing a layer switch must run once, even if the target layer is already active.</p>}
       {action.type === 'macro' && <>
@@ -456,13 +503,13 @@ export function Inspector() {
       {isMouseButtonAction(action) && <>
         <label class="field">
           <span class="field-label">Behavior</span>
-          <select aria-label="Mouse Behavior" aria-describedby="mouse-behavior-hint" value={action.type}
+          <select aria-label="Mouse Behavior" aria-describedby={`mouse-behavior-hint${branch ? `-${branch}` : ''}`} value={action.type}
             onChange={e => setMouseBehavior((e.target as HTMLSelectElement).value as MouseButtonAction['type'])}>
-            {MOUSE_BEHAVIORS.map(behavior => <option key={behavior.type} value={behavior.type} disabled={behavior.type === 'mouseHold' && rotation}>{behavior.label}</option>)}
+            {MOUSE_BEHAVIORS.map(behavior => <option key={behavior.type} value={behavior.type} disabled={behavior.type === 'mouseHold' && rotation}>{branch && behavior.type === 'mouseHold' ? 'Until Release' : behavior.label}</option>)}
           </select>
-          <span class="hint" id="mouse-behavior-hint">
+          <span class="hint" id={`mouse-behavior-hint${branch ? `-${branch}` : ''}`}>
             {MOUSE_BEHAVIORS.find(behavior => behavior.type === action.type)?.hint}
-            {rotation && <> Hold is not available on this input.</>}
+            {rotation && <> Until Release is not available on this input.</>}
           </span>
         </label>
         <MouseButtons value={action.buttons} onChange={(buttons) => update({ ...action, buttons })} />
@@ -507,11 +554,11 @@ export function Inspector() {
           {!rotation && <>
             <span class="field-label">{action.type === 'scroll' ? 'Scroll Behavior' : 'Behavior'}</span>
             <div class="segmented" role="group" aria-label={action.type === 'scroll' ? 'Scroll Behavior' : 'Behavior'}>
-              <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>Tap</button>
-              <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>Hold</button>
+              <button type="button" class={!action.hold ? 'is-selected' : ''} aria-pressed={!action.hold} onClick={() => update({ ...action, hold: undefined })}>{branch ? 'Once' : 'Tap'}</button>
+              <button type="button" class={action.hold ? 'is-selected' : ''} aria-pressed={!!action.hold} onClick={() => update({ ...action, hold: true })}>{branch ? 'Until Release' : 'Hold'}</button>
             </div>
           </>}
-          <span class="hint">{timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8ms while held; release to stop.' : action.type === 'scroll' ? 'Sends one step per press.' : 'Sends one move event per press.'}</span>
+          <span class="hint">{branch === 'tap' ? 'Sends one step when the Tap gesture runs.' : timed ? 'Sends one step when this timed action runs.' : rotation ? 'Encoder rotation sends one step per detent.' : action.hold ? action.type === 'scroll' ? 'Repeats with 100ms between steps while held. Release stops new repeats; a step already started finishes.' : 'Repeats every 8ms while held; release to stop.' : action.type === 'scroll' ? 'Sends one step per press.' : 'Sends one move event per press.'}</span>
         </div>
       )}
 
@@ -595,6 +642,7 @@ export function Inspector() {
       )}
 
       {problem && <p class="problem" role="alert">{problem}</p>}
+      </>}
 
       {keyIndex !== null && <IdleColor layerIndex={slot.layer} keyIndex={keyIndex} />}
       {keyIndex !== null && (

@@ -618,9 +618,9 @@ output {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
 }
 .shortcut-none {
-  background: color-mix(in srgb, white 90%, var(--bg-elev));
-  color: #626878;
-  border: 1px dashed #9298a6;
+  background: var(--bg-elev);
+  color: var(--fg-muted);
+  border: 1px dashed var(--fg-faint);
 }
 .enc-part .shortcut-none {
   background: transparent;
@@ -2240,6 +2240,7 @@ output {
   gap: 8px;
   margin-top: 18px;
 }
+.dialog-actions > .btn-ghost { margin-right: auto; }
 .dialog-differences-link {
   display: inline-block;
   margin-top: 10px;
@@ -2623,7 +2624,38 @@ output {
 
 /* Device feedback keeps physical input and accepted binding dispatch distinct. */
 .keycap.is-live-pressed, .enc-part.is-live-pressed { outline: 3px solid #54a8ef; outline-offset: 2px; }
-.keycap.is-live-fired, .enc-part.is-live-fired { box-shadow: inset 0 0 0 3px #5ace97, 0 0 16px #5ace9740; }
+.keycap.is-live-fired, .enc-part.is-live-fired { --live-trigger: #5ace97; box-shadow: inset 0 0 0 3px var(--live-trigger), 0 0 16px color-mix(in srgb, var(--live-trigger) 25%, transparent); }
+.keycap.is-live-hold, .enc-part.is-live-hold { --live-trigger: #b18aff; }
+.keycap.is-live-unknown, .enc-part.is-live-unknown { --live-trigger: var(--fg-faint); }
+.live-gesture-tap { color: var(--ok); }
+.live-gesture-hold { color: var(--sim); }
+.live-gesture-unknown { color: var(--fg-muted); }
+
+/* Tap and Hold are one binding, with independent, collapsible action editors. */
+.tap-hold-group { min-width: 0; margin: 0; padding: 10px 12px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--bg-sunken); }
+.tap-hold-group > legend { padding: 0 6px; font-size: 13px; font-weight: 600; }
+.tap-hold-group > .hint { margin: 0 0 12px; }
+.gesture-editor { min-width: 0; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-elev); }
+.gesture-editor + .gesture-editor { margin-top: 8px; }
+.gesture-editor > summary { display: flex; align-items: center; gap: 10px; padding: 12px; list-style: none; cursor: pointer; }
+.gesture-editor > summary::-webkit-details-marker { display: none; }
+.gesture-name { flex: 0 0 34px; font-weight: 600; }
+.gesture-summary { flex: 1; min-width: 0; color: var(--fg-muted); }
+.gesture-editor > summary > svg { flex-shrink: 0; transition: transform 150ms ease; }
+.gesture-editor[open] > summary > svg { transform: rotate(180deg); }
+.inspector-branch { display: flex; flex-direction: column; gap: 14px; padding: 12px; border-top: 1px solid var(--line); }
+.inspector-branch > .field:last-child { margin-bottom: 0; }
+.gesture-remove { align-self: flex-start; margin: 12px 0; }
+.add-hold-gesture { align-self: flex-start; margin-bottom: 12px; }
+.tap-hold-label { display: inline-grid; gap: 4px; min-width: 0; max-width: 100%; text-align: left; }
+.tap-hold-label > span { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.gesture-label { color: var(--fg-muted); font-size: 11px; font-weight: 500; min-width: 28px; }
+.keycap-label:has(.tap-hold-label) { display: block; font-size: 12px; }
+.keycap-label .tap-hold-label .shortcut-pills { justify-content: flex-start; }
+.tap-hold-compact { display: grid; width: 100%; }
+.tap-hold-compact > span { flex-wrap: nowrap; }
+.tap-hold-compact .gesture-action { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seg-tap-hold { background: #c7b535; }
 .viewer-live { margin-top: 16px; }
 .viewer-timed-actions { grid-column: 1 / -1; }
 .viewer-section > summary { display: flex; align-items: center; gap: 1rem; cursor: pointer; list-style: none; margin-bottom: 0; }
@@ -2675,3 +2707,17 @@ output {
 .device-readonly .enc-part-label small { flex-shrink: 0; font-size: 9px; letter-spacing: 0; }
 
 .viewer-all-layers { color: var(--accent); background: var(--accent-soft); }
+
+#hold-threshold { scroll-margin-block: 100px; }
+.setting-spotlight {
+  position: relative;
+  z-index: 70;
+  background: var(--bg-elev);
+  border-radius: var(--radius-sm);
+  outline: 8px solid var(--bg-elev);
+  animation: setting-spotlight 1350ms linear;
+}
+@keyframes setting-spotlight {
+  0%, 74.074% { box-shadow: 0 0 0 100vmax rgb(8 10 16 / 0.65); }
+  100% { box-shadow: 0 0 0 100vmax rgb(8 10 16 / 0); }
+}

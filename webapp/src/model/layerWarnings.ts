@@ -3,12 +3,14 @@ import { chordSlot } from './chords';
 import { LayerIndicatorBehavior } from './constants';
 import type { Action, Issue, Profile, Slot } from './types';
 import { actionProblem, slotLabel } from './validate';
+import { branches } from './tapHold';
 
 /** Advisory only: self-referential bindings remain valid and encodable. */
 export function selfReferentialLayerWarnings(profile: Profile): Issue[] {
   const warnings: Issue[] = [];
   const layerCount = profile.layers.length;
   const check = (action: Action, slot: Slot, source = slot.layer, rotation = false) => {
+    if (action.type === 'tapHold') { branches(action).forEach(a => check(a, slot, source, rotation)); return; }
     if (actionProblem(action, { layerCount, rotation, timed: slot.kind === 'timed' })) return;
     let target: number;
     switch (action.type) {

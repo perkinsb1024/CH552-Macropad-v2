@@ -12,6 +12,7 @@ import { SLEEP_TIMEOUT_LABELS, SLEEP_TIMEOUT_MINUTES, MAX_TIMED_ACTIONS, TIMED_T
 import { viewerSection } from '../viewerSections';
 import { IconChevron } from './Icons';
 import { rainbowAnimation, setRainbowAnimation, startLiveLighting } from '../liveLighting';
+import { branches, holdBindings, holdThreshold } from '../../model/tapHold';
 
 export function ViewerChords() {
   const p = profile.value!;
@@ -67,7 +68,7 @@ export function ViewerMacros() {
     ...(p.timedActions ?? []).filter(timer => timer.layer === undefined || timer.layer === layerIndex)
       .flatMap(timer => [timer.action, timer.resumeAction]),
   ];
-  const triggeredMacros = new Set(triggers.filter(action => action.type === 'macro').map(action => action.macro));
+  const triggeredMacros = new Set(triggers.flatMap(branches).filter(action => action.type === 'macro').map(action => action.macro));
   return <details class="card viewer-bindings viewer-section viewer-macros" {...viewerSection('macros')}><summary class="card-head"><h2>Macros ({macros.length})</h2><IconChevron /></summary>
     {!macros.length && <p class="muted">No macros in this profile.</p>}
     {macros.map((macro, index) => <div class="viewer-macro" key={index}>
@@ -195,6 +196,7 @@ export function ProfileViewer() {
           <details class="viewer-section viewer-saved-settings" {...viewerSection('layer-settings', false)}>
             <summary class="card-head"><h2>Layer Settings</h2><IconChevron /></summary>
             <div class="viewer-settings-grid" aria-label="Layer Settings">
+              {holdBindings(p).length > 0 && <section class="viewer-stat-group"><h3>Hold Gestures</h3><dl class="viewer-facts"><div><dt>Threshold</dt><dd>{holdBindings(p).some(a => holdThreshold(p, a) !== holdThreshold(p)) ? 'Mixed Saved Values' : `${holdThreshold(p)}ms`}</dd></div></dl></section>}
               <section class="viewer-stat-group"><h3>Layer Indicator</h3><dl class="viewer-facts">
                 <div><dt>Mode</dt><dd>{indicatorMode}</dd></div>
                 <div><dt>Brightness</dt><dd>{viewedLayer?.indicatorFullBrightness ? 'Full Brightness' : 'Dim'}</dd></div>

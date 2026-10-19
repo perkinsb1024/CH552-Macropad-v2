@@ -13,9 +13,9 @@ export function Dialog() {
   const helpCloseButton = useRef<HTMLButtonElement>(null);
   const dialogElement = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!spec?.inputMonitoringHelp) return;
+    if (!spec?.inputMonitoringHelp && !spec?.onCancel) return;
     const previousFocus = document.activeElement;
-    helpCloseButton.current?.focus({ preventScroll: true });
+    (helpCloseButton.current ?? dialogElement.current?.querySelector<HTMLButtonElement>('button'))?.focus({ preventScroll: true });
     return () => { if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus(); };
   }, [spec]);
   useEffect(() => { setShowDifferences(false); }, [spec]);
@@ -29,9 +29,9 @@ export function Dialog() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (showDifferences) setShowDifferences(false);
-        else spec.actions.find((a) => a.tone === 'neutral')?.onSelect();
+        else (spec.onCancel ?? spec.actions.find((a) => a.tone === 'neutral')?.onSelect)?.();
       }
-      if (spec.inputMonitoringHelp && e.key === 'Tab') {
+      if ((spec.inputMonitoringHelp || spec.onCancel) && e.key === 'Tab') {
         const controls = Array.from(dialogElement.current?.querySelectorAll<HTMLElement>('summary, button') ?? [])
           .filter((element) => element.getClientRects().length > 0);
         const first = controls[0];
@@ -69,8 +69,8 @@ export function Dialog() {
   }
   return (
     <div class="scrim" role="presentation" onClick={(e) => {
-      if (spec.inputMonitoringHelp && e.target === e.currentTarget) {
-        spec.actions.find((a) => a.tone === 'neutral')?.onSelect();
+      if ((spec.inputMonitoringHelp || spec.onCancel) && e.target === e.currentTarget) {
+        (spec.onCancel ?? spec.actions.find((a) => a.tone === 'neutral')?.onSelect)?.();
       }
     }}>
       <div ref={dialogElement} class={`dialog${spec.textInput ? ' dialog-paste' : ''}${spec.inputMonitoringHelp ? ' dialog-permission-help' : ''}`} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
@@ -95,7 +95,7 @@ export function Dialog() {
         )}
         <div class="dialog-actions">
           {spec.actions.map((a) => (
-            <button key={a.label} ref={spec.inputMonitoringHelp ? helpCloseButton : undefined} class={`btn ${a.tone === 'primary' ? 'btn-primary' : a.tone === 'danger' ? 'btn-danger' : ''}`} onClick={a.onSelect}>
+            <button key={a.label} ref={spec.inputMonitoringHelp ? helpCloseButton : undefined} class={`btn ${a.tone === 'primary' ? 'btn-primary' : a.tone === 'danger' ? 'btn-danger' : a.tone === 'ghost' ? 'btn-ghost' : ''}`} onClick={a.onSelect}>
               {a.label}
             </button>
           ))}

@@ -13,6 +13,7 @@ export function StorageMeter() {
     { key: 'palettes', label: `${palettes} Layer Palette${palettes === 1 ? '' : 's'}`, bytes: cap.layerPalettes, detail: `${layerPaletteSize(p.variant)} bytes each` },
     { key: 'chords', label: `${p.chords.length} Chord${p.chords.length === 1 ? '' : 's'}`, bytes: cap.chords, detail: '3 bytes each' },
     { key: 'timers', label: `${p.timedActions?.length ?? 0} Timed Action${p.timedActions?.length === 1 ? '' : 's'}`, bytes: cap.timedActions, detail: '6 bytes each' },
+    ...(cap.tapHold ? [{ key: 'tap-hold', label: 'Tap-Hold Pairs', bytes: cap.tapHold, detail: '4 bytes each + 1 header' }] : []),
     { key: 'macros', label: `${p.macros?.length ?? 0} Macro${p.macros?.length === 1 ? '' : 's'}`, bytes: cap.macros, detail: '2 bytes per step + terminator' },
     { key: 'strings', label: `${cap.pool.length} String${cap.pool.length === 1 ? '' : 's'}`, bytes: cap.strings, detail: 'length + terminator' },
   ];

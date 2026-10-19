@@ -2,6 +2,7 @@ import { actionsEqual, summarize, isPreviousLayer } from './actions';
 import { SLEEP_TIMEOUT_MINUTES, SLEEP_TIMEOUT_LABELS, RAINBOW_SPEED_LABELS, RAINBOW_PHASE_LABELS, LayerIndicatorBehavior, variantName } from './constants';
 import { PALETTE } from './palette';
 import type { Action, Chord, Profile } from './types';
+import { holdThreshold, mapBranches } from './tapHold';
 
 export interface ProfileChange { where: string; before?: string; after?: string; undo?: (draft: Profile) => void }
 
@@ -48,6 +49,10 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
   }
   change('Startup Layer', before.startupLayer, after.startupLayer, (n) => `Layer ${n + 1}`, (draft) => { draft.startupLayer = before.startupLayer; });
   change('Chord Window', before.chordWindow, after.chordWindow, (n) => n ? `${n * 5}ms` : 'Selection Required', (draft) => { draft.chordWindow = before.chordWindow; });
+  change('Hold Threshold', holdThreshold(before), holdThreshold(after), n => `${n}ms`, draft => {
+    if (before.holdThresholdMs === undefined) delete draft.holdThresholdMs;
+    else draft.holdThresholdMs = before.holdThresholdMs;
+  });
   change('Rainbow Phase Spacing', before.rainbowPhase, after.rainbowPhase, (v) => RAINBOW_PHASE_LABELS[v]!, (draft) => { draft.rainbowPhase = before.rainbowPhase; });
   change('Rainbow Speed', before.rainbowSpeed, after.rainbowSpeed, (v) => RAINBOW_SPEED_LABELS[v] ?? 'Unknown', (draft) => { draft.rainbowSpeed = before.rainbowSpeed; });
   change('Transparent Off Color', before.transparentBlack, after.transparentBlack, (v) => v ? 'Enabled' : 'Disabled', (draft) => { draft.transparentBlack = before.transparentBlack; });
@@ -59,8 +64,8 @@ export function profileChanges(before: Profile | null, after: Profile): ProfileC
       changes.push({ where: label, after: 'Added', undo: (draft) => {
         draft.layers.splice(i, 1);
         draft.chords = draft.chords.filter((chord) => chord.layer !== i).map((chord) => chord.layer > i ? { ...chord, layer: chord.layer - 1 } : chord);
-        const shift = (action: Action): Action =>
-          !isPreviousLayer(action) && (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer > i ? { ...action, layer: action.layer - 1 } : action;
+        const shift = (binding: Action): Action => mapBranches(binding, action =>
+          !isPreviousLayer(action) && (action.type === 'setLayer' || action.type === 'oneShotSetLayer' || action.type === 'momentaryLayer') && action.layer > i ? { ...action, layer: action.layer - 1 } : action);
         for (const layer of draft.layers) {
           layer.keys = layer.keys.map(shift);
           layer.encoderButton = shift(layer.encoderButton);

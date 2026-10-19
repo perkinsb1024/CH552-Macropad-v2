@@ -1,6 +1,7 @@
 import { TIMED_ENTRY_SIZE, CHORD_ENTRY_SIZE, HEADER_SIZE, IMAGE_SIZE, layerSize, layerPaletteSize } from './constants';
 import type { Action, Profile } from './types';
 import { encodedLength } from './strings';
+import { branches, holdRecords } from './tapHold';
 
 export interface Capacity {
   header: number;
@@ -10,6 +11,7 @@ export interface Capacity {
   strings: number;
   timedActions: number;
   macros: number;
+  tapHold: number;
   used: number;
   remaining: number;
   /** Distinct strings in pool order. */
@@ -20,7 +22,7 @@ export interface Capacity {
 export function stringActionsInOrder(profile: Profile): string[] {
   const out: string[] = [];
   const visit = (a: Action) => {
-    if (a.type === 'string') out.push(a.text);
+    for (const branch of branches(a)) if (branch.type === 'string') out.push(branch.text);
   };
   for (const layer of profile.layers) {
     layer.keys.forEach(visit);
@@ -59,10 +61,12 @@ export function computeCapacity(profile: Profile): Capacity {
   const chords = CHORD_ENTRY_SIZE * profile.chords.length;
   const strings = pool.reduce((sum, s) => sum + encodedLength(s), 0);
   const timedActions = TIMED_ENTRY_SIZE * (profile.timedActions?.length ?? 0);
+  const records = holdRecords(profile);
+  const tapHold = records.length ? 1 + 4 * records.length : 0;
   let macros = (profile.macros ?? []).reduce((sum, macro) => sum + 2 * macro.actions.length + 1, 0);
-  const withTerminators = header + layers + layerPalettes + chords + timedActions + strings + macros;
+  const withTerminators = header + layers + layerPalettes + chords + timedActions + strings + tapHold + macros;
   // The image boundary itself terminates the final nonempty sequence.
   if (profile.macros?.at(-1)?.actions.length && withTerminators === IMAGE_SIZE + 1) macros--;
-  const used = header + layers + layerPalettes + chords + timedActions + strings + macros;
-  return { header, layers, layerPalettes, chords, timedActions, macros, strings, used, remaining: IMAGE_SIZE - used, pool };
+  const used = header + layers + layerPalettes + chords + timedActions + strings + tapHold + macros;
+  return { header, layers, layerPalettes, chords, timedActions, macros, strings, tapHold, used, remaining: IMAGE_SIZE - used, pool };
 }

@@ -50,6 +50,7 @@ export function loadDraft(variant: 0 | 1): Draft | null {
         parsed.profile = migrateLegacyProfile(parsed.profile, parsed.formatVersion ?? 2);
         const actions = [...parsed.profile.layers.flatMap((l) => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...parsed.profile.chords.map((c) => c.action),
           ...(parsed.profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(parsed.profile.macros ?? []).flatMap(m => m.actions)];
+        if ((parsed.formatVersion ?? 2) < 18 && (parsed.profile.holdThresholdMs !== undefined || actions.some(a => a.type === 'tapHold'))) continue;
         if ((parsed.formatVersion ?? 2) < 14 && actions.some(a => a.type === 'consumerModifiedHold' || a.type === 'momentaryRelativeLayer')) continue;
         if ((parsed.formatVersion ?? 2) < 13 && actions.some(a => a.type === 'consumerModified')) continue;
         if ((parsed.formatVersion ?? 2) < 12 && actions.some(a => a.type === 'mouseDown' || a.type === 'mouseUp' || ('buttons' in a && a.buttons > 7))) continue;

@@ -1,4 +1,4 @@
-import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
+import type { Action, Chord, Layer, Profile, TimedAction, OrdinaryAction } from '../model/types';
 import { RAINBOW_SPEED_LABELS, DEFAULT_RAINBOW_SPEED, RAINBOW_PHASE_DEGREES, DEFAULT_RAINBOW_PHASE, type Variant, VARIANT_SIX_KEYS, VARIANT_THREE_KEYS, keyCount, maxLayers } from '../model/constants';
 import { validateProfile } from '../model/validate';
 import { descriptor, ACTION_DESCRIPTORS, isPreviousLayer } from '../model/actions';
@@ -28,6 +28,7 @@ export interface ExportedProfile {
   startupLayer: number;
   transparentBlack: boolean;
   chordWindowMs: number;
+  holdThresholdMs?: number;
   rainbowPhaseDegrees: number;
   rainbowSpeed: string;
   layers: Array<{
@@ -61,6 +62,7 @@ export function exportProfile(profile: Profile, meta?: LocalMetadata): string {
     startupLayer: profile.startupLayer,
     transparentBlack: profile.transparentBlack,
     chordWindowMs: profile.chordWindow * 5,
+    ...(profile.holdThresholdMs !== undefined ? { holdThresholdMs: profile.holdThresholdMs } : {}),
     rainbowPhaseDegrees: RAINBOW_PHASE_DEGREES[profile.rainbowPhase]!,
     rainbowSpeed: RAINBOW_SPEED_LABELS[profile.rainbowSpeed]!.toLowerCase(),
     layers: profile.layers.map((layer) => ({
@@ -102,13 +104,18 @@ function bool(v: unknown, what: string): boolean {
   return v;
 }
 
-function action(v: unknown, what: string): Action {
+function action(v: unknown, what: string, allowTapHold = true): Action {
   if (isRecord(v) && v.type === 'mouseDouble') return { type: 'mouseClick', buttons: int(v.buttons, `${what} buttons`), clicks: 2 };
   if (isRecord(v) && v.type === 'nextLayer') return { type: 'relativeLayer', offset: 0 };
   if (!isRecord(v) || typeof v.type !== 'string' || !TYPES.has(v.type as Action['type'])) throw new ImportError(`${what}: unknown action.`);
   const type = v.type as Action['type'];
   descriptor(type);
   switch (type) {
+    case 'tapHold': {
+      if (!allowTapHold) throw new ImportError(`${what}: nested Tap-Hold is not supported.`);
+      return { type, tap: action(v.tap, `${what} Tap`, false) as OrdinaryAction, hold: action(v.hold, `${what} Hold`, false) as OrdinaryAction,
+        ...(v.thresholdMs !== undefined ? { thresholdMs: int(v.thresholdMs, `${what} threshold`) } : {}) };
+    }
     case 'macro': return { type, macro: int(v.macro, `${what} macro`), repeats: int(v.repeats ?? 1, `${what} repeats`) };
     case 'pause': return { type, ticks: int(v.ticks, `${what} pause ticks`) };
     case 'ledControl':
@@ -233,6 +240,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
       label.toLowerCase() === raw.rainbowSpeed || LEGACY_RAINBOW_SPEED_NAMES[i] === raw.rainbowSpeed) : -1;
   if (rainbowSpeed < 0) throw new ImportError('rainbowSpeed must be extra fast, fast, slow or extra slow.');
   const profile: Profile = {
+    ...(raw.holdThresholdMs !== undefined ? { holdThresholdMs: int(raw.holdThresholdMs, 'Hold Threshold') } : {}),
     sleepTimeoutMinutes: board && raw.sleepTimeoutMinutes !== undefined ? int(raw.sleepTimeoutMinutes, 'Sleep Timeout') : 30,
     consumeWakeInput: board && raw.consumeWakeInput !== undefined ? bool(raw.consumeWakeInput, 'Consume Wake Input') : true,
     showLayerIndicatorOnWake: board && raw.showLayerIndicatorOnWake !== undefined ? bool(raw.showLayerIndicatorOnWake, 'Show Layer Indicator') : true,
@@ -262,6 +270,7 @@ export function importProfile(text: string): { profile: Profile; meta: LocalMeta
   if (Number(raw.version) < 7 && [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action)].some(isPreviousLayer)) throw new ImportError('Previous layer requires profile version 7.');
   const allActions = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action),
     ...(profile.timedActions ?? []).flatMap(t => [t.action, t.resumeAction]), ...(profile.macros ?? []).flatMap(m => m.actions)];
+  if (Number(raw.version) < 18 && (raw.holdThresholdMs !== undefined || allActions.some(a => a.type === 'tapHold'))) throw new ImportError('Tap-Hold requires profile version 18.');
   if (Number(raw.version) < 14 && allActions.some(a => a.type === 'consumerModifiedHold' || a.type === 'momentaryRelativeLayer')) throw new ImportError('Modified consumer holds and relative layer holds require profile version 14.');
   if (Number(raw.version) < 13 && allActions.some(a => a.type === 'consumerModified')) throw new ImportError('Modified consumer actions require profile version 13.');
   if (Number(raw.version) < 12 && allActions.some(a => a.type === 'mouseDown' || a.type === 'mouseUp' || ('buttons' in a && a.buttons > 7))) throw new ImportError('Mouse down/up and buttons 4–8 require profile version 12.');

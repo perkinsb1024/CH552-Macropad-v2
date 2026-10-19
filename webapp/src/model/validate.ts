@@ -8,6 +8,7 @@ import { isMacroLayerSwitch, macroSwitchesLayer } from './macros';
 import { computeCapacity } from './capacity';
 import { chordSlot } from './chords';
 import { ACTION_DESCRIPTORS, actionNeedsRelease, isPreviousLayer } from './actions';
+import { holdBindings, holdRecords, holdThreshold, HOLD_THRESHOLDS } from './tapHold';
 
 export interface ActionContext {
   layerCount: number;
@@ -21,6 +22,16 @@ export interface ActionContext {
 
 /** Returns a problem description, or null when the action is legal in this context. */
 export function actionProblem(action: Action, ctx: ActionContext): string | null {
+  if (action.type === 'tapHold') {
+    if (ctx.rotation || ctx.timed || ctx.macro) return 'Tap-Hold is available only on keys, the encoder button and chords.';
+    if (!action.tap || !action.hold || action.tap.type === ('tapHold' as string) || action.hold.type === ('tapHold' as string)) return 'Tap-Hold branches must be ordinary actions.';
+    if (action.thresholdMs !== undefined && !HOLD_THRESHOLDS.includes(action.thresholdMs)) return 'Hold threshold must be 32ms–512ms in 32ms steps.';
+    for (const branch of ['tap', 'hold'] as const) {
+      const problem = actionProblem(action[branch], { ...ctx, rotation: branch === 'tap' });
+      if (problem) return `${branch === 'tap' ? 'Tap' : 'Hold'}: ${problem}`;
+    }
+    return null;
+  }
   const actionDescriptor = ACTION_DESCRIPTORS.find((candidate) => candidate.type === action.type);
   if (!actionDescriptor) return 'This action type is no longer supported. Choose another action.';
   if ((ctx.rotation || ctx.timed) && actionNeedsRelease(action)) {
@@ -111,6 +122,10 @@ export function slotLabel(slot: Slot): string {
 /** All problems that would prevent encoding a valid image. Empty means the profile is encodable. */
 export function validateProfile(profile: Profile): Issue[] {
   const issues: Issue[] = [];
+  if (holdBindings(profile).some(a => !HOLD_THRESHOLDS.includes(holdThreshold(profile, a))) ||
+      profile.holdThresholdMs !== undefined && !HOLD_THRESHOLDS.includes(profile.holdThresholdMs))
+    issues.push({ where: 'Hold Threshold', message: 'Hold threshold must be 32ms–512ms in 32ms steps.' });
+  if (holdRecords(profile).length > 16) issues.push({ where: 'Storage', message: 'At most 16 distinct Tap-Hold pairs are supported.' });
   if (!SLEEP_TIMEOUT_MINUTES.some(minutes => minutes === profile.sleepTimeoutMinutes)) {
     issues.push({ where: 'Sleep Timeout', message: 'Sleep timeout must be 15, 30, 60 or 120 minutes.' });
   }

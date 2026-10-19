@@ -4,6 +4,7 @@ import { decodeImage } from '../codec/decode';
 import { encodeProfile } from '../codec/encode';
 import { defaultProfile } from '../model/defaults';
 import { PALETTE_VERSION } from '../model/palette';
+import { holdBindings } from '../model/tapHold';
 import { Opcode, Status, TRANSPORT_VERSION } from './packet';
 import type { ReplyListener, Transport } from './transport';
 
@@ -20,6 +21,7 @@ export interface SimulatorOptions {
   /** Model firmware built with ENABLE_COLOR_PREVIEW=0 (or older firmware). */
   previewSupported?: boolean;
   liveSupported?: boolean;
+  tapHoldSupported?: boolean;
 }
 
 /**
@@ -128,7 +130,7 @@ export class SimulatedDevice implements Transport {
     switch (opcode) {
       case Opcode.GetInfo:
         reply[6] = 14;
-        reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, FORMAT_VERSION, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, maxLayers(this.options.variant), IMAGE_SIZE, PALETTE_VERSION, 0xff, 0x7f], 8);
+        reply.set([0x55, 0x4d, 0x41, 0x43, TRANSPORT_VERSION, FORMAT_VERSION, this.options.variant, this.options.variant ? 3 : 6, this.options.variant ? 3 : 6, maxLayers(this.options.variant), IMAGE_SIZE, PALETTE_VERSION, 0xff, this.options.tapHoldSupported === false ? 0x7f : 0xff], 8);
         return Status.Ok;
       case Opcode.GetStatus:
         reply[6] = this.options.liveSupported === false ? 6 : 23;
@@ -184,6 +186,10 @@ export class SimulatedDevice implements Transport {
         const crc = imageCrc(this.staging, 7);
         if (crc !== this.uploadCrc || this.staging[7] !== (crc & 0xff) || this.staging[8] !== crc >> 8) return Status.BadCrc;
         if (this.staging[0] !== HEADER_MARKER || this.staging[1] !== FORMAT_VERSION || !decodeImage(this.staging, this.options.variant).ok) return Status.BadConfig;
+        if (this.options.tapHoldSupported === false) {
+          const decoded = decodeImage(this.staging);
+          if (decoded.ok && holdBindings(decoded.profile).length) return Status.BadConfig;
+        }
         if (this.options.failNextCommit) {
           this.options.failNextCommit = false;
           this.flash[0] = 0; // invalidated magic, as after an interrupted save

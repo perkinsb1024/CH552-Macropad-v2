@@ -36,6 +36,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
   const fresh = activity && liveClock.value - activity.receivedAt < 1000 && c.kind === 'connected' && c.connection.status.flashValid && c.connection.status.currentLayer === li;
   const pressed = (index: number) => !!fresh && !!(activity!.sample.pressed & (1 << index));
   const fired = (index: number) => !!fresh && activity!.sample.bindingLayer === li && activity!.hotUntil[index]! > liveClock.value;
+  const triggerClass = (index: number) => !fired(index) ? '' : `is-live-fired ${activity!.triggerKinds?.[index] === 'hold' ? 'is-live-hold' : activity!.triggerKinds?.[index] === 'unknown' ? 'is-live-unknown' : ''}`;
   const turned = (index: number) => !!fresh && index >= 7 && activity!.turnUntil[index - 7]! > liveClock.value;
 
   const selectedChord = selection?.kind === 'chord'
@@ -184,7 +185,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
         key={index}
         title={actionTooltip(action)}
         data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)}
-        class={`keycap ${pressed(index) ? 'is-live-pressed' : ''} ${fired(index) ? 'is-live-fired' : ''} ${rainbow ? 'keycap-rainbow' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
+        class={`keycap ${pressed(index) ? 'is-live-pressed' : ''} ${triggerClass(index)} ${rainbow ? 'keycap-rainbow' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${intent === 'before' ? 'drop-before' : ''} ${intent === 'after' ? 'drop-after' : ''} ${invalidDrop ? 'drag-invalid' : ''}`}
         style={`--led:${color}; --led-strip:${rainbow ? RAINBOW_GRADIENT : `linear-gradient(${color}, ${color})`}; --led-glow:${off ? 'transparent' : rainbow ? '#8000ff' : color}`}
         onClick={readOnly ? restartBriefRainbowAnimation : () => select(slot)}
         draggable={!readOnly}
@@ -196,7 +197,7 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
       >
         <span class="keycap-led" aria-hidden="true" />
         <span class="keycap-index">{index + 1}</span>
-        <span class="keycap-label"><ActionLabel action={action} showTooltip={false} /></span>
+        <span class="keycap-label"><ActionLabel action={action} showTooltip={false} compact /></span>
         {chordKeys.has(index) && <span class={`keycap-chord ${selectedChord && (selectedChord.keyA === index || selectedChord.keyB === index) ? 'is-selected' : ''}`} title="Part of a chord on this layer">chord</span>}
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>
@@ -211,9 +212,9 @@ export function DeviceView({ readOnly = false }: { readOnly?: boolean } = {}) {
     const invalidDrop = !!dragged && !canSwapSlots(dragged, slot) && !canInsertSlot(dragged, slot, 'before') && !canInsertSlot(dragged, slot, 'after');
     const intent = !readOnly && slotDrop.value && sameSlot(slotDrop.value.slot, slot) ? slotDrop.value.position : null;
     return (
-      <button title={actionTooltip(action)} data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)} class={`enc-part ${(slot.kind === 'encoderButton' && pressed(liveIndex)) || turned(liveIndex) ? 'is-live-pressed' : ''} ${fired(liveIndex) ? 'is-live-fired' : ''} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
+      <button title={actionTooltip(action)} data-clipboard-target={!readOnly || undefined} data-slot={readOnly ? undefined : JSON.stringify(slot)} class={`enc-part ${(slot.kind === 'encoderButton' && pressed(liveIndex)) || turned(liveIndex) ? 'is-live-pressed' : ''} ${triggerClass(liveIndex)} ${sameSlot(selection, slot) ? 'is-selected' : ''} ${problem ? 'has-problem' : ''} ${sameSlot(dragged, slot) ? 'is-dragging' : ''} ${intent === 'swap' ? 'is-drop-target' : ''} ${invalidDrop ? 'drag-invalid' : ''}`} onClick={readOnly ? undefined : () => select(slot)} draggable={!readOnly} tabIndex={readOnly ? -1 : undefined} aria-disabled={readOnly || undefined} onDragStart={readOnly ? undefined : (event) => dragStart(event, slot)} onDragEnd={readOnly ? undefined : dragEnd} onDragOver={readOnly ? undefined : (event) => dragOver(event, slot, 'vertical')} onDrop={readOnly ? undefined : (event) => drop(event, slot, 'vertical')}>
         <span class="enc-part-label">{icon}{label}{readOnly && turned(liveIndex) && <small>{activity!.turns[liveIndex - 7]} Detent{activity!.turns[liveIndex - 7] === 1 ? '' : 's'}</small>}</span>
-        <span class="enc-part-value"><ActionLabel action={action} showTooltip={false} /></span>
+        <span class="enc-part-value"><ActionLabel action={action} showTooltip={false} compact /></span>
         {intent === 'before' || intent === 'after' ? <span class={`drop-line drop-line-${intent}`} aria-hidden="true" /> : null}
       </button>
     );

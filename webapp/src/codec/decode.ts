@@ -4,7 +4,8 @@ import {
   LAYER_OPT_FULL_BRIGHTNESS, LAYER_OPT_AUTO_SLEEP, LAYER_OPT_INDICATOR_SHIFT,
   keyCount, layerSize, layerPaletteSize, pairCount, type Variant,
 } from '../model/constants';
-import type { Action, Chord, Layer, Profile, TimedAction } from '../model/types';
+import type { Action, Chord, Layer, Profile, TimedAction, OrdinaryAction } from '../model/types';
+import { branches, holdBindings } from '../model/tapHold';
 import { pairFromIndex } from '../model/pairs';
 import { imageCrc, storedCrc } from './crc16';
 import { migrateProfileColors } from '../model/palette';
@@ -26,6 +27,8 @@ interface PoolView {
   start: number;
   used: number;
   bytes: Uint8Array;
+  macroStart?: number;
+  records?: Map<number, { tap: OrdinaryAction; hold: OrdinaryAction }>;
 }
 
 function stringAt(pool: PoolView, offset: number): string | null {
@@ -65,7 +68,12 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
       if (b1 >= layers && !(mode !== 2 && b1 === PREVIOUS_LAYER)) return `Layer ${b1 + 1} does not exist`;
       return { type: mode === 2 ? 'momentaryLayer' : mode === 1 ? 'oneShotSetLayer' : 'setLayer', layer: b1 };
     }
-    if (type === 0xf) return 'Reserved action type F';
+    if (type === 0xf) {
+      if (version < 18) return 'Reserved action type F';
+      if (rotation) return 'Tap-Hold needs a physical release';
+      const record = pool.records?.get(b1);
+      return record ? { type: 'tapHold', ...structuredClone(record), thresholdMs: (aux + 1) * 32 } : 'Invalid Tap-Hold record address';
+    }
     if (type === 0) b0 = aux === 1 ? 0x20 : aux === 2 ? 0x10 : b0;
     else {
       const legacyTypes = [0, 1, 2, 3, 5, 6, 12, 13, 7, 8, 4, 0, 0, 14, 15];
@@ -86,7 +94,7 @@ function decodeAction(b0: number, b1: number, layers: number, rotation: boolean,
   const nonZeroAux = aux !== 0;
   switch (type) {
     case ActionCode.Macro: {
-      const start = pool.start + pool.used;
+      const start = pool.macroStart ?? pool.start + pool.used;
       return b1 < start || b1 >= IMAGE_SIZE ? 'Invalid macro offset' : { type: 'macro', macro: b1, repeats: aux + 1 };
     }
     case ActionCode.LedControl: {
@@ -221,6 +229,24 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
   const end = poolStart + poolUsed;
   if (end > IMAGE_SIZE) return fail('malformed', `Declared content ends at byte ${end}, beyond the 128-byte image.`);
   const pool: PoolView = { start: poolStart, used: poolUsed, bytes: image };
+  let macroStart = end;
+  const records = new Map<number, { tap: OrdinaryAction; hold: OrdinaryAction }>();
+  if (version >= 18 && end < IMAGE_SIZE && (image[end]! & 15) === 15) {
+    const count = (image[end]! >> 4) + 1;
+    macroStart += 1 + 4 * count;
+    if (macroStart > IMAGE_SIZE) return fail('malformed', 'Tap-Hold records exceed image capacity.');
+    pool.macroStart = macroStart;
+    for (let i = 0; i < count; i++) {
+      const address = end + 1 + 4 * i;
+      const tap = decodeAction(image[address]!, image[address + 1]!, layerCount, true, pool, version);
+      const hold = decodeAction(image[address + 2]!, image[address + 3]!, layerCount, false, pool, version);
+      if (typeof tap === 'string' || typeof hold === 'string' || tap.type === 'tapHold' || hold.type === 'tapHold')
+        return fail('malformed', `Invalid Tap-Hold pair ${i + 1}.`);
+      records.set(address, { tap, hold });
+    }
+  }
+  pool.records = records;
+  pool.macroStart = macroStart;
 
   if (poolUsed && image[poolStart + poolUsed - 1] !== 0) return fail('malformed', 'String pool does not end with a terminator.');
   for (let i = 0; i < poolUsed; i++) {
@@ -308,7 +334,7 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     const steps = new Map<number, Action>();
     const starts = new Set<number>();
     let beginning = true;
-    let offset = end;
+    let offset = macroStart;
     for (; offset < IMAGE_SIZE;) {
       if (!image[offset]) {
         steps.set(offset++, { type: 'none' });
@@ -322,7 +348,8 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
       if (beginning) { starts.add(offset); beginning = false; }
       offset += 2;
     }
-    const bindings = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action), ...timedActions.flatMap(t => [t.action, t.resumeAction])];
+    const bindings = [...layers.flatMap(l => [...l.keys, l.encoderButton, l.clockwise, l.counterclockwise]), ...chords.map(c => c.action), ...timedActions.flatMap(t => [t.action, t.resumeAction])].flatMap(branches);
+    bindings.push(...[...records.values()].flatMap(r => [r.tap, r.hold]));
     for (const action of bindings) if (action.type === 'macro') {
       if (!steps.has(action.macro)) return fail('malformed', 'Macro offset points to an action parameter.');
       starts.add(action.macro);
@@ -351,6 +378,11 @@ export function decodeImage(image: Uint8Array, expectedVariant?: Variant): Decod
     rainbowPhase: configurableRainbow ? (led >> HEADER_RAINBOW_PHASE_SHIFT) & 3 : DEFAULT_RAINBOW_PHASE,
     rainbowSpeed: configurableRainbow ? led >> HEADER_RAINBOW_SPEED_SHIFT : DEFAULT_RAINBOW_SPEED,
     layers, chords, ...(timedActions.length ? { timedActions } : {}), ...(macros.length ? { macros } : {}) };
+  const holds = holdBindings(profile);
+  if (holds.length) {
+    profile.holdThresholdMs = holds[0]!.thresholdMs;
+    for (const a of holds) if (a.thresholdMs === profile.holdThresholdMs) delete a.thresholdMs;
+  }
   const teal = version < 16 && migrateProfileColors(profile);
   const notices = board ? [] : migrateChordWindow(profile);
   if (teal) notices.push('Teal was replaced with Cyan. Brightness settings are unchanged.');
@@ -365,17 +397,25 @@ export function decodeLiveAction(image: Uint8Array, first: number, second: numbe
   let start = HEADER_SIZE + layerSize(p.variant) * p.layers.length;
   for (const l of p.layers) if (l.indicatorColor === 0) start += layerPaletteSize(p.variant);
   start += CHORD_ENTRY_SIZE * p.chords.length + TIMED_ENTRY_SIZE * (p.timedActions?.length ?? 0);
-  const pool = { start, used: image[3]! >> 1, bytes: image };
+  const end = start + (image[3]! >> 1);
+  const macroStart = end < IMAGE_SIZE && (image[end]! & 15) === 15 ? end + 1 + 4 * ((image[end]! >> 4) + 1) : end;
+  const pool = { start, used: image[3]! >> 1, bytes: image, macroStart };
   const action = decodeAction(first, second, p.layers.length, false, pool, FORMAT_VERSION);
   if (typeof action === 'string') return null;
   if (action.type === 'macro') {
     // The decoder sorts referenced macro starts; locate this binding's original address.
     const addresses = new Set<number>();
+    let beginning = true;
+    for (let cursor = macroStart; cursor < IMAGE_SIZE;) {
+      if (!image[cursor]) { cursor++; beginning = true; }
+      else { if (beginning) addresses.add(cursor); beginning = false; cursor += 2; }
+    }
     const add = (offset: number) => { if ((image[offset]! & 15) === 14) addresses.add(image[offset + 1]!); };
     for (let li = 0; li < p.layers.length; li++) for (let i = 0; i < keyCount(p.variant) + 3; i++) add(HEADER_SIZE + li * layerSize(p.variant) + 2 * i);
     let offset = start - CHORD_ENTRY_SIZE * p.chords.length - TIMED_ENTRY_SIZE * (p.timedActions?.length ?? 0);
     for (let i = 0; i < p.chords.length; i++, offset += CHORD_ENTRY_SIZE) add(offset + 1);
     for (let i = 0; i < (p.timedActions?.length ?? 0); i++, offset += TIMED_ENTRY_SIZE) { add(offset + 1); add(offset + 3); }
+    if (macroStart !== end) for (let cursor = end + 1; cursor < macroStart; cursor += 2) add(cursor);
     action.macro = [...addresses].sort((a, b) => a - b).indexOf(second);
     if (action.macro < 0) return null;
   }

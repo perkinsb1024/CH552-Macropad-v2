@@ -22,10 +22,10 @@ transport. It includes independent per-key layer palettes, keypress and layer
 absolute/relative persistent/one-shot/held layers, chords, macros, text, mouse
 buttons, movement, scrolling, timers, runtime LED controls and read-only
 **Live View** telemetry. All action records
-remain two bytes. The active configurator supports ordinary v18 profiles, including
-binary, JSON and draft migration. Its tap-hold controls, profile conversion and
-host-layer controls are deferred; do not use it to edit profiles containing
-**Tap-Hold** records.
+remain two bytes. The configurator supports v18 profiles, including **Tap-Hold**
+editing, binary decoding, JSON backups and draft recovery. Its **Hold Threshold**
+setting applies a shared threshold to every gesture; imported mixed thresholds
+are preserved until the user selects a shared value. Host-layer controls remain deferred.
 V18 supports five user-defined **Timed Actions** and encodes global chords using
 scope 7, leaving chord identifier bit 7 reserved. Timer runtime telemetry includes
 six slots. **Tap-Hold** extends the action map with type F and an optional counted
@@ -50,9 +50,8 @@ migrate or erase profiles during an update.
 The tap-hold extension preserves existing valid v18 profiles byte for byte; it
 uses the previously invalid type F and previously invalid macro-tail prefix.
 **GET_INFO** action mask `0xFFFF` identifies tap-hold support in format 18.
-Earlier v18 source reports `0x7FFF` and rejects tap-hold images. The active editor
-still writes profiles without this extension. Binary, JSON and draft editor
-support for tap-hold is not implemented. HID **SET_LAYER** is a transport extension;
+Earlier v18 source reports `0x7FFF` and rejects tap-hold images. The configurator
+checks this capability before saving profiles containing **Tap-Hold**. HID **SET_LAYER** is a transport extension;
 older builds can reject opcode 13 even when their configuration version is 18.
 
 A converter must validate the original source format and checksum, decode all
@@ -581,6 +580,14 @@ address. The sixteen thresholds are 32ms, 64ms, …, 512ms. Each binding selects
 own threshold. Multiple inputs can wait and cross their deadlines independently;
 pressing another input does not force a tap or restart an existing decision.
 There is no single-pending-hold limit.
+
+The editor represents a wrapper as `{ type: "tapHold", tap: action, hold: action }`
+and stores its shared threshold in the optional profile field `holdThresholdMs`
+(default 256). A wrapper may retain an optional `thresholdMs` override when
+reading mixed thresholds. Selecting **Hold Threshold** removes all overrides.
+These fields are preserved in v18 JSON backups and local drafts; the binary writer
+encodes the effective threshold into each wrapper. The profile field uses no
+additional firmware header space.
 
 The optional block starts immediately after the shared string pool, before
 macros. Its first byte is `((recordCount - 1) << 4) | 0xF`, with recordCount

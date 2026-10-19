@@ -113,6 +113,7 @@ describe('every action type round-trips', () => {
     { type: 'mouseXY', x: -60, y: 4 },
     { type: 'mouseX', delta: -1, hold: true },
     { type: 'mouseY', delta: 127, hold: true },
+    { type: 'tapHold', tap: { type: 'keyTap', usage: 40, modifiers: 0 }, hold: { type: 'keyHold', usage: 0, modifiers: 1 } },
   ];
   it('covers every supported code', () => {
     const types = new Set(samples.map((s) => s.type));
@@ -127,6 +128,7 @@ describe('every action type round-trips', () => {
       samples.slice(start, start + 24).forEach((a, i) => {
         profile.layers[Math.floor(i / 6)]!.keys[i % 6] = a;
       });
+      if (samples.slice(start, start + 24).some(a => a.type === 'tapHold')) profile.holdThresholdMs = 256;
       expect(validateProfile(profile)).toEqual([]);
       const decoded = decodeImage(encodeProfile(profile));
       expect(decoded.ok).toBe(true);

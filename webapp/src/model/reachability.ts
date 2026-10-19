@@ -1,5 +1,6 @@
 import type { Action, Profile } from './types';
 import { isPreviousLayer, relativeTargetLayer } from './actions';
+import { branches } from './tapHold';
 
 export interface ReachabilityWarning {
   layer: number;
@@ -41,7 +42,7 @@ export function layerReachabilityWarnings(profile: Profile): ReachabilityWarning
   const startup = profile.startupLayer;
   if (!count || !Number.isInteger(startup) || startup < 0 || startup >= count) return [];
 
-  const bindings = profile.layers.map((_, layer) => actionsOnLayer(profile, layer));
+  const bindings = profile.layers.map((_, layer) => actionsOnLayer(profile, layer).flatMap(branches));
   const timers = profile.timedActions ?? [];
   const states: LayerState[] = [];
   const ids = new Map<string, number>();

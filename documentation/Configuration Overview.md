@@ -109,7 +109,13 @@ An action is what the macropad does. A trigger is what makes it happen.
 | Timer | Runs its action whenever its interval expires. The timer can optionally restart when you interact with the macropad |
 | **On Next Input** after a timer | Runs once when you next press a key or use the wheel, after that timer has fired |
 
-There are no separate user-configurable double-tap or long-press triggers for ordinary actions. **Key Hold** means “keep this action held while I hold the button,” rather than “wait before starting.” In v12, firmware update mode is entered through the installer or by holding the encoder while connecting USB.
+For keys, the encoder button and chords, click **Add Hold Gesture** to choose separate **Tap** and **Hold** actions. They appear together under **Tap and Hold**, with an independently collapsible editor for each branch. The original action becomes **Tap**, unless it needs a physical release; in that case it becomes **Hold** and **Tap** starts as **Nothing**. Use **Remove Hold Gesture** and choose **Keep Tap** or **Keep Hold** to return to an ordinary binding.
+
+**Profile Settings** shows **Hold Threshold** directly below **Chord Window** whenever a gesture is present. It applies to every gesture, defaults to 256ms and uses a slider from 32ms–512ms in 32ms steps. Nothing runs at initial press. Release before the threshold to run **Tap** once; reaching the threshold runs **Hold** once. In a branch editor, **Press Once** sends one keyboard or media press; **Until Release** keeps its output active until physical release. Movement and scrolling can similarly repeat until release. **Nothing** is valid on either branch. Wheel rotation, timers and macro steps cannot use **Tap-Hold**.
+
+Chord recognition takes priority over a single-key gesture. A single key retains its initial press time while waiting for a chord; a chord gesture starts when the second key is recognized. Releasing either chord member chooses **Tap** or ends **Hold**, without running either constituent key's **Tap** action. Pressing another input does not force a pending gesture to choose a branch. Imported profiles with different thresholds retain them as **Mixed (Saved Values)** until a shared value is selected. Saving gestures requires firmware that advertises Tap-Hold support, including for v18 source builds.
+
+There is no double-tap trigger. An ordinary **Key Hold** starts immediately and keeps its output held until release; the **Hold** gesture instead waits for the threshold before starting its action. In v12, firmware update mode is entered through the installer or by holding the encoder while connecting USB.
 
 Actions that need a button release—**Key Hold**, **Mouse Hold**, and media, layer, scroll or pointer actions set to **Hold**—cannot be used for wheel rotation, either timer action, or macro steps as those contexts have no physical release.
 
@@ -768,7 +774,9 @@ With v17 or v18 firmware, the matching viewer adds:
 | Display | Meaning |
 | --- | --- |
 | Blue outlines | Physical key or encoder-button presses and completed encoder turns, even when a wake input is consumed |
-| Green flashes | Accepted bindings, including short taps and both keys of a chord |
+| Green flashes | Accepted **Tap** or ordinary triggers, including short taps and both keys of a chord |
+| Purple flashes | Accepted **Hold** gestures, including both chord members |
+| Gray flashes | Accepted triggers whose gesture cannot be identified from telemetry |
 | **Latest Binding** | The most recent action, its input/timer/macro source and effective layer at dispatch |
 | **Auto-Sleep** | **Disabled**, **Asleep**, or an awake countdown to sleep |
 | **Brightness**, **LED Effect**, **Rainbow** | Current indicator/key policies, temporary effects, blink progress, color preview and rainbow settings |
@@ -777,12 +785,14 @@ With v17 or v18 firmware, the matching viewer adds:
 | **Timed Actions** | Time until firing, a pause outside the timer's layer, and any armed next-input action or input consumption |
 | **Latched Mouse Buttons**, **Dropped Actions** | Persistent mouse latches and rejected actions, shown when nonzero |
 
-Green feedback means the firmware accepted the binding; output may still be
+Trigger feedback means the firmware accepted the binding; output may still be
 queued, and an application may not have received it yet. The latest binding is
 a summary, not a complete event history. Waking the pad can show a blue outline
 without a green flash when **Consume Wake Input** blocks the normal binding.
 Brightness policies describe runtime settings; actual rendered LED colors are
 not streamed.
+
+The viewer shows both **Tap** and **Hold** actions on affected keys and chords. **Latest Trigger** identifies the gesture when the reported action distinguishes the branches. Identical branch actions, conflicting actions on different layers, or intermediate events between polls can prevent identification; those triggers receive neutral feedback. The viewer does not infer a pending Hold countdown from browser timing. Frozen viewers retain their original color legends.
 
 The visible viewer schedules each input poll 50ms after the previous poll
 completes and reads runtime state after each input reply. Timers are sampled

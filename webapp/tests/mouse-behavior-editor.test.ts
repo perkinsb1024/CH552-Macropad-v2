@@ -65,7 +65,7 @@ it.each<Slot>([
   const tree = nodes(Inspector());
   const hold = tree.find(n => n.type === 'option' && n.props.value === 'mouseHold')!;
   expect(hold.props.disabled).toBe(restricted);
-  expect(textContent(tree.find(n => n.props.id === 'mouse-behavior-hint')).includes('Hold is not available on this input.')).toBe(restricted);
+  expect(textContent(tree.find(n => n.props.id === 'mouse-behavior-hint')).includes('Until Release is not available on this input.')).toBe(restricted);
   choose('mouseHold');
   expect(getAction(profile.value!, slot)).toEqual({ type: restricted ? 'mouseClick' : 'mouseHold', buttons: 2 });
   for (const type of ['mouseToggle', 'mouseDown', 'mouseUp', 'mouseClick'] as const) {
